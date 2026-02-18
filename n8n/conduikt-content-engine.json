@@ -1,0 +1,1062 @@
+{
+  "name": "Conduikt Build-in-Public Content Engine (29 nodes)",
+  "description": "Automated build-in-public content engine for Conduikt. Fetches project context from GitHub, generates X and LinkedIn posts via Claude API, posts via platform APIs. 29 nodes across 3 trigger paths (schedule, webhook, manual). Persistent state stored in Supabase n8n_content_state table.",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9,13,17 * * *"
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0],
+      "notes": "Fires at 09:00, 13:00, 17:00 UTC (= 10:00, 14:00, 18:00 WAT)"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "conduikt-github-push",
+        "options": {}
+      },
+      "id": "github-push-webhook",
+      "name": "GitHub Push Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 260],
+      "webhookId": "conduikt-github-push",
+      "notes": "Receives push events from conduikt repo master branch. Configure GitHub webhook to POST to this URL with ref filter refs/heads/master."
+    },
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 520],
+      "notes": "For testing the workflow manually"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "claude_api_key",
+              "value": "={{ $env.CLAUDE_API_KEY }}"
+            },
+            {
+              "name": "twitter_bearer_token",
+              "value": "={{ $env.TWITTER_BEARER_TOKEN }}"
+            },
+            {
+              "name": "twitter_api_key",
+              "value": "={{ $env.TWITTER_API_KEY }}"
+            },
+            {
+              "name": "twitter_api_secret",
+              "value": "={{ $env.TWITTER_API_SECRET }}"
+            },
+            {
+              "name": "twitter_access_token",
+              "value": "={{ $env.TWITTER_ACCESS_TOKEN }}"
+            },
+            {
+              "name": "twitter_access_token_secret",
+              "value": "={{ $env.TWITTER_ACCESS_TOKEN_SECRET }}"
+            },
+            {
+              "name": "linkedin_access_token",
+              "value": "={{ $env.LINKEDIN_ACCESS_TOKEN }}"
+            },
+            {
+              "name": "linkedin_person_id",
+              "value": "={{ $env.LINKEDIN_PERSON_ID }}"
+            },
+            {
+              "name": "github_token",
+              "value": "={{ $env.GITHUB_TOKEN }}"
+            },
+            {
+              "name": "repo_owner",
+              "value": "olaDmenace"
+            },
+            {
+              "name": "repo_name",
+              "value": "conduikt"
+            },
+            {
+              "name": "supabase_url",
+              "value": "={{ $env.SUPABASE_URL }}"
+            },
+            {
+              "name": "supabase_service_key",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            }
+          ],
+          "boolean": [
+            {
+              "name": "dry_run",
+              "value": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "configuration",
+      "name": "Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [320, 260],
+      "notes": "Central configuration node. Set dry_run to false when ready to go live. Env vars: CLAUDE_API_KEY, TWITTER_*, LINKEDIN_ACCESS_TOKEN, LINKEDIN_PERSON_ID, GITHUB_TOKEN, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY."
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.github.com/repos/{{ $node['Configuration'].json['repo_owner'] }}/{{ $node['Configuration'].json['repo_name'] }}/contents/WORKPLAN.md",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github.v3+json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $node['Configuration'].json['github_token'] }}"
+            },
+            {
+              "name": "X-GitHub-Api-Version",
+              "value": "2022-11-28"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "fetch-workplan",
+      "name": "Fetch WORKPLAN.md",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [620, 0],
+      "notes": "Fetches WORKPLAN.md from the Conduikt GitHub repo. Continue on fail with empty string fallback.",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.github.com/repos/{{ $node['Configuration'].json['repo_owner'] }}/{{ $node['Configuration'].json['repo_name'] }}/contents/CHANGELOG.md",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github.v3+json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $node['Configuration'].json['github_token'] }}"
+            },
+            {
+              "name": "X-GitHub-Api-Version",
+              "value": "2022-11-28"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "fetch-changelog",
+      "name": "Fetch CHANGELOG.md",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [620, 200],
+      "notes": "Fetches CHANGELOG.md from the Conduikt GitHub repo. Continue on fail with empty string fallback.",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.github.com/repos/{{ $node['Configuration'].json['repo_owner'] }}/{{ $node['Configuration'].json['repo_name'] }}/commits?per_page=10",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github.v3+json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $node['Configuration'].json['github_token'] }}"
+            },
+            {
+              "name": "X-GitHub-Api-Version",
+              "value": "2022-11-28"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "fetch-commits",
+      "name": "Fetch Recent Commits",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [620, 400],
+      "notes": "Fetches the last 10 commits from the Conduikt GitHub repo. Continue on fail with empty array fallback.",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.github.com/repos/{{ $node['Configuration'].json['repo_owner'] }}/{{ $node['Configuration'].json['repo_name'] }}/contents/screenshots/index.json",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github.v3+json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $node['Configuration'].json['github_token'] }}"
+            },
+            {
+              "name": "X-GitHub-Api-Version",
+              "value": "2022-11-28"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "fetch-screenshots",
+      "name": "Fetch Screenshots Index",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [620, 600],
+      "notes": "Fetches screenshots/index.json for image selection. Continue on fail with empty object fallback.",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Load Memory — persistent state from Supabase n8n_content_state table\n\nconst https = require('https');\nconst config = $('Configuration').first().json;\nconst supabaseUrl = config.supabase_url;\nconst supabaseKey = config.supabase_service_key;\n\nconst categories = [\n  'market_insight',\n  'build_log',\n  'before_after',\n  'founder_lesson',\n  'product_tease',\n  'technical_deep'\n];\n\n// Fetch state from Supabase\nfunction supabaseGet(url, key) {\n  return new Promise((resolve, reject) => {\n    const parsed = new URL(url);\n    const options = {\n      hostname: parsed.hostname,\n      path: parsed.pathname + parsed.search,\n      method: 'GET',\n      headers: {\n        'apikey': key,\n        'Authorization': 'Bearer ' + key,\n        'Content-Type': 'application/json'\n      }\n    };\n    const req = https.request(options, (res) => {\n      let data = '';\n      res.on('data', chunk => data += chunk);\n      res.on('end', () => {\n        try { resolve(JSON.parse(data)); }\n        catch { resolve(null); }\n      });\n    });\n    req.on('error', () => resolve(null));\n    req.end();\n  });\n}\n\nlet state = null;\nif (supabaseUrl && supabaseKey) {\n  try {\n    const rows = await supabaseGet(\n      supabaseUrl + '/rest/v1/n8n_content_state?select=*&limit=1',\n      supabaseKey\n    );\n    state = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;\n  } catch (e) {\n    state = null;\n  }\n}\n\nconst postedHistory = state?.posted_history ?? [];\nconst rotationIndex = state?.rotation_index ?? 0;\nconst bannedHashes = state?.banned_hashes ?? [];\nconst stateId = state?.id ?? null;\n\nconst nextCategory = categories[rotationIndex % categories.length];\n\n// Banned topics — battle-tested list\nconst bannedTopics = [\n  '\"Built in 30 minutes\" or any variation implying the tool is trivially simple',\n  '\"Faith apps are terrible\" or any negative comparisons to other app categories',\n  '\"Controversial opinion\" / \"Hot take\" / \"Unpopular opinion\" openers',\n  '\"Follow along\" / \"Follow for more\" / \"unfiltered version\" CTAs',\n  '\"Debugging nightmare\" or exaggerated struggle narratives',\n  '\"Building something different\" or vague differentiation claims',\n  'Any hashtags (#BuildInPublic, #IndieHacker, #SaaS, etc.)',\n  '\"Thread \\ud83e\\uddf5\" or thread-style posts',\n  'Emoji-heavy posts (more than 2 emojis)'\n];\n\nreturn [{\n  json: {\n    categories,\n    nextCategory,\n    rotationIndex,\n    postedHistory,\n    bannedTopics,\n    bannedHashes,\n    stateId,\n    categoryDescriptions: {\n      market_insight: 'Share a finding about the marketing automation space. What are founders struggling with? What tools are failing them? What gap does Conduikt fill?',\n      build_log: 'What you shipped today with Claude Code. Reference specific commits, features built, bugs squashed. Show the real work.',\n      before_after: 'Show a website before/after the tool optimizes it. Concrete results, real transformations. If no screenshots available, describe the transformation vividly.',\n      founder_lesson: 'Honest takes on building as a solo founder in Lagos. The reality of building a SaaS from Nigeria — infrastructure challenges, time zone arbitrage, unique perspective on global markets.',\n      product_tease: 'Preview a specific feature with enough detail to intrigue. Make people want to try it. Show the UI, the workflow, the magic moment.',\n      technical_deep: 'Architecture decisions, why Claude over GPT, Supabase patterns, Next.js 15 App Router insights, n8n automation patterns. Technical enough to impress, clear enough to follow.'\n    }\n  }\n}];"
+      },
+      "id": "load-memory",
+      "name": "Load Memory",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [940, 260],
+      "notes": "Loads posted history and category rotation state from Supabase n8n_content_state table. Falls back to empty state if Supabase is unreachable."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare Inputs — decode base64 GitHub API content and merge all context\n// Handles fetch node failures gracefully with fallback values\n\nconst config = $('Configuration').first().json;\nconst memory = $('Load Memory').first().json;\n\n// Helper: safely decode base64 content from GitHub API responses\nfunction decodeGitHubContent(nodeName) {\n  try {\n    const data = $(nodeName).first().json;\n    // If the node failed (continueOnFail), data may be an error object\n    if (data && data.error) return null;\n    if (data && data.content) {\n      const cleaned = data.content.replace(/\\n/g, '');\n      return Buffer.from(cleaned, 'base64').toString('utf-8');\n    }\n    return null;\n  } catch (e) {\n    return null;\n  }\n}\n\n// Decode WORKPLAN.md — fallback: empty string\nconst workplan = decodeGitHubContent('Fetch WORKPLAN.md') || '';\n\n// Decode CHANGELOG.md — fallback: empty string\nconst changelog = decodeGitHubContent('Fetch CHANGELOG.md') || '';\n\n// Decode screenshots index.json — fallback: empty object\nlet screenshotsIndex = {};\ntry {\n  const rawScreenshots = decodeGitHubContent('Fetch Screenshots Index');\n  if (rawScreenshots) {\n    screenshotsIndex = JSON.parse(rawScreenshots);\n  }\n} catch (e) {\n  screenshotsIndex = {};\n}\n\n// Format recent commits — fallback: empty array representation\nlet formattedCommits = 'No recent commits available.';\ntry {\n  const commitsData = $('Fetch Recent Commits').first().json;\n  // Check for error response from continueOnFail\n  if (commitsData && commitsData.error) {\n    formattedCommits = 'No recent commits available.';\n  } else {\n    const commits = Array.isArray(commitsData) ? commitsData : (commitsData.data || [commitsData]);\n    if (Array.isArray(commits) && commits.length > 0 && commits[0].sha) {\n      formattedCommits = commits\n        .slice(0, 10)\n        .map((c, i) => {\n          const sha = (c.sha || '').substring(0, 7);\n          const message = c.commit ? c.commit.message : (c.message || 'No message');\n          const date = c.commit ? c.commit.author.date : (c.date || '');\n          return `${i + 1}. [${sha}] ${message.split('\\n')[0]} (${date})`;\n        })\n        .join('\\n');\n    }\n  }\n} catch (e) {\n  formattedCommits = 'No recent commits available.';\n}\n\nreturn [{\n  json: {\n    config,\n    memory,\n    workplan,\n    changelog,\n    recentCommits: formattedCommits,\n    screenshotsIndex,\n    nextCategory: memory.nextCategory,\n    categoryDescription: memory.categoryDescriptions[memory.nextCategory]\n  }\n}];"
+      },
+      "id": "prepare-inputs",
+      "name": "Prepare Inputs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1220, 260],
+      "notes": "Decodes base64 GitHub content, formats commits, merges all context. Handles fetch failures with fallback values (empty string, empty array, empty object)."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Construct Prompt — builds system instruction and user content SEPARATELY\n// System instruction goes to Claude's system parameter, user content to messages\n\nconst data = $input.first().json;\n\nconst postedListStr = data.memory.postedHistory.length > 0\n  ? data.memory.postedHistory.slice(-20).map(p => `- [${p.category}] ${p.summary} (${p.date})`).join('\\n')\n  : 'No previous posts yet.';\n\nconst bannedTopicsStr = data.memory.bannedTopics.join('\\n- ');\n\n// SYSTEM INSTRUCTION — everything about role, tone, rules, format\nconst systemInstruction = `You are the content voice for Conduikt — an AI marketing automation SaaS being built by a solo developer in Lagos, Nigeria using Claude Code.\n\nYour audience: Technical founders, indie hackers, growth marketers on X and LinkedIn.\n\nPOST CATEGORY: ${data.nextCategory}\n\n${data.categoryDescription}\n\nTONE:\n- Authentic builder voice — show the real work, not just highlights\n- Technical enough to impress developers, clear enough for marketers\n- Confident but not arrogant — you're building something real, not just hyping\n- Nigerian founder perspective is a strength — lean into it naturally when relevant\n- NO hashtags, NO \"follow for more\", NO generic motivation\n- NO emojis overload — one or two max if they add meaning\n\nPREVIOUSLY POSTED (DO NOT REPEAT THESE TOPICS OR ANGLES):\n${postedListStr}\n\nBANNED TOPICS (NEVER post about):\n- ${bannedTopicsStr}\n\nINSTRUCTIONS:\nGenerate 1 post for X (max 280 characters) and 1 adapted version for LinkedIn (400-700 characters).\n\nThe X post should be punchy, specific, and create curiosity or resonance.\nThe LinkedIn post should expand on the same idea with more context, paragraph breaks, and a professional/insight-driven tone.\n\nIf you reference an image_category, it MUST be one of the available screenshot categories listed above. If none are relevant, set image_category to null.\n\nIf you truly cannot generate a quality post that avoids duplicating previous content, set skip_reason to a brief explanation. Otherwise skip_reason must be null.\n\nOutput ONLY valid JSON (no markdown, no code fences, no explanation):\n{\n  \"x_post\": { \"text\": \"...\", \"image_category\": null },\n  \"linkedin_post\": { \"text\": \"...\", \"image_category\": null },\n  \"category\": \"${data.nextCategory}\",\n  \"skip_reason\": null\n}`;\n\n// USER CONTENT — the actual context data for this run\nconst userContent = `RECENT COMMITS:\n${data.recentCommits}\n\nCURRENT WORKPLAN STATUS:\n${data.workplan.substring(0, 3000)}\n\nRECENT CHANGELOG:\n${data.changelog.substring(0, 2000)}\n\nAVAILABLE SCREENSHOT CATEGORIES: ${Object.keys(data.screenshotsIndex).join(', ') || 'none yet'}\n\nGenerate the content now.`;\n\nreturn [{\n  json: {\n    systemInstruction,\n    userContent,\n    config: data.config,\n    memory: data.memory,\n    screenshotsIndex: data.screenshotsIndex\n  }\n}];"
+      },
+      "id": "construct-prompt",
+      "name": "Construct Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1500, 260],
+      "notes": "Splits prompt into system instruction (role, tone, rules, format) and user content (commits, workplan, changelog). These map to Claude's system parameter and messages array."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $node['Configuration'].json['claude_api_key'] }}"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-sonnet-4-5-20250929\",\n  \"max_tokens\": 1024,\n  \"system\": {{ JSON.stringify($json.systemInstruction) }},\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": {{ JSON.stringify($json.userContent) }}\n    }\n  ]\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "claude-api",
+      "name": "Claude API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1780, 260],
+      "notes": "Calls Claude claude-sonnet-4-5-20250929 with system instruction in top-level system parameter and user content in messages array"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Response — extract JSON from Claude's response\n\nconst claudeResponse = $input.first().json;\nconst config = $('Construct Prompt').first().json.config;\nconst memory = $('Construct Prompt').first().json.memory;\nconst screenshotsIndex = $('Construct Prompt').first().json.screenshotsIndex;\n\nlet parsed = null;\nlet parseError = null;\n\ntry {\n  // Claude returns content as an array of content blocks\n  const textContent = claudeResponse.content\n    .filter(c => c.type === 'text')\n    .map(c => c.text)\n    .join('');\n  \n  // Try to parse the JSON directly\n  try {\n    parsed = JSON.parse(textContent);\n  } catch (e) {\n    // Sometimes Claude wraps JSON in code fences; strip them\n    const jsonMatch = textContent.match(/```(?:json)?\\s*([\\s\\S]*?)```/);\n    if (jsonMatch) {\n      parsed = JSON.parse(jsonMatch[1].trim());\n    } else {\n      // Try to find JSON object in the response\n      const objMatch = textContent.match(/\\{[\\s\\S]*\\}/);\n      if (objMatch) {\n        parsed = JSON.parse(objMatch[0]);\n      } else {\n        throw new Error('No JSON found in Claude response');\n      }\n    }\n  }\n} catch (e) {\n  parseError = e.message;\n  parsed = {\n    x_post: { text: null, image_category: null },\n    linkedin_post: { text: null, image_category: null },\n    category: memory.nextCategory,\n    skip_reason: 'Failed to parse Claude response: ' + e.message\n  };\n}\n\nreturn [{\n  json: {\n    ...parsed,\n    config,\n    memory,\n    screenshotsIndex,\n    parseError\n  }\n}];"
+      },
+      "id": "parse-response",
+      "name": "Parse Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2060, 260],
+      "notes": "Extracts JSON from Claude's response, handles code fences and parse errors gracefully"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Check Duplicate — compare against previously posted content and banned topics\n\nconst data = $input.first().json;\nconst postedHistory = data.memory.postedHistory || [];\nconst bannedTopics = data.memory.bannedTopics || [];\nconst xText = data.x_post ? data.x_post.text : null;\n\nlet isDuplicate = false;\nlet duplicateReason = null;\n\nif (xText) {\n  // Check for near-duplicate posts (simple similarity check)\n  const xTextLower = xText.toLowerCase();\n  \n  for (const prev of postedHistory) {\n    if (!prev.xText) continue;\n    const prevLower = prev.xText.toLowerCase();\n    \n    // Check if more than 60% of words overlap\n    const currentWords = new Set(xTextLower.split(/\\s+/).filter(w => w.length > 3));\n    const prevWords = new Set(prevLower.split(/\\s+/).filter(w => w.length > 3));\n    \n    if (currentWords.size > 0 && prevWords.size > 0) {\n      let overlap = 0;\n      for (const word of currentWords) {\n        if (prevWords.has(word)) overlap++;\n      }\n      const similarity = overlap / Math.max(currentWords.size, prevWords.size);\n      if (similarity > 0.6) {\n        isDuplicate = true;\n        duplicateReason = `Too similar to previous post from ${prev.date}: \"${prev.xText.substring(0, 80)}...\" (${Math.round(similarity * 100)}% word overlap)`;\n        break;\n      }\n    }\n  }\n  \n  // Check banned topics\n  if (!isDuplicate) {\n    for (const banned of bannedTopics) {\n      if (xTextLower.includes(banned.toLowerCase())) {\n        isDuplicate = true;\n        duplicateReason = `Contains banned topic: \"${banned}\"`;\n        break;\n      }\n    }\n  }\n}\n\nreturn [{\n  json: {\n    ...data,\n    isDuplicate,\n    duplicateReason,\n    skip_reason: data.skip_reason || (isDuplicate ? duplicateReason : null)\n  }\n}];"
+      },
+      "id": "check-duplicate",
+      "name": "Check Duplicate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2340, 260],
+      "notes": "Checks for near-duplicate posts (>60% word overlap) and banned topics"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-post-check",
+              "leftValue": "={{ $json.skip_reason }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "has-post",
+      "name": "Has Post?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [2620, 260],
+      "notes": "Routes to posting flow if skip_reason is null/empty, otherwise logs and ends"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Log Skip — record why this run was skipped\n\nconst data = $input.first().json;\n\nconsole.log(`[Conduikt Content Engine] SKIPPED`);\nconsole.log(`  Category: ${data.category}`);\nconsole.log(`  Skip reason: ${data.skip_reason}`);\nconsole.log(`  Is duplicate: ${data.isDuplicate}`);\nconsole.log(`  Parse error: ${data.parseError || 'none'}`);\nconsole.log(`  Timestamp: ${new Date().toISOString()}`);\n\nreturn [{\n  json: {\n    action: 'skipped',\n    category: data.category,\n    skip_reason: data.skip_reason,\n    isDuplicate: data.isDuplicate,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "log-skip",
+      "name": "Log Skip",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2900, 480],
+      "notes": "Logs the reason this run was skipped (duplicate, banned topic, parse error, etc.)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Select Image — match image_category to screenshots/index.json and pick a random image\n\nconst data = $input.first().json;\nconst screenshotsIndex = data.screenshotsIndex || {};\n\nlet selectedImage = null;\nlet imageUrl = null;\n\n// Check X post image category first, then LinkedIn\nconst imageCategory = (data.x_post && data.x_post.image_category) || \n                      (data.linkedin_post && data.linkedin_post.image_category) || \n                      null;\n\nif (imageCategory && screenshotsIndex[imageCategory]) {\n  const images = screenshotsIndex[imageCategory];\n  if (Array.isArray(images) && images.length > 0) {\n    // Pick a random image from the category\n    const randomIndex = Math.floor(Math.random() * images.length);\n    selectedImage = images[randomIndex];\n    \n    // Construct the raw GitHub URL for the image\n    const owner = data.config.repo_owner;\n    const repo = data.config.repo_name;\n    imageUrl = `https://raw.githubusercontent.com/${owner}/${repo}/master/screenshots/${imageCategory}/${selectedImage}`;\n  }\n}\n\nreturn [{\n  json: {\n    ...data,\n    selectedImage,\n    imageUrl,\n    imageCategory,\n    hasImage: selectedImage !== null\n  }\n}];"
+      },
+      "id": "select-image",
+      "name": "Select Image",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2900, 60],
+      "notes": "Matches image_category from Claude's response to screenshots/index.json and picks a random image"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "dry-run-check",
+              "leftValue": "={{ $node['Configuration'].json['dry_run'] }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "is-dry-run",
+      "name": "Is Dry Run?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [3180, 60],
+      "notes": "If dry_run is true, log the post content without actually posting. If false, proceed to live posting."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Log Dry Run — output what would have been posted\n\nconst data = $input.first().json;\n\nconst logOutput = {\n  mode: 'DRY RUN',\n  timestamp: new Date().toISOString(),\n  category: data.category,\n  x_post: data.x_post,\n  linkedin_post: data.linkedin_post,\n  selectedImage: data.selectedImage,\n  imageUrl: data.imageUrl,\n  hasImage: data.hasImage\n};\n\nconsole.log('=== CONDUIKT CONTENT ENGINE — DRY RUN ===');\nconsole.log(JSON.stringify(logOutput, null, 2));\nconsole.log('=========================================');\n\nreturn [{\n  json: logOutput\n}];"
+      },
+      "id": "log-dry-run",
+      "name": "Log Dry Run",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3460, -120],
+      "notes": "Logs the full post content for review during testing"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-image-check",
+              "leftValue": "={{ $json.hasImage }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "has-image",
+      "name": "Has Image?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [3460, 200],
+      "notes": "Routes to media upload flow if an image was selected, otherwise posts text only"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.imageUrl }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "download-image",
+      "name": "Download Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3740, 60],
+      "notes": "Downloads the selected screenshot from GitHub raw content"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://upload.twitter.com/1.1/media/upload.json",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "multipart/form-data"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "media_data",
+              "value": "={{ $binary.data ? $binary.data.data : '' }}"
+            },
+            {
+              "name": "media_category",
+              "value": "tweet_image"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "upload-media",
+      "name": "Upload Media to Twitter",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [4020, 60],
+      "notes": "Uploads image to Twitter media endpoint. Requires OAuth 1.0a signing (handled via credentials)."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Sign OAuth for Media Tweet — construct OAuth 1.0a signature for Twitter API v2\n// This node prepares the OAuth header for the tweet posting request with media\n\nconst crypto = require('crypto');\n\nconst data = $input.first().json;\nconst config = $('Configuration').first().json;\nconst postData = $('Select Image').first().json;\n\nconst mediaId = data.media_id_string || data.media_id;\n\n// OAuth 1.0a parameters\nconst oauthParams = {\n  oauth_consumer_key: config.twitter_api_key,\n  oauth_nonce: crypto.randomBytes(16).toString('hex'),\n  oauth_signature_method: 'HMAC-SHA1',\n  oauth_timestamp: Math.floor(Date.now() / 1000).toString(),\n  oauth_token: config.twitter_access_token,\n  oauth_version: '1.0'\n};\n\n// Create signature base string\nconst method = 'POST';\nconst baseUrl = 'https://api.twitter.com/2/tweets';\n\nconst paramString = Object.keys(oauthParams)\n  .sort()\n  .map(k => `${encodeURIComponent(k)}=${encodeURIComponent(oauthParams[k])}`)\n  .join('&');\n\nconst signatureBase = `${method}&${encodeURIComponent(baseUrl)}&${encodeURIComponent(paramString)}`;\n\nconst signingKey = `${encodeURIComponent(config.twitter_api_secret)}&${encodeURIComponent(config.twitter_access_token_secret)}`;\n\nconst signature = crypto\n  .createHmac('sha1', signingKey)\n  .update(signatureBase)\n  .digest('base64');\n\noauthParams.oauth_signature = signature;\n\nconst authHeader = 'OAuth ' + Object.keys(oauthParams)\n  .sort()\n  .map(k => `${encodeURIComponent(k)}=\"${encodeURIComponent(oauthParams[k])}\"`)\n  .join(', ');\n\nreturn [{\n  json: {\n    authHeader,\n    tweetText: postData.x_post.text,\n    mediaId,\n    hasMedia: true,\n    fullPostData: postData\n  }\n}];"
+      },
+      "id": "sign-oauth-media",
+      "name": "Sign OAuth (Media)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4300, 60],
+      "notes": "Constructs OAuth 1.0a signature for the Twitter v2 tweet endpoint (with media)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.twitter.com/2/tweets",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $json.authHeader }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"text\": {{ JSON.stringify($json.tweetText) }},\n  \"media\": {\n    \"media_ids\": [{{ JSON.stringify($json.mediaId) }}]\n  }\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "post-media-tweet",
+      "name": "Post Media Tweet",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [4580, 60],
+      "notes": "Posts tweet with media attachment via Twitter API v2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Sign OAuth for Text-Only Tweet — construct OAuth 1.0a signature for Twitter API v2\n\nconst crypto = require('crypto');\n\nconst data = $input.first().json;\nconst config = $('Configuration').first().json;\n\n// OAuth 1.0a parameters\nconst oauthParams = {\n  oauth_consumer_key: config.twitter_api_key,\n  oauth_nonce: crypto.randomBytes(16).toString('hex'),\n  oauth_signature_method: 'HMAC-SHA1',\n  oauth_timestamp: Math.floor(Date.now() / 1000).toString(),\n  oauth_token: config.twitter_access_token,\n  oauth_version: '1.0'\n};\n\nconst method = 'POST';\nconst baseUrl = 'https://api.twitter.com/2/tweets';\n\nconst paramString = Object.keys(oauthParams)\n  .sort()\n  .map(k => `${encodeURIComponent(k)}=${encodeURIComponent(oauthParams[k])}`)\n  .join('&');\n\nconst signatureBase = `${method}&${encodeURIComponent(baseUrl)}&${encodeURIComponent(paramString)}`;\n\nconst signingKey = `${encodeURIComponent(config.twitter_api_secret)}&${encodeURIComponent(config.twitter_access_token_secret)}`;\n\nconst signature = crypto\n  .createHmac('sha1', signingKey)\n  .update(signatureBase)\n  .digest('base64');\n\noauthParams.oauth_signature = signature;\n\nconst authHeader = 'OAuth ' + Object.keys(oauthParams)\n  .sort()\n  .map(k => `${encodeURIComponent(k)}=\"${encodeURIComponent(oauthParams[k])}\"`)\n  .join(', ');\n\nreturn [{\n  json: {\n    authHeader,\n    tweetText: data.x_post.text,\n    hasMedia: false,\n    fullPostData: data\n  }\n}];"
+      },
+      "id": "sign-oauth-text",
+      "name": "Sign OAuth (Text Only)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3740, 360],
+      "notes": "Constructs OAuth 1.0a signature for text-only tweet"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.twitter.com/2/tweets",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $json.authHeader }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"text\": {{ JSON.stringify($json.tweetText) }}\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "post-text-tweet",
+      "name": "Post Text Tweet",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [4020, 360],
+      "notes": "Posts text-only tweet via Twitter API v2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// LinkedIn Adapter — prepare data for LinkedIn Community Management API\n\nconst data = $input.first().json;\nlet tweetResponse;\nlet fullPostData;\n\n// Determine which path we came from (media or text-only)\ntry {\n  tweetResponse = data;\n  try {\n    fullPostData = $('Sign OAuth (Media)').first().json.fullPostData;\n  } catch(e) {\n    try {\n      fullPostData = $('Sign OAuth (Text Only)').first().json.fullPostData;\n    } catch(e2) {\n      fullPostData = $('Select Image').first().json;\n    }\n  }\n} catch(e) {\n  fullPostData = $input.first().json;\n}\n\nconst linkedinText = fullPostData.linkedin_post ? fullPostData.linkedin_post.text : null;\nconst config = $('Configuration').first().json;\nconst tweetId = tweetResponse.data ? tweetResponse.data.id : null;\n\nreturn [{\n  json: {\n    linkedinText,\n    linkedinAccessToken: config.linkedin_access_token,\n    linkedinPersonId: config.linkedin_person_id,\n    tweetId,\n    category: fullPostData.category,\n    x_post: fullPostData.x_post,\n    linkedin_post: fullPostData.linkedin_post,\n    selectedImage: fullPostData.selectedImage,\n    imageUrl: fullPostData.imageUrl,\n    config\n  }\n}];"
+      },
+      "id": "linkedin-adapter",
+      "name": "LinkedIn Adapter",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4860, 200],
+      "notes": "Prepares LinkedIn post data with person ID for the Community Management API"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/rest/posts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.linkedinAccessToken }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "LinkedIn-Version",
+              "value": "202402"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"author\": \"urn:li:person:{{ $json.linkedinPersonId }}\",\n  \"commentary\": {{ JSON.stringify($json.linkedinText) }},\n  \"visibility\": \"PUBLIC\",\n  \"distribution\": {\n    \"feedDistribution\": \"MAIN_FEED\"\n  },\n  \"lifecycleState\": \"PUBLISHED\"\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "post-linkedin",
+      "name": "Post to LinkedIn",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [5140, 200],
+      "notes": "Posts via LinkedIn Community Management API (rest/posts endpoint, version 202402). Replaces deprecated v2/ugcPosts."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Save State — persist to Supabase n8n_content_state table\n\nconst https = require('https');\nconst config = $('Configuration').first().json;\nconst supabaseUrl = config.supabase_url;\nconst supabaseKey = config.supabase_service_key;\n\n// Gather post data from the flow\nlet postData;\ntry {\n  postData = $('LinkedIn Adapter').first().json;\n} catch(e) {\n  try {\n    postData = $('Log Dry Run').first().json;\n  } catch(e2) {\n    postData = $input.first().json;\n  }\n}\n\nconst isDryRun = config.dry_run;\nconst memory = $('Load Memory').first().json;\n\n// Build updated history\nconst postedHistory = [...(memory.postedHistory || [])];\n\nconst record = {\n  date: new Date().toISOString(),\n  category: postData.category || 'unknown',\n  xText: postData.x_post ? postData.x_post.text : null,\n  linkedinText: postData.linkedin_post ? postData.linkedin_post.text : null,\n  summary: postData.x_post ? postData.x_post.text.substring(0, 100) : 'No text',\n  tweetId: postData.tweetId || null,\n  imageUsed: postData.selectedImage || null,\n  dryRun: isDryRun\n};\n\npostedHistory.push(record);\n\n// Keep only last 100 entries\nconst trimmedHistory = postedHistory.slice(-100);\nconst nextRotationIndex = ((memory.rotationIndex || 0) + 1) % 6;\n\n// Persist to Supabase\nconst stateId = memory.stateId;\nif (stateId && supabaseUrl && supabaseKey) {\n  try {\n    const body = JSON.stringify({\n      posted_history: trimmedHistory,\n      rotation_index: nextRotationIndex,\n      updated_at: new Date().toISOString()\n    });\n    const parsed = new URL(supabaseUrl + '/rest/v1/n8n_content_state?id=eq.' + stateId);\n    await new Promise((resolve, reject) => {\n      const options = {\n        hostname: parsed.hostname,\n        path: parsed.pathname + parsed.search,\n        method: 'PATCH',\n        headers: {\n          'apikey': supabaseKey,\n          'Authorization': 'Bearer ' + supabaseKey,\n          'Content-Type': 'application/json',\n          'Prefer': 'return=minimal',\n          'Content-Length': Buffer.byteLength(body)\n        }\n      };\n      const req = https.request(options, (res) => {\n        let data = '';\n        res.on('data', chunk => data += chunk);\n        res.on('end', () => resolve(data));\n      });\n      req.on('error', reject);\n      req.write(body);\n      req.end();\n    });\n  } catch (e) {\n    console.log('[Conduikt Content Engine] Failed to save state to Supabase: ' + e.message);\n  }\n}\n\nconsole.log('[Conduikt Content Engine] State saved.');\nconsole.log('  Category: ' + record.category);\nconsole.log('  Dry run: ' + isDryRun);\nconsole.log('  Next rotation index: ' + nextRotationIndex);\nconsole.log('  Total posts in history: ' + trimmedHistory.length);\n\nreturn [{\n  json: {\n    action: 'state_saved',\n    record,\n    nextRotationIndex,\n    totalPostsInHistory: trimmedHistory.length,\n    isDryRun\n  }\n}];"
+      },
+      "id": "save-state",
+      "name": "Save State",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [5420, 0],
+      "notes": "Persists posted content history and rotation index to Supabase n8n_content_state table via PATCH. Falls back to console log if Supabase is unreachable."
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub Push Webhook": {
+      "main": [
+        [
+          {
+            "node": "Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configuration": {
+      "main": [
+        [
+          {
+            "node": "Fetch WORKPLAN.md",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch CHANGELOG.md",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Recent Commits",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Screenshots Index",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch WORKPLAN.md": {
+      "main": [
+        [
+          {
+            "node": "Load Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch CHANGELOG.md": {
+      "main": [
+        [
+          {
+            "node": "Load Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Recent Commits": {
+      "main": [
+        [
+          {
+            "node": "Load Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Screenshots Index": {
+      "main": [
+        [
+          {
+            "node": "Load Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Memory": {
+      "main": [
+        [
+          {
+            "node": "Prepare Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Inputs": {
+      "main": [
+        [
+          {
+            "node": "Construct Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Construct Prompt": {
+      "main": [
+        [
+          {
+            "node": "Claude API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude API": {
+      "main": [
+        [
+          {
+            "node": "Parse Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Response": {
+      "main": [
+        [
+          {
+            "node": "Check Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Duplicate": {
+      "main": [
+        [
+          {
+            "node": "Has Post?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Post?": {
+      "main": [
+        [
+          {
+            "node": "Select Image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Skip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select Image": {
+      "main": [
+        [
+          {
+            "node": "Is Dry Run?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Dry Run?": {
+      "main": [
+        [
+          {
+            "node": "Log Dry Run",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Has Image?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Dry Run": {
+      "main": [
+        [
+          {
+            "node": "Save State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Image?": {
+      "main": [
+        [
+          {
+            "node": "Download Image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sign OAuth (Text Only)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Image": {
+      "main": [
+        [
+          {
+            "node": "Upload Media to Twitter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Media to Twitter": {
+      "main": [
+        [
+          {
+            "node": "Sign OAuth (Media)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sign OAuth (Media)": {
+      "main": [
+        [
+          {
+            "node": "Post Media Tweet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Media Tweet": {
+      "main": [
+        [
+          {
+            "node": "LinkedIn Adapter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sign OAuth (Text Only)": {
+      "main": [
+        [
+          {
+            "node": "Post Text Tweet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Text Tweet": {
+      "main": [
+        [
+          {
+            "node": "LinkedIn Adapter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn Adapter": {
+      "main": [
+        [
+          {
+            "node": "Post to LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "Save State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "conduikt",
+      "id": "1"
+    },
+    {
+      "name": "build-in-public",
+      "id": "2"
+    },
+    {
+      "name": "content-engine",
+      "id": "3"
+    }
+  ],
+  "triggerCount": 3,
+  "updatedAt": "2026-02-15T23:00:00.000Z",
+  "versionId": "2"
+}

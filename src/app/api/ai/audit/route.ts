@@ -1,0 +1,131 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/src/lib/supabase/server";
+import { generateWithClaude } from "@/src/lib/ai/client";
+import { seoAuditSkill } from "@/src/lib/ai/skills/seo-audit";
+import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
+
+export async function POST(request: NextRequest) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Check generation limits
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("plan, generation_count")
+    .eq("id", user.id)
+    .single();
+
+  const planLimits: Record<string, number> = {
+    free: 5,
+    pro: 100,
+    growth: 999999,
+    agency: 999999,
+  };
+  const limit = planLimits[profile?.plan ?? "free"] ?? 5;
+  if ((profile?.generation_count ?? 0) >= limit) {
+    return NextResponse.json(
+      { error: "Generation limit reached. Upgrade your plan." },
+      { status: 429 }
+    );
+  }
+
+  const { projectId, url } = await request.json();
+
+  // Fetch project
+  const { data: project, error: projectError } = await supabase
+    .from("projects")
+    .select("*")
+    .eq("id", projectId)
+    .single();
+
+  if (projectError || !project) {
+    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  }
+
+  // Fetch the page HTML
+  let html: string;
+  try {
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (compatible; ConduiktBot/1.0; +https://conduikt.io)",
+      },
+    });
+    html = await response.text();
+  } catch {
+    return NextResponse.json(
+      { error: "Failed to fetch URL" },
+      { status: 400 }
+    );
+  }
+
+  // Build context and run audit
+  const context = buildProjectContext(project);
+  const systemPrompt = seoAuditSkill.buildSystemPrompt(context);
+  const userPrompt = seoAuditSkill.buildUserPrompt({ url, html });
+
+  const result = await generateWithClaude({
+    systemPrompt,
+    userPrompt,
+    model: seoAuditSkill.model,
+    maxTokens: seoAuditSkill.maxTokens,
+  });
+
+  // Parse
+  let auditData;
+  try {
+    const parsed = seoAuditSkill.parseResponse(result.content);
+    auditData = parsed.data as { score: number; findings: unknown };
+  } catch {
+    return NextResponse.json(
+      { error: "Failed to parse audit results", raw: result.content },
+      { status: 500 }
+    );
+  }
+
+  // Save audit to database
+  const { data: audit, error: auditError } = await supabase
+    .from("audits")
+    .insert({
+      project_id: projectId,
+      type: "seo",
+      url,
+      score: auditData.score,
+      findings: auditData.findings,
+    })
+    .select()
+    .single();
+
+  if (auditError) {
+    return NextResponse.json(
+      { error: "Failed to save audit" },
+      { status: 500 }
+    );
+  }
+
+  // Log generation and increment count
+  await Promise.all([
+    supabase.from("ai_generations").insert({
+      project_id: projectId,
+      skill_used: "seo-audit",
+      input_tokens: result.inputTokens,
+      output_tokens: result.outputTokens,
+      model: result.model,
+      duration_ms: result.durationMs,
+    }),
+    supabase
+      .from("profiles")
+      .update({
+        generation_count: (profile?.generation_count ?? 0) + 1,
+      })
+      .eq("id", user.id),
+  ]);
+
+  return NextResponse.json(audit);
+}
