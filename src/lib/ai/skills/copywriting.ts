@@ -4,7 +4,7 @@ export const copywritingSkill: SkillConfig = {
   id: "copywriting",
   name: "Copywriting",
   description: "Conversion-focused marketing copy generation",
-  model: "claude-sonnet-4-5-20250929",
+  model: "claude-sonnet-4-6",
   maxTokens: 4000,
 
   buildSystemPrompt: (context: ProjectContext) => `

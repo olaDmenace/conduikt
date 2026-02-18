@@ -4,7 +4,7 @@ export const pageCroSkill: SkillConfig = {
   id: "page-cro",
   name: "Page CRO",
   description: "Landing page conversion rate optimization analysis",
-  model: "claude-sonnet-4-5-20250929",
+  model: "claude-sonnet-4-6",
   maxTokens: 4000,
 
   buildSystemPrompt: (context: ProjectContext) => `

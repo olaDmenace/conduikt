@@ -21,7 +21,7 @@ Context: ${JSON.stringify(context || {})}
 
 Respond in JSON format: { "suggestions": [{ "text": "string", "type": "string" }] }`,
     userPrompt: prompt,
-    model: "claude-sonnet-4-5-20250929",
+    model: "claude-sonnet-4-6",
     maxTokens: 1000,
   });
 

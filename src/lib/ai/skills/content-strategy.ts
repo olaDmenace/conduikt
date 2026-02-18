@@ -4,7 +4,7 @@ export const contentStrategySkill: SkillConfig = {
   id: "content-strategy",
   name: "Content Strategy",
   description: "Strategic content planning with topics, formats, and calendar recommendations",
-  model: "claude-sonnet-4-5-20250929",
+  model: "claude-sonnet-4-6",
   maxTokens: 5000,
 
   buildSystemPrompt: (context: ProjectContext) => `

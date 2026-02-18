@@ -4,7 +4,7 @@ export const competitorAnalysisSkill: SkillConfig = {
   id: "competitor-analysis",
   name: "Competitor Analysis",
   description: "Deep competitive analysis with positioning gaps and tactical opportunities",
-  model: "claude-sonnet-4-5-20250929",
+  model: "claude-sonnet-4-6",
   maxTokens: 5000,
 
   buildSystemPrompt: (context: ProjectContext) => `

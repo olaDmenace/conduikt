@@ -4,7 +4,7 @@ export const socialContentSkill: SkillConfig = {
   id: "social-content",
   name: "Social Content",
   description: "Social media content creation for X and LinkedIn",
-  model: "claude-sonnet-4-5-20250929",
+  model: "claude-sonnet-4-6",
   maxTokens: 4000,
 
   buildSystemPrompt: (context: ProjectContext) => `

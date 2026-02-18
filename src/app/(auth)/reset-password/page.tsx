@@ -22,51 +22,58 @@ export default function ResetPasswordPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Handle PKCE flow: ?code= query param
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get("code");
+    async function verifyToken() {
+      // Handle PKCE flow: ?code= query param
+      const searchParams = new URLSearchParams(window.location.search);
+      const code = searchParams.get("code");
 
-    if (code) {
-      supabase.auth
-        .exchangeCodeForSession(code)
-        .then(({ error }) => {
-          if (error) {
-            setError("This reset link is invalid or has expired. Please request a new one.");
-          } else {
-            setSessionReady(true);
-          }
-          setVerifying(false);
-        });
-      return;
-    }
-
-    // Handle implicit flow: #access_token= hash fragment
-    // Supabase JS SDK picks up the hash automatically and fires PASSWORD_RECOVERY
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === "PASSWORD_RECOVERY" && session) {
-          setSessionReady(true);
-          setVerifying(false);
-        }
-      }
-    );
-
-    // Give the hash fragment a moment to be processed
-    const timeout = setTimeout(() => {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
-          setSessionReady(true);
-        } else {
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) {
           setError("This reset link is invalid or has expired. Please request a new one.");
+        } else {
+          setSessionReady(true);
         }
         setVerifying(false);
-      });
-    }, 1000);
+        return;
+      }
 
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timeout);
-    };
+      // Handle implicit flow: #access_token= hash fragment
+      // Parse the hash directly — do NOT rely on onAuthStateChange which can
+      // miss the PASSWORD_RECOVERY event due to listener attachment timing.
+      const hash = window.location.hash.substring(1);
+      const hashParams = new URLSearchParams(hash);
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token") ?? "";
+      const type = hashParams.get("type");
+
+      if (accessToken && type === "recovery") {
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (error) {
+          setError("This reset link is invalid or has expired. Please request a new one.");
+        } else {
+          setSessionReady(true);
+          // Clear the hash so the token isn't reused
+          window.history.replaceState(null, "", window.location.pathname);
+        }
+        setVerifying(false);
+        return;
+      }
+
+      // No code or hash — check if there's already an active recovery session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setSessionReady(true);
+      } else {
+        setError("This reset link is invalid or has expired. Please request a new one.");
+      }
+      setVerifying(false);
+    }
+
+    verifyToken();
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {

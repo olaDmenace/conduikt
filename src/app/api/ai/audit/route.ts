@@ -70,12 +70,18 @@ export async function POST(request: NextRequest) {
   const systemPrompt = seoAuditSkill.buildSystemPrompt(context);
   const userPrompt = seoAuditSkill.buildUserPrompt({ url, html });
 
-  const result = await generateWithClaude({
-    systemPrompt,
-    userPrompt,
-    model: seoAuditSkill.model,
-    maxTokens: seoAuditSkill.maxTokens,
-  });
+  let result;
+  try {
+    result = await generateWithClaude({
+      systemPrompt,
+      userPrompt,
+      model: seoAuditSkill.model,
+      maxTokens: seoAuditSkill.maxTokens,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "AI generation failed";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 
   // Parse
   let auditData;

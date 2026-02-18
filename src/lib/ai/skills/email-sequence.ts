@@ -4,7 +4,7 @@ export const emailSequenceSkill: SkillConfig = {
   id: "email-sequence",
   name: "Email Sequence",
   description: "Automated email sequence generation",
-  model: "claude-sonnet-4-5-20250929",
+  model: "claude-sonnet-4-6",
   maxTokens: 6000,
 
   buildSystemPrompt: (context: ProjectContext) => `

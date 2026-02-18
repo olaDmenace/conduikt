@@ -11,7 +11,7 @@ export function getAnthropicClient() {
   return client;
 }
 
-export type AIModel = "claude-sonnet-4-5-20250929" | "claude-opus-4-6";
+export type AIModel = "claude-sonnet-4-6" | "claude-opus-4-6";
 
 export interface GenerationResult {
   content: string;
@@ -24,7 +24,7 @@ export interface GenerationResult {
 export async function generateWithClaude({
   systemPrompt,
   userPrompt,
-  model = "claude-sonnet-4-5-20250929",
+  model = "claude-sonnet-4-6",
   maxTokens = 4000,
 }: {
   systemPrompt: string;

@@ -4,7 +4,7 @@ export const seoAuditSkill: SkillConfig = {
   id: "seo-audit",
   name: "SEO Audit",
   description: "Comprehensive technical and on-page SEO analysis",
-  model: "claude-sonnet-4-5-20250929",
+  model: "claude-sonnet-4-6",
   maxTokens: 4000,
 
   buildSystemPrompt: (context: ProjectContext) => `
