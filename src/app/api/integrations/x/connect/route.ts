@@ -11,6 +11,13 @@ export async function GET(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.redirect(new URL("/login", request.url));
 
+  if (!process.env.X_CLIENT_ID || !process.env.X_CLIENT_SECRET) {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    return NextResponse.redirect(
+      `${appUrl}/settings/integrations?error=${encodeURIComponent("X_CLIENT_ID is not configured. Add it to your environment variables.")}`
+    );
+  }
+
   // PKCE
   const codeVerifier = base64url(crypto.randomBytes(32));
   const codeChallenge = base64url(

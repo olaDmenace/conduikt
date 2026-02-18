@@ -11,6 +11,13 @@ export async function GET(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.redirect(new URL("/login", request.url));
 
+  if (!process.env.LINKEDIN_CLIENT_ID || !process.env.LINKEDIN_CLIENT_SECRET) {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    return NextResponse.redirect(
+      `${appUrl}/settings/integrations?error=${encodeURIComponent("LINKEDIN_CLIENT_ID is not configured. Add it to your environment variables.")}`
+    );
+  }
+
   const state = base64url(crypto.randomBytes(16));
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const callbackUrl = `${appUrl}/api/integrations/linkedin/callback`;
