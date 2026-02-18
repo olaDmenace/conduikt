@@ -19,6 +19,7 @@ import {
   Trash2,
   Map,
   Crosshair,
+  Send,
 } from "lucide-react";
 import {
   Card,
@@ -208,6 +209,11 @@ export default function ContentPage({
   const [assets, setAssets] = useState<Asset[]>([]);
   const [loadingAssets, setLoadingAssets] = useState(true);
 
+  // Publish state
+  const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
+  const [publishing, setPublishing] = useState<"x" | "linkedin" | null>(null);
+  const [savedAssetId, setSavedAssetId] = useState<string | null>(null);
+
   const skill = contentSkills.find((s) => s.id === selectedSkill)!;
 
   // ---------- data fetching ----------
@@ -215,6 +221,7 @@ export default function ContentPage({
   useEffect(() => {
     fetchProject();
     fetchAssets();
+    fetchConnectedAccounts();
   }, [projectId]);
 
   async function fetchProject() {
@@ -232,6 +239,68 @@ export default function ContentPage({
       setAssets(data);
     }
     setLoadingAssets(false);
+  }
+
+  async function fetchConnectedAccounts() {
+    const { createClient } = await import("@/src/lib/supabase/client");
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("connected_accounts")
+      .select("platform");
+    setConnectedPlatforms((data ?? []).map((a: { platform: string }) => a.platform));
+  }
+
+  async function handlePublish(platform: "x" | "linkedin") {
+    if (!result.trim()) return;
+
+    // Ensure asset is saved first
+    let assetId = savedAssetId;
+    if (!assetId) {
+      setSaving(true);
+      const res = await fetch(`/api/projects/${projectId}/assets`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: skill.assetType,
+          channel: platform,
+          title: prompt.slice(0, 100),
+          content: { raw: result, skill: selectedSkill, prompt },
+        }),
+      });
+      if (res.ok) {
+        const saved = await res.json();
+        assetId = saved.id;
+        setSavedAssetId(saved.id);
+        fetchAssets();
+      }
+      setSaving(false);
+    }
+
+    setPublishing(platform);
+    const res = await fetch(`/api/publish/${platform}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: result, assetId }),
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      toast(
+        platform === "x"
+          ? `Posted to X!${data.tweetUrl ? ` View it →` : ""}`
+          : "Posted to LinkedIn!",
+        "success"
+      );
+      fetchAssets();
+    } else {
+      if (data.reconnect) {
+        toast(`${platform === "x" ? "X" : "LinkedIn"} token expired — reconnect in Settings → Integrations`, "error");
+        setConnectedPlatforms((prev) => prev.filter((p) => p !== platform));
+      } else {
+        toast(data.error || "Publish failed", "error");
+      }
+    }
+    setPublishing(null);
   }
 
   // Auto-scroll output
@@ -253,6 +322,7 @@ export default function ContentPage({
     setGenerating(true);
     setResult("");
     setUsage(null);
+    setSavedAssetId(null);
 
     try {
       const res = await fetch("/api/ai/stream", {
@@ -665,7 +735,7 @@ export default function ContentPage({
               <div className="flex items-center justify-between">
                 <CardTitle>Preview</CardTitle>
                 {result && !generating && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap justify-end">
                     <Button variant="ghost" size="sm" onClick={handleCopy}>
                       {copied ? (
                         <Check className="h-4 w-4 text-success" />
@@ -676,6 +746,7 @@ export default function ContentPage({
                     </Button>
                     <Button
                       size="sm"
+                      variant="secondary"
                       onClick={handleSave}
                       disabled={saving}
                     >
@@ -686,6 +757,43 @@ export default function ContentPage({
                       )}
                       {saving ? "Saving..." : "Save Draft"}
                     </Button>
+                    {/* Publish buttons — only for social content when accounts are connected */}
+                    {selectedSkill === "social-content" && connectedPlatforms.includes("x") && (
+                      <Button
+                        size="sm"
+                        onClick={() => handlePublish("x")}
+                        disabled={publishing !== null}
+                      >
+                        {publishing === "x" ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Twitter className="h-4 w-4" />
+                        )}
+                        {publishing === "x" ? "Posting..." : "Post to X"}
+                      </Button>
+                    )}
+                    {selectedSkill === "social-content" && connectedPlatforms.includes("linkedin") && (
+                      <Button
+                        size="sm"
+                        onClick={() => handlePublish("linkedin")}
+                        disabled={publishing !== null}
+                      >
+                        {publishing === "linkedin" ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Linkedin className="h-4 w-4" />
+                        )}
+                        {publishing === "linkedin" ? "Posting..." : "Post to LinkedIn"}
+                      </Button>
+                    )}
+                    {selectedSkill === "social-content" && connectedPlatforms.length === 0 && (
+                      <Button size="sm" variant="secondary" asChild>
+                        <a href="/settings/integrations">
+                          <Send className="h-4 w-4" />
+                          Connect to publish
+                        </a>
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>
