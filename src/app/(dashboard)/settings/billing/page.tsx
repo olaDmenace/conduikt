@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Zap, ExternalLink, Loader2, Sparkles } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
@@ -65,7 +65,7 @@ const planLabels: Record<string, string> = {
 const POLL_TIMEOUT = 30_000;
 const POLL_INTERVAL = 2_000;
 
-export default function BillingPage() {
+function BillingContent() {
   const searchParams = useSearchParams();
   const justPaid = searchParams.get("payment") === "success";
 
@@ -331,5 +331,13 @@ export default function BillingPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function BillingPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-12"><div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" /></div>}>
+      <BillingContent />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Twitter, Linkedin, CheckCircle2, AlertCircle, Loader2, Link2, Unlink } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
@@ -17,7 +17,7 @@ interface ConnectedAccount {
   created_at: string;
 }
 
-export default function IntegrationsPage() {
+function IntegrationsContent() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const supabase = createClient();
@@ -190,5 +190,13 @@ export default function IntegrationsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function IntegrationsPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-16"><div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" /></div>}>
+      <IntegrationsContent />
+    </Suspense>
   );
 }
