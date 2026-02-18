@@ -33,7 +33,6 @@ const settingsNav = [
     href: "/settings/integrations",
     icon: Zap,
     active: false,
-    comingSoon: true,
   },
   { name: "Team", href: "/settings/team", icon: Users, active: false, comingSoon: true },
 ];

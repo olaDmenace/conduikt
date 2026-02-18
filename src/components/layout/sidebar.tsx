@@ -36,7 +36,7 @@ const navigation = [
     label: "ACCOUNT",
     items: [
       { name: "Settings", href: "/settings", icon: Settings },
-      { name: "Integrations", href: "/settings/integrations", icon: Zap, comingSoon: true },
+      { name: "Integrations", href: "/settings/integrations", icon: Zap },
     ],
   },
 ] as const;
