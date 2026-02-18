@@ -55,6 +55,43 @@ export async function POST(request: NextRequest) {
   const attrs = payload.data?.attributes;
 
   switch (eventName) {
+    // One-time purchase (product not set up as a subscription in LS)
+    case "order_created": {
+      if (attrs?.status !== "paid") break;
+
+      const variantId = String(attrs?.first_order_item?.variant_id ?? "");
+      const customerId = String(attrs?.customer_id ?? "");
+      const plan = variantToPlan[variantId];
+
+      if (!plan) break; // unknown variant — ignore
+
+      await supabase
+        .from("profiles")
+        .update({
+          plan,
+          lemon_squeezy_customer_id: customerId,
+          lemon_squeezy_variant_id: variantId,
+          generation_count: 0,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", userId);
+
+      break;
+    }
+
+    case "order_refunded": {
+      await supabase
+        .from("profiles")
+        .update({
+          plan: "free",
+          lemon_squeezy_variant_id: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", userId);
+
+      break;
+    }
+
     case "subscription_created":
     case "subscription_updated": {
       const variantId = String(attrs?.variant_id ?? "");
