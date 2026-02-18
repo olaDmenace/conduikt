@@ -23,6 +23,7 @@ export default function SignupPage() {
     setError("");
     setLoading(true);
 
+    const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin;
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -30,6 +31,7 @@ export default function SignupPage() {
         data: {
           full_name: fullName,
         },
+        emailRedirectTo: `${siteUrl}/auth/confirm?next=/dashboard`,
       },
     });
 

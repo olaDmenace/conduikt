@@ -17,6 +17,15 @@ export default function LoginPage() {
   const supabase = createClient();
   const { toast } = useToast();
 
+  // Surface errors passed back from /auth/confirm redirect
+  useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const urlError = params.get("error");
+      if (urlError) setError(urlError);
+    }
+  });
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setError("");
