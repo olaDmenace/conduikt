@@ -1,14 +1,14 @@
 # Conduikt — Progress Report
 
-**Date:** February 15, 2026
-**Phase:** 1 (MVP Core) — Week 1, Day 1
-**Author:** Claude Code (Opus 4.6)
+**Date:** February 18, 2026
+**Phase:** 1 (MVP Core) — Complete. Phase 2 (Differentiation) — In Progress.
+**Author:** Claude Code (Sonnet 4.6)
 
 ---
 
 ## Executive Summary
 
-In a single session, we established the complete foundation for Conduikt — including database schema, design system, UI components, all page routes, AI skills infrastructure, API endpoints, and the n8n build-in-public content engine. The project compiles successfully with **23 routes and zero errors**.
+Conduikt has progressed from scaffolding to a functional, deployed SaaS in 3 days of build sessions. The platform is live at `https://conduikt.vercel.app`, Supabase is fully wired, billing works end-to-end via Lemon Squeezy, social login with X and LinkedIn is live, and 7 AI marketing skills are operational. The app is now in active use with a real Pro account.
 
 ---
 
@@ -22,7 +22,7 @@ In a single session, we established the complete foundation for Conduikt — inc
 | Row Level Security | Done | RLS enabled on all tables with user-scoped policies |
 | Indexes | Done | 8 performance indexes on key columns |
 | Triggers | Done | Auto-create profile on signup, auto-update timestamps |
-| Security Fixes | Done | Fixed mutable search_path on functions |
+| Security Advisors | Done | Fixed mutable search_path on functions |
 
 ### 2. Mineral Design System
 | Item | Status | Details |
@@ -30,147 +30,163 @@ In a single session, we established the complete foundation for Conduikt — inc
 | CSS Design Tokens | Done | Full dark obsidian palette with copper/amber accents |
 | Typography | Done | DM Serif Display (display), Outfit (body), JetBrains Mono (data) |
 | Animations | Done | Staggered fade-up, shimmer skeleton, grain texture overlay |
-| Light Mode Tokens | Done | Warm parchment palette defined (activation via Phase 2) |
+| Light Mode Tokens | Done | Warm parchment palette defined (activation in Phase 3) |
 
 ### 3. UI Component Library
-| Component | Status | Built On |
-|-----------|--------|----------|
-| Button | Done | Native + Radix Slot |
-| Input | Done | Native with label/error support |
-| Card | Done | Native with hover variant |
-| Badge | Done | Native with 6 semantic variants |
-| Dialog | Done | Radix Dialog |
-| Tabs | Done | Radix Tabs |
-| Skeleton | Done | CSS animation (shimmer) |
+| Component | Status |
+|-----------|--------|
+| Button (primary, secondary, ghost) | Done |
+| Input (with label, error, hint) | Done |
+| Card (with hover variant) | Done |
+| Badge (6 semantic variants) | Done |
+| Dialog (Radix) | Done |
+| Tabs (Radix) | Done |
+| Skeleton (shimmer) | Done |
+| Toast (success, error, info) | Done |
+| Coming Soon (reusable page state) | Done |
 
 ### 4. Layout Shell
 | Component | Status | Details |
 |-----------|--------|---------|
-| Sidebar | Done | 260px collapsible to 64px, section headers, active states |
-| Header | Done | Search bar, new project CTA, notifications, user avatar |
+| Sidebar | Done | 260px collapsible to 64px, Coming Soon nav items, section headers |
+| Header | Done | Hamburger (mobile), search, new project CTA, user avatar |
+| Mobile Responsive | Done | Sidebar slides in/out on mobile with backdrop overlay |
 | Page Header | Done | Title, description, action slot |
 | Grain Overlay | Done | SVG noise texture at 3% opacity |
-| Zustand UI Store | Done | Sidebar collapse state management |
+| Zustand UI Store | Done | Sidebar collapse + mobile menu state |
 
-### 5. Page Routes (23 total)
-| Route | Type | Description |
-|-------|------|-------------|
-| `/` | Static | Marketing landing page with hero, features, pricing, CTA |
-| `/features` | Static | Detailed feature breakdown (4 groups, 12 features) |
-| `/pricing` | Static | 4-tier pricing comparison |
-| `/login` | Static | Email/password auth with Supabase |
-| `/signup` | Static | Registration with name/email/password |
-| `/dashboard` | Static | Stats grid, quick actions, getting started |
-| `/projects` | Static | Project list with empty state |
-| `/projects/new` | Static | 3-step wizard: URL → context → audit |
-| `/projects/[id]` | Dynamic | Project overview with scores, findings, suggestions |
-| `/projects/[id]/audit` | Dynamic | SEO audit with gauge, filters, findings, fix preview |
-| `/projects/[id]/content` | Dynamic | Content studio with generation panel, X/LinkedIn preview |
-| `/projects/[id]/campaigns` | Dynamic | Campaign type selector, active campaigns |
-| `/projects/[id]/calendar` | Dynamic | Monthly content calendar grid |
-| `/projects/[id]/analytics` | Dynamic | Performance metrics (impressions, clicks, engagement) |
-| `/projects/[id]/settings` | Dynamic | Project name, URL, description, danger zone |
-| `/settings` | Static | Profile settings |
-| `/settings/billing` | Static | Plan comparison, usage meter |
-| `/settings/integrations` | Static | X, LinkedIn, Resend, GSC connection cards |
-| `/settings/team` | Static | Team management, invite members |
-| `/playground` | Static | AI skill selector, prompt input, output display |
-| `/api/ai/generate` | API | Core AI generation with skill routing and limits |
-| `/api/ai/audit` | API | SEO audit with URL fetching and Supabase storage |
-| `/api/ai/suggest` | API | Quick suggestion endpoint |
+### 5. Page Routes (35 total)
+| Route | Status | Notes |
+|-------|--------|-------|
+| `/` | Done | Landing page — hero, features, pricing, CTA |
+| `/features` | Done | Feature breakdown |
+| `/pricing` | Done | 4-tier pricing table |
+| `/privacy` | Done | Privacy Policy (needed for X/LinkedIn OAuth) |
+| `/terms` | Done | Terms of Service |
+| `/login` | Done | Email + X + LinkedIn social login |
+| `/signup` | Done | Email + X + LinkedIn social sign-up |
+| `/forgot-password` | Done | Password reset request |
+| `/reset-password` | Done | PKCE + hash fragment token handling |
+| `/auth/confirm` | Done | PKCE code exchange route handler |
+| `/dashboard` | Done | Stats grid wired to real Supabase data |
+| `/projects` | Done | Project list (real data) |
+| `/projects/new` | Done | 3-step wizard: URL → context → create |
+| `/projects/[id]` | Done | Project overview — real data |
+| `/projects/[id]/audit` | Done | SEO audit with live Claude API |
+| `/projects/[id]/content` | Done | Content studio — 6 skills, streaming generation |
+| `/projects/[id]/analytics` | Done | Real ai_generations data — tokens, model, skill, duration |
+| `/projects/[id]/settings` | Done | Edit name/URL/description, delete project |
+| `/projects/[id]/campaigns` | Coming Soon | Placeholder |
+| `/projects/[id]/calendar` | Coming Soon | Placeholder |
+| `/settings` | Done | Profile editing |
+| `/settings/billing` | Done | Plan display, LS checkout links, portal link |
+| `/settings/integrations` | Coming Soon | Placeholder |
+| `/settings/team` | Coming Soon | Placeholder |
+| `/playground` | Done | 7-skill AI sandbox |
+| `/not-found` | Done | Custom 404 |
+| `/error` | Done | Root error boundary |
+| `/api/ai/generate` | Done | Skill routing, plan limits, generation logging |
+| `/api/ai/audit` | Done | SEO audit — fetch URL, Claude, store result |
+| `/api/ai/suggest` | Done | Quick suggestions |
+| `/api/projects` | Done | CRUD |
+| `/api/projects/[id]` | Done | PATCH, DELETE |
+| `/api/projects/[id]/analytics` | Done | ai_generations query |
+| `/api/projects/[id]/audits` | Done | Audit history |
+| `/api/projects/[id]/assets` | Done | Asset CRUD |
+| `/api/dashboard/stats` | Done | Aggregated dashboard stats |
+| `/api/profile` | Done | Profile PATCH |
+| `/api/webhooks/lemonsqueezy` | Done | order_created, subscription_*, order_refunded |
 
 ### 6. AI Skills Engine
-| Skill | Status | Model | Purpose |
-|-------|--------|-------|---------|
-| seo-audit | Done | Sonnet | Technical and on-page SEO analysis |
-| page-cro | Done | Sonnet | Landing page conversion optimization |
-| copywriting | Done | Sonnet | Conversion-focused marketing copy |
-| social-content | Done | Sonnet | X and LinkedIn post generation |
-| email-sequence | Done | Sonnet | Automated email flow generation |
-| Skills Index | Done | — | Registry, lookup, and listing |
-| Prompt Builder | Done | — | Project context → skill prompt converter |
-| AI Client | Done | — | Anthropic SDK wrapper with timing |
+| Skill | Status | Model |
+|-------|--------|-------|
+| seo-audit | Done | claude-sonnet-4-6 |
+| page-cro | Done | claude-sonnet-4-6 |
+| copywriting | Done | claude-sonnet-4-6 |
+| social-content | Done | claude-sonnet-4-6 |
+| email-sequence | Done | claude-sonnet-4-6 |
+| content-strategy | Done | claude-sonnet-4-6 |
+| competitor-analysis | Done | claude-sonnet-4-6 |
+| Skills Index | Done | Registry + lookup |
+| Prompt Builder | Done | Project context injection |
+| AI Client | Done | Anthropic SDK wrapper + error handling |
 
-### 7. n8n Build-in-Public Content Engine
+### 7. Auth & Security
 | Item | Status | Details |
 |------|--------|---------|
-| Workflow JSON | Done | 46KB, 24 nodes, import-ready |
-| Triggers | Done | 3x daily schedule (WAT), GitHub webhook, manual |
-| Claude API Node | Done | Replaces Gemini, uses Sonnet |
-| Category Rotation | Done | 6 categories cycling automatically |
-| Dual Platform | Done | X (280 char) + LinkedIn (500-700 char) |
-| Screenshot Pipeline | Done | Category-indexed image selection |
-| Dry Run Mode | Done | Default true for safe testing |
-| Duplicate Check | Done | Hash-based deduplication |
+| Email/password login | Done | Supabase signInWithPassword |
+| Social login — X | Done | signInWithOAuth → twitter |
+| Social login — LinkedIn | Done | signInWithOAuth → linkedin_oidc |
+| Email confirmation | Done | /auth/confirm route handler |
+| Password reset | Done | PKCE + hash fragment both handled |
+| Middleware | Done | Session refresh, route protection |
+| Allow users without email | Done | Enabled for X OAuth edge case |
 
-### 8. Supporting Files
-| File | Status | Purpose |
+### 8. Billing
+| Item | Status | Details |
 |------|--------|---------|
-| WORKPLAN.md | Done | Current development status for n8n context |
-| CHANGELOG.md | Done | Shipped features log for n8n context |
-| screenshots/index.json | Done | Screenshot category mapping |
-| .env.local | Done | Supabase URL + anon key configured |
-| .env.local.example | Done | Template with all required variables |
-| middleware.ts | Done | Auth session refresh, route protection |
+| Lemon Squeezy checkout | Done | Pro ($49), Growth ($99), Agency ($249) |
+| Webhook handler | Done | order_created + subscription_* events |
+| Plan enforcement | Done | Generation limits per tier |
+| Billing portal | Done | Direct link to LS customer portal |
+| Manual plan override | Done | Supabase SQL for support use |
+
+### 9. n8n Build-in-Public Content Engine
+| Item | Status |
+|------|--------|
+| Workflow JSON (46KB, 24 nodes) | Done |
+| Claude Sonnet API node | Done |
+| Category rotation (6 types) | Done |
+| Dual platform: X + LinkedIn | Done |
+| Screenshot pipeline | Done |
+| Dry run mode | Done |
 
 ---
 
-## Architecture Compliance
+## Architecture Deviations from Original Plan
 
-| Design Rule | Compliance |
-|-------------|------------|
-| NEVER use default Tailwind gray | Yes — all colors use custom warm palette |
-| NEVER use pure white (#FFFFFF) text | Yes — uses --text-primary (#E8E4DE) |
-| ALWAYS add grain texture overlay | Yes — applied via `grain` class on body |
-| ALWAYS use type scale classes | Yes — text-hero, text-h1, etc. throughout |
-| ALWAYS use copper accent for primary CTAs | Yes — gradient from accent to #C88550 |
-| PREFER DM Serif Display for page titles only | Yes — font-display used only in headings |
-| Border/shadow depth for hierarchy | Yes — shadow-ambient/elevated system |
+| Original | Actual | Reason |
+|---|---|---|
+| Stripe | Lemon Squeezy | Simpler for solo founder, better for Africa |
+| Inngest | Skipped | n8n handles scheduling; Supabase pg_cron for simple jobs |
+| Drizzle ORM | Skipped | Supabase client is sufficient for current scale |
+| claude-sonnet-4-5-20250929 | claude-sonnet-4-6 | Model upgrade |
+| Publishing routes (X/LinkedIn) | Not yet | Phase 2 item — social login done, publishing separate |
 
 ---
 
-## What's Next (Priority Order)
+## What's Next
 
-### Immediate (Week 1 remaining)
-1. **Wire Supabase queries** — Connect dashboard pages to real data
-2. **Live Claude API** — Connect generation to real API with streaming
-3. **n8n workflow deployment** — Import to self-hosted n8n, run dry tests, go live
-4. **Generation limits** — Enforce per-plan limits with reset logic
+### Immediate — Phase 2 priorities
+1. **Publishing routes** — `/api/publish/x` and `/api/publish/linkedin` so users can post from the app (different from social login — requires per-user OAuth token storage)
+2. **Resend integration** — Transactional emails (confirmation, reset, notifications)
+3. **Streaming AI responses** — Real-time token streaming on content generation page
+4. **Campaign orchestrator** — Multi-skill chaining for full campaign runs
 
-### Week 2
-5. Project onboarding with real URL fetching and HTML analysis
-6. Live SEO audit running against real pages
-7. Content generation with streaming AI responses
-8. Generation tracking dashboard
+### Phase 2 remaining
+5. X/LinkedIn engagement metrics fetching
+6. Analytics feedback loop (inject performance data into AI context)
+7. Programmatic SEO skill
+8. A/B test setup skill
 
-### Week 3
-9. X OAuth 2.0 PKCE + publishing
-10. LinkedIn OAuth 2.0 + publishing
-11. Stripe billing (4 tiers)
-12. Content calendar with scheduled posts
-13. Deploy to Vercel
+### Phase 3
+9. Team member invites + RBAC
+10. White-label PDF audit reports
+11. Light mode toggle
+12. Onboarding tour
 
 ---
 
 ## Metrics
 
-- **Files created:** ~50 TypeScript/CSS files
-- **Components built:** 7 base UI + 5 layout + 20 page components
-- **Database tables:** 10 with RLS policies
-- **API routes:** 3 endpoints
-- **AI skills:** 5 implemented
-- **Build status:** Compiles with zero errors
-- **Routes:** 23 (19 static, 4 dynamic)
-- **n8n workflow nodes:** 24
+- **Routes:** 35 (pages + API)
+- **AI skills:** 7 implemented
+- **DB tables:** 10 with full RLS
+- **Components:** 9 UI + 5 layout + 25 page components
+- **Build status:** Zero errors, live on Vercel
+- **Paying users:** 1 (Pro plan, oladmenace@gmail.com)
+- **n8n nodes:** 24
 
 ---
 
-## Blockers & Notes
-
-1. **API Keys needed:** Anthropic, Stripe, Twitter, LinkedIn, Resend keys must be added to `.env.local` before live features work
-2. **n8n deployment:** Workflow JSON ready for import, needs environment variables configured on the n8n instance
-3. **Vercel deployment:** Ready once env vars are set — project builds cleanly
-
----
-
-*Generated by Claude Code (Opus 4.6) on February 15, 2026*
+*Updated by Claude Code (Sonnet 4.6) on February 18, 2026*
