@@ -65,6 +65,9 @@ export async function GET() {
   const generationLimit = limits[plan] ?? 5;
   const generationsLeft = Math.max(0, generationLimit - generationCount);
 
+  // Most recently created project id (for dashboard action links)
+  const latestProjectId = projects[projects.length - 1]?.id ?? null;
+
   return NextResponse.json({
     projectCount,
     assetCount,
@@ -74,5 +77,6 @@ export async function GET() {
     generationLimit,
     latestAuditScore,
     plan,
+    latestProjectId,
   });
 }

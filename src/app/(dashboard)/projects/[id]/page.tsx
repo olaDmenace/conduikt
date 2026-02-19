@@ -304,7 +304,7 @@ export default function ProjectOverviewPage({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-success" />
-            Next Steps
+            Your Tools
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -315,13 +315,33 @@ export default function ProjectOverviewPage({
               show: findings.length > 0,
             },
             {
-              label: "Generate marketing copy in the playground",
-              href: "/playground",
+              label: "Write a Blog Post",
+              description: "SEO-optimized long-form content with meta tags and social snippets",
+              href: `/projects/${id}/blog`,
               show: true,
             },
             {
-              label: "Create social media content",
-              href: "/playground",
+              label: "Research Keywords",
+              description: "Discover keyword clusters, long-tail opportunities, and content gaps",
+              href: `/projects/${id}/keywords`,
+              show: true,
+            },
+            {
+              label: "Generate Growth Playbook",
+              description: "AI-powered 90-day action plan across SEO, content, and conversion",
+              href: `/projects/${id}/growth`,
+              show: true,
+            },
+            {
+              label: "Content Studio",
+              description: "Social posts, email sequences, copywriting and more",
+              href: `/projects/${id}/content`,
+              show: true,
+            },
+            {
+              label: "View Analytics",
+              description: "Track your AI generation usage and audit score trends",
+              href: `/projects/${id}/analytics`,
               show: true,
             },
           ]
@@ -330,10 +350,15 @@ export default function ProjectOverviewPage({
               <Link
                 key={i}
                 href={action.href}
-                className="flex items-center justify-between rounded-lg border border-border-default bg-surface-0 p-4 hover:bg-surface-2 transition-colors"
+                className="flex items-center justify-between rounded-lg border border-border-default bg-surface-0 p-4 hover:bg-surface-2 transition-colors group"
               >
-                <p className="text-body text-text-primary">{action.label}</p>
-                <ArrowUpRight className="h-4 w-4 text-text-tertiary" />
+                <div>
+                  <p className="text-body text-text-primary font-medium">{action.label}</p>
+                  {"description" in action && action.description && (
+                    <p className="text-small text-text-tertiary mt-0.5">{action.description}</p>
+                  )}
+                </div>
+                <ArrowUpRight className="h-4 w-4 text-text-tertiary shrink-0 group-hover:text-accent transition-colors" />
               </Link>
             ))}
         </CardContent>

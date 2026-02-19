@@ -12,6 +12,10 @@ import {
   Mail,
   Twitter,
   Loader2,
+  Search,
+  PenLine,
+  Rocket,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -33,38 +37,8 @@ interface DashboardStats {
   generationLimit: number;
   latestAuditScore: number | null;
   plan: string;
+  latestProjectId: string | null;
 }
-
-const quickActions = [
-  {
-    title: "Run SEO Audit",
-    description: "Analyze your site for technical and on-page SEO issues",
-    icon: BarChart3,
-    href: "/projects/new",
-    color: "text-accent",
-  },
-  {
-    title: "Generate Social Posts",
-    description: "Create a week of content for X and LinkedIn",
-    icon: Twitter,
-    href: "/playground",
-    color: "text-info",
-  },
-  {
-    title: "Create Email Sequence",
-    description: "Build an automated email flow for your audience",
-    icon: Mail,
-    href: "/playground",
-    color: "text-success",
-  },
-  {
-    title: "Optimize Landing Page",
-    description: "Get CRO recommendations to improve conversions",
-    icon: ArrowUpRight,
-    href: "/playground",
-    color: "text-warning",
-  },
-];
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -81,6 +55,8 @@ export default function DashboardPage() {
     }
     fetchStats();
   }, []);
+
+  const pid = stats?.latestProjectId;
 
   const statCards = [
     {
@@ -113,6 +89,83 @@ export default function DashboardPage() {
       icon: Zap,
     },
   ];
+
+  // Quick actions — project-aware when a project exists
+  const quickActions = pid
+    ? [
+        {
+          title: "Blog Post Generator",
+          description: "Write SEO-optimized long-form posts with meta tags and social snippets",
+          icon: PenLine,
+          href: `/projects/${pid}/blog`,
+          color: "text-accent",
+        },
+        {
+          title: "Keyword Research",
+          description: "Discover keyword clusters, long-tail opportunities, and content gaps",
+          icon: Search,
+          href: `/projects/${pid}/keywords`,
+          color: "text-info",
+        },
+        {
+          title: "Growth Playbook",
+          description: "Generate your 90-day AI-powered growth plan with prioritised actions",
+          icon: Rocket,
+          href: `/projects/${pid}/growth`,
+          color: "text-success",
+        },
+        {
+          title: "Content Studio",
+          description: "Create social posts, emails, copy, and more with 10 AI skills",
+          icon: Sparkles,
+          href: `/projects/${pid}/content`,
+          color: "text-warning",
+        },
+      ]
+    : [
+        {
+          title: "Create a Project",
+          description: "Connect your first website to unlock all AI marketing tools",
+          icon: Plus,
+          href: "/projects/new",
+          color: "text-accent",
+        },
+        {
+          title: "AI Playground",
+          description: "Try all AI skills without a project context",
+          icon: Sparkles,
+          href: "/playground",
+          color: "text-info",
+        },
+        {
+          title: "View Pricing",
+          description: "Upgrade your plan to unlock unlimited AI generations",
+          icon: Zap,
+          href: "/pricing",
+          color: "text-warning",
+        },
+        {
+          title: "Connect Integrations",
+          description: "Link X, LinkedIn, and Google Search Console",
+          icon: Globe,
+          href: "/settings/integrations",
+          color: "text-success",
+        },
+      ];
+
+  // All platform tools — shown as a reference grid when projects exist
+  const allTools = pid
+    ? [
+        { name: "SEO Audit",         href: `/projects/${pid}/audit`,     icon: BarChart3,  desc: "Technical & on-page analysis"           },
+        { name: "Content Studio",    href: `/projects/${pid}/content`,   icon: Sparkles,   desc: "10 AI skills for all channels"           },
+        { name: "Blog Generator",    href: `/projects/${pid}/blog`,      icon: PenLine,    desc: "SEO posts with meta & social snippets"   },
+        { name: "Keyword Research",  href: `/projects/${pid}/keywords`,  icon: Search,     desc: "Clusters, long-tail & question keywords" },
+        { name: "Growth Playbook",   href: `/projects/${pid}/growth`,    icon: Rocket,     desc: "90-day AI-powered growth plan"           },
+        { name: "Analytics",         href: `/projects/${pid}/analytics`, icon: TrendingUp, desc: "Impact dashboard & skill usage"          },
+        { name: "Email Sequence",    href: `/projects/${pid}/content`,   icon: Mail,       desc: "AI-written drip campaigns"               },
+        { name: "Social Content",    href: `/projects/${pid}/content`,   icon: Twitter,    desc: "X and LinkedIn post generation"          },
+      ]
+    : [];
 
   return (
     <div>
@@ -199,43 +252,91 @@ export default function DashboardPage() {
                   : "Needs attention — several critical issues found."}
               </p>
             </div>
-            <Button variant="secondary" size="sm" className="ml-auto" asChild>
-              <Link href="/projects">View Projects</Link>
-            </Button>
+            {pid && (
+              <Button variant="secondary" size="sm" className="ml-auto" asChild>
+                <Link href={`/projects/${pid}/audit`}>View Audit</Link>
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}
 
       {/* Quick Actions */}
       <div className="mb-8">
-        <h2 className="text-h2 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {quickActions.map((action, i) => (
-            <Link key={action.title} href={action.href}>
-              <Card
-                hover
-                className="animate-in"
-                style={{ animationDelay: `${(i + 4) * 60}ms` }}
-              >
-                <CardContent className="flex items-start gap-4">
-                  <div className="rounded-lg bg-surface-2 p-3">
-                    <action.icon className={`h-5 w-5 ${action.color}`} />
-                  </div>
-                  <div>
-                    <h3 className="text-h3 text-text-primary">{action.title}</h3>
-                    <p className="mt-1 text-small text-text-secondary">
-                      {action.description}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
+        <h2 className="text-h2 mb-4">
+          {loading ? "Quick Actions" : pid ? "Jump Back In" : "Get Started"}
+        </h2>
+        {loading ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="h-24 rounded-xl bg-surface-2 animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {quickActions.map((action, i) => (
+              <Link key={action.title} href={action.href}>
+                <Card
+                  hover
+                  className="animate-in"
+                  style={{ animationDelay: `${(i + 4) * 60}ms` }}
+                >
+                  <CardContent className="flex items-start gap-4">
+                    <div className="rounded-lg bg-surface-2 p-3 shrink-0">
+                      <action.icon className={`h-5 w-5 ${action.color}`} />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-h3 text-text-primary">{action.title}</h3>
+                      <p className="mt-1 text-small text-text-secondary">
+                        {action.description}
+                      </p>
+                    </div>
+                    <ArrowUpRight className="h-4 w-4 text-text-tertiary shrink-0 mt-1 ml-auto" />
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
 
+      {/* All Tools grid — only when a project exists */}
+      {!loading && allTools.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-h2">All Tools</h2>
+            <Button variant="secondary" size="sm" asChild>
+              <Link href="/projects">
+                All Projects <ArrowUpRight className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {allTools.map((tool, i) => (
+              <Link key={tool.name} href={tool.href}>
+                <Card
+                  hover
+                  className="animate-in h-full"
+                  style={{ animationDelay: `${(i + 8) * 40}ms` }}
+                >
+                  <CardContent className="py-4 flex flex-col items-start gap-2">
+                    <div className="rounded-lg bg-surface-2 p-2">
+                      <tool.icon className="h-4 w-4 text-accent" />
+                    </div>
+                    <div>
+                      <p className="text-small font-medium text-text-primary leading-tight">{tool.name}</p>
+                      <p className="text-caption text-text-tertiary mt-0.5 leading-snug">{tool.desc}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Empty State — only show if no projects */}
-      {stats && stats.projectCount === 0 && (
+      {!loading && stats && stats.projectCount === 0 && (
         <Card
           className="animate-in border-dashed border-border-strong"
           style={{ animationDelay: "480ms" }}
@@ -249,7 +350,7 @@ export default function DashboardPage() {
             </h3>
             <p className="mt-2 max-w-md text-body text-text-secondary">
               Connect your first website to unlock AI-powered SEO audits,
-              content generation, and multi-channel publishing.
+              blog generation, keyword research, growth playbooks, and multi-channel publishing.
             </p>
             <Button className="mt-6" asChild>
               <Link href="/projects/new">
