@@ -13,10 +13,8 @@ import {
   Save,
   Loader2,
   Zap,
-  RotateCcw,
   ArrowUpRight,
   Clock,
-  Trash2,
   Map,
   Crosshair,
   Send,
@@ -63,6 +61,15 @@ interface UsageInfo {
   inputTokens: number;
   outputTokens: number;
   durationMs: number;
+}
+
+interface SocialPost {
+  platform: "x" | "linkedin";
+  text: string;
+  angle: string;
+  hook: string;
+  image_suggestion: string | null;
+  best_time: string;
 }
 
 // ---------- skill definitions ----------
@@ -209,9 +216,12 @@ export default function ContentPage({
   const [assets, setAssets] = useState<Asset[]>([]);
   const [loadingAssets, setLoadingAssets] = useState(true);
 
+  // Social posts parsed state
+  const [parsedPosts, setParsedPosts] = useState<SocialPost[] | null>(null);
+
   // Publish state
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
-  const [publishing, setPublishing] = useState<"x" | "linkedin" | null>(null);
+  const [publishing, setPublishing] = useState<string | null>(null); // "x-0", "linkedin-2", etc.
   const [savedAssetId, setSavedAssetId] = useState<string | null>(null);
 
   const skill = contentSkills.find((s) => s.id === selectedSkill)!;
@@ -250,8 +260,8 @@ export default function ContentPage({
     setConnectedPlatforms((data ?? []).map((a: { platform: string }) => a.platform));
   }
 
-  async function handlePublish(platform: "x" | "linkedin") {
-    if (!result.trim()) return;
+  async function handlePublish(platform: "x" | "linkedin", postText: string, publishKey: string) {
+    if (!postText.trim()) return;
 
     // Ensure asset is saved first
     let assetId = savedAssetId;
@@ -276,11 +286,11 @@ export default function ContentPage({
       setSaving(false);
     }
 
-    setPublishing(platform);
+    setPublishing(publishKey);
     const res = await fetch(`/api/publish/${platform}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: result, assetId }),
+      body: JSON.stringify({ text: postText, assetId }),
     });
 
     const data = await res.json();
@@ -323,6 +333,7 @@ export default function ContentPage({
     setResult("");
     setUsage(null);
     setSavedAssetId(null);
+    setParsedPosts(null);
 
     try {
       const res = await fetch("/api/ai/stream", {
@@ -351,6 +362,7 @@ export default function ContentPage({
 
       const decoder = new TextDecoder();
       let buffer = "";
+      let fullText = "";
 
       while (true) {
         const { done, value } = await reader.read();
@@ -365,12 +377,24 @@ export default function ContentPage({
           const data = JSON.parse(line.slice(6));
 
           if (data.type === "text") {
-            setResult((prev) => prev + data.text);
+            fullText += data.text;
+            setResult(fullText);
           } else if (data.type === "done") {
             setUsage(data.usage);
           } else if (data.type === "error") {
             toast(data.error, "error");
           }
+        }
+      }
+
+      // Parse JSON for social posts after streaming completes
+      if (selectedSkill === "social-content" && fullText) {
+        try {
+          const jsonMatch = fullText.match(/\{[\s\S]*\}/);
+          const parsed = JSON.parse(jsonMatch?.[0] ?? fullText);
+          if (Array.isArray(parsed?.posts)) setParsedPosts(parsed.posts);
+        } catch {
+          // Not valid JSON — leave parsedPosts null, raw text will display
         }
       }
     } catch {
@@ -546,6 +570,107 @@ export default function ContentPage({
     );
   }
 
+  // ---------- social post cards ----------
+
+  function SocialPostCard({ post, index }: { post: SocialPost; index: number }) {
+    const isX = post.platform === "x";
+    const charLimit = isX ? 280 : 700;
+    const charCount = post.text.length;
+    const publishKey = `${post.platform}-${index}`;
+    const [cardCopied, setCardCopied] = useState(false);
+
+    function copyPost() {
+      navigator.clipboard.writeText(post.text);
+      setCardCopied(true);
+      toast("Copied!", "info");
+      setTimeout(() => setCardCopied(false), 2000);
+    }
+
+    return (
+      <div
+        className="rounded-xl border border-border-default bg-surface-0 p-4 space-y-3 animate-in"
+        style={{ animationDelay: `${index * 60}ms` }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
+            {isX ? (
+              <Twitter className="h-4 w-4 text-text-primary" />
+            ) : (
+              <Linkedin className="h-4 w-4 text-[#0A66C2]" />
+            )}
+            <Badge variant="secondary">{isX ? "X (Twitter)" : "LinkedIn"}</Badge>
+            {post.angle && (
+              <Badge variant="secondary" className="text-text-tertiary">{post.angle}</Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Button size="sm" variant="ghost" onClick={copyPost}>
+              {cardCopied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
+              {cardCopied ? "Copied" : "Copy"}
+            </Button>
+            {isX && connectedPlatforms.includes("x") && (
+              <Button
+                size="sm"
+                onClick={() => handlePublish("x", post.text, publishKey)}
+                disabled={publishing !== null}
+              >
+                {publishing === publishKey ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Twitter className="h-3.5 w-3.5" />
+                )}
+                {publishing === publishKey ? "Posting…" : "Post"}
+              </Button>
+            )}
+            {!isX && connectedPlatforms.includes("linkedin") && (
+              <Button
+                size="sm"
+                onClick={() => handlePublish("linkedin", post.text, publishKey)}
+                disabled={publishing !== null}
+              >
+                {publishing === publishKey ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Linkedin className="h-3.5 w-3.5" />
+                )}
+                {publishing === publishKey ? "Posting…" : "Post"}
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Text */}
+        <p className="text-body text-text-primary whitespace-pre-line leading-relaxed">
+          {post.text}
+        </p>
+
+        {/* Metadata row */}
+        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border-default">
+          <Badge variant={charCount <= charLimit ? "success" : "error"}>
+            {charCount}/{charLimit}
+          </Badge>
+          {charCount > charLimit && (
+            <span className="text-small text-error">{charCount - charLimit} over</span>
+          )}
+          {post.best_time && (
+            <span className="flex items-center gap-1 text-small text-text-tertiary">
+              <Clock className="h-3 w-3" />
+              {post.best_time}
+            </span>
+          )}
+        </div>
+
+        {/* Image suggestion */}
+        {post.image_suggestion && (
+          <p className="text-small text-text-tertiary italic border-l-2 border-accent/30 pl-3">
+            {post.image_suggestion}
+          </p>
+        )}
+      </div>
+    );
+  }
+
   // ---------- render ----------
 
   return (
@@ -688,10 +813,21 @@ export default function ContentPage({
                       <button
                         key={asset.id}
                         onClick={() => {
-                          setResult(asset.content?.raw ?? "");
-                          setSelectedSkill(asset.content?.skill ?? "copywriting");
+                          const raw = asset.content?.raw ?? "";
+                          const assetSkill = asset.content?.skill ?? "copywriting";
+                          setResult(raw);
+                          setSelectedSkill(assetSkill);
                           setPrompt(asset.content?.prompt ?? "");
                           setUsage(null);
+                          setSavedAssetId(asset.id);
+                          setParsedPosts(null);
+                          if (assetSkill === "social-content" && raw) {
+                            try {
+                              const jsonMatch = raw.match(/\{[\s\S]*\}/);
+                              const parsed = JSON.parse(jsonMatch?.[0] ?? raw);
+                              if (Array.isArray(parsed?.posts)) setParsedPosts(parsed.posts);
+                            } catch { /* not JSON */ }
+                          }
                         }}
                         className="w-full text-left rounded-lg border border-border-default p-3 hover:bg-surface-2 transition-colors"
                       >
@@ -736,14 +872,17 @@ export default function ContentPage({
                 <CardTitle>Preview</CardTitle>
                 {result && !generating && (
                   <div className="flex items-center gap-2 flex-wrap justify-end">
-                    <Button variant="ghost" size="sm" onClick={handleCopy}>
-                      {copied ? (
-                        <Check className="h-4 w-4 text-success" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
-                      {copied ? "Copied" : "Copy"}
-                    </Button>
+                    {/* For non-social skills, show copy button */}
+                    {selectedSkill !== "social-content" && (
+                      <Button variant="ghost" size="sm" onClick={handleCopy}>
+                        {copied ? (
+                          <Check className="h-4 w-4 text-success" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                        {copied ? "Copied" : "Copy"}
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="secondary"
@@ -757,35 +896,7 @@ export default function ContentPage({
                       )}
                       {saving ? "Saving..." : "Save Draft"}
                     </Button>
-                    {/* Publish buttons — only for social content when accounts are connected */}
-                    {selectedSkill === "social-content" && connectedPlatforms.includes("x") && (
-                      <Button
-                        size="sm"
-                        onClick={() => handlePublish("x")}
-                        disabled={publishing !== null}
-                      >
-                        {publishing === "x" ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Twitter className="h-4 w-4" />
-                        )}
-                        {publishing === "x" ? "Posting..." : "Post to X"}
-                      </Button>
-                    )}
-                    {selectedSkill === "social-content" && connectedPlatforms.includes("linkedin") && (
-                      <Button
-                        size="sm"
-                        onClick={() => handlePublish("linkedin")}
-                        disabled={publishing !== null}
-                      >
-                        {publishing === "linkedin" ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Linkedin className="h-4 w-4" />
-                        )}
-                        {publishing === "linkedin" ? "Posting..." : "Post to LinkedIn"}
-                      </Button>
-                    )}
+                    {/* Connect nudge if social content and no accounts */}
                     {selectedSkill === "social-content" && connectedPlatforms.length === 0 && (
                       <Button size="sm" variant="secondary" asChild>
                         <a href="/settings/integrations">
@@ -803,33 +914,43 @@ export default function ContentPage({
                 <div className="space-y-4">
                   {/* Tab previews based on skill */}
                   {selectedSkill === "social-content" ? (
-                    <Tabs defaultValue="x">
-                      <TabsList>
-                        <TabsTrigger value="x">
-                          <Twitter className="h-3.5 w-3.5 mr-1.5" />X
-                          Preview
-                        </TabsTrigger>
-                        <TabsTrigger value="linkedin">
-                          <Linkedin className="h-3.5 w-3.5 mr-1.5" />
-                          LinkedIn
-                        </TabsTrigger>
-                        <TabsTrigger value="raw">
-                          <FileText className="h-3.5 w-3.5 mr-1.5" />
-                          Raw
-                        </TabsTrigger>
-                      </TabsList>
-                      <TabsContent value="x">
-                        <XPreview text={result} />
-                      </TabsContent>
-                      <TabsContent value="linkedin">
-                        <LinkedInPreview text={result} />
-                      </TabsContent>
-                      <TabsContent value="raw">
-                        <div ref={outputRef}>
-                          <RawPreview text={result} />
-                        </div>
-                      </TabsContent>
-                    </Tabs>
+                    generating ? (
+                      // Show raw stream while generating
+                      <div ref={outputRef}>
+                        <RawPreview text={result} />
+                      </div>
+                    ) : parsedPosts ? (
+                      // Parsed post cards
+                      <Tabs defaultValue="posts">
+                        <TabsList>
+                          <TabsTrigger value="posts">
+                            <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+                            Posts ({parsedPosts.length})
+                          </TabsTrigger>
+                          <TabsTrigger value="raw">
+                            <FileText className="h-3.5 w-3.5 mr-1.5" />
+                            Raw JSON
+                          </TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="posts">
+                          <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
+                            {parsedPosts.map((post, i) => (
+                              <SocialPostCard key={i} post={post} index={i} />
+                            ))}
+                          </div>
+                        </TabsContent>
+                        <TabsContent value="raw">
+                          <div ref={outputRef}>
+                            <RawPreview text={result} />
+                          </div>
+                        </TabsContent>
+                      </Tabs>
+                    ) : (
+                      // Fallback if JSON parse failed
+                      <div ref={outputRef}>
+                        <RawPreview text={result} />
+                      </div>
+                    )
                   ) : selectedSkill === "email-sequence" ? (
                     <Tabs defaultValue="email">
                       <TabsList>
