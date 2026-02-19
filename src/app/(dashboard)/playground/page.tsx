@@ -63,6 +63,27 @@ const skills = [
     placeholder: "Which competitors should we analyze? What aspects matter most?\n\nExample: Analyze HubSpot, Jasper, and Copy.ai — find messaging gaps and content opportunities",
     inputFields: {},
   },
+  {
+    id: "blog-post",
+    name: "Blog Post",
+    description: "Write long-form SEO blog posts with meta and social snippets",
+    placeholder: "What's the topic, target keyword, and audience?\n\nExample: Write a 1500-word post targeting 'AI marketing tools' for B2B SaaS founders. Tone: educational but conversational.",
+    inputFields: {},
+  },
+  {
+    id: "keyword-research",
+    name: "Keyword Research",
+    description: "Discover keyword clusters, long-tail opportunities, and content gaps",
+    placeholder: "What's your seed keyword or niche?\n\nExample: AI marketing automation for small businesses",
+    inputFields: {},
+  },
+  {
+    id: "growth-playbook",
+    name: "Growth Playbook",
+    description: "Generate a 90-day AI-powered growth plan with prioritised actions",
+    placeholder: "Describe your product, target audience, and main growth goal.\n\nExample: B2B SaaS for marketing teams, 10 employees, goal is to grow from 100 to 500 MRR users in 90 days via content and SEO",
+    inputFields: {},
+  },
 ];
 
 interface UsageInfo {
@@ -174,6 +195,12 @@ export default function PlaygroundPage() {
         return { goal: prompt, context: prompt };
       case "competitor-analysis":
         return { competitors: prompt, context: prompt };
+      case "blog-post":
+        return { topic: prompt, targetKeyword: prompt, wordCount: 1200 };
+      case "keyword-research":
+        return { seedKeyword: prompt, context: prompt };
+      case "growth-playbook":
+        return { businessContext: prompt, goal: prompt };
       default:
         return { context: prompt };
     }
