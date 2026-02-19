@@ -189,3 +189,78 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-tertiary);
 }
+
+/* ===================================================
+   MARKDOWN PROSE — Blog Post Preview
+   =================================================== */
+.prose-conduikt h1 {
+  font: 700 1.75rem/1.2 var(--font-display);
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  margin-top: 0;
+}
+.prose-conduikt h2 {
+  font: 600 1.25rem/1.3 var(--font-body);
+  color: var(--text-primary);
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.prose-conduikt h3 {
+  font: 600 1.0625rem/1.4 var(--font-body);
+  color: var(--text-primary);
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+.prose-conduikt p {
+  font: 400 0.9375rem/1.7 var(--font-body);
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+.prose-conduikt ul, .prose-conduikt ol {
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+.prose-conduikt li {
+  margin-bottom: 0.35rem;
+}
+.prose-conduikt strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.prose-conduikt a {
+  color: var(--accent-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.prose-conduikt blockquote {
+  border-left: 3px solid var(--accent-primary);
+  padding-left: 1rem;
+  margin: 1.5rem 0;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+.prose-conduikt code {
+  background: var(--surface-2);
+  color: var(--accent-primary);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  font: 500 0.875rem var(--font-mono);
+}
+.prose-conduikt pre {
+  background: var(--surface-2);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  padding: 1rem;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+}
+.prose-conduikt pre code {
+  background: none;
+  padding: 0;
+  color: var(--text-primary);
+}

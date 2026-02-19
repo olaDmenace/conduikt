@@ -15,7 +15,6 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Verify project ownership
   const { data: project } = await supabase
     .from("projects")
     .select("id")
@@ -27,15 +26,26 @@ export async function GET(
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
-  const { data: generations, error } = await supabase
-    .from("ai_generations")
-    .select("id, skill_used, input_tokens, output_tokens, model, duration_ms, created_at")
-    .eq("project_id", id)
-    .order("created_at", { ascending: false });
+  const [generationsRes, auditsRes, assetsRes] = await Promise.all([
+    supabase
+      .from("ai_generations")
+      .select("id, skill_used, input_tokens, output_tokens, model, duration_ms, created_at")
+      .eq("project_id", id)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("audits")
+      .select("id, type, url, score, created_at")
+      .eq("project_id", id)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("assets")
+      .select("id, type, channel, status, created_at")
+      .eq("project_id", id),
+  ]);
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json(generations ?? []);
+  return NextResponse.json({
+    generations: generationsRes.data ?? [],
+    audits: auditsRes.data ?? [],
+    assets: assetsRes.data ?? [],
+  });
 }

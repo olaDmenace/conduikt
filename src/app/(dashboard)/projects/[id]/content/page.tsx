@@ -126,6 +126,16 @@ const contentSkills = [
       "What are your content goals?\n\ne.g. Build a 30-day content plan to drive organic traffic and establish thought leadership in AI marketing",
   },
   {
+    id: "blog-post",
+    name: "Blog Post",
+    icon: Globe,
+    assetType: "blog_post" as const,
+    channel: "web" as const,
+    description: "SEO-optimized long-form blog posts with meta tags and social snippets",
+    placeholder:
+      "What's the blog post about?\n\ne.g. How to automate your social media marketing with AI — target keyword: AI social media automation",
+  },
+  {
     id: "competitor-analysis",
     name: "Competitor Intel",
     icon: Crosshair,
@@ -148,6 +158,8 @@ function buildSkillInput(
       return { type: "headline", context: prompt, instructions: prompt };
     case "social-content":
       return { topic: prompt, count: 5 };
+    case "blog-post":
+      return { topic: prompt, wordCount: 1500 };
     case "email-sequence":
       return { type: "welcome", goal: prompt, context: prompt, count: 5 };
     case "page-cro":
