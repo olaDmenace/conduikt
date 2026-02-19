@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
+import { sendWelcomeEmail } from "@/src/lib/email";
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -31,6 +32,14 @@ export async function GET(request: NextRequest) {
     if (!error) {
       if (type === "recovery") {
         return NextResponse.redirect(`${origin}/reset-password`);
+      }
+      // Send welcome email for new signups (fire and forget)
+      if (type === "signup") {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.email) {
+          const name = user.user_metadata?.full_name ?? user.user_metadata?.name ?? "";
+          sendWelcomeEmail(user.email, name).catch(() => {});
+        }
       }
       return NextResponse.redirect(`${origin}${next}`);
     }

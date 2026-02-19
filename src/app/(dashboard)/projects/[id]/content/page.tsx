@@ -19,6 +19,8 @@ import {
   Map,
   Crosshair,
   Send,
+  CalendarClock,
+  ChevronDown,
 } from "lucide-react";
 import {
   Card,
@@ -241,6 +243,10 @@ function ContentPageInner({
   const [publishing, setPublishing] = useState<string | null>(null); // "x-0", "linkedin-2", etc.
   const [savedAssetId, setSavedAssetId] = useState<string | null>(null);
 
+  // Schedule state — tracks which post card has the picker open: "x-0", "linkedin-1", etc.
+  const [schedulingKey, setSchedulingKey] = useState<string | null>(null);
+  const [scheduleDateTime, setScheduleDateTime] = useState("");
+
   const skill = contentSkills.find((s) => s.id === selectedSkill)!;
 
   // ---------- data fetching ----------
@@ -328,6 +334,61 @@ function ContentPageInner({
       }
     }
     setPublishing(null);
+  }
+
+  async function handleSchedule(platform: "x" | "linkedin", postText: string, publishKey: string) {
+    if (!scheduleDateTime) return;
+
+    // Ensure asset is saved first
+    let assetId = savedAssetId;
+    if (!assetId) {
+      setSaving(true);
+      const res = await fetch(`/api/projects/${projectId}/assets`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: skill.assetType,
+          channel: platform,
+          title: prompt.slice(0, 100),
+          content: { raw: result, skill: selectedSkill, prompt },
+        }),
+      });
+      if (res.ok) {
+        const saved = await res.json();
+        assetId = saved.id;
+        setSavedAssetId(saved.id);
+        fetchAssets();
+      }
+      setSaving(false);
+    }
+
+    if (!assetId) {
+      toast("Failed to save asset before scheduling", "error");
+      return;
+    }
+
+    const res = await fetch(`/api/projects/${projectId}/schedule`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        assetId,
+        channel: platform,
+        scheduledFor: new Date(scheduleDateTime).toISOString(),
+        postText,
+      }),
+    });
+
+    if (res.ok) {
+      toast(
+        `Scheduled for ${new Date(scheduleDateTime).toLocaleString()}`,
+        "success"
+      );
+      setSchedulingKey(null);
+      setScheduleDateTime("");
+    } else {
+      const err = await res.json();
+      toast(err.error || "Failed to schedule post", "error");
+    }
   }
 
   // Auto-scroll output
@@ -595,6 +656,12 @@ function ContentPageInner({
     const charCount = post.text.length;
     const publishKey = `${post.platform}-${index}`;
     const [cardCopied, setCardCopied] = useState(false);
+    const isScheduling = schedulingKey === publishKey;
+
+    // Min datetime for the picker — 5 minutes from now
+    const minDateTime = new Date(Date.now() + 5 * 60 * 1000)
+      .toISOString()
+      .slice(0, 16);
 
     function copyPost() {
       navigator.clipboard.writeText(post.text);
@@ -621,11 +688,26 @@ function ContentPageInner({
               <Badge variant="secondary" className="text-text-tertiary">{post.angle}</Badge>
             )}
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <Button size="sm" variant="ghost" onClick={copyPost}>
               {cardCopied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
               {cardCopied ? "Copied" : "Copy"}
             </Button>
+            {/* Schedule button — shown when platform is connected */}
+            {((isX && connectedPlatforms.includes("x")) ||
+              (!isX && connectedPlatforms.includes("linkedin"))) && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() =>
+                  setSchedulingKey(isScheduling ? null : publishKey)
+                }
+              >
+                <CalendarClock className="h-3.5 w-3.5" />
+                Schedule
+                <ChevronDown className={`h-3 w-3 transition-transform ${isScheduling ? "rotate-180" : ""}`} />
+              </Button>
+            )}
             {isX && connectedPlatforms.includes("x") && (
               <Button
                 size="sm"
@@ -637,7 +719,7 @@ function ContentPageInner({
                 ) : (
                   <Twitter className="h-3.5 w-3.5" />
                 )}
-                {publishing === publishKey ? "Posting…" : "Post"}
+                {publishing === publishKey ? "Posting…" : "Post now"}
               </Button>
             )}
             {!isX && connectedPlatforms.includes("linkedin") && (
@@ -651,11 +733,49 @@ function ContentPageInner({
                 ) : (
                   <Linkedin className="h-3.5 w-3.5" />
                 )}
-                {publishing === publishKey ? "Posting…" : "Post"}
+                {publishing === publishKey ? "Posting…" : "Post now"}
               </Button>
             )}
           </div>
         </div>
+
+        {/* Schedule picker — inline, only shows when active */}
+        {isScheduling && (
+          <div className="rounded-lg border border-accent/30 bg-accent/5 p-3 space-y-2">
+            <p className="text-small font-medium text-text-primary flex items-center gap-1.5">
+              <CalendarClock className="h-3.5 w-3.5 text-accent" />
+              Schedule for later
+            </p>
+            <div className="flex items-center gap-2">
+              <input
+                type="datetime-local"
+                min={minDateTime}
+                value={scheduleDateTime}
+                onChange={(e) => setScheduleDateTime(e.target.value)}
+                className="flex-1 rounded-lg border border-border-strong bg-surface-0 px-3 py-1.5 text-small text-text-primary focus:border-accent focus:outline-none"
+              />
+              <Button
+                size="sm"
+                onClick={() =>
+                  handleSchedule(post.platform, post.text, publishKey)
+                }
+                disabled={!scheduleDateTime}
+              >
+                Confirm
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setSchedulingKey(null);
+                  setScheduleDateTime("");
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Text */}
         <p className="text-body text-text-primary whitespace-pre-line leading-relaxed">

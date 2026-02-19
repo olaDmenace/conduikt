@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
+import { sendPlanUpgradeEmail } from "@/src/lib/email";
 
 // Use service-role client for webhook (no user auth context)
 function getServiceClient() {
@@ -76,6 +77,13 @@ export async function POST(request: NextRequest) {
         })
         .eq("id", userId);
 
+      // Send plan upgrade email (fire and forget)
+      const { data: userData } = await supabase.auth.admin.getUserById(userId);
+      if (userData?.user?.email) {
+        const name = userData.user.user_metadata?.full_name ?? userData.user.user_metadata?.name ?? "";
+        sendPlanUpgradeEmail(userData.user.email, plan, name).catch(() => {});
+      }
+
       break;
     }
 
@@ -114,6 +122,15 @@ export async function POST(request: NextRequest) {
           updated_at: new Date().toISOString(),
         })
         .eq("id", userId);
+
+      // Send plan upgrade email on new subscription (fire and forget)
+      if (eventName === "subscription_created" && isActive) {
+        const { data: userData } = await supabase.auth.admin.getUserById(userId);
+        if (userData?.user?.email) {
+          const name = userData.user.user_metadata?.full_name ?? userData.user.user_metadata?.name ?? "";
+          sendPlanUpgradeEmail(userData.user.email, plan, name).catch(() => {});
+        }
+      }
 
       break;
     }
