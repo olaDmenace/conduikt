@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef, use } from "react";
+import { useState, useEffect, useRef, use, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Sparkles,
   Twitter,
@@ -34,6 +35,7 @@ import {
   TabsContent,
 } from "@/src/components/ui/tabs";
 import { PageHeader } from "@/src/components/layout/page-header";
+import { ProjectNav } from "@/src/components/layout/project-nav";
 import { useToast } from "@/src/components/ui/toast";
 
 // ---------- types ----------
@@ -203,21 +205,24 @@ const channelIcons: Record<string, typeof Twitter> = {
 
 // ---------- component ----------
 
-export default function ContentPage({
+function ContentPageInner({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id: projectId } = use(params);
   const { toast } = useToast();
+  const searchParams = useSearchParams();
   const outputRef = useRef<HTMLDivElement>(null);
 
   // Project context
   const [project, setProject] = useState<ProjectContext | null>(null);
 
-  // Generation state
-  const [selectedSkill, setSelectedSkill] = useState("copywriting");
-  const [prompt, setPrompt] = useState("");
+  // Generation state — seed from URL params if present
+  const [selectedSkill, setSelectedSkill] = useState(
+    () => searchParams.get("skill") ?? "copywriting"
+  );
+  const [prompt, setPrompt] = useState(() => searchParams.get("prompt") ?? "");
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState("");
   const [usage, setUsage] = useState<UsageInfo | null>(null);
@@ -696,6 +701,8 @@ export default function ContentPage({
         }
       />
 
+      <ProjectNav projectId={projectId} />
+
       {/* Project context banner */}
       {project && (
         <div className="mb-6 rounded-lg border border-border-default bg-surface-1 px-4 py-3 flex items-start gap-4 text-small animate-in">
@@ -1055,5 +1062,17 @@ export default function ContentPage({
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ContentPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-16"><div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" /></div>}>
+      <ContentPageInner params={params} />
+    </Suspense>
   );
 }

@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, Suspense } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -64,17 +66,18 @@ interface UsageInfo {
 
 // ---------- component ----------
 
-export default function BlogPage({
+function BlogPageInner({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id: projectId } = use(params);
   const { toast } = useToast();
+  const searchParams = useSearchParams();
 
   // Inputs
   const [topic, setTopic] = useState("");
-  const [targetKeyword, setTargetKeyword] = useState("");
+  const [targetKeyword, setTargetKeyword] = useState(() => searchParams.get("keyword") ?? "");
   const [wordCount, setWordCount] = useState(1500);
   const [tone, setTone] = useState("");
 
@@ -363,7 +366,16 @@ export default function BlogPage({
               <div className="flex items-center justify-between">
                 <CardTitle>Preview</CardTitle>
                 {parsed && !generating && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {savedId && (
+                      <Link
+                        href={`/projects/${projectId}/content?skill=social-content&prompt=${encodeURIComponent(`Promote this blog post: ${parsed.meta_title || topic}`)}`}
+                        className="flex items-center gap-1.5 rounded-lg border border-accent/30 bg-accent-muted px-3 py-1.5 text-small font-medium text-accent hover:bg-accent/20 transition-colors"
+                      >
+                        <Sparkles className="h-3.5 w-3.5" />
+                        Generate Social Posts
+                      </Link>
+                    )}
                     <Button
                       size="sm"
                       variant="secondary"
@@ -678,5 +690,17 @@ export default function BlogPage({
         </div>
       </div>
     </div>
+  );
+}
+
+export default function BlogPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-16"><div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" /></div>}>
+      <BlogPageInner params={params} />
+    </Suspense>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, use } from "react";
+import Link from "next/link";
 import {
   Search,
   Sparkles,
@@ -15,6 +16,7 @@ import {
   Zap,
   Save,
   X,
+  PenLine,
 } from "lucide-react";
 import {
   Card,
@@ -443,6 +445,14 @@ export default function KeywordsPage({
                         <p className="mt-2 text-small text-text-secondary">{kw.rationale}</p>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
+                        <Link
+                          href={`/projects/${projectId}/blog?keyword=${encodeURIComponent(kw.term)}`}
+                          className="flex items-center gap-1 rounded-md border border-border-default bg-surface-0 px-2 py-1 text-caption text-text-secondary hover:border-accent/40 hover:text-accent transition-colors whitespace-nowrap"
+                          title="Write blog post targeting this keyword"
+                        >
+                          <PenLine className="h-3 w-3" />
+                          Blog
+                        </Link>
                         <button
                           onClick={() => copy(kw.term, `kw-${i}`)}
                           className="p-1.5 rounded-md text-text-tertiary hover:text-text-primary hover:bg-surface-2 transition-colors"

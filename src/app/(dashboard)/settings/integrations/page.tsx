@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Twitter, Linkedin, CheckCircle2, AlertCircle, Loader2, Link2, Unlink } from "lucide-react";
+import { Twitter, Linkedin, CheckCircle2, AlertCircle, Loader2, Link2, Unlink, Search } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
@@ -31,6 +31,7 @@ function IntegrationsContent() {
     const error = searchParams.get("error");
     if (connected === "x") toast("X account connected successfully!", "success");
     if (connected === "linkedin") toast("LinkedIn account connected successfully!", "success");
+    if (connected === "gsc") toast("Google Search Console connected!", "success");
     if (error) toast(decodeURIComponent(error), "error");
     // Clean URL
     window.history.replaceState({}, "", "/settings/integrations");
@@ -58,7 +59,8 @@ function IntegrationsContent() {
     if (error) {
       toast("Failed to disconnect account", "error");
     } else {
-      toast(`${platform === "x" ? "X" : "LinkedIn"} account disconnected`, "info");
+      const names: Record<string, string> = { x: "X", linkedin: "LinkedIn", gsc: "Google Search Console" };
+      toast(`${names[platform] ?? platform} disconnected`, "info");
       setAccounts((prev) => prev.filter((a) => a.platform !== platform));
     }
     setDisconnecting(null);
@@ -66,6 +68,7 @@ function IntegrationsContent() {
 
   const xAccount = accounts.find((a) => a.platform === "x");
   const liAccount = accounts.find((a) => a.platform === "linkedin");
+  const gscAccount = accounts.find((a) => a.platform === "gsc");
 
   function isExpired(account: ConnectedAccount) {
     if (!account.token_expires_at) return false;
@@ -88,6 +91,14 @@ function IntegrationsContent() {
       description: "Publish posts to your LinkedIn profile from the Content Studio.",
       connectHref: "/api/integrations/linkedin/connect",
       account: liAccount,
+    },
+    {
+      key: "gsc",
+      name: "Google Search Console",
+      icon: Search,
+      description: "Import real keyword rankings and click data into your Growth Playbook.",
+      connectHref: "/api/integrations/gsc/connect",
+      account: gscAccount,
     },
   ];
 

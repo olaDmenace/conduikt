@@ -7,6 +7,7 @@ import { contentStrategySkill } from "./content-strategy";
 import { competitorAnalysisSkill } from "./competitor-analysis";
 import { blogPostSkill } from "./blog-post";
 import { keywordResearchSkill } from "./keyword-research";
+import { growthPlaybookSkill } from "./growth-playbook";
 import type { SkillConfig } from "./types";
 
 export const skills: Record<string, SkillConfig> = {
@@ -19,6 +20,7 @@ export const skills: Record<string, SkillConfig> = {
   "competitor-analysis": competitorAnalysisSkill,
   "blog-post": blogPostSkill,
   "keyword-research": keywordResearchSkill,
+  "growth-playbook": growthPlaybookSkill,
 };
 
 export function getSkill(id: string): SkillConfig | undefined {

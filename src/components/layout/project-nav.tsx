@@ -12,6 +12,7 @@ import {
   Calendar,
   Globe,
   Search,
+  Rocket,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils/cn";
 
@@ -29,6 +30,7 @@ export function ProjectNav({ projectId }: ProjectNavProps) {
     { name: "Content",   href: `${base}/content`,        icon: FileText    },
     { name: "Blog",      href: `${base}/blog`,           icon: Globe       },
     { name: "Keywords",  href: `${base}/keywords`,       icon: Search      },
+    { name: "Growth",    href: `${base}/growth`,         icon: Rocket      },
     { name: "Analytics", href: `${base}/analytics`,      icon: TrendingUp  },
     { name: "Campaigns", href: `${base}/campaigns`,      icon: Sparkles,   comingSoon: true },
     { name: "Calendar",  href: `${base}/calendar`,       icon: Calendar,   comingSoon: true },

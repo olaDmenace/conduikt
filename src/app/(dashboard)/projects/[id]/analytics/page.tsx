@@ -28,6 +28,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { PageHeader } from "@/src/components/layout/page-header";
+import { ProjectNav } from "@/src/components/layout/project-nav";
 
 // ---------- types ----------
 
@@ -193,6 +194,8 @@ export default function AnalyticsPage() {
         title="Analytics"
         description="Impact dashboard — track your marketing progress"
       />
+
+      <ProjectNav projectId={id} />
 
       {loading ? (
         <div className="flex justify-center py-12">
