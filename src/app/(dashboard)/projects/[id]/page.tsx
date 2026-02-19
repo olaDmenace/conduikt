@@ -3,11 +3,6 @@
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import {
-  BarChart3,
-  FileText,
-  Calendar,
-  Settings,
-  TrendingUp,
   AlertTriangle,
   CheckCircle2,
   ArrowUpRight,
@@ -25,6 +20,7 @@ import {
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
+import { ProjectNav } from "@/src/components/layout/project-nav";
 import { useToast } from "@/src/components/ui/toast";
 
 interface Audit {
@@ -123,16 +119,6 @@ export default function ProjectOverviewPage({
     (f) => f.severity === "critical"
   ).length;
 
-  const projectNav = [
-    { name: "Overview", href: `/projects/${id}`, icon: BarChart3 },
-    { name: "Audit", href: `/projects/${id}/audit`, icon: AlertTriangle },
-    { name: "Content", href: `/projects/${id}/content`, icon: FileText },
-    { name: "Campaigns", href: `/projects/${id}/campaigns`, icon: Sparkles, comingSoon: true },
-    { name: "Calendar", href: `/projects/${id}/calendar`, icon: Calendar, comingSoon: true },
-    { name: "Analytics", href: `/projects/${id}/analytics`, icon: TrendingUp },
-    { name: "Settings", href: `/projects/${id}/settings`, icon: Settings },
-  ];
-
   return (
     <div>
       <PageHeader
@@ -159,36 +145,7 @@ export default function ProjectOverviewPage({
         </Button>
       </PageHeader>
 
-      {/* Project Sub-Navigation */}
-      <div className="flex items-center gap-1 mb-8 rounded-lg border border-border-default bg-surface-0 p-1 overflow-x-auto">
-        {projectNav.map((item, i) => {
-          if (item.comingSoon) {
-            return (
-              <span
-                key={item.name}
-                className="flex items-center gap-2 whitespace-nowrap rounded-md px-3 py-1.5 text-small font-medium text-text-tertiary/40 cursor-not-allowed"
-              >
-                <item.icon className="h-4 w-4" />
-                {item.name}
-              </span>
-            );
-          }
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={`flex items-center gap-2 whitespace-nowrap rounded-md px-3 py-1.5 text-small font-medium transition-colors ${
-                i === 0
-                  ? "bg-surface-2 text-accent"
-                  : "text-text-secondary hover:text-text-primary hover:bg-surface-2"
-              }`}
-            >
-              <item.icon className="h-4 w-4" />
-              {item.name}
-            </Link>
-          );
-        })}
-      </div>
+      <ProjectNav projectId={id} />
 
       {/* Score Overview */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-8">

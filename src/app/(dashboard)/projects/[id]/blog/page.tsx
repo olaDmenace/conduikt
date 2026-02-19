@@ -15,6 +15,9 @@ import {
   Mail,
   Globe,
   Zap,
+  Image as ImageIcon,
+  X as CloseIcon,
+  ChevronRight,
 } from "lucide-react";
 import {
   Card,
@@ -32,7 +35,9 @@ import {
   TabsContent,
 } from "@/src/components/ui/tabs";
 import { PageHeader } from "@/src/components/layout/page-header";
+import { ProjectNav } from "@/src/components/layout/project-nav";
 import { useToast } from "@/src/components/ui/toast";
+import type { UnsplashPhoto } from "@/src/lib/integrations/unsplash";
 
 // ---------- types ----------
 
@@ -81,6 +86,12 @@ export default function BlogPage({
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
 
+  // Image picker state
+  const [imagePhotos, setImagePhotos] = useState<UnsplashPhoto[]>([]);
+  const [imageLoading, setImageLoading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<UnsplashPhoto | null>(null);
+  const [showImagePicker, setShowImagePicker] = useState(false);
+
   // Copy states per field
   const [copied, setCopied] = useState<string | null>(null);
 
@@ -94,7 +105,39 @@ export default function BlogPage({
   // Reset saved ID when topic changes
   useEffect(() => {
     setSavedId(null);
+    setSelectedImage(null);
+    setShowImagePicker(false);
   }, [topic]);
+
+  async function fetchImages(query: string) {
+    setImageLoading(true);
+    setImagePhotos([]);
+    try {
+      const res = await fetch(`/api/blog/image?q=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      if (data.photos?.length) {
+        setImagePhotos(data.photos);
+        setShowImagePicker(true);
+      } else {
+        toast(data.error || "No images found", "warning");
+      }
+    } catch {
+      toast("Image search failed", "error");
+    } finally {
+      setImageLoading(false);
+    }
+  }
+
+  async function selectImage(photo: UnsplashPhoto) {
+    setSelectedImage(photo);
+    setShowImagePicker(false);
+    // Notify Unsplash (attribution requirement)
+    await fetch("/api/blog/image", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ downloadLocation: photo.links.download_location }),
+    });
+  }
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
@@ -191,7 +234,21 @@ export default function BlogPage({
         type: "blog_post",
         channel: "web",
         title: parsed.meta_title || topic.slice(0, 100),
-        content: { raw: rawResult, skill: "blog-post", prompt: topic, parsed },
+        content: {
+          raw: rawResult,
+          skill: "blog-post",
+          prompt: topic,
+          parsed,
+          hero_image: selectedImage
+            ? {
+                url: selectedImage.urls.regular,
+                thumb: selectedImage.urls.small,
+                alt: selectedImage.alt_description,
+                author: selectedImage.user.name,
+                author_url: selectedImage.user.links.html,
+              }
+            : null,
+        },
       }),
     });
 
@@ -213,6 +270,8 @@ export default function BlogPage({
         title="Blog Post Generator"
         description="Generate SEO-optimized long-form content with meta tags and social promotion snippets"
       />
+
+      <ProjectNav projectId={projectId} />
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* ---- Left: Input Panel ---- */}
@@ -371,24 +430,104 @@ export default function BlogPage({
 
                   {/* Article preview */}
                   <TabsContent value="preview">
-                    <div className="rounded-xl border border-border-default bg-surface-0 p-6 max-h-[560px] overflow-y-auto">
-                      <div className="flex items-center gap-3 mb-5 pb-4 border-b border-border-subtle">
-                        <Badge variant="secondary">
-                          ~{parsed.word_count?.toLocaleString() ?? "—"} words
-                        </Badge>
-                        <Badge variant="secondary">
-                          {parsed.reading_time_minutes ?? "—"} min read
-                        </Badge>
-                        {parsed.featured_image_query && (
-                          <span className="text-small text-text-tertiary">
-                            Image: "{parsed.featured_image_query}"
-                          </span>
-                        )}
-                      </div>
-                      <div className="prose-conduikt">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {parsed.content_markdown}
-                        </ReactMarkdown>
+                    <div className="rounded-xl border border-border-default bg-surface-0 overflow-hidden max-h-[600px] overflow-y-auto">
+                      {/* Hero image area */}
+                      {selectedImage ? (
+                        <div className="relative group">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={selectedImage.urls.regular}
+                            alt={selectedImage.alt_description || parsed.meta_title}
+                            className="w-full h-48 object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                            <button
+                              onClick={() => fetchImages(parsed.featured_image_query)}
+                              className="rounded-lg bg-surface-1/90 px-3 py-1.5 text-small text-text-primary hover:bg-surface-2 transition-colors"
+                            >
+                              Change image
+                            </button>
+                            <button
+                              onClick={() => setSelectedImage(null)}
+                              className="rounded-lg bg-surface-1/90 p-1.5 text-text-primary hover:bg-surface-2 transition-colors"
+                            >
+                              <CloseIcon className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                          {/* Attribution */}
+                          <a
+                            href={`${selectedImage.user.links.html}?utm_source=conduikt&utm_medium=referral`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="absolute bottom-2 right-2 text-[10px] text-white/70 bg-black/40 px-1.5 py-0.5 rounded hover:text-white/100 transition-colors"
+                          >
+                            Photo by {selectedImage.user.name} on Unsplash
+                          </a>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between px-5 pt-4">
+                          {parsed.featured_image_query && (
+                            <button
+                              onClick={() => fetchImages(parsed.featured_image_query)}
+                              disabled={imageLoading}
+                              className="flex items-center gap-2 rounded-lg border border-border-default bg-surface-1 px-3 py-2 text-small text-text-secondary hover:border-accent/40 hover:text-text-primary transition-colors"
+                            >
+                              {imageLoading ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <ImageIcon className="h-3.5 w-3.5" />
+                              )}
+                              {imageLoading ? "Searching…" : `Find hero image: "${parsed.featured_image_query}"`}
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Image picker grid */}
+                      {showImagePicker && imagePhotos.length > 0 && (
+                        <div className="mx-5 mt-3 mb-1">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-small text-text-tertiary">Select a hero image</p>
+                            <button
+                              onClick={() => setShowImagePicker(false)}
+                              className="p-1 text-text-tertiary hover:text-text-primary"
+                            >
+                              <CloseIcon className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2">
+                            {imagePhotos.map((photo) => (
+                              <button
+                                key={photo.id}
+                                onClick={() => selectImage(photo)}
+                                className="group relative rounded-lg overflow-hidden border-2 border-transparent hover:border-accent transition-all aspect-video"
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={photo.urls.small}
+                                  alt={photo.alt_description || ""}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="p-6">
+                        <div className="flex items-center gap-3 mb-5 pb-4 border-b border-border-subtle">
+                          <Badge variant="secondary">
+                            ~{parsed.word_count?.toLocaleString() ?? "—"} words
+                          </Badge>
+                          <Badge variant="secondary">
+                            {parsed.reading_time_minutes ?? "—"} min read
+                          </Badge>
+                        </div>
+                        <div className="prose-conduikt">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {parsed.content_markdown}
+                          </ReactMarkdown>
+                        </div>
                       </div>
                     </div>
                   </TabsContent>
