@@ -276,7 +276,7 @@ export default function LandingPage() {
       </section>
 
       {/* Features Grid */}
-      <section className="py-20">
+      <section id="features" className="py-20">
         <div className="mx-auto max-w-6xl px-6">
           <div className="text-center mb-16">
             <h2 className="text-h1 text-text-primary">
@@ -304,7 +304,7 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing */}
-      <section className="py-20 border-t border-border-subtle">
+      <section id="pricing" className="py-20 border-t border-border-subtle">
         <div className="mx-auto max-w-6xl px-6">
           <div className="text-center mb-16">
             <h2 className="text-h1 text-text-primary">Simple, transparent pricing</h2>

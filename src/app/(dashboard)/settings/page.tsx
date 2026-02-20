@@ -34,7 +34,7 @@ const settingsNav = [
     icon: Zap,
     active: false,
   },
-  { name: "Team", href: "/settings/team", icon: Users, active: false, comingSoon: true },
+  { name: "Team", href: "/settings/team", icon: Users, active: false },
 ];
 
 export default function SettingsPage() {
@@ -104,31 +104,20 @@ export default function SettingsPage() {
         {/* Settings Nav */}
         <nav className="lg:col-span-1">
           <div className="space-y-1">
-            {settingsNav.map((item) =>
-              item.comingSoon ? (
-                <span
-                  key={item.name}
-                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-small font-medium text-text-tertiary/40 cursor-not-allowed"
-                >
-                  <item.icon className="h-4 w-4" />
-                  {item.name}
-                  <span className="ml-auto text-[0.6rem] uppercase tracking-wider">Soon</span>
-                </span>
-              ) : (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex items-center gap-2 rounded-lg px-3 py-2 text-small font-medium transition-colors ${
-                    item.active
-                      ? "bg-accent-muted text-accent"
-                      : "text-text-secondary hover:bg-surface-2 hover:text-text-primary"
-                  }`}
-                >
-                  <item.icon className="h-4 w-4" />
-                  {item.name}
-                </Link>
-              )
-            )}
+            {settingsNav.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`flex items-center gap-2 rounded-lg px-3 py-2 text-small font-medium transition-colors ${
+                  item.active
+                    ? "bg-accent-muted text-accent"
+                    : "text-text-secondary hover:bg-surface-2 hover:text-text-primary"
+                }`}
+              >
+                <item.icon className="h-4 w-4" />
+                {item.name}
+              </Link>
+            ))}
           </div>
         </nav>
 
