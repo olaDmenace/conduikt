@@ -132,14 +132,13 @@ export const AGENT_REGISTRY: AgentDefinition[] = [
     ctaLabel: "View Playbook",
     route: "growth",
   },
-  // --- Coming Soon ---
   {
     id: "campaigns",
     name: "Campaign Agent",
     shortName: "Campaigns",
     icon: "Zap",
     description: "Orchestrate multi-step marketing campaigns",
-    status: "coming_soon",
+    status: "active",
     tier: "pro",
     category: "distribution",
     ctaLabel: "Build Campaign",
@@ -151,12 +150,13 @@ export const AGENT_REGISTRY: AgentDefinition[] = [
     shortName: "Calendar",
     icon: "Calendar",
     description: "Schedule and manage content publishing",
-    status: "coming_soon",
+    status: "active",
     tier: "pro",
     category: "distribution",
     ctaLabel: "View Calendar",
     route: "calendar",
   },
+  // --- Coming Soon ---
   {
     id: "ab-test-setup",
     name: "A/B Test Agent",

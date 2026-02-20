@@ -134,16 +134,28 @@ export default function LandingPage() {
           </Link>
           <div className="hidden items-center gap-8 md:flex">
             <Link
-              href="/features"
+              href="#features"
               className="text-small text-text-secondary hover:text-text-primary transition-colors"
             >
               Features
             </Link>
             <Link
-              href="/pricing"
+              href="#pricing"
               className="text-small text-text-secondary hover:text-text-primary transition-colors"
             >
               Pricing
+            </Link>
+            <Link
+              href="/compare/jasper"
+              className="text-small text-text-secondary hover:text-text-primary transition-colors"
+            >
+              Compare
+            </Link>
+            <Link
+              href="/launch"
+              className="text-small text-text-secondary hover:text-text-primary transition-colors"
+            >
+              Launch
             </Link>
           </div>
           <div className="flex items-center gap-3">
@@ -355,12 +367,17 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="border-t border-border-subtle py-12">
-        <div className="mx-auto max-w-6xl px-6 flex items-center justify-between">
+        <div className="mx-auto max-w-6xl px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div className="flex h-6 w-6 items-center justify-center rounded bg-gradient-to-br from-accent to-[#C88550]">
               <span className="text-[0.625rem] font-bold text-surface-0">C</span>
             </div>
             <span className="text-small text-text-secondary">Conduikt by Technicity Digital</span>
+          </div>
+          <div className="flex items-center gap-6 text-small text-text-tertiary">
+            <Link href="/compare/jasper" className="hover:text-text-secondary transition-colors">Compare</Link>
+            <Link href="/guides/social-media-marketing" className="hover:text-text-secondary transition-colors">Guides</Link>
+            <Link href="/launch" className="hover:text-text-secondary transition-colors">Launch</Link>
           </div>
           <p className="text-small text-text-tertiary">Built with Claude Code in Lagos, Nigeria</p>
         </div>

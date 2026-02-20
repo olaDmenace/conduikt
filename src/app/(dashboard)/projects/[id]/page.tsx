@@ -17,6 +17,9 @@ import {
   Key,
   TrendingUp,
   Lock,
+  Zap,
+  Calendar,
+  GitBranch,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -37,6 +40,9 @@ const ICON_MAP: Record<string, React.ElementType> = {
   FileText,
   Key,
   TrendingUp,
+  Zap,
+  Calendar,
+  GitBranch,
 };
 
 interface Project {
