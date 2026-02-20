@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
         if (projectId) {
           await supabase.from("ai_generations").insert({
             project_id: projectId,
-            skill_used: skill.id,
+            agent_used: skill.id,
             input_tokens: inputTokens,
             output_tokens: outputTokens,
             model: skill.model,

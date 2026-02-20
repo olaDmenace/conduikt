@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
   // Log generation
   await supabase.from("ai_generations").insert({
     project_id: projectId,
-    skill_used: skill.id,
+    agent_used: skill.id,
     input_tokens: result.inputTokens,
     output_tokens: result.outputTokens,
     model: result.model,

@@ -56,7 +56,7 @@ export async function GET(
       .eq("project_id", id),
     supabase
       .from("ai_generations")
-      .select("skill_used, created_at")
+      .select("agent_used, created_at")
       .eq("project_id", id)
       .order("created_at", { ascending: false }),
   ]);
@@ -67,7 +67,7 @@ export async function GET(
 
   // Helper: last generation for a skill
   function lastGen(skillId: string) {
-    return generations.find((g) => g.skill_used === skillId)?.created_at ?? null;
+    return generations.find((g) => g.agent_used === skillId)?.created_at ?? null;
   }
 
   // Helper: asset count + last
@@ -152,7 +152,7 @@ export async function GET(
 
   // Competitor Analysis
   const competitorGens = generations.filter(
-    (g) => g.skill_used === "competitor-analysis"
+    (g) => g.agent_used === "competitor-analysis"
   ).length;
   const competitorLast = lastGen("competitor-analysis");
   metrics["competitor-analysis"] = {
@@ -163,7 +163,7 @@ export async function GET(
 
   // Keyword Research
   const keywordGens = generations.filter(
-    (g) => g.skill_used === "keyword-research"
+    (g) => g.agent_used === "keyword-research"
   ).length;
   const keywordLast = lastGen("keyword-research");
   metrics["keyword-research"] = {
@@ -174,7 +174,7 @@ export async function GET(
 
   // Growth Playbook
   const growthGens = generations.filter(
-    (g) => g.skill_used === "growth-playbook"
+    (g) => g.agent_used === "growth-playbook"
   ).length;
   const growthLast = lastGen("growth-playbook");
   metrics["growth-playbook"] = {
@@ -184,7 +184,7 @@ export async function GET(
   };
 
   // Page CRO
-  const croGens = generations.filter((g) => g.skill_used === "page-cro").length;
+  const croGens = generations.filter((g) => g.agent_used === "page-cro").length;
   const croLast = lastGen("page-cro");
   metrics["page-cro"] = {
     primary: croGens > 0 ? `${croGens} analysis run${croGens !== 1 ? "s" : ""}` : "Not used yet",

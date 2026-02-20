@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
   await Promise.all([
     supabase.from("ai_generations").insert({
       project_id: projectId,
-      skill_used: "seo-audit",
+      agent_used: "seo-audit",
       input_tokens: result.inputTokens,
       output_tokens: result.outputTokens,
       model: result.model,

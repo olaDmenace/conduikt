@@ -34,7 +34,7 @@ import { ProjectNav } from "@/src/components/layout/project-nav";
 
 interface Generation {
   id: string;
-  skill_used: string;
+  agent_used: string;
   input_tokens: number | null;
   output_tokens: number | null;
   model: string | null;
@@ -142,7 +142,7 @@ export default function AnalyticsPage() {
 
   const agentCounts: Record<string, number> = {};
   for (const g of generations) {
-    agentCounts[g.skill_used] = (agentCounts[g.skill_used] ?? 0) + 1;
+    agentCounts[g.agent_used] = (agentCounts[g.agent_used] ?? 0) + 1;
   }
   const mostUsedAgent =
     Object.entries(agentCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
@@ -481,7 +481,7 @@ export default function AnalyticsPage() {
                           >
                             <td className="px-6 py-4">
                               <Badge variant="secondary">
-                                {agentLabels[gen.skill_used as string] ?? gen.skill_used}
+                                {agentLabels[gen.agent_used as string] ?? gen.agent_used}
                               </Badge>
                             </td>
                             <td className="px-6 py-4 text-small text-text-secondary font-mono">

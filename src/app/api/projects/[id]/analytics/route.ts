@@ -29,7 +29,7 @@ export async function GET(
   const [generationsRes, auditsRes, assetsRes] = await Promise.all([
     supabase
       .from("ai_generations")
-      .select("id, skill_used, input_tokens, output_tokens, model, duration_ms, created_at")
+      .select("id, agent_used, input_tokens, output_tokens, model, duration_ms, created_at")
       .eq("project_id", id)
       .order("created_at", { ascending: true }),
     supabase
