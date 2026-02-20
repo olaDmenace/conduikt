@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-// This route is called by Vercel Cron every 5 minutes.
+// This route is called by Vercel Cron once daily (Hobby plan limit).
+// Upgrade to Vercel Pro for more frequent schedules (e.g. every 5 min).
 // It picks up pending scheduled_posts whose scheduled_for time has passed
 // and publishes them via the existing /api/publish/x and /api/publish/linkedin routes.
 //
