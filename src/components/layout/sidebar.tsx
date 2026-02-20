@@ -1,53 +1,121 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
-  FolderKanban,
   Settings,
-  Zap,
-  ChevronLeft,
-  ChevronRight,
   Sparkles,
   LogOut,
   X,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  Plus,
+  BarChart3,
+  Search,
+  Target,
+  PenTool,
+  Smartphone,
+  Mail,
+  Map,
+  Flag,
+  FileText,
+  Key,
+  TrendingUp,
+  Zap,
+  Calendar,
+  GitBranch,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils/cn";
 import { useUIStore } from "@/src/stores/ui-store";
 import { createClient } from "@/src/lib/supabase/client";
 import { useToast } from "@/src/components/ui/toast";
+import { AGENT_REGISTRY } from "@/src/lib/ai/agents/registry";
 
-const navigation = [
-  {
-    label: "OVERVIEW",
-    items: [
-      { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-      { name: "Projects", href: "/projects", icon: FolderKanban },
-    ],
-  },
-  {
-    label: "TOOLS",
-    items: [
-      { name: "Playground", href: "/playground", icon: Sparkles },
-    ],
-  },
-  {
-    label: "ACCOUNT",
-    items: [
-      { name: "Settings", href: "/settings", icon: Settings },
-      { name: "Integrations", href: "/settings/integrations", icon: Zap },
-    ],
-  },
-] as const;
+// Map Lucide icon names to components
+const ICON_MAP: Record<string, React.ElementType> = {
+  Search,
+  Target,
+  PenTool,
+  Smartphone,
+  Mail,
+  Map,
+  Flag,
+  FileText,
+  Key,
+  TrendingUp,
+  Zap,
+  Calendar,
+  GitBranch,
+  BarChart3,
+};
+
+const PLAN_LIMITS: Record<string, number> = {
+  free: 5,
+  pro: 100,
+  growth: 999999,
+  agency: 999999,
+};
+
+interface Project {
+  id: string;
+  name: string;
+  website_url: string | null;
+}
+
+interface Profile {
+  plan: string;
+  generation_count: number;
+}
+
+// Active agents (non-coming-soon) to show in sidebar
+const SIDEBAR_AGENTS = AGENT_REGISTRY.filter((a) => a.status === "active");
 
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { sidebarCollapsed, toggleSidebar, mobileMenuOpen, setMobileMenuOpen } =
-    useUIStore();
+  const {
+    sidebarCollapsed,
+    toggleSidebar,
+    mobileMenuOpen,
+    setMobileMenuOpen,
+    expandedProjectIds,
+    toggleProjectExpanded,
+  } = useUIStore();
+
   const supabase = createClient();
   const { toast } = useToast();
+
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [profile, setProfile] = useState<Profile | null>(null);
+
+  useEffect(() => {
+    async function loadData() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const [projectsRes, profileRes] = await Promise.all([
+        supabase
+          .from("projects")
+          .select("id, name, website_url")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("profiles")
+          .select("plan, generation_count")
+          .eq("id", user.id)
+          .single(),
+      ]);
+
+      if (projectsRes.data) setProjects(projectsRes.data);
+      if (profileRes.data) setProfile(profileRes.data);
+    }
+    loadData();
+  }, []);
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -58,13 +126,18 @@ export function Sidebar() {
   }
 
   function handleNavClick() {
-    // Close mobile menu on navigation
     setMobileMenuOpen(false);
   }
 
+  const showLabel = !sidebarCollapsed || mobileMenuOpen;
+  const plan = profile?.plan ?? "free";
+  const usageCount = profile?.generation_count ?? 0;
+  const usageLimit = PLAN_LIMITS[plan] ?? 5;
+  const usagePct = usageLimit >= 999999 ? 0 : Math.min((usageCount / usageLimit) * 100, 100);
+
   return (
     <>
-      {/* Mobile overlay backdrop */}
+      {/* Mobile overlay */}
       {mobileMenuOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
@@ -75,18 +148,15 @@ export function Sidebar() {
       <aside
         className={cn(
           "fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-border-default bg-surface-0 transition-all duration-300",
-          // Mobile: off-screen by default, slide in when open
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full",
           "md:translate-x-0",
-          // Desktop: collapse width
           sidebarCollapsed ? "md:w-16" : "md:w-[260px]",
-          // Mobile: always full sidebar width
           "w-[260px]"
         )}
       >
         {/* Logo */}
-        <div className="flex h-16 items-center justify-between border-b border-border-subtle px-4">
-          {(!sidebarCollapsed || mobileMenuOpen) && (
+        <div className="flex h-16 items-center justify-between border-b border-border-subtle px-4 shrink-0">
+          {showLabel && (
             <Link
               href="/dashboard"
               className="flex items-center gap-2"
@@ -100,7 +170,7 @@ export function Sidebar() {
               </span>
             </Link>
           )}
-          {sidebarCollapsed && !mobileMenuOpen && (
+          {!showLabel && (
             <Link
               href="/dashboard"
               className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-accent to-[#C88550]"
@@ -108,7 +178,6 @@ export function Sidebar() {
               <span className="text-sm font-bold text-surface-0">C</span>
             </Link>
           )}
-          {/* Mobile close button */}
           {mobileMenuOpen && (
             <button
               onClick={() => setMobileMenuOpen(false)}
@@ -119,79 +188,228 @@ export function Sidebar() {
           )}
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4">
-          {navigation.map((section) => (
-            <div key={section.label} className="mb-6">
-              {(!sidebarCollapsed || mobileMenuOpen) && (
-                <p className="text-caption mb-2 px-3 text-text-tertiary">
-                  {section.label}
-                </p>
-              )}
-              <ul className="space-y-1">
-                {section.items.map((item) => {
-                  const isComingSoon = "comingSoon" in item && item.comingSoon;
-                  const isActive =
-                    !isComingSoon &&
-                    (pathname === item.href ||
-                      (item.href !== "/dashboard" &&
-                        pathname.startsWith(item.href)));
-                  const showLabel = !sidebarCollapsed || mobileMenuOpen;
+        {/* Scrollable nav */}
+        <nav className="flex-1 overflow-y-auto px-2 py-3">
+          {/* Dashboard */}
+          <SidebarLink
+            href="/dashboard"
+            icon={LayoutDashboard}
+            label="Dashboard"
+            active={pathname === "/dashboard"}
+            showLabel={showLabel}
+            onClick={handleNavClick}
+          />
 
-                  if (isComingSoon) {
-                    return (
-                      <li key={item.name}>
-                        <span className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[0.875rem] font-medium text-text-tertiary/50 cursor-not-allowed">
-                          <item.icon className="h-[18px] w-[18px] shrink-0" />
-                          {showLabel && (
-                            <>
-                              <span>{item.name}</span>
-                              <span className="ml-auto text-[0.625rem] uppercase tracking-wider opacity-60">
-                                Soon
-                              </span>
-                            </>
-                          )}
-                        </span>
-                      </li>
-                    );
-                  }
+          {/* Projects section */}
+          {showLabel && (
+            <p className="text-caption px-3 mt-5 mb-2 text-text-tertiary tracking-wider uppercase">
+              My Projects
+            </p>
+          )}
 
-                  return (
-                    <li key={item.name}>
-                      <Link
-                        href={item.href}
-                        onClick={handleNavClick}
+          <div className="space-y-0.5">
+            {projects.map((project) => {
+              const isExpanded = expandedProjectIds.includes(project.id);
+              const projectBase = `/projects/${project.id}`;
+              const agentsBase = `${projectBase}/agents`;
+              const isInProject = pathname.startsWith(projectBase);
+
+              return (
+                <div key={project.id}>
+                  {/* Project header */}
+                  {showLabel ? (
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => toggleProjectExpanded(project.id)}
                         className={cn(
-                          "flex items-center gap-3 rounded-lg px-3 py-2.5 text-[0.875rem] font-medium transition-all duration-150",
-                          isActive
-                            ? "border-l-2 border-accent bg-accent-muted text-accent"
+                          "flex flex-1 items-center gap-2.5 rounded-lg px-3 py-2 text-[0.875rem] font-medium transition-colors min-w-0",
+                          isInProject
+                            ? "text-accent bg-accent-muted"
                             : "text-text-secondary hover:bg-surface-2 hover:text-text-primary"
                         )}
                       >
-                        <item.icon className="h-[18px] w-[18px] shrink-0" />
-                        {showLabel && <span>{item.name}</span>}
+                        <span
+                          className={cn(
+                            "flex h-5 w-5 shrink-0 items-center justify-center rounded text-[10px] font-bold",
+                            isInProject
+                              ? "bg-accent/20 text-accent"
+                              : "bg-surface-3 text-text-tertiary"
+                          )}
+                        >
+                          {project.name.charAt(0).toUpperCase()}
+                        </span>
+                        <span className="truncate">{project.name}</span>
+                        <ChevronDown
+                          className={cn(
+                            "ml-auto h-3.5 w-3.5 shrink-0 transition-transform duration-200",
+                            isExpanded && "rotate-180"
+                          )}
+                        />
+                      </button>
+                    </div>
+                  ) : (
+                    // Collapsed: just show avatar
+                    <button
+                      onClick={() => toggleProjectExpanded(project.id)}
+                      className={cn(
+                        "flex w-full items-center justify-center rounded-lg p-2.5 text-[0.875rem] font-medium transition-colors",
+                        isInProject
+                          ? "bg-accent-muted text-accent"
+                          : "text-text-secondary hover:bg-surface-2"
+                      )}
+                      title={project.name}
+                    >
+                      <span className="flex h-6 w-6 items-center justify-center rounded text-[11px] font-bold bg-surface-3 text-text-tertiary">
+                        {project.name.charAt(0).toUpperCase()}
+                      </span>
+                    </button>
+                  )}
+
+                  {/* Agent list — only visible when expanded + showLabel */}
+                  {isExpanded && showLabel && (
+                    <div className="ml-3 pl-3 border-l border-border-subtle mt-0.5 mb-1 space-y-0.5">
+                      {SIDEBAR_AGENTS.map((agent) => {
+                        const href = `${agentsBase}/${agent.route}`;
+                        const isActive = pathname === href || pathname.startsWith(href);
+                        const IconComp = ICON_MAP[agent.icon] ?? FileText;
+
+                        return (
+                          <Link
+                            key={agent.id}
+                            href={href}
+                            onClick={handleNavClick}
+                            title={agent.description}
+                            className={cn(
+                              "flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[0.8125rem] font-medium transition-colors",
+                              isActive
+                                ? "bg-surface-2 text-accent"
+                                : "text-text-tertiary hover:bg-surface-2 hover:text-text-primary"
+                            )}
+                          >
+                            <IconComp className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">{agent.shortName}</span>
+                          </Link>
+                        );
+                      })}
+
+                      {/* Non-agent project pages */}
+                      <Link
+                        href={`${projectBase}/analytics`}
+                        onClick={handleNavClick}
+                        className={cn(
+                          "flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[0.8125rem] font-medium transition-colors",
+                          pathname.startsWith(`${projectBase}/analytics`)
+                            ? "bg-surface-2 text-accent"
+                            : "text-text-tertiary hover:bg-surface-2 hover:text-text-primary"
+                        )}
+                      >
+                        <BarChart3 className="h-3.5 w-3.5 shrink-0" />
+                        <span>Analytics</span>
                       </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
+                      <Link
+                        href={`${projectBase}/settings`}
+                        onClick={handleNavClick}
+                        className={cn(
+                          "flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[0.8125rem] font-medium transition-colors",
+                          pathname.startsWith(`${projectBase}/settings`)
+                            ? "bg-surface-2 text-accent"
+                            : "text-text-tertiary hover:bg-surface-2 hover:text-text-primary"
+                        )}
+                      >
+                        <Settings className="h-3.5 w-3.5 shrink-0" />
+                        <span>Settings</span>
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* New Project button */}
+            {showLabel && (
+              <Link
+                href="/projects/new"
+                onClick={handleNavClick}
+                className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[0.875rem] font-medium text-text-tertiary hover:bg-surface-2 hover:text-text-primary transition-colors"
+              >
+                <Plus className="h-4 w-4 shrink-0" />
+                <span>New Project</span>
+              </Link>
+            )}
+          </div>
+
+          {/* Divider */}
+          <div className="my-3 border-t border-border-subtle" />
+
+          {/* Global tools */}
+          <SidebarLink
+            href="/playground"
+            icon={Sparkles}
+            label="Playground"
+            active={pathname.startsWith("/playground")}
+            showLabel={showLabel}
+            onClick={handleNavClick}
+          />
+          <SidebarLink
+            href="/settings"
+            icon={Settings}
+            label="Settings"
+            active={pathname === "/settings" || (pathname.startsWith("/settings") && !pathname.startsWith("/settings/"))}
+            showLabel={showLabel}
+            onClick={handleNavClick}
+          />
         </nav>
 
-        {/* Bottom: Logout + Collapse */}
-        <div className="border-t border-border-subtle p-3 space-y-1">
+        {/* Plan badge + sign out + collapse */}
+        <div className="border-t border-border-subtle p-3 space-y-2 shrink-0">
+          {/* Plan + usage */}
+          {showLabel && profile && (
+            <div className="rounded-lg border border-border-default bg-surface-1 px-3 py-2.5">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-caption font-medium text-text-secondary capitalize">
+                  {plan} Plan
+                </span>
+                {usageLimit < 999999 && (
+                  <span className="text-caption text-text-tertiary font-mono">
+                    {usageCount}/{usageLimit}
+                  </span>
+                )}
+              </div>
+              {usageLimit < 999999 && (
+                <div className="h-1 rounded-full bg-surface-3 overflow-hidden">
+                  <div
+                    className={cn(
+                      "h-full rounded-full transition-all duration-500",
+                      usagePct >= 90 ? "bg-error" : usagePct >= 70 ? "bg-warning" : "bg-accent"
+                    )}
+                    style={{ width: `${usagePct}%` }}
+                  />
+                </div>
+              )}
+              {plan === "free" && (
+                <Link
+                  href="/settings/billing"
+                  className="mt-2 block text-center text-caption text-accent hover:text-accent-hover transition-colors"
+                  onClick={handleNavClick}
+                >
+                  Upgrade →
+                </Link>
+              )}
+            </div>
+          )}
+
           <button
             onClick={handleLogout}
             className={cn(
-              "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[0.875rem] font-medium text-text-secondary hover:bg-error/10 hover:text-error transition-colors",
-              sidebarCollapsed && !mobileMenuOpen && "justify-center"
+              "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[0.875rem] font-medium text-text-secondary hover:bg-error/10 hover:text-error transition-colors",
+              !showLabel && "justify-center"
             )}
           >
             <LogOut className="h-[18px] w-[18px] shrink-0" />
-            {(!sidebarCollapsed || mobileMenuOpen) && <span>Sign out</span>}
+            {showLabel && <span>Sign out</span>}
           </button>
-          {/* Desktop-only collapse toggle */}
+
+          {/* Desktop collapse toggle */}
           <button
             onClick={toggleSidebar}
             className="hidden md:flex w-full items-center justify-center rounded-lg p-2 text-text-tertiary hover:bg-surface-2 hover:text-text-primary transition-colors"
@@ -205,5 +423,39 @@ export function Sidebar() {
         </div>
       </aside>
     </>
+  );
+}
+
+function SidebarLink({
+  href,
+  icon: Icon,
+  label,
+  active,
+  showLabel,
+  onClick,
+}: {
+  href: string;
+  icon: React.ElementType;
+  label: string;
+  active: boolean;
+  showLabel: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      title={!showLabel ? label : undefined}
+      className={cn(
+        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-[0.875rem] font-medium transition-all duration-150",
+        !showLabel && "justify-center",
+        active
+          ? "border-l-2 border-accent bg-accent-muted text-accent"
+          : "text-text-secondary hover:bg-surface-2 hover:text-text-primary"
+      )}
+    >
+      <Icon className="h-[18px] w-[18px] shrink-0" />
+      {showLabel && <span>{label}</span>}
+    </Link>
   );
 }

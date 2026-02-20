@@ -1,4 +1,4 @@
-import type { ProjectContext } from "./skills/types";
+import type { ProjectContext } from "./agents/types";
 
 /**
  * Builds a ProjectContext from a database project record.

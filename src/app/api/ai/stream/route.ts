@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 import { getAnthropicClient } from "@/src/lib/ai/client";
-import { getSkill } from "@/src/lib/ai/skills";
-import type { ProjectContext } from "@/src/lib/ai/skills/types";
+import { getAgent } from "@/src/lib/ai/agents";
+import type { ProjectContext } from "@/src/lib/ai/agents/types";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -17,11 +17,11 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { skillId, input, projectId } = body;
+  const { skillId, agentId, input, projectId } = body;
 
-  const skill = getSkill(skillId);
+  const skill = getAgent(agentId ?? skillId);
   if (!skill) {
-    return new Response(JSON.stringify({ error: "Unknown skill" }), {
+    return new Response(JSON.stringify({ error: "Unknown agent" }), {
       status: 400,
     });
   }

@@ -27,7 +27,7 @@ export interface ProjectContext {
   }>;
 }
 
-export interface SkillConfig {
+export interface AgentConfig {
   id: string;
   name: string;
   description: string;
@@ -35,10 +35,10 @@ export interface SkillConfig {
   maxTokens: number;
   buildSystemPrompt: (context: ProjectContext) => string;
   buildUserPrompt: (input: Record<string, unknown>) => string;
-  parseResponse: (response: string) => SkillOutput;
+  parseResponse: (response: string) => AgentOutput;
 }
 
-export interface SkillOutput {
+export interface AgentOutput {
   type: string;
   data: unknown;
   usage: {
@@ -46,3 +46,7 @@ export interface SkillOutput {
     outputTokens: number;
   };
 }
+
+// Legacy aliases for backward compatibility during migration
+export type SkillConfig = AgentConfig;
+export type SkillOutput = AgentOutput;

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 import { generateWithClaude } from "@/src/lib/ai/client";
-import { getSkill } from "@/src/lib/ai/skills";
+import { getAgent } from "@/src/lib/ai/agents";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
 
 export async function POST(request: NextRequest) {
@@ -16,12 +16,12 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { projectId, skillId, input } = body;
+  const { projectId, skillId, agentId, input } = body;
 
-  // Validate skill
-  const skill = getSkill(skillId);
+  // Validate agent
+  const skill = getAgent(agentId ?? skillId);
   if (!skill) {
-    return NextResponse.json({ error: "Unknown skill" }, { status: 400 });
+    return NextResponse.json({ error: "Unknown agent" }, { status: 400 });
   }
 
   // Fetch project

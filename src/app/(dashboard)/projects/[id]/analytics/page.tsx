@@ -60,7 +60,7 @@ interface AssetRecord {
 
 // ---------- constants ----------
 
-const skillLabels: Record<string, string> = {
+const agentLabels: Record<string, string> = {
   "seo-audit": "SEO Audit",
   "page-cro": "Page CRO",
   copywriting: "Copywriting",
@@ -69,6 +69,8 @@ const skillLabels: Record<string, string> = {
   "content-strategy": "Content Strategy",
   "competitor-analysis": "Competitor Analysis",
   "blog-post": "Blog Post",
+  "keyword-research": "Keyword Research",
+  "growth-playbook": "Growth Playbook",
 };
 
 const ACCENT = "#D4945A";
@@ -138,12 +140,12 @@ export default function AnalyticsPage() {
   );
   const totalAssets = assets.length;
 
-  const skillCounts: Record<string, number> = {};
+  const agentCounts: Record<string, number> = {};
   for (const g of generations) {
-    skillCounts[g.skill_used] = (skillCounts[g.skill_used] ?? 0) + 1;
+    agentCounts[g.skill_used] = (agentCounts[g.skill_used] ?? 0) + 1;
   }
-  const mostUsedSkill =
-    Object.entries(skillCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+  const mostUsedAgent =
+    Object.entries(agentCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
 
   // Audit score trend data
   const auditTrendData = audits
@@ -172,12 +174,12 @@ export default function AnalyticsPage() {
     count: weekCounts[wk],
   }));
 
-  // Skill breakdown (top 6)
-  const skillBreakdown = Object.entries(skillCounts)
+  // Agent usage breakdown (top 6)
+  const agentBreakdown = Object.entries(agentCounts)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 6)
-    .map(([skill, count]) => ({
-      skill: skillLabels[skill] ?? skill,
+    .map(([agent, count]) => ({
+      agent: agentLabels[agent] ?? agent,
       count,
       pct: Math.round((count / totalGenerations) * 100),
     }));
@@ -225,8 +227,8 @@ export default function AnalyticsPage() {
                 delay: "120ms",
               },
               {
-                label: "Top Skill",
-                value: mostUsedSkill ? (skillLabels[mostUsedSkill] ?? mostUsedSkill) : "—",
+                label: "Top Agent",
+                value: mostUsedAgent ? (agentLabels[mostUsedAgent] ?? mostUsedAgent) : "—",
                 icon: Star,
                 delay: "180ms",
                 small: true,
@@ -404,21 +406,21 @@ export default function AnalyticsPage() {
             </Card>
           </div>
 
-          {/* Skill Usage Breakdown */}
-          {skillBreakdown.length > 0 && (
+          {/* Agent Usage Breakdown */}
+          {agentBreakdown.length > 0 && (
             <Card className="animate-in mb-6" style={{ animationDelay: "240ms" }}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-h3">
                   <BarChart3 className="h-4 w-4 text-accent" />
-                  Skill Usage
+                  Agent Usage
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {skillBreakdown.map((item) => (
-                    <div key={item.skill} className="flex items-center gap-3">
+                  {agentBreakdown.map((item) => (
+                    <div key={item.agent} className="flex items-center gap-3">
                       <span className="text-small text-text-secondary w-36 shrink-0 truncate">
-                        {item.skill}
+                        {item.agent}
                       </span>
                       <div className="flex-1 h-2 rounded-full bg-surface-2 overflow-hidden">
                         <div
@@ -462,7 +464,7 @@ export default function AnalyticsPage() {
                   <table className="w-full text-left">
                     <thead>
                       <tr className="border-b border-border-subtle">
-                        <th className="px-6 py-3 text-caption text-text-tertiary font-medium">Skill</th>
+                        <th className="px-6 py-3 text-caption text-text-tertiary font-medium">Agent</th>
                         <th className="px-6 py-3 text-caption text-text-tertiary font-medium">Model</th>
                         <th className="px-6 py-3 text-caption text-text-tertiary font-medium text-right">Tokens</th>
                         <th className="px-6 py-3 text-caption text-text-tertiary font-medium text-right">Duration</th>
@@ -479,7 +481,7 @@ export default function AnalyticsPage() {
                           >
                             <td className="px-6 py-4">
                               <Badge variant="secondary">
-                                {skillLabels[gen.skill_used] ?? gen.skill_used}
+                                {agentLabels[gen.skill_used as string] ?? gen.skill_used}
                               </Badge>
                             </td>
                             <td className="px-6 py-4 text-small text-text-secondary font-mono">

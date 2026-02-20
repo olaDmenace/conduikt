@@ -8,9 +8,9 @@ import { competitorAnalysisSkill } from "./competitor-analysis";
 import { blogPostSkill } from "./blog-post";
 import { keywordResearchSkill } from "./keyword-research";
 import { growthPlaybookSkill } from "./growth-playbook";
-import type { SkillConfig } from "./types";
+import type { AgentConfig } from "./types";
 
-export const skills: Record<string, SkillConfig> = {
+export const agents: Record<string, AgentConfig> = {
   "seo-audit": seoAuditSkill,
   "page-cro": pageCroSkill,
   copywriting: copywritingSkill,
@@ -23,16 +23,25 @@ export const skills: Record<string, SkillConfig> = {
   "growth-playbook": growthPlaybookSkill,
 };
 
-export function getSkill(id: string): SkillConfig | undefined {
-  return skills[id];
+// Legacy alias
+export const skills = agents;
+
+export function getAgent(id: string): AgentConfig | undefined {
+  return agents[id];
 }
 
-export function listSkills(): Array<{ id: string; name: string; description: string }> {
-  return Object.values(skills).map((s) => ({
-    id: s.id,
-    name: s.name,
-    description: s.description,
+// Legacy alias
+export const getSkill = getAgent;
+
+export function listAgents(): Array<{ id: string; name: string; description: string }> {
+  return Object.values(agents).map((a) => ({
+    id: a.id,
+    name: a.name,
+    description: a.description,
   }));
 }
 
-export type { SkillConfig, ProjectContext, SkillOutput } from "./types";
+// Legacy alias
+export const listSkills = listAgents;
+
+export type { AgentConfig, AgentOutput, ProjectContext, SkillConfig, SkillOutput } from "./types";

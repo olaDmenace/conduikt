@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 import { generateWithClaude } from "@/src/lib/ai/client";
-import { seoAuditSkill } from "@/src/lib/ai/skills/seo-audit";
+import { seoAuditSkill } from "@/src/lib/ai/agents/seo-audit";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
 
 export async function POST(request: NextRequest) {

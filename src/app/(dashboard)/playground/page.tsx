@@ -13,7 +13,7 @@ import { Badge } from "@/src/components/ui/badge";
 import { PageHeader } from "@/src/components/layout/page-header";
 import { useToast } from "@/src/components/ui/toast";
 
-const skills = [
+const agents = [
   {
     id: "seo-audit",
     name: "SEO Audit",
@@ -93,7 +93,7 @@ interface UsageInfo {
 }
 
 export default function PlaygroundPage() {
-  const [selectedSkill, setSelectedSkill] = useState("copywriting");
+  const [selectedAgent, setSelectedAgent] = useState("copywriting");
   const [prompt, setPrompt] = useState("");
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<string>("");
@@ -102,7 +102,7 @@ export default function PlaygroundPage() {
   const outputRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  const currentSkill = skills.find((s) => s.id === selectedSkill)!;
+  const currentAgent = agents.find((s) => s.id === selectedAgent)!;
 
   // Auto-scroll output during streaming
   useEffect(() => {
@@ -128,7 +128,7 @@ export default function PlaygroundPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          skillId: selectedSkill,
+          agentId: selectedAgent,
           input: buildInput(),
         }),
       });
@@ -179,8 +179,7 @@ export default function PlaygroundPage() {
   }
 
   function buildInput(): Record<string, unknown> {
-    // Build skill-specific input from the prompt
-    switch (selectedSkill) {
+    switch (selectedAgent) {
       case "seo-audit":
         return { url: prompt, html: "" };
       case "page-cro":
@@ -224,7 +223,7 @@ export default function PlaygroundPage() {
     <div>
       <PageHeader
         title="AI Playground"
-        description="Quick-generate marketing content with any skill"
+        description="Quick-generate marketing content with any agent"
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -235,29 +234,29 @@ export default function PlaygroundPage() {
           </CardHeader>
           <CardContent>
             {/* Skill Selector */}
-            <p className="text-small text-text-secondary mb-2">Select Skill</p>
+            <p className="text-small text-text-secondary mb-2">Select Agent</p>
             <div className="flex flex-wrap gap-2 mb-4">
-              {skills.map((skill) => (
+              {agents.map((agent) => (
                 <button
-                  key={skill.id}
+                  key={agent.id}
                   onClick={() => {
-                    setSelectedSkill(skill.id);
+                    setSelectedAgent(agent.id);
                     setResult("");
                     setUsage(null);
                   }}
                   className={`rounded-lg border px-3 py-1.5 text-small font-medium transition-all ${
-                    selectedSkill === skill.id
+                    selectedAgent === agent.id
                       ? "border-accent bg-accent-muted text-accent"
                       : "border-border-default text-text-secondary hover:border-border-strong"
                   }`}
                 >
-                  {skill.name}
+                  {agent.name}
                 </button>
               ))}
             </div>
 
             <p className="text-small text-text-tertiary mb-3">
-              {currentSkill.description}
+              {currentAgent.description}
             </p>
 
             <form onSubmit={handleGenerate} className="space-y-4">
@@ -268,7 +267,7 @@ export default function PlaygroundPage() {
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  placeholder={currentSkill.placeholder}
+                  placeholder={currentAgent.placeholder}
                   rows={8}
                   className="w-full rounded-lg border border-border-strong bg-surface-0 px-4 py-3 text-text-primary placeholder:text-text-tertiary font-sans text-[0.9375rem] transition-all duration-150 focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-glow)] resize-none"
                 />
@@ -348,7 +347,7 @@ export default function PlaygroundPage() {
               <div className="flex flex-col items-center py-16 text-center">
                 <Sparkles className="h-10 w-10 text-text-tertiary mb-4" />
                 <p className="text-body text-text-secondary">
-                  Select a skill, write your prompt, and hit Generate
+                  Select an agent, write your prompt, and hit Generate
                 </p>
                 <p className="text-small text-text-tertiary mt-2">
                   Results stream in real-time from Claude AI
