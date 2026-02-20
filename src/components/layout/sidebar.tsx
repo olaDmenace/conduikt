@@ -352,7 +352,7 @@ export function Sidebar() {
                 onClick={() => setAgentsMenuOpen((o) => !o)}
                 className={cn(
                   "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[0.875rem] font-medium transition-all duration-150",
-                  pathname.startsWith("/playground")
+                  pathname.startsWith("/agents")
                     ? "border-l-2 border-accent bg-accent-muted text-accent"
                     : "text-text-secondary hover:bg-surface-2 hover:text-text-primary"
                 )}
@@ -370,12 +370,8 @@ export function Sidebar() {
               {agentsMenuOpen && (
                 <div className="ml-3 pl-3 border-l border-border-subtle mt-0.5 mb-1 space-y-0.5">
                   {SIDEBAR_AGENTS.map((agent) => {
-                    const href = `/playground?agent=${agent.id}`;
-                    const isActive =
-                      pathname.startsWith("/playground") &&
-                      (typeof window !== "undefined"
-                        ? new URLSearchParams(window.location.search).get("agent") === agent.id
-                        : false);
+                    const href = `/agents/${agent.route}`;
+                    const isActive = pathname.startsWith(`/agents/${agent.route}`);
                     const IconComp = ICON_MAP[agent.icon] ?? FileText;
                     return (
                       <Link
@@ -399,11 +395,11 @@ export function Sidebar() {
             </div>
           ) : (
             <Link
-              href="/playground"
+              href="/agents/seo-audit"
               title="Agents"
               className={cn(
                 "flex w-full items-center justify-center rounded-lg p-2.5 transition-colors",
-                pathname.startsWith("/playground")
+                pathname.startsWith("/agents")
                   ? "bg-accent-muted text-accent"
                   : "text-text-secondary hover:bg-surface-2 hover:text-text-primary"
               )}

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Bell, Search, Plus, Menu } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { useUIStore } from "@/src/stores/ui-store";
@@ -38,12 +39,16 @@ export function Header() {
 
       {/* Actions */}
       <div className="flex items-center gap-2 md:gap-3">
-        <Button variant="primary" size="sm" className="hidden sm:inline-flex">
-          <Plus className="h-4 w-4" />
-          <span className="hidden md:inline">New Project</span>
+        <Button variant="primary" size="sm" className="hidden sm:inline-flex" asChild>
+          <Link href="/projects/new">
+            <Plus className="h-4 w-4" />
+            <span className="hidden md:inline">New Project</span>
+          </Link>
         </Button>
-        <Button variant="primary" size="sm" className="sm:hidden">
-          <Plus className="h-4 w-4" />
+        <Button variant="primary" size="sm" className="sm:hidden" asChild>
+          <Link href="/projects/new">
+            <Plus className="h-4 w-4" />
+          </Link>
         </Button>
         <button className="relative rounded-lg p-2 text-text-secondary hover:bg-surface-2 hover:text-text-primary transition-colors">
           <Bell className="h-5 w-5" />
