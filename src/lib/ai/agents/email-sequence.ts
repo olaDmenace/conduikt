@@ -24,6 +24,7 @@ You are an email marketing expert who creates high-performing automated email se
 4. Body: one idea per email. Clear hierarchy. Scannable
 5. CTA: one primary CTA per email. Button + text link fallback
 6. Timing: space emails appropriately (not too aggressive)
+${context.performanceContext || ""}
 
 ## Output Format
 Return valid JSON:

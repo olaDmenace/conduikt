@@ -3,6 +3,7 @@ import { createClient } from "@/src/lib/supabase/server";
 import { generateWithClaude } from "@/src/lib/ai/client";
 import { getAgent } from "@/src/lib/ai/agents";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
+import { buildPerformanceContext } from "@/src/lib/ai/performance-context";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -57,8 +58,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Build prompts
+  // Build prompts with performance context
   const context = buildProjectContext(project);
+  const performanceCtx = await buildPerformanceContext(projectId, supabase);
+  if (performanceCtx) {
+    context.performanceContext = performanceCtx;
+  }
   const systemPrompt = skill.buildSystemPrompt(context);
   const userPrompt = skill.buildUserPrompt(input);
 

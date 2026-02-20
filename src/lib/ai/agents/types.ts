@@ -25,6 +25,7 @@ export interface ProjectContext {
     volume?: number;
     difficulty?: number;
   }>;
+  performanceContext?: string;
 }
 
 export interface AgentConfig {

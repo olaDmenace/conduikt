@@ -38,15 +38,26 @@ export async function PATCH(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { full_name } = body;
+  const { full_name, onboarding_completed } = body;
 
-  if (!full_name || typeof full_name !== "string" || full_name.trim().length === 0) {
-    return NextResponse.json({ error: "Name is required" }, { status: 400 });
+  // Build update payload
+  const updates: Record<string, unknown> = {};
+
+  if (full_name && typeof full_name === "string" && full_name.trim().length > 0) {
+    updates.full_name = full_name.trim();
+  }
+
+  if (typeof onboarding_completed === "boolean") {
+    updates.onboarding_completed = onboarding_completed;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
   }
 
   const { data: profile, error } = await supabase
     .from("profiles")
-    .update({ full_name: full_name.trim() })
+    .update(updates)
     .eq("id", user.id)
     .select()
     .single();

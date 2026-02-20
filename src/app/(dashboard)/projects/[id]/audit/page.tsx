@@ -162,19 +162,44 @@ export default function AuditPage({
     <div>
       <PageHeader title="SEO Audit" description={`Last run: ${new Date(latestAudit.created_at).toLocaleDateString()} — ${latestAudit.url}`}>
 
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={handleRerun}
-          disabled={rerunning}
-        >
-          {rerunning ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <RefreshCw className="h-4 w-4" />
-          )}
-          {rerunning ? "Running..." : "Re-run Audit"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={async () => {
+              const res = await fetch(
+                `/api/projects/${id}/audits/${latestAudit.id}/pdf`
+              );
+              if (res.ok) {
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `conduikt-audit-${latestAudit.id.slice(0, 8)}.pdf`;
+                a.click();
+                URL.revokeObjectURL(url);
+              } else {
+                toast("Failed to generate PDF", "error");
+              }
+            }}
+          >
+            <Download className="h-4 w-4" />
+            Download PDF
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleRerun}
+            disabled={rerunning}
+          >
+            {rerunning ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            {rerunning ? "Running..." : "Re-run Audit"}
+          </Button>
+        </div>
       </PageHeader>
 
       <ProjectNav projectId={id} />

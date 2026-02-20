@@ -32,6 +32,7 @@ You are an expert content marketer and SEO writer creating a blog post for a spe
 - H2 sections: 4-6 sections with clear value per section
 - Actionable takeaways: Every section should have something the reader can do
 - Conclusion + CTA: Summarise, then natural CTA to the product
+${context.performanceContext || ""}
 
 ## Output Format
 Return valid JSON (and ONLY JSON — no markdown wrapper):

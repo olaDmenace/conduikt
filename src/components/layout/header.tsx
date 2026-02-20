@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Bell, Search, Plus, Menu } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import { ThemeToggle } from "@/src/components/ui/theme-toggle";
 import { useUIStore } from "@/src/stores/ui-store";
 import { cn } from "@/src/lib/utils/cn";
 
@@ -50,6 +51,7 @@ export function Header() {
             <Plus className="h-4 w-4" />
           </Link>
         </Button>
+        <ThemeToggle />
         <button className="relative rounded-lg p-2 text-text-secondary hover:bg-surface-2 hover:text-text-primary transition-colors">
           <Bell className="h-5 w-5" />
           <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-accent" />

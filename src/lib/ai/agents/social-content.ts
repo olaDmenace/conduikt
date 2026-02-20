@@ -33,6 +33,7 @@ LinkedIn:
 
 ## Content Angles
 Rotate between: educational, storytelling, opinion/hot take, data/stats, behind-the-scenes, social proof
+${context.performanceContext || ""}
 
 ## Output Format
 Return valid JSON:

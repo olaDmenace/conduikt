@@ -18,6 +18,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
+import { OnboardingTour } from "@/src/components/onboarding/onboarding-tour";
 import {
   Card,
   CardContent,
@@ -38,11 +39,13 @@ interface DashboardStats {
   latestAuditScore: number | null;
   plan: string;
   latestProjectId: string | null;
+  onboardingCompleted: boolean;
 }
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     async function fetchStats() {
@@ -50,6 +53,9 @@ export default function DashboardPage() {
       if (res.ok) {
         const data = await res.json();
         setStats(data);
+        if (!data.onboardingCompleted) {
+          setShowOnboarding(true);
+        }
       }
       setLoading(false);
     }
@@ -169,6 +175,9 @@ export default function DashboardPage() {
 
   return (
     <div>
+      {showOnboarding && (
+        <OnboardingTour onComplete={() => setShowOnboarding(false)} />
+      )}
       <PageHeader
         title="Dashboard"
         description="Your AI marketing command center"

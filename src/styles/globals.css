@@ -64,6 +64,11 @@
   --border-subtle: #0000000A;
   --border-default: #00000012;
   --border-strong: #00000020;
+  --grain-opacity: 0.015;
+  --glass-bg: #FFFFFF80;
+  --glass-border: #00000010;
+  --shadow-ambient: 0 0 0 1px var(--border-subtle), 0 2px 8px #00000010;
+  --shadow-elevated: 0 0 0 1px var(--border-default), 0 8px 32px #00000015;
 }
 
 /* Tailwind v4 Theme Integration */

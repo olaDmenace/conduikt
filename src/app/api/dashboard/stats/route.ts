@@ -15,7 +15,7 @@ export async function GET() {
   const [profileRes, projectsRes] = await Promise.all([
     supabase
       .from("profiles")
-      .select("plan, generation_count")
+      .select("plan, generation_count, onboarding_completed")
       .eq("id", user.id)
       .single(),
     supabase
@@ -78,5 +78,6 @@ export async function GET() {
     latestAuditScore,
     plan,
     latestProjectId,
+    onboardingCompleted: profile?.onboarding_completed ?? false,
   });
 }
