@@ -12,6 +12,11 @@ import {
   TrendingUp,
   FileText,
   Zap,
+  Search,
+  MousePointerClick,
+  Eye,
+  ArrowUpDown,
+  RefreshCw,
 } from "lucide-react";
 import {
   LineChart,
@@ -27,6 +32,7 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
+import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
 import { ProjectNav } from "@/src/components/layout/project-nav";
 
@@ -56,6 +62,14 @@ interface AssetRecord {
   channel: string | null;
   status: string;
   created_at: string;
+}
+
+interface GscKeyword {
+  term: string;
+  clicks: number;
+  impressions: number;
+  ctr: number;
+  position: number;
 }
 
 // ---------- constants ----------
@@ -115,6 +129,9 @@ export default function AnalyticsPage() {
   const [generations, setGenerations] = useState<Generation[]>([]);
   const [audits, setAudits] = useState<AuditRecord[]>([]);
   const [assets, setAssets] = useState<AssetRecord[]>([]);
+  const [gscKeywords, setGscKeywords] = useState<GscKeyword[]>([]);
+  const [gscConnected, setGscConnected] = useState(false);
+  const [gscSyncing, setGscSyncing] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -125,11 +142,23 @@ export default function AnalyticsPage() {
         setGenerations(data.generations ?? []);
         setAudits(data.audits ?? []);
         setAssets(data.assets ?? []);
+        setGscKeywords(data.gscKeywords ?? []);
+        setGscConnected(data.gscConnected ?? false);
       }
       setLoading(false);
     }
     fetchData();
   }, [id]);
+
+  async function handleGscSync() {
+    setGscSyncing(true);
+    const res = await fetch("/api/integrations/gsc/sync", { method: "POST" });
+    if (res.ok) {
+      const data = await res.json();
+      setGscKeywords(data.topQueries ?? []);
+    }
+    setGscSyncing(false);
+  }
 
   // ---------- computed stats ----------
 
@@ -436,6 +465,165 @@ export default function AnalyticsPage() {
                 </div>
               </CardContent>
             </Card>
+          )}
+
+          {/* Search Performance (GSC) */}
+          {gscConnected && (
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-h2 text-text-primary flex items-center gap-2">
+                  <Search className="h-5 w-5 text-accent" />
+                  Search Performance
+                </h2>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleGscSync}
+                  disabled={gscSyncing}
+                >
+                  <RefreshCw
+                    className={`h-3.5 w-3.5 mr-1.5 ${gscSyncing ? "animate-spin" : ""}`}
+                  />
+                  {gscSyncing ? "Syncing..." : "Sync GSC Data"}
+                </Button>
+              </div>
+
+              {gscKeywords.length > 0 && (
+                <>
+                  {/* GSC Stats Row */}
+                  <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 mb-4">
+                    {[
+                      {
+                        label: "Total Clicks",
+                        value: gscKeywords
+                          .reduce((s, k) => s + k.clicks, 0)
+                          .toLocaleString(),
+                        icon: MousePointerClick,
+                      },
+                      {
+                        label: "Total Impressions",
+                        value: gscKeywords
+                          .reduce((s, k) => s + k.impressions, 0)
+                          .toLocaleString(),
+                        icon: Eye,
+                      },
+                      {
+                        label: "Avg CTR",
+                        value:
+                          (
+                            (gscKeywords.reduce((s, k) => s + k.ctr, 0) /
+                              gscKeywords.length) *
+                            100
+                          ).toFixed(1) + "%",
+                        icon: TrendingUp,
+                      },
+                      {
+                        label: "Avg Position",
+                        value: (
+                          gscKeywords.reduce((s, k) => s + k.position, 0) /
+                          gscKeywords.length
+                        ).toFixed(1),
+                        icon: ArrowUpDown,
+                      },
+                    ].map((stat, i) => (
+                      <Card
+                        key={stat.label}
+                        className="animate-in"
+                        style={{ animationDelay: `${i * 60}ms` }}
+                      >
+                        <CardContent className="flex items-start justify-between p-5">
+                          <div className="min-w-0">
+                            <p className="text-caption text-text-tertiary">
+                              {stat.label}
+                            </p>
+                            <p className="mt-1 font-semibold font-mono text-text-primary text-2xl">
+                              {stat.value}
+                            </p>
+                          </div>
+                          <div className="rounded-lg bg-surface-2 p-2 shrink-0 ml-2">
+                            <stat.icon className="h-5 w-5 text-accent" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+
+                  {/* Top Queries Table */}
+                  <Card className="animate-in" style={{ animationDelay: "60ms" }}>
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between">
+                        <span>Top Search Queries</span>
+                        <Badge variant="secondary">{gscKeywords.length}</Badge>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                          <thead>
+                            <tr className="border-b border-border-subtle">
+                              <th className="px-6 py-3 text-caption text-text-tertiary font-medium">
+                                Query
+                              </th>
+                              <th className="px-6 py-3 text-caption text-text-tertiary font-medium text-right">
+                                Clicks
+                              </th>
+                              <th className="px-6 py-3 text-caption text-text-tertiary font-medium text-right">
+                                Impressions
+                              </th>
+                              <th className="px-6 py-3 text-caption text-text-tertiary font-medium text-right">
+                                CTR
+                              </th>
+                              <th className="px-6 py-3 text-caption text-text-tertiary font-medium text-right">
+                                Position
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {gscKeywords.slice(0, 20).map((kw) => (
+                              <tr
+                                key={kw.term}
+                                className="border-b border-border-subtle last:border-0 hover:bg-surface-1/50 transition-colors"
+                              >
+                                <td className="px-6 py-3 text-small text-text-primary truncate max-w-[300px]">
+                                  {kw.term}
+                                </td>
+                                <td className="px-6 py-3 text-small text-text-secondary font-mono text-right">
+                                  {kw.clicks.toLocaleString()}
+                                </td>
+                                <td className="px-6 py-3 text-small text-text-secondary font-mono text-right">
+                                  {kw.impressions.toLocaleString()}
+                                </td>
+                                <td className="px-6 py-3 text-small text-text-secondary font-mono text-right">
+                                  {(kw.ctr * 100).toFixed(1)}%
+                                </td>
+                                <td className="px-6 py-3 text-small text-text-secondary font-mono text-right">
+                                  {kw.position.toFixed(1)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
+
+              {gscKeywords.length === 0 && (
+                <Card className="animate-in">
+                  <CardContent className="flex flex-col items-center py-12 text-center">
+                    <Search className="h-8 w-8 text-text-tertiary mb-3" />
+                    <p className="text-body text-text-secondary">
+                      No GSC data yet
+                    </p>
+                    <p className="text-small text-text-tertiary mt-1">
+                      Click &ldquo;Sync GSC Data&rdquo; to pull your search
+                      performance metrics
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           )}
 
           {/* Generation History Table */}

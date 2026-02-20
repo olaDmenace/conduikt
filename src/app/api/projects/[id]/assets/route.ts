@@ -93,3 +93,47 @@ export async function POST(
 
   return NextResponse.json(asset, { status: 201 });
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { assetId } = await request.json();
+  if (!assetId) {
+    return NextResponse.json({ error: "assetId is required" }, { status: 400 });
+  }
+
+  // Verify ownership via project
+  const { data: asset } = await supabase
+    .from("assets")
+    .select("id, project_id")
+    .eq("id", assetId)
+    .eq("project_id", id)
+    .single();
+
+  if (!asset) {
+    return NextResponse.json({ error: "Asset not found" }, { status: 404 });
+  }
+
+  // Soft-delete by archiving
+  const { error } = await supabase
+    .from("assets")
+    .update({ status: "archived" })
+    .eq("id", assetId);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
+}

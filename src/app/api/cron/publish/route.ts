@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-// This route is called by Vercel Cron once daily (Hobby plan limit).
-// Upgrade to Vercel Pro for more frequent schedules (e.g. every 5 min).
+// This route is called every 5 minutes by Supabase pg_cron + pg_net.
 // It picks up pending scheduled_posts whose scheduled_for time has passed
-// and publishes them via the existing /api/publish/x and /api/publish/linkedin routes.
+// and publishes them via the X and LinkedIn APIs directly.
 //
-// Vercel sends:  Authorization: Bearer <CRON_SECRET>
-// Add CRON_SECRET to Vercel env vars (any random string).
+// The route is idempotent (only processes status='pending' posts).
 
 function getServiceClient() {
   return createClient(

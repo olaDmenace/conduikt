@@ -26,26 +26,46 @@ export async function GET(
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
-  const [generationsRes, auditsRes, assetsRes] = await Promise.all([
-    supabase
-      .from("ai_generations")
-      .select("id, agent_used, input_tokens, output_tokens, model, duration_ms, created_at")
-      .eq("project_id", id)
-      .order("created_at", { ascending: true }),
-    supabase
-      .from("audits")
-      .select("id, type, url, score, created_at")
-      .eq("project_id", id)
-      .order("created_at", { ascending: true }),
-    supabase
-      .from("assets")
-      .select("id, type, channel, status, created_at")
-      .eq("project_id", id),
-  ]);
+  const [generationsRes, auditsRes, assetsRes, gscKeywordsRes, gscAccountRes] =
+    await Promise.all([
+      supabase
+        .from("ai_generations")
+        .select(
+          "id, agent_used, input_tokens, output_tokens, model, duration_ms, created_at"
+        )
+        .eq("project_id", id)
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("audits")
+        .select("id, type, url, score, created_at")
+        .eq("project_id", id)
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("assets")
+        .select("id, type, channel, status, created_at")
+        .eq("project_id", id),
+      supabase
+        .from("keyword_data")
+        .select(
+          "term, clicks, impressions, ctr, position, date_range_start, date_range_end"
+        )
+        .eq("project_id", id)
+        .eq("source", "gsc")
+        .order("clicks", { ascending: false })
+        .limit(100),
+      supabase
+        .from("connected_accounts")
+        .select("id, platform_username")
+        .eq("user_id", user.id)
+        .eq("platform", "google_search_console")
+        .maybeSingle(),
+    ]);
 
   return NextResponse.json({
     generations: generationsRes.data ?? [],
     audits: auditsRes.data ?? [],
     assets: assetsRes.data ?? [],
+    gscKeywords: gscKeywordsRes.data ?? [],
+    gscConnected: !!gscAccountRes.data,
   });
 }
