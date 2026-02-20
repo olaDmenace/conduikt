@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { Sparkles, Copy, Check, RotateCcw, Loader2, Zap } from "lucide-react";
 import {
   Card,
@@ -92,8 +93,22 @@ interface UsageInfo {
   durationMs: number;
 }
 
-export default function PlaygroundPage() {
-  const [selectedAgent, setSelectedAgent] = useState("copywriting");
+function PlaygroundInner() {
+  const searchParams = useSearchParams();
+  const initialAgent = searchParams.get("agent") ?? "copywriting";
+  const validAgent = agents.find((a) => a.id === initialAgent)
+    ? initialAgent
+    : "copywriting";
+
+  const [selectedAgent, setSelectedAgent] = useState(validAgent);
+
+  // Sync when query param changes (e.g. sidebar navigation)
+  useEffect(() => {
+    const agentParam = searchParams.get("agent");
+    if (agentParam && agents.find((a) => a.id === agentParam)) {
+      setSelectedAgent(agentParam);
+    }
+  }, [searchParams]);
   const [prompt, setPrompt] = useState("");
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<string>("");
@@ -358,5 +373,13 @@ export default function PlaygroundPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function PlaygroundPage() {
+  return (
+    <Suspense>
+      <PlaygroundInner />
+    </Suspense>
   );
 }

@@ -73,6 +73,9 @@ interface Profile {
 // Active agents (non-coming-soon) to show in sidebar
 const SIDEBAR_AGENTS = AGENT_REGISTRY.filter((a) => a.status === "active");
 
+// Icon for the global Agents menu
+const AgentsMenuIcon = Sparkles;
+
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -90,6 +93,7 @@ export function Sidebar() {
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [agentsMenuOpen, setAgentsMenuOpen] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -341,15 +345,72 @@ export function Sidebar() {
           {/* Divider */}
           <div className="my-3 border-t border-border-subtle" />
 
-          {/* Global tools */}
-          <SidebarLink
-            href="/playground"
-            icon={Sparkles}
-            label="Playground"
-            active={pathname.startsWith("/playground")}
-            showLabel={showLabel}
-            onClick={handleNavClick}
-          />
+          {/* Global Agents menu */}
+          {showLabel ? (
+            <div>
+              <button
+                onClick={() => setAgentsMenuOpen((o) => !o)}
+                className={cn(
+                  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[0.875rem] font-medium transition-all duration-150",
+                  pathname.startsWith("/playground")
+                    ? "border-l-2 border-accent bg-accent-muted text-accent"
+                    : "text-text-secondary hover:bg-surface-2 hover:text-text-primary"
+                )}
+              >
+                <AgentsMenuIcon className="h-[18px] w-[18px] shrink-0" />
+                <span className="flex-1 text-left">Agents</span>
+                <ChevronDown
+                  className={cn(
+                    "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
+                    agentsMenuOpen && "rotate-180"
+                  )}
+                />
+              </button>
+
+              {agentsMenuOpen && (
+                <div className="ml-3 pl-3 border-l border-border-subtle mt-0.5 mb-1 space-y-0.5">
+                  {SIDEBAR_AGENTS.map((agent) => {
+                    const href = `/playground?agent=${agent.id}`;
+                    const isActive =
+                      pathname.startsWith("/playground") &&
+                      (typeof window !== "undefined"
+                        ? new URLSearchParams(window.location.search).get("agent") === agent.id
+                        : false);
+                    const IconComp = ICON_MAP[agent.icon] ?? FileText;
+                    return (
+                      <Link
+                        key={agent.id}
+                        href={href}
+                        onClick={handleNavClick}
+                        className={cn(
+                          "flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[0.8125rem] font-medium transition-colors",
+                          isActive
+                            ? "bg-surface-2 text-accent"
+                            : "text-text-tertiary hover:bg-surface-2 hover:text-text-primary"
+                        )}
+                      >
+                        <IconComp className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{agent.shortName}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link
+              href="/playground"
+              title="Agents"
+              className={cn(
+                "flex w-full items-center justify-center rounded-lg p-2.5 transition-colors",
+                pathname.startsWith("/playground")
+                  ? "bg-accent-muted text-accent"
+                  : "text-text-secondary hover:bg-surface-2 hover:text-text-primary"
+              )}
+            >
+              <AgentsMenuIcon className="h-[18px] w-[18px]" />
+            </Link>
+          )}
           <SidebarLink
             href="/settings"
             icon={Settings}
