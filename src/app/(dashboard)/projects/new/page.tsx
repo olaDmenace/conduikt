@@ -9,6 +9,7 @@ import {
   Sparkles,
   Loader2,
   CheckCircle2,
+  ClipboardList,
 } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
@@ -16,13 +17,89 @@ import { Input } from "@/src/components/ui/input";
 import { PageHeader } from "@/src/components/layout/page-header";
 import { useToast } from "@/src/components/ui/toast";
 
-type Step = "url" | "context" | "audit";
+type Step = "url" | "setup" | "context" | "audit";
+
+const STEPS: Step[] = ["url", "setup", "context", "audit"];
 
 interface AuditProgress {
   fetching: "pending" | "running" | "done" | "error";
   analyzing: "pending" | "running" | "done" | "error";
   saving: "pending" | "running" | "done" | "error";
 }
+
+interface Question {
+  id: string;
+  question: string;
+  multi?: boolean;
+  options: string[];
+}
+
+const QUESTIONS: Question[] = [
+  {
+    id: "content_creation",
+    question: "What are you currently using for content creation?",
+    options: [
+      "Nothing yet",
+      "ChatGPT / Claude",
+      "Jasper / Copy.ai",
+      "A marketing agency",
+      "In-house team",
+    ],
+  },
+  {
+    id: "active_channels",
+    question: "Which channels are you actively posting on?",
+    multi: true,
+    options: [
+      "X (Twitter)",
+      "LinkedIn",
+      "Email newsletter",
+      "Blog",
+      "None yet",
+    ],
+  },
+  {
+    id: "biggest_challenge",
+    question: "What's your biggest marketing challenge right now?",
+    options: [
+      "Getting more traffic",
+      "Converting visitors into customers",
+      "Staying consistent with content",
+      "Not enough time to do it all",
+      "Don't know where to start",
+    ],
+  },
+  {
+    id: "gsc_status",
+    question: "Is Google Search Console set up for your site?",
+    options: [
+      "Yes, it's connected",
+      "Yes but I haven't set it up",
+      "No",
+      "What's Google Search Console?",
+    ],
+  },
+  {
+    id: "content_output",
+    question: "How would you describe your current content output?",
+    options: [
+      "Zero — starting from scratch",
+      "Occasional posts (less than weekly)",
+      "Weekly content",
+      "Daily / multiple times a week",
+    ],
+  },
+  {
+    id: "project_type",
+    question: "Who is this project for?",
+    options: [
+      "My own product / startup",
+      "A client's business",
+      "My agency (multiple clients)",
+      "Side project / experiment",
+    ],
+  },
+];
 
 export default function NewProjectPage() {
   const [step, setStep] = useState<Step>("url");
@@ -33,6 +110,10 @@ export default function NewProjectPage() {
   const [valueProposition, setValueProposition] = useState("");
   const [loading, setLoading] = useState(false);
   const [projectId, setProjectId] = useState<string | null>(null);
+  const [setupAnswers, setSetupAnswers] = useState<
+    Record<string, string | string[]>
+  >({});
+  const [currentQ, setCurrentQ] = useState(0);
   const [auditProgress, setAuditProgress] = useState<AuditProgress>({
     fetching: "pending",
     analyzing: "pending",
@@ -42,12 +123,13 @@ export default function NewProjectPage() {
   const router = useRouter();
   const { toast } = useToast();
 
+  const stepIndex = STEPS.indexOf(step);
+
   async function handleStep1(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    // Create the project in Supabase
     const res = await fetch("/api/projects", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -68,15 +150,54 @@ export default function NewProjectPage() {
 
     setProjectId(data.id);
     toast("Project created successfully!", "success");
+    setStep("setup");
+    setLoading(false);
+  }
+
+  function handleSelectOption(questionId: string, option: string, multi?: boolean) {
+    setSetupAnswers((prev) => {
+      if (multi) {
+        const current = (prev[questionId] as string[]) || [];
+        const updated = current.includes(option)
+          ? current.filter((o) => o !== option)
+          : [...current, option];
+        return { ...prev, [questionId]: updated };
+      }
+      return { ...prev, [questionId]: option };
+    });
+  }
+
+  function isOptionSelected(questionId: string, option: string): boolean {
+    const val = setupAnswers[questionId];
+    if (Array.isArray(val)) return val.includes(option);
+    return val === option;
+  }
+
+  function canAdvanceQuestion(): boolean {
+    const q = QUESTIONS[currentQ];
+    const val = setupAnswers[q.id];
+    if (!val) return false;
+    if (Array.isArray(val) && val.length === 0) return false;
+    return true;
+  }
+
+  async function handleSetupComplete() {
+    setLoading(true);
+    if (projectId) {
+      await fetch(`/api/projects/${projectId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ onboarding_answers: setupAnswers }),
+      });
+    }
     setStep("context");
     setLoading(false);
   }
 
-  async function handleStep2(e: React.FormEvent) {
+  async function handleStep3(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
 
-    // Update project with marketing context
     if (projectId) {
       await fetch(`/api/projects/${projectId}`, {
         method: "PATCH",
@@ -93,17 +214,19 @@ export default function NewProjectPage() {
     setStep("audit");
     setLoading(false);
 
-    // Run SEO audit
     if (projectId && websiteUrl) {
       runAudit();
     } else {
-      // No URL — skip audit, go to project
       setTimeout(() => router.push(`/projects/${projectId}`), 1000);
     }
   }
 
   async function runAudit() {
-    setAuditProgress({ fetching: "running", analyzing: "pending", saving: "pending" });
+    setAuditProgress({
+      fetching: "running",
+      analyzing: "pending",
+      saving: "pending",
+    });
 
     try {
       const res = await fetch("/api/ai/audit", {
@@ -116,27 +239,24 @@ export default function NewProjectPage() {
         const err = await res.json();
         setAuditProgress((p) => ({ ...p, fetching: "error" }));
         toast(err.error || "Audit failed", "error");
-        // Still redirect after a delay
         setTimeout(() => router.push(`/projects/${projectId}`), 2000);
         return;
       }
 
-      setAuditProgress({
-        fetching: "done",
-        analyzing: "done",
-        saving: "done",
-      });
-
+      setAuditProgress({ fetching: "done", analyzing: "done", saving: "done" });
       toast("SEO audit complete!", "success");
       setTimeout(() => router.push(`/projects/${projectId}/audit`), 1500);
     } catch {
       setAuditProgress((p) => ({ ...p, fetching: "error" }));
-      toast("Failed to run audit. You can retry from the project page.", "error");
+      toast(
+        "Failed to run audit. You can retry from the project page.",
+        "error"
+      );
       setTimeout(() => router.push(`/projects/${projectId}`), 2000);
     }
   }
 
-  const stepIndex = ["url", "context", "audit"].indexOf(step);
+  const q = QUESTIONS[currentQ];
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -147,7 +267,7 @@ export default function NewProjectPage() {
 
       {/* Progress Steps */}
       <div className="flex items-center gap-3 mb-8">
-        {(["url", "context", "audit"] as const).map((s, i) => (
+        {STEPS.map((s, i) => (
           <div key={s} className="flex items-center gap-3">
             <div
               className={`flex h-8 w-8 items-center justify-center rounded-full text-[0.8125rem] font-medium transition-colors ${
@@ -164,9 +284,9 @@ export default function NewProjectPage() {
                 i + 1
               )}
             </div>
-            {i < 2 && (
+            {i < STEPS.length - 1 && (
               <div
-                className={`h-px w-12 ${
+                className={`h-px w-10 ${
                   i < stepIndex ? "bg-success/40" : "bg-border-default"
                 }`}
               />
@@ -235,7 +355,117 @@ export default function NewProjectPage() {
         </Card>
       )}
 
-      {/* Step 2: Marketing Context */}
+      {/* Step 2: Marketing Setup Questionnaire */}
+      {step === "setup" && (
+        <Card className="animate-in">
+          <CardContent>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="rounded-lg bg-accent-muted p-2">
+                <ClipboardList className="h-5 w-5 text-accent" />
+              </div>
+              <div>
+                <h2 className="text-h3">Tell us about your marketing</h2>
+                <p className="text-small text-text-secondary">
+                  Question {currentQ + 1} of {QUESTIONS.length}
+                </p>
+              </div>
+            </div>
+
+            <div className="mb-2">
+              <div className="h-1 rounded-full bg-surface-2 overflow-hidden mb-6">
+                <div
+                  className="h-full bg-accent rounded-full transition-all duration-300"
+                  style={{
+                    width: `${((currentQ + 1) / QUESTIONS.length) * 100}%`,
+                  }}
+                />
+              </div>
+
+              <p className="text-body font-medium text-text-primary mb-4">
+                {q.question}
+              </p>
+
+              <div className="grid grid-cols-1 gap-2.5">
+                {q.options.map((option) => {
+                  const selected = isOptionSelected(q.id, option);
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() =>
+                        handleSelectOption(q.id, option, q.multi)
+                      }
+                      className={`text-left rounded-xl border px-4 py-3.5 text-small font-medium transition-all duration-150 ${
+                        selected
+                          ? "border-accent bg-accent/10 text-accent shadow-[0_0_0_1px_var(--accent)]"
+                          : "border-border-default bg-surface-1 text-text-secondary hover:border-border-strong hover:bg-surface-2"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-${
+                            q.multi ? "md" : "full"
+                          } border transition-colors ${
+                            selected
+                              ? "border-accent bg-accent"
+                              : "border-border-strong bg-surface-0"
+                          }`}
+                        >
+                          {selected && (
+                            <CheckCircle2 className="h-3 w-3 text-surface-0" />
+                          )}
+                        </div>
+                        {option}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex justify-between pt-4">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  if (currentQ > 0) setCurrentQ(currentQ - 1);
+                  else setStep("url");
+                }}
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </Button>
+              {currentQ < QUESTIONS.length - 1 ? (
+                <Button
+                  type="button"
+                  disabled={!canAdvanceQuestion()}
+                  onClick={() => setCurrentQ(currentQ + 1)}
+                >
+                  Next
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  disabled={!canAdvanceQuestion() || loading}
+                  onClick={handleSetupComplete}
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      Continue
+                      <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Step 3: Marketing Context */}
       {step === "context" && (
         <Card className="animate-in">
           <CardContent>
@@ -250,7 +480,7 @@ export default function NewProjectPage() {
                 </p>
               </div>
             </div>
-            <form onSubmit={handleStep2} className="space-y-4">
+            <form onSubmit={handleStep3} className="space-y-4">
               <div>
                 <label className="text-small text-text-secondary block mb-1.5">
                   Target Audience
@@ -279,7 +509,7 @@ export default function NewProjectPage() {
                 <Button
                   type="button"
                   variant="secondary"
-                  onClick={() => setStep("url")}
+                  onClick={() => setStep("setup")}
                 >
                   <ArrowLeft className="h-4 w-4" />
                   Back
@@ -305,7 +535,7 @@ export default function NewProjectPage() {
         </Card>
       )}
 
-      {/* Step 3: Running Audit */}
+      {/* Step 4: Running Audit */}
       {step === "audit" && (
         <Card className="animate-in">
           <CardContent className="flex flex-col items-center py-12 text-center">
@@ -329,8 +559,8 @@ export default function NewProjectPage() {
               ) : (
                 <>
                   Analyzing{" "}
-                  <span className="text-accent">{websiteUrl}</span> for
-                  SEO issues and content opportunities.
+                  <span className="text-accent">{websiteUrl}</span> for SEO
+                  issues and content opportunities.
                 </>
               )}
             </p>

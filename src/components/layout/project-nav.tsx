@@ -16,6 +16,7 @@ import {
   Mail,
   FolderOpen,
   Megaphone,
+  Swords,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils/cn";
 
@@ -38,6 +39,7 @@ export function ProjectNav({ projectId }: ProjectNavProps) {
     { name: "CRO",       href: `${agentsBase}/cro`,           icon: Target      },
     { name: "Analytics", href: `${base}/analytics`,           icon: TrendingUp  },
     { name: "Campaigns", href: `${base}/campaigns`,            icon: Megaphone   },
+    { name: "Competitors", href: `${base}/competitors`,        icon: Swords      },
     { name: "Calendar",  href: `${agentsBase}/calendar`,      icon: Calendar    },
     { name: "Emails",    href: `${base}/emails`,              icon: Mail        },
     { name: "Library",   href: `${base}/library`,             icon: FolderOpen  },

@@ -113,7 +113,7 @@ export async function GET(
       status,
       error_message,
       created_at,
-      assets (id, title, type)
+      assets (id, title, type, content)
     `)
     .eq("project_id", projectId)
     .order("scheduled_for", { ascending: true });

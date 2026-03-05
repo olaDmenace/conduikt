@@ -17,6 +17,10 @@ import {
   Eye,
   ArrowUpDown,
   RefreshCw,
+  DollarSign,
+  Trophy,
+  Heart,
+  Share2,
 } from "lucide-react";
 import {
   LineChart,
@@ -29,6 +33,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
+  Legend,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
@@ -70,6 +75,24 @@ interface GscKeyword {
   impressions: number;
   ctr: number;
   position: number;
+}
+
+interface PostMetric {
+  id: string;
+  channel: string;
+  impressions: number;
+  likes: number;
+  shares: number;
+  comments: number;
+  clicks: number;
+  synced_at: string;
+  created_at: string;
+}
+
+interface KeywordTracking {
+  term: string;
+  position: number;
+  date_range_start: string;
 }
 
 // ---------- constants ----------
@@ -132,6 +155,9 @@ export default function AnalyticsPage() {
   const [gscKeywords, setGscKeywords] = useState<GscKeyword[]>([]);
   const [gscConnected, setGscConnected] = useState(false);
   const [gscSyncing, setGscSyncing] = useState(false);
+  const [postMetrics, setPostMetrics] = useState<PostMetric[]>([]);
+  const [keywordTracking, setKeywordTracking] = useState<KeywordTracking[]>([]);
+  const [metricsSyncing, setMetricsSyncing] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -144,6 +170,8 @@ export default function AnalyticsPage() {
         setAssets(data.assets ?? []);
         setGscKeywords(data.gscKeywords ?? []);
         setGscConnected(data.gscConnected ?? false);
+        setPostMetrics(data.postMetrics ?? []);
+        setKeywordTracking(data.keywordTracking ?? []);
       }
       setLoading(false);
     }
@@ -158,6 +186,21 @@ export default function AnalyticsPage() {
       setGscKeywords(data.topQueries ?? []);
     }
     setGscSyncing(false);
+  }
+
+  async function handleSyncMetrics() {
+    setMetricsSyncing(true);
+    await Promise.all([
+      fetch("/api/integrations/x/sync-metrics", { method: "POST" }),
+      fetch("/api/integrations/linkedin/sync-metrics", { method: "POST" }),
+    ]);
+    // Refresh analytics data
+    const res = await fetch(`/api/projects/${id}/analytics`);
+    if (res.ok) {
+      const data = await res.json();
+      setPostMetrics(data.postMetrics ?? []);
+    }
+    setMetricsSyncing(false);
   }
 
   // ---------- computed stats ----------
@@ -218,6 +261,67 @@ export default function AnalyticsPage() {
     ? sortedWeeks.reduce((a, b) => (weekCounts[a] > weekCounts[b] ? a : b))
     : null;
   const mostActiveCount = mostActiveWeek ? weekCounts[mostActiveWeek] : 0;
+
+  // Generation cost estimate (Sonnet 4 pricing)
+  const totalInputTokens = generations.reduce((s, g) => s + (g.input_tokens ?? 0), 0);
+  const totalOutputTokens = generations.reduce((s, g) => s + (g.output_tokens ?? 0), 0);
+  const estimatedCost = totalInputTokens * 0.000003 + totalOutputTokens * 0.000015;
+
+  // Social performance — weekly impressions
+  const socialWeekly: Record<string, number> = {};
+  for (const m of postMetrics) {
+    const wk = getWeekKey(m.created_at);
+    socialWeekly[wk] = (socialWeekly[wk] ?? 0) + m.impressions;
+  }
+  const socialWeekKeys = Object.keys(socialWeekly).sort().slice(-8);
+  const socialBarData = socialWeekKeys.map((wk) => ({
+    week: new Date(wk).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    impressions: socialWeekly[wk],
+  }));
+
+  // Total social stats
+  const totalImpressions = postMetrics.reduce((s, m) => s + m.impressions, 0);
+  const totalLikes = postMetrics.reduce((s, m) => s + m.likes, 0);
+  const totalShares = postMetrics.reduce((s, m) => s + m.shares, 0);
+  const bestPost = postMetrics.length
+    ? postMetrics.reduce((best, m) => (m.impressions > best.impressions ? m : best))
+    : null;
+
+  // Keyword ranking tracking — build line chart data
+  const kwByTerm: Record<string, Array<{ date: string; position: number }>> = {};
+  for (const kw of keywordTracking) {
+    if (!kwByTerm[kw.term]) kwByTerm[kw.term] = [];
+    kwByTerm[kw.term].push({ date: kw.date_range_start, position: kw.position });
+  }
+  // Only show keywords with 2+ data points, max 5 keywords
+  const trackedKeywords = Object.entries(kwByTerm)
+    .filter(([, pts]) => pts.length >= 2)
+    .slice(0, 5);
+
+  // Build unified date axis for keyword chart
+  const kwDates = [...new Set(keywordTracking.map((k) => k.date_range_start))].sort();
+  const keywordChartData = kwDates.map((date) => {
+    const point: Record<string, unknown> = {
+      date: new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    };
+    for (const [term] of trackedKeywords) {
+      const match = kwByTerm[term].find((p) => p.date === date);
+      point[term] = match?.position ?? null;
+    }
+    return point;
+  });
+
+  const KW_COLORS = ["#D4945A", "#4ADE80", "#60A5FA", "#F59E0B", "#A78BFA"];
+
+  // Biggest win
+  const biggestWinAudit =
+    firstScore !== null && latestScore !== null && latestScore > firstScore
+      ? `Your audit score improved by +${latestScore - firstScore} points since you started`
+      : null;
+  const biggestWinPost = bestPost
+    ? `Your best post got ${bestPost.impressions.toLocaleString()} impressions`
+    : null;
+  const biggestWin = biggestWinAudit || biggestWinPost;
 
   return (
     <div>
@@ -463,6 +567,171 @@ export default function AnalyticsPage() {
                     </div>
                   ))}
                 </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Biggest Win + Cost Tracker */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-6">
+            {biggestWin && (
+              <Card className="animate-in" style={{ animationDelay: "300ms" }}>
+                <CardContent className="p-5 flex items-center gap-4">
+                  <div className="rounded-xl p-3 bg-accent/10">
+                    <Trophy className="h-5 w-5 text-accent" />
+                  </div>
+                  <div>
+                    <p className="text-caption text-text-tertiary">Biggest Win</p>
+                    <p className="text-body font-medium text-text-primary">
+                      {biggestWin}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            {estimatedCost > 0 && (
+              <Card className="animate-in" style={{ animationDelay: "360ms" }}>
+                <CardContent className="p-5 flex items-center gap-4">
+                  <div className="rounded-xl p-3 bg-info/10">
+                    <DollarSign className="h-5 w-5 text-info" />
+                  </div>
+                  <div>
+                    <p className="text-caption text-text-tertiary">AI Costs This Month</p>
+                    <p className="text-body font-medium text-text-primary font-mono">
+                      ~${estimatedCost.toFixed(2)}
+                    </p>
+                    <p className="text-small text-text-tertiary">
+                      {totalInputTokens.toLocaleString()} in + {totalOutputTokens.toLocaleString()} out tokens
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Social Performance Section */}
+          {postMetrics.length > 0 && (
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-h2 text-text-primary flex items-center gap-2">
+                  <Heart className="h-5 w-5 text-accent" />
+                  Social Performance
+                </h2>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleSyncMetrics}
+                  disabled={metricsSyncing}
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${metricsSyncing ? "animate-spin" : ""}`} />
+                  {metricsSyncing ? "Syncing..." : "Sync Now"}
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 mb-4">
+                {[
+                  { label: "Total Impressions", value: totalImpressions.toLocaleString(), icon: Eye },
+                  { label: "Total Likes", value: totalLikes.toLocaleString(), icon: Heart },
+                  { label: "Total Shares", value: totalShares.toLocaleString(), icon: Share2 },
+                  { label: "Best Post", value: bestPost ? `${bestPost.impressions.toLocaleString()} imp.` : "—", icon: Trophy },
+                ].map((stat, i) => (
+                  <Card key={stat.label} className="animate-in" style={{ animationDelay: `${i * 60}ms` }}>
+                    <CardContent className="flex items-start justify-between p-5">
+                      <div className="min-w-0">
+                        <p className="text-caption text-text-tertiary">{stat.label}</p>
+                        <p className="mt-1 font-semibold font-mono text-text-primary text-2xl">
+                          {stat.value}
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-surface-2 p-2 shrink-0 ml-2">
+                        <stat.icon className="h-5 w-5 text-accent" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {socialBarData.length > 0 && (
+                <Card className="animate-in" style={{ animationDelay: "120ms" }}>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-h3">
+                      <BarChart3 className="h-4 w-4 text-accent" />
+                      Weekly Impressions
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <BarChart data={socialBarData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={BORDER} />
+                        <XAxis dataKey="week" tick={{ fill: TEXT_TERTIARY, fontSize: 11 }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fill: TEXT_TERTIARY, fontSize: 11 }} axisLine={false} tickLine={false} width={40} />
+                        <Tooltip content={<ChartTooltip />} cursor={{ fill: SURFACE_2 }} />
+                        <Bar dataKey="impressions" radius={[4, 4, 0, 0]} fill={ACCENT} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              )}
+
+              {postMetrics.length > 0 && (
+                <p className="text-small text-text-tertiary mt-2">
+                  Last synced: {new Date(postMetrics[0].synced_at).toLocaleString()}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Keyword Ranking Tracker */}
+          {trackedKeywords.length > 0 && (
+            <Card className="animate-in mb-6" style={{ animationDelay: "180ms" }}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-h3">
+                  <TrendingUp className="h-4 w-4 text-accent" />
+                  Keyword Ranking Tracker
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={250}>
+                  <LineChart data={keywordChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={BORDER} />
+                    <XAxis dataKey="date" tick={{ fill: TEXT_TERTIARY, fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <YAxis
+                      reversed
+                      domain={[1, "auto"]}
+                      tick={{ fill: TEXT_TERTIARY, fontSize: 11 }}
+                      axisLine={false}
+                      tickLine={false}
+                      width={28}
+                      label={{ value: "Position", angle: -90, position: "insideLeft", fill: TEXT_TERTIARY, fontSize: 10 }}
+                    />
+                    <Tooltip content={<ChartTooltip />} />
+                    <Legend />
+                    {trackedKeywords.map(([term], i) => (
+                      <Line
+                        key={term}
+                        type="monotone"
+                        dataKey={term}
+                        stroke={KW_COLORS[i]}
+                        strokeWidth={2}
+                        dot={{ r: 3, fill: KW_COLORS[i] }}
+                        connectNulls
+                      />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+
+          {gscConnected && trackedKeywords.length === 0 && (
+            <Card className="animate-in mb-6">
+              <CardContent className="flex flex-col items-center py-8 text-center">
+                <TrendingUp className="h-6 w-6 text-text-tertiary mb-2" />
+                <p className="text-small text-text-secondary">
+                  Connect GSC and track keywords to see ranking trends
+                </p>
+                <p className="text-caption text-text-tertiary mt-1">
+                  Sync GSC data at least twice to see position changes
+                </p>
               </CardContent>
             </Card>
           )}

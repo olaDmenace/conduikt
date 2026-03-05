@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, useCallback } from "react";
 import {
   Twitter,
   Linkedin,
@@ -12,6 +12,8 @@ import {
   Loader2,
   CalendarDays,
   Trash2,
+  CalendarRange,
+  X,
 } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
@@ -21,20 +23,8 @@ import { PageHeader } from "@/src/components/layout/page-header";
 import { ProjectNav } from "@/src/components/layout/project-nav";
 import { useToast } from "@/src/components/ui/toast";
 import { createClient } from "@/src/lib/supabase/client";
-import { CalendarGrid } from "@/src/components/calendar/calendar-grid";
-import { DayDetail } from "@/src/components/calendar/day-detail";
+import { CalendarGrid, type ScheduledPost } from "@/src/components/calendar/calendar-grid";
 import Link from "next/link";
-
-interface ScheduledPost {
-  id: string;
-  channel: "x" | "linkedin" | "email";
-  scheduled_for: string;
-  posted_at: string | null;
-  status: "pending" | "posted" | "failed" | "cancelled";
-  error_message: string | null;
-  created_at: string;
-  assets: { id: string; title: string | null; type: string } | null;
-}
 
 function statusVariant(
   status: string
@@ -109,7 +99,8 @@ export default function CalendarPage({
   const [posts, setPosts] = useState<ScheduledPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState<string | null>(null);
-  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [calendarView, setCalendarView] = useState<"week" | "month">("week");
+  const [selectedPost, setSelectedPost] = useState<ScheduledPost | null>(null);
 
   useEffect(() => {
     fetchPosts();
@@ -137,9 +128,50 @@ export default function CalendarPage({
           p.id === postId ? { ...p, status: "cancelled" as const } : p
         )
       );
+      if (selectedPost?.id === postId) {
+        setSelectedPost((sp) => (sp ? { ...sp, status: "cancelled" } : null));
+      }
     }
     setCancelling(null);
   }
+
+  const handleReschedule = useCallback(
+    async (postId: string, newDate: Date) => {
+      // Optimistic update
+      const oldPosts = [...posts];
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId
+            ? { ...p, scheduled_for: newDate.toISOString() }
+            : p
+        )
+      );
+
+      try {
+        const res = await fetch(`/api/scheduled-posts/${postId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ scheduled_for: newDate.toISOString() }),
+        });
+
+        if (!res.ok) throw new Error("Failed");
+
+        toast(
+          `Post rescheduled to ${newDate.toLocaleDateString(undefined, {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+          })}`,
+          "success"
+        );
+      } catch {
+        // Revert
+        setPosts(oldPosts);
+        toast("Failed to reschedule post", "error");
+      }
+    },
+    [posts, toast]
+  );
 
   // Group by date for timeline view
   const grouped: Record<string, ScheduledPost[]> = {};
@@ -155,13 +187,6 @@ export default function CalendarPage({
   const pendingCount = posts.filter((p) => p.status === "pending").length;
   const postedCount = posts.filter((p) => p.status === "posted").length;
   const failedCount = posts.filter((p) => p.status === "failed").length;
-
-  // Posts for selected day (for DayDetail dialog)
-  const selectedDayPosts = selectedDay
-    ? posts.filter((p) =>
-        isSameDay(new Date(p.scheduled_for), selectedDay)
-      )
-    : [];
 
   return (
     <div>
@@ -228,22 +253,53 @@ export default function CalendarPage({
         </Card>
       ) : (
         <Tabs defaultValue="calendar">
-          <TabsList>
-            <TabsTrigger value="calendar">
-              <CalendarDays className="h-3.5 w-3.5 mr-1.5" />
-              Calendar
-            </TabsTrigger>
-            <TabsTrigger value="timeline">
-              <Clock className="h-3.5 w-3.5 mr-1.5" />
-              Timeline
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex items-center justify-between mb-4">
+            <TabsList>
+              <TabsTrigger value="calendar">
+                <CalendarDays className="h-3.5 w-3.5 mr-1.5" />
+                Calendar
+              </TabsTrigger>
+              <TabsTrigger value="timeline">
+                <Clock className="h-3.5 w-3.5 mr-1.5" />
+                Timeline
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Calendar View */}
+            {/* Week / Month toggle (only visible in calendar tab) */}
+            <div className="flex items-center gap-1 rounded-lg border border-border-default p-0.5">
+              <button
+                onClick={() => setCalendarView("week")}
+                className={`px-2.5 py-1 rounded-md text-small font-medium transition-colors ${
+                  calendarView === "week"
+                    ? "bg-surface-2 text-accent"
+                    : "text-text-tertiary hover:text-text-secondary"
+                }`}
+              >
+                <CalendarRange className="h-3.5 w-3.5 inline mr-1" />
+                Week
+              </button>
+              <button
+                onClick={() => setCalendarView("month")}
+                className={`px-2.5 py-1 rounded-md text-small font-medium transition-colors ${
+                  calendarView === "month"
+                    ? "bg-surface-2 text-accent"
+                    : "text-text-tertiary hover:text-text-secondary"
+                }`}
+              >
+                <CalendarDays className="h-3.5 w-3.5 inline mr-1" />
+                Month
+              </button>
+            </div>
+          </div>
+
+          {/* Calendar View with DnD */}
           <TabsContent value="calendar">
             <CalendarGrid
               posts={posts}
-              onDayClick={(date) => setSelectedDay(date)}
+              view={calendarView}
+              onDayClick={() => {}}
+              onPostClick={(post) => setSelectedPost(post)}
+              onReschedule={handleReschedule}
             />
           </TabsContent>
 
@@ -265,8 +321,9 @@ export default function CalendarPage({
                     {groupPosts.map((post, i) => (
                       <Card
                         key={post.id}
-                        className="animate-in"
+                        className="animate-in cursor-pointer hover:border-border-strong transition-colors"
                         style={{ animationDelay: `${i * 40}ms` }}
+                        onClick={() => setSelectedPost(post)}
                       >
                         <CardContent className="flex items-start gap-4 py-4">
                           <div className="rounded-lg bg-surface-2 p-2.5 shrink-0 mt-0.5">
@@ -304,7 +361,10 @@ export default function CalendarPage({
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => handleCancel(post.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCancel(post.id);
+                              }}
                               disabled={cancelling === post.id}
                               className="shrink-0 text-error hover:text-error"
                             >
@@ -327,14 +387,92 @@ export default function CalendarPage({
         </Tabs>
       )}
 
-      {/* Day Detail Dialog */}
-      <DayDetail
-        date={selectedDay}
-        posts={selectedDayPosts}
-        cancelling={cancelling}
-        onCancel={handleCancel}
-        onClose={() => setSelectedDay(null)}
-      />
+      {/* Post Slide-Over Panel */}
+      {selectedPost && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setSelectedPost(null)}
+          />
+          <div className="relative w-full max-w-md bg-surface-0 border-l border-border-default shadow-2xl animate-in slide-in-from-right overflow-y-auto">
+            <div className="sticky top-0 bg-surface-0 border-b border-border-default p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {channelIcon(selectedPost.channel)}
+                <Badge variant={statusVariant(selectedPost.status)}>
+                  {selectedPost.status}
+                </Badge>
+              </div>
+              <button
+                onClick={() => setSelectedPost(null)}
+                className="rounded-lg p-1.5 text-text-tertiary hover:text-text-primary hover:bg-surface-2 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-6">
+              <div>
+                <h3 className="text-h3 text-text-primary mb-1">
+                  {selectedPost.assets?.title || "Untitled post"}
+                </h3>
+                <p className="text-small text-text-tertiary">
+                  {channelLabel(selectedPost.channel)}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-caption text-text-tertiary mb-1">Scheduled For</p>
+                <p className="text-body text-text-primary flex items-center gap-2">
+                  {statusIcon(selectedPost.status)}
+                  {formatDateTime(selectedPost.scheduled_for)}
+                </p>
+              </div>
+
+              {selectedPost.posted_at && (
+                <div>
+                  <p className="text-caption text-text-tertiary mb-1">Published At</p>
+                  <p className="text-body text-text-primary">
+                    {formatDateTime(selectedPost.posted_at)}
+                  </p>
+                </div>
+              )}
+
+              {selectedPost.assets?.content && (
+                <div>
+                  <p className="text-caption text-text-tertiary mb-1">Content</p>
+                  <div className="rounded-lg bg-surface-1 p-3 text-body text-text-secondary whitespace-pre-wrap">
+                    {selectedPost.assets.content}
+                  </div>
+                </div>
+              )}
+
+              {selectedPost.error_message && (
+                <div>
+                  <p className="text-caption text-text-tertiary mb-1">Error</p>
+                  <p className="text-body text-error">{selectedPost.error_message}</p>
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                {selectedPost.status === "pending" && (
+                  <Button
+                    variant="secondary"
+                    className="flex-1 text-error hover:text-error"
+                    onClick={() => {
+                      handleCancel(selectedPost.id);
+                      setSelectedPost(null);
+                    }}
+                    disabled={cancelling === selectedPost.id}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Cancel Post
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

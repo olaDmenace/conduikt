@@ -31,6 +31,36 @@ const availableAgents = AGENT_REGISTRY.filter(
   (a) => a.status === "active" && a.id !== "campaigns"
 );
 
+const CAMPAIGN_TEMPLATES = [
+  {
+    name: "Blog → Social Promotion",
+    description: "Write a blog post, then generate social promotion for it",
+    steps: [
+      { agent_id: "blog-post", config: {} },
+      { agent_id: "social-content", config: {} },
+    ],
+  },
+  {
+    name: "Audit → Fix → Report",
+    description: "Run an SEO audit, generate copy fixes, then create a growth plan",
+    steps: [
+      { agent_id: "seo-audit", config: {} },
+      { agent_id: "copywriting", config: {} },
+      { agent_id: "growth-playbook", config: {} },
+    ],
+  },
+  {
+    name: "Monthly Content Sprint",
+    description: "Keyword research → blog posts → social content → email sequence",
+    steps: [
+      { agent_id: "keyword-research", config: {} },
+      { agent_id: "blog-post", config: {} },
+      { agent_id: "social-content", config: {} },
+      { agent_id: "email-sequence", config: {} },
+    ],
+  },
+];
+
 export function CampaignWizard({
   projectId,
   onClose,
@@ -103,6 +133,37 @@ export function CampaignWizard({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
             >
+              {/* Quick-start templates */}
+              <p className="text-caption text-text-tertiary mb-2">
+                Start from a template
+              </p>
+              <div className="grid gap-2 mb-6">
+                {CAMPAIGN_TEMPLATES.map((tpl) => (
+                  <button
+                    key={tpl.name}
+                    onClick={() => {
+                      setName(tpl.name);
+                      setSteps(tpl.steps.map((s) => ({ ...s })));
+                      setPhase("review");
+                    }}
+                    className="text-left rounded-lg border border-border-default bg-surface-0 p-3 hover:border-accent hover:bg-surface-2 transition-colors"
+                  >
+                    <p className="text-body font-medium text-text-primary">
+                      {tpl.name}
+                    </p>
+                    <p className="text-small text-text-tertiary mt-0.5">
+                      {tpl.description} ({tpl.steps.length} steps)
+                    </p>
+                  </button>
+                ))}
+              </div>
+
+              <div className="relative flex items-center mb-6">
+                <div className="flex-1 border-t border-border-default" />
+                <span className="px-3 text-caption text-text-tertiary">or build custom</span>
+                <div className="flex-1 border-t border-border-default" />
+              </div>
+
               <label className="text-caption text-text-tertiary mb-2 block">
                 Campaign Name
               </label>

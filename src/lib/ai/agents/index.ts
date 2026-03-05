@@ -8,6 +8,8 @@ import { competitorAnalysisSkill } from "./competitor-analysis";
 import { blogPostSkill } from "./blog-post";
 import { keywordResearchSkill } from "./keyword-research";
 import { growthPlaybookSkill } from "./growth-playbook";
+import { onboardingAdvisorAgent } from "./onboarding-advisor";
+import { videoScriptAgent } from "./video-script";
 import type { AgentConfig } from "./types";
 
 export const agents: Record<string, AgentConfig> = {
@@ -21,6 +23,8 @@ export const agents: Record<string, AgentConfig> = {
   "blog-post": blogPostSkill,
   "keyword-research": keywordResearchSkill,
   "growth-playbook": growthPlaybookSkill,
+  "onboarding-advisor": onboardingAdvisorAgent,
+  "video-script": videoScriptAgent,
 };
 
 // Legacy alias

@@ -158,6 +158,18 @@ export const AGENT_REGISTRY: AgentDefinition[] = [
   },
   // --- Coming Soon ---
   {
+    id: "video-ad",
+    name: "Video Ad Agent",
+    shortName: "Video Ads",
+    icon: "Video",
+    description: "Generate short-form video ads from your content",
+    status: "coming_soon",
+    tier: "growth",
+    category: "creation",
+    ctaLabel: "Create Video",
+    route: "video",
+  },
+  {
     id: "ab-test-setup",
     name: "A/B Test Agent",
     shortName: "A/B Tests",

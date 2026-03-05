@@ -103,6 +103,46 @@ export async function buildPerformanceContext(
     }
   }
 
+  // 5. Top performing social posts (from post_metrics)
+  const { data: topPosts } = await supabase
+    .from("post_metrics")
+    .select(
+      "impressions, likes, shares, comments, channel, scheduled_post_id"
+    )
+    .eq("project_id", projectId)
+    .order("impressions", { ascending: false })
+    .limit(3);
+
+  if (topPosts && topPosts.length > 0) {
+    // Get the post content for these top performers
+    const postIds = topPosts.map((p) => p.scheduled_post_id).filter(Boolean);
+    const { data: scheduledPosts } = await supabase
+      .from("scheduled_posts")
+      .select("id, content")
+      .in("id", postIds);
+
+    const postMap = new Map(
+      (scheduledPosts ?? []).map((p) => [p.id, p.content])
+    );
+
+    sections.push("### Top Performing Social Posts");
+    sections.push(
+      "Use these as examples of what resonates with the audience:"
+    );
+    for (const p of topPosts) {
+      const content = postMap.get(p.scheduled_post_id);
+      const text =
+        typeof content === "string"
+          ? content.slice(0, 200)
+          : typeof content === "object" && content
+          ? JSON.stringify(content).slice(0, 200)
+          : "N/A";
+      sections.push(
+        `- **${p.channel}** (${p.impressions} impressions, ${p.likes} likes): "${text}"`
+      );
+    }
+  }
+
   if (sections.length === 0) return "";
 
   return (

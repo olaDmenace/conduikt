@@ -62,6 +62,7 @@ export async function PATCH(
     "competitors",
     "positioning_statement",
     "keywords",
+    "onboarding_answers",
   ];
 
   const updates: Record<string, unknown> = {};

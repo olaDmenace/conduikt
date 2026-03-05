@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, Search, Plus, Menu } from "lucide-react";
+import { Search, Plus, Menu } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { ThemeToggle } from "@/src/components/ui/theme-toggle";
+import { NotificationPanel } from "@/src/components/notifications/notification-panel";
 import { useUIStore } from "@/src/stores/ui-store";
 import { cn } from "@/src/lib/utils/cn";
 
@@ -52,10 +53,7 @@ export function Header() {
           </Link>
         </Button>
         <ThemeToggle />
-        <button className="relative rounded-lg p-2 text-text-secondary hover:bg-surface-2 hover:text-text-primary transition-colors">
-          <Bell className="h-5 w-5" />
-          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-accent" />
-        </button>
+        <NotificationPanel />
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-[0.75rem] font-medium text-text-secondary">
           OA
         </div>
