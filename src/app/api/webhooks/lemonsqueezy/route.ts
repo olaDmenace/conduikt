@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createServiceClient } from "@/src/lib/supabase/service";
 import crypto from "crypto";
 import { sendPlanUpgradeEmail } from "@/src/lib/email";
 
 // Use service-role client for webhook (no user auth context)
 function getServiceClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  return createClient(url, key);
+  return createServiceClient();
 }
 
 // Plan variant mapping — set these in .env.local

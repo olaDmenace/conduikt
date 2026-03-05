@@ -17,6 +17,7 @@ import {
   FolderOpen,
   Megaphone,
   Swords,
+  Video,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils/cn";
 
@@ -34,6 +35,7 @@ export function ProjectNav({ projectId }: ProjectNavProps) {
     { name: "SEO Audit", href: `${agentsBase}/seo-audit`,     icon: AlertTriangle },
     { name: "Content",   href: `${agentsBase}/content`,       icon: FileText    },
     { name: "Blog",      href: `${agentsBase}/blog`,          icon: Globe       },
+    { name: "Video",     href: `${base}/video`,               icon: Video       },
     { name: "Keywords",  href: `${agentsBase}/keywords`,      icon: Search      },
     { name: "Growth",    href: `${agentsBase}/growth`,        icon: Rocket      },
     { name: "CRO",       href: `${agentsBase}/cro`,           icon: Target      },

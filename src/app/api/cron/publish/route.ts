@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createServiceClient } from "@/src/lib/supabase/service";
 
 // This route is called every 5 minutes by Supabase pg_cron + pg_net.
 // It picks up pending scheduled_posts whose scheduled_for time has passed
@@ -8,10 +8,7 @@ import { createClient } from "@supabase/supabase-js";
 // The route is idempotent (only processes status='pending' posts).
 
 function getServiceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  return createServiceClient();
 }
 
 export async function GET(request: NextRequest) {

@@ -20,6 +20,7 @@ import {
   Loader2,
   Zap,
   ArrowUpRight,
+  Video,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -39,6 +40,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   FileText,
   Key,
   TrendingUp,
+  Video,
 };
 
 interface InputConfig {
@@ -157,9 +159,44 @@ interface UsageInfo {
   durationMs: number;
 }
 
+// Agents that require a project context and have their own dedicated page
+const PROJECT_REQUIRED_AGENTS = ["video-ad"];
+
 export function AgentSandbox({ agent }: { agent: AgentDefinition }) {
   const config = INPUT_CONFIGS[agent.id] ?? DEFAULT_CONFIG;
   const IconComp = ICON_MAP[agent.icon] ?? FileText;
+
+  // Video-ad (and similar) require a project — show a prompt to select one
+  if (PROJECT_REQUIRED_AGENTS.includes(agent.id)) {
+    return (
+      <div>
+        <PageHeader title={agent.name} description={agent.description}>
+          <Badge variant="secondary" className="capitalize shrink-0">
+            {agent.category}
+          </Badge>
+        </PageHeader>
+        <Card className="animate-in">
+          <CardContent className="flex flex-col items-center py-16 text-center">
+            <div className="mb-4 rounded-xl bg-accent-muted p-4">
+              <IconComp className="h-8 w-8 text-accent" />
+            </div>
+            <h3 className="text-h2 text-text-primary">
+              Select a project to get started
+            </h3>
+            <p className="mt-2 max-w-md text-body text-text-secondary">
+              {agent.name} requires a project context to generate videos. Open a project and navigate to the Video agent from there.
+            </p>
+            <Button className="mt-6" asChild>
+              <Link href="/projects">
+                Open Projects
+                <ArrowUpRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const [url, setUrl] = useState("");
   const [prompt, setPrompt] = useState("");

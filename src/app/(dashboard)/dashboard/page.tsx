@@ -16,6 +16,7 @@ import {
   PenLine,
   Rocket,
   Sparkles,
+  Video,
 } from "lucide-react";
 import Link from "next/link";
 import { OnboardingTour } from "@/src/components/onboarding/onboarding-tour";
@@ -170,6 +171,7 @@ export default function DashboardPage() {
         { name: "Analytics",         href: `/projects/${pid}/analytics`, icon: TrendingUp, desc: "Impact dashboard & skill usage"          },
         { name: "Email Sequence",    href: `/projects/${pid}/content`,   icon: Mail,       desc: "AI-written drip campaigns"               },
         { name: "Social Content",    href: `/projects/${pid}/content`,   icon: Twitter,    desc: "X and LinkedIn post generation"          },
+        { name: "Video Ads",        href: `/projects/${pid}/video`,     icon: Video,      desc: "AI presenter video ads via HeyGen"       },
       ]
     : [];
 

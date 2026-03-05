@@ -15,6 +15,7 @@ function getResend(): Resend {
 // ---------------------------------------------------------------------------
 
 function welcomeHtml(name: string): string {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const greeting = name ? `Welcome, ${name}!` : "Welcome!";
   return `<!DOCTYPE html>
 <html lang="en">
@@ -66,7 +67,7 @@ function welcomeHtml(name: string): string {
               <table cellpadding="0" cellspacing="0" role="presentation">
                 <tr>
                   <td style="background:#C88540;border-radius:8px;">
-                    <a href="https://conduikt.vercel.app/dashboard" style="display:block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;">Go to Dashboard &rarr;</a>
+                    <a href="${appUrl}/dashboard" style="display:block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;">Go to Dashboard &rarr;</a>
                   </td>
                 </tr>
               </table>
@@ -76,7 +77,7 @@ function welcomeHtml(name: string): string {
           <tr>
             <td style="background:#f9f6f2;padding:20px 40px;border-top:1px solid #e5e0db;">
               <p style="margin:0;font-size:12px;color:#8a8176;line-height:1.6;">You received this because you created a Conduikt account. Questions? Reply to this email — we read every one.</p>
-              <p style="margin:8px 0 0;font-size:12px;"><a href="https://conduikt.vercel.app" style="color:#C88540;text-decoration:none;">conduikt.vercel.app</a></p>
+              <p style="margin:8px 0 0;font-size:12px;"><a href="${appUrl}" style="color:#C88540;text-decoration:none;">conduikt.vercel.app</a></p>
             </td>
           </tr>
         </table>
@@ -88,6 +89,7 @@ function welcomeHtml(name: string): string {
 }
 
 function planUpgradeHtml(name: string, plan: string): string {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const planLabels: Record<string, string> = {
     pro: "Pro",
     growth: "Growth",
@@ -134,7 +136,7 @@ function planUpgradeHtml(name: string, plan: string): string {
               <table cellpadding="0" cellspacing="0" role="presentation">
                 <tr>
                   <td style="background:#C88540;border-radius:8px;">
-                    <a href="https://conduikt.vercel.app/dashboard" style="display:block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;">Go to Dashboard &rarr;</a>
+                    <a href="${appUrl}/dashboard" style="display:block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;">Go to Dashboard &rarr;</a>
                   </td>
                 </tr>
               </table>
@@ -144,7 +146,7 @@ function planUpgradeHtml(name: string, plan: string): string {
           <tr>
             <td style="background:#f9f6f2;padding:20px 40px;border-top:1px solid #e5e0db;">
               <p style="margin:0;font-size:12px;color:#8a8176;line-height:1.6;">
-                Manage your billing at <a href="https://conduikt.vercel.app/settings/billing" style="color:#C88540;text-decoration:none;">Settings &rarr; Billing</a>. Questions? Reply to this email.
+                Manage your billing at <a href="${appUrl}/settings/billing" style="color:#C88540;text-decoration:none;">Settings &rarr; Billing</a>. Questions? Reply to this email.
               </p>
             </td>
           </tr>

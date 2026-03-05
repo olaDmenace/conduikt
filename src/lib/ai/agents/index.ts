@@ -25,6 +25,7 @@ export const agents: Record<string, AgentConfig> = {
   "growth-playbook": growthPlaybookSkill,
   "onboarding-advisor": onboardingAdvisorAgent,
   "video-script": videoScriptAgent,
+  "video-ad": videoScriptAgent,
 };
 
 // Legacy alias

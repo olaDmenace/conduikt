@@ -27,6 +27,7 @@ import {
   Zap,
   Calendar,
   GitBranch,
+  Video,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils/cn";
 import { useUIStore } from "@/src/stores/ui-store";
@@ -50,6 +51,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   Calendar,
   GitBranch,
   BarChart3,
+  Video,
 };
 
 const PLAN_LIMITS: Record<string, number> = {
