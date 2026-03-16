@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
-import { Megaphone, Plus, Loader2 } from "lucide-react";
+import { Megaphone, Plus, Loader2, Workflow } from "lucide-react";
 import { PageHeader } from "@/src/components/layout/page-header";
 import { ProjectNav } from "@/src/components/layout/project-nav";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { CampaignWizard } from "@/src/components/campaigns/campaign-wizard";
 import { CampaignRunner } from "@/src/components/campaigns/campaign-runner";
+import { CampaignFlowEditor } from "@/src/components/campaigns/campaign-flow-editor";
 
 interface CampaignStep {
   id: string;
@@ -36,6 +37,7 @@ export default function CampaignsPage({
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [showWizard, setShowWizard] = useState(false);
+  const [showFlowEditor, setShowFlowEditor] = useState(false);
 
   useEffect(() => {
     fetchCampaigns();
@@ -56,13 +58,27 @@ export default function CampaignsPage({
         title="Campaigns"
         description="Multi-step AI campaign orchestration"
       >
-        <Button size="sm" onClick={() => setShowWizard(true)}>
-          <Plus className="h-4 w-4" />
-          Create Campaign
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={() => setShowFlowEditor(true)}>
+            <Workflow className="h-4 w-4" />
+            Visual Builder
+          </Button>
+          <Button size="sm" onClick={() => setShowWizard(true)}>
+            <Plus className="h-4 w-4" />
+            Create Campaign
+          </Button>
+        </div>
       </PageHeader>
 
       <ProjectNav projectId={id} />
+
+      {showFlowEditor && (
+        <CampaignFlowEditor
+          projectId={id}
+          onClose={() => setShowFlowEditor(false)}
+          onCreated={fetchCampaigns}
+        />
+      )}
 
       {showWizard && (
         <CampaignWizard

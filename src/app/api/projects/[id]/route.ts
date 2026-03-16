@@ -63,6 +63,16 @@ export async function PATCH(
     "positioning_statement",
     "keywords",
     "onboarding_answers",
+    "industry",
+    "business_description",
+    "audience_pain_point",
+    "online_channels",
+    "brand_voice_example",
+    "primary_goal",
+    "onboarding_completed",
+    "client_name",
+    "client_logo_url",
+    "report_accent_color",
   ];
 
   const updates: Record<string, unknown> = {};

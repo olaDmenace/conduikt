@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Save, Trash2, Loader2, AlertTriangle } from "lucide-react";
+import { Save, Trash2, Loader2, AlertTriangle, Upload, Palette } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
@@ -21,6 +21,9 @@ interface Project {
   competitors: unknown;
   positioning_statement: string | null;
   keywords: unknown;
+  client_name: string | null;
+  client_logo_url: string | null;
+  report_accent_color: string | null;
 }
 
 export default function ProjectSettingsPage() {
@@ -45,10 +48,18 @@ export default function ProjectSettingsPage() {
   const [brandVoiceText, setBrandVoiceText] = useState("");
   const [competitorsText, setCompetitorsText] = useState("");
   const [keywordsText, setKeywordsText] = useState("");
+  const [clientName, setClientName] = useState("");
+  const [clientLogoUrl, setClientLogoUrl] = useState("");
+  const [reportAccentColor, setReportAccentColor] = useState("#D4945A");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [userPlan, setUserPlan] = useState("free");
 
   useEffect(() => {
     async function fetchProject() {
-      const res = await fetch(`/api/projects/${id}`);
+      const [res, profileRes] = await Promise.all([
+        fetch(`/api/projects/${id}`),
+        fetch("/api/profile"),
+      ]);
       if (res.ok) {
         const data = await res.json();
         setProject(data);
@@ -69,8 +80,15 @@ export default function ProjectSettingsPage() {
         setKeywordsText(
           data.keywords ? JSON.stringify(data.keywords, null, 2) : ""
         );
+        setClientName(data.client_name || "");
+        setClientLogoUrl(data.client_logo_url || "");
+        setReportAccentColor(data.report_accent_color || "#D4945A");
       } else {
         toast("Failed to load project", "error");
+      }
+      if (profileRes.ok) {
+        const profile = await profileRes.json();
+        setUserPlan(profile.plan || "free");
       }
       setLoading(false);
     }
@@ -129,6 +147,9 @@ export default function ProjectSettingsPage() {
         brand_voice: brandVoice,
         competitors,
         keywords,
+        client_name: clientName.trim() || null,
+        client_logo_url: clientLogoUrl.trim() || null,
+        report_accent_color: reportAccentColor || "#D4945A",
       }),
     });
 
@@ -295,6 +316,117 @@ export default function ProjectSettingsPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Client Branding — Agency only */}
+        {userPlan === "agency" && (
+          <Card className="animate-in" style={{ animationDelay: "120ms" }}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Palette className="h-5 w-5 text-accent" />
+                Client Branding
+              </CardTitle>
+              <p className="text-small text-text-secondary">
+                Customize PDF reports with your client&apos;s branding.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Input
+                label="Client Name"
+                placeholder="Acme Corp"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+              />
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-small text-text-secondary">Client Logo</label>
+                {clientLogoUrl && (
+                  <div className="mb-2 p-3 rounded-lg border border-border-default bg-surface-1 inline-block">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={clientLogoUrl}
+                      alt="Client logo"
+                      className="max-h-12 max-w-[200px] object-contain"
+                    />
+                  </div>
+                )}
+                <div className="flex items-center gap-3">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={uploadingLogo}
+                    onClick={() => {
+                      const input = document.createElement("input");
+                      input.type = "file";
+                      input.accept = "image/png,image/jpeg,image/svg+xml";
+                      input.onchange = async (e) => {
+                        const file = (e.target as HTMLInputElement).files?.[0];
+                        if (!file) return;
+                        if (file.size > 2 * 1024 * 1024) {
+                          toast("Logo must be under 2MB", "warning");
+                          return;
+                        }
+                        setUploadingLogo(true);
+                        const formData = new FormData();
+                        formData.append("file", file);
+                        formData.append("bucket", "logos");
+                        formData.append("path", `projects/${id}/logo`);
+                        const res = await fetch("/api/upload", {
+                          method: "POST",
+                          body: formData,
+                        });
+                        if (res.ok) {
+                          const data = await res.json();
+                          setClientLogoUrl(data.url);
+                          toast("Logo uploaded", "success");
+                        } else {
+                          toast("Failed to upload logo", "error");
+                        }
+                        setUploadingLogo(false);
+                      };
+                      input.click();
+                    }}
+                  >
+                    {uploadingLogo ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4" />
+                    )}
+                    {uploadingLogo ? "Uploading..." : "Upload Logo"}
+                  </Button>
+                  {clientLogoUrl && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setClientLogoUrl("")}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-small text-text-secondary">Report Accent Color</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={reportAccentColor}
+                    onChange={(e) => setReportAccentColor(e.target.value)}
+                    className="w-10 h-10 rounded-lg border border-border-strong cursor-pointer bg-transparent"
+                  />
+                  <Input
+                    placeholder="#D4945A"
+                    value={reportAccentColor}
+                    onChange={(e) => setReportAccentColor(e.target.value)}
+                    className="max-w-[140px] font-mono"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Save button */}
         <div className="flex justify-end">

@@ -1,7 +1,8 @@
 import { inngest } from "../client";
 import { createServiceClient } from "@/src/lib/supabase/service";
 import { generateVoiceover } from "@/src/lib/integrations/elevenlabs";
-import { createHeyGenVideo, pollHeyGenVideo } from "@/src/lib/integrations/heygen";
+import { createHeyGenVideo, pollHeyGenVideo, resolveUGCAvatar } from "@/src/lib/integrations/heygen";
+import type { BrandMatchContext } from "@/src/lib/integrations/heygen";
 import { searchUnsplash } from "@/src/lib/integrations/unsplash";
 
 async function updateJob(
@@ -46,6 +47,8 @@ export const videoPipeline = inngest.createFunction(
         progress_message: "Generating voiceover...",
       });
 
+      // For UGC, voice is resolved later based on avatar gender — use a placeholder here
+      // since the ElevenLabs voiceover is separate from the HeyGen TTS
       const buffer = await generateVoiceover({
         text: voiceoverText,
         voiceId: job.voice_id ?? undefined,
@@ -97,10 +100,44 @@ export const videoPipeline = inngest.createFunction(
         progress_message: "AI is recording your presenter...",
       });
 
+      const videoType = (job.style as "presenter" | "cinematic" | "ugc") || "presenter";
+
+      // Resolve avatar for UGC videos
+      let avatarId: string | undefined;
+      let resolvedVoiceId: string | undefined = job.voice_id ?? undefined;
+      if (videoType === "ugc") {
+        const avatarMode = (job.avatar_mode as "random" | "pick" | "brand-matched") || "random";
+        const projectData = job.projects as { name: string; website_url?: string } | null;
+        const projectContext: BrandMatchContext | undefined = avatarMode === "brand-matched" && projectData
+          ? {
+              projectName: projectData.name,
+              industry: (job as Record<string, unknown>).industry as string | undefined,
+              targetAudience: (job as Record<string, unknown>).target_audience as string | undefined,
+            }
+          : undefined;
+
+        const resolved = await resolveUGCAvatar(avatarMode, {
+          gender: (job.avatar_gender as "male" | "female") || undefined,
+          selectedAvatarId: (job.selected_avatar_id as string) || undefined,
+          projectContext,
+        });
+        avatarId = resolved.avatarId;
+
+        // Match voice gender to avatar gender (override any user-supplied voice_id for UGC)
+        if (resolved.gender === "male") {
+          resolvedVoiceId = process.env.HEYGEN_DEFAULT_VOICE_ID_MALE ?? process.env.HEYGEN_DEFAULT_VOICE_ID;
+        } else if (resolved.gender === "female") {
+          resolvedVoiceId = process.env.HEYGEN_DEFAULT_VOICE_ID;
+        }
+      }
+
       const { jobId: hgJobId } = await createHeyGenVideo({
         script: voiceoverText,
-        voiceId: job.voice_id ?? undefined,
-        backgroundUrl: thumbnailUrl ?? undefined,
+        voiceId: resolvedVoiceId,
+        backgroundUrl: videoType === "ugc" ? undefined : (thumbnailUrl ?? undefined),
+        backgroundStyle: videoType === "ugc" ? "natural" : "studio",
+        videoType,
+        avatarId,
       });
 
       await updateJob(jobId, {

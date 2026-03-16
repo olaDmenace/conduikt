@@ -25,6 +25,18 @@ export async function POST(
     return NextResponse.json({ error: "Tracker not found" }, { status: 404 });
   }
 
+  // Rate limit: max once per 24 hours per tracker
+  if (tracker.last_checked_at) {
+    const lastChecked = new Date(tracker.last_checked_at).getTime();
+    const hoursSinceCheck = (Date.now() - lastChecked) / (1000 * 60 * 60);
+    if (hoursSinceCheck < 24) {
+      return NextResponse.json(
+        { error: "Analysis can only be run once per 24 hours per competitor" },
+        { status: 429 }
+      );
+    }
+  }
+
   const { data: project } = await supabase
     .from("projects")
     .select("name, website_url, keywords")

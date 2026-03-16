@@ -21,6 +21,7 @@ import {
   Send,
   CalendarClock,
   ChevronDown,
+  GitBranch,
 } from "lucide-react";
 import {
   Card,
@@ -39,6 +40,9 @@ import {
 import { PageHeader } from "@/src/components/layout/page-header";
 import { ProjectNav } from "@/src/components/layout/project-nav";
 import { useToast } from "@/src/components/ui/toast";
+import { VariantPanel } from "@/src/components/content/variant-panel";
+import { BulkGenerateDialog } from "@/src/components/content/bulk-generate-dialog";
+import { SendToWebhook } from "@/src/components/content/send-to-webhook";
 
 // ---------- types ----------
 
@@ -245,6 +249,7 @@ function ContentPageInner({
 
   // Schedule state — tracks which post card has the picker open: "x-0", "linkedin-1", etc.
   const [schedulingKey, setSchedulingKey] = useState<string | null>(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [scheduleDateTime, setScheduleDateTime] = useState("");
 
   const skill = contentSkills.find((s) => s.id === selectedSkill)!;
@@ -922,6 +927,16 @@ function ContentPageInner({
                     </>
                   )}
                 </Button>
+
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="w-full"
+                  onClick={() => setBulkOpen(true)}
+                >
+                  <Zap className="h-4 w-4" />
+                  Bulk Generate
+                </Button>
               </form>
             </CardContent>
           </Card>
@@ -1035,6 +1050,12 @@ function ContentPageInner({
                       )}
                       {saving ? "Saving..." : "Save Draft"}
                     </Button>
+                    <SendToWebhook
+                      title={skill.name}
+                      content={result}
+                      contentType={skill.assetType}
+                      projectId={projectId}
+                    />
                     {/* Connect nudge if social content and no accounts */}
                     {selectedSkill === "social-content" && connectedPlatforms.length === 0 && (
                       <Button size="sm" variant="secondary" asChild>
@@ -1045,6 +1066,14 @@ function ContentPageInner({
                       </Button>
                     )}
                   </div>
+                )}
+                {/* A/B Variant button — shown when content is generated */}
+                {result && !generating && (
+                  <VariantPanel
+                    originalContent={result}
+                    projectId={projectId}
+                    agentId={selectedSkill}
+                  />
                 )}
               </div>
             </CardHeader>
@@ -1181,6 +1210,14 @@ function ContentPageInner({
           </Card>
         </div>
       </div>
+
+      <BulkGenerateDialog
+        open={bulkOpen}
+        onClose={() => setBulkOpen(false)}
+        projectId={projectId}
+        agentId={selectedSkill}
+        agentName={skill.name}
+      />
     </div>
   );
 }

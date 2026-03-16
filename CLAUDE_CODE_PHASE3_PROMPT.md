@@ -488,17 +488,23 @@ Let users run templates before building the custom visual editor.
 
 ## Session Protocol
 
-At the start of each Claude Code session:
-1. Read `SYSTEM_ARCHITECTURE_v2.md` and `ARCHITECTURE_ADDENDUM_v2.1.md`
-2. Check `PROGRESS_REPORT.md` for what's complete
-3. Confirm which Tier and feature we're working on before writing any code
-4. After completing a feature, update `PROGRESS_REPORT.md` with the new completed items
+At the start of every Claude Code session, the very first thing
+you must do is run:
 
-Do not mark a feature complete until:
-- The database migration is applied (if applicable)
-- The API route is returning correct responses
-- The UI is rendering correctly in dark mode
-- The feature is tested end-to-end in the browser
+  bash .claude/session-start.sh
+
+Do not write any code, do not make any changes, do not read any
+task until this script runs successfully.
+
+After the script runs:
+1. Read SYSTEM_ARCHITECTURE_v2.md in full
+2. Read ARCHITECTURE_ADDENDUM_v2.1.md in full
+3. Read PROGRESS_REPORT.md and verify completed items exist on disk
+4. Tell the user what you found before asking what to build
+At the end of every session, before closing:
+1. Run: bash .claude/checkpoint.sh "name-of-feature" "complete or partial or blocked"
+2. Update PROGRESS_REPORT.md to reflect what was done
+3. Never leave a session without doing both of these
 
 ---
 

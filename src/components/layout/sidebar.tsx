@@ -28,6 +28,15 @@ import {
   Calendar,
   GitBranch,
   Video,
+  FolderOpen,
+  Megaphone,
+  Swords,
+  Webhook,
+  Users,
+  CreditCard,
+  Link2,
+  AlertTriangle,
+  Play,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils/cn";
 import { useUIStore } from "@/src/stores/ui-store";
@@ -208,9 +217,13 @@ export function Sidebar() {
 
           {/* Projects section */}
           {showLabel && (
-            <p className="text-caption px-3 mt-5 mb-2 text-text-tertiary tracking-wider uppercase">
+            <Link
+              href="/projects"
+              onClick={handleNavClick}
+              className="text-caption px-3 mt-5 mb-2 text-text-tertiary tracking-wider uppercase hover:text-text-secondary transition-colors block"
+            >
               My Projects
-            </p>
+            </Link>
           )}
 
           <div className="space-y-0.5">
@@ -299,32 +312,15 @@ export function Sidebar() {
                       })}
 
                       {/* Non-agent project pages */}
-                      <Link
-                        href={`${projectBase}/analytics`}
-                        onClick={handleNavClick}
-                        className={cn(
-                          "flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[0.8125rem] font-medium transition-colors",
-                          pathname.startsWith(`${projectBase}/analytics`)
-                            ? "bg-surface-2 text-accent"
-                            : "text-text-tertiary hover:bg-surface-2 hover:text-text-primary"
-                        )}
-                      >
-                        <BarChart3 className="h-3.5 w-3.5 shrink-0" />
-                        <span>Analytics</span>
-                      </Link>
-                      <Link
-                        href={`${projectBase}/settings`}
-                        onClick={handleNavClick}
-                        className={cn(
-                          "flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[0.8125rem] font-medium transition-colors",
-                          pathname.startsWith(`${projectBase}/settings`)
-                            ? "bg-surface-2 text-accent"
-                            : "text-text-tertiary hover:bg-surface-2 hover:text-text-primary"
-                        )}
-                      >
-                        <Settings className="h-3.5 w-3.5 shrink-0" />
-                        <span>Settings</span>
-                      </Link>
+                      <ProjectSubLink href={`${projectBase}`} icon={BarChart3} label="Overview" pathname={pathname} exact onClick={handleNavClick} />
+                      <ProjectSubLink href={`${projectBase}/audit`} icon={AlertTriangle} label="Audit" pathname={pathname} onClick={handleNavClick} />
+                      <ProjectSubLink href={`${projectBase}/analytics`} icon={TrendingUp} label="Analytics" pathname={pathname} onClick={handleNavClick} />
+                      <ProjectSubLink href={`${projectBase}/calendar`} icon={Calendar} label="Calendar" pathname={pathname} onClick={handleNavClick} />
+                      <ProjectSubLink href={`${projectBase}/campaigns`} icon={Megaphone} label="Campaigns" pathname={pathname} onClick={handleNavClick} />
+                      <ProjectSubLink href={`${projectBase}/competitors`} icon={Swords} label="Competitors" pathname={pathname} onClick={handleNavClick} />
+                      <ProjectSubLink href={`${projectBase}/video`} icon={Video} label="Video" pathname={pathname} onClick={handleNavClick} />
+                      <ProjectSubLink href={`${projectBase}/library`} icon={FolderOpen} label="Library" pathname={pathname} onClick={handleNavClick} />
+                      <ProjectSubLink href={`${projectBase}/settings`} icon={Settings} label="Settings" pathname={pathname} onClick={handleNavClick} />
                     </div>
                   )}
                 </div>
@@ -410,13 +406,45 @@ export function Sidebar() {
             </Link>
           )}
           <SidebarLink
-            href="/settings"
-            icon={Settings}
-            label="Settings"
-            active={pathname === "/settings" || (pathname.startsWith("/settings") && !pathname.startsWith("/settings/"))}
+            href="/playground"
+            icon={Play}
+            label="Playground"
+            active={pathname === "/playground"}
             showLabel={showLabel}
             onClick={handleNavClick}
           />
+
+          {/* Settings with sub-items */}
+          {showLabel ? (
+            <div>
+              <SidebarLink
+                href="/settings"
+                icon={Settings}
+                label="Settings"
+                active={pathname.startsWith("/settings")}
+                showLabel={showLabel}
+                onClick={handleNavClick}
+              />
+              {pathname.startsWith("/settings") && (
+                <div className="ml-3 pl-3 border-l border-border-subtle mt-0.5 mb-1 space-y-0.5">
+                  <ProjectSubLink href="/settings" icon={Settings} label="Profile" pathname={pathname} exact onClick={handleNavClick} />
+                  <ProjectSubLink href="/settings/team" icon={Users} label="Team" pathname={pathname} onClick={handleNavClick} />
+                  <ProjectSubLink href="/settings/billing" icon={CreditCard} label="Billing" pathname={pathname} onClick={handleNavClick} />
+                  <ProjectSubLink href="/settings/integrations" icon={Link2} label="Integrations" pathname={pathname} exact onClick={handleNavClick} />
+                  <ProjectSubLink href="/settings/integrations/webhooks" icon={Webhook} label="Webhooks" pathname={pathname} onClick={handleNavClick} />
+                </div>
+              )}
+            </div>
+          ) : (
+            <SidebarLink
+              href="/settings"
+              icon={Settings}
+              label="Settings"
+              active={pathname.startsWith("/settings")}
+              showLabel={showLabel}
+              onClick={handleNavClick}
+            />
+          )}
         </nav>
 
         {/* Plan badge + sign out + collapse */}
@@ -515,6 +543,39 @@ function SidebarLink({
     >
       <Icon className="h-[18px] w-[18px] shrink-0" />
       {showLabel && <span>{label}</span>}
+    </Link>
+  );
+}
+
+function ProjectSubLink({
+  href,
+  icon: Icon,
+  label,
+  pathname,
+  exact,
+  onClick,
+}: {
+  href: string;
+  icon: React.ElementType;
+  label: string;
+  pathname: string;
+  exact?: boolean;
+  onClick?: () => void;
+}) {
+  const isActive = exact ? pathname === href : pathname.startsWith(href);
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[0.8125rem] font-medium transition-colors",
+        isActive
+          ? "bg-surface-2 text-accent"
+          : "text-text-tertiary hover:bg-surface-2 hover:text-text-primary"
+      )}
+    >
+      <Icon className="h-3.5 w-3.5 shrink-0" />
+      <span>{label}</span>
     </Link>
   );
 }

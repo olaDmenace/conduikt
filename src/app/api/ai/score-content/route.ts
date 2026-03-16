@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 import { generateWithClaude } from "@/src/lib/ai/client";
+import { getAgent } from "@/src/lib/ai/agents";
+import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user)
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const body = await request.json();
-  const { content, contentType, targetKeyword, channel, projectId } = body;
+  const { content, contentType, projectId, postId } = body;
 
   if (!content || content.length < 20) {
     return NextResponse.json(
@@ -20,51 +23,82 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const systemPrompt = `You are a content quality scorer for a marketing automation platform. Analyze the provided content and return a JSON quality assessment.
+  const agent = getAgent("content-scorer");
+  if (!agent) {
+    return NextResponse.json(
+      { error: "Content scorer agent not found" },
+      { status: 500 }
+    );
+  }
 
-Content type: ${contentType}
-${targetKeyword ? `Target keyword: ${targetKeyword}` : ""}
-${channel ? `Target channel: ${channel}` : ""}
+  // Build project context if projectId is provided
+  let systemPrompt: string;
+  if (projectId) {
+    const { data: project } = await supabase
+      .from("projects")
+      .select("*")
+      .eq("id", projectId)
+      .single();
 
-Score each dimension 0-100:
+    if (project) {
+      const context = buildProjectContext(project);
+      systemPrompt = agent.buildSystemPrompt(context);
+    } else {
+      systemPrompt = agent.buildSystemPrompt({
+        name: "Unknown",
+        websiteUrl: "",
+      });
+    }
+  } else {
+    systemPrompt = agent.buildSystemPrompt({
+      name: "Unknown",
+      websiteUrl: "",
+    });
+  }
 
-1. **readability** — sentence complexity, word choice, flow, formatting, clarity
-2. **seoFit** — ${contentType === "blog" ? "keyword usage, heading structure, meta quality, content length, internal linking opportunities" : "null (not applicable for this content type)"}
-3. **engagementPotential** — hook strength, emotional appeal, call-to-action clarity, shareability, relevance
-
-Calculate **overall** as a weighted average:
-${contentType === "blog" ? "- readability 30% + seoFit 30% + engagementPotential 40%" : "- readability 30% + engagementPotential 70%"}
-
-Determine **verdict**:
-- "publish" if overall > 75
-- "improve" if overall 50-75
-- "rewrite" if overall < 50
-
-Provide 2-4 specific, actionable **suggestions** that reference the actual content.
-
-Respond with ONLY valid JSON, no markdown:
-{
-  "scores": {
-    "readability": number,
-    "seoFit": number | null,
-    "engagementPotential": number,
-    "overall": number
-  },
-  "suggestions": ["string", "string"],
-  "verdict": "publish" | "improve" | "rewrite"
-}`;
+  const userPrompt = agent.buildUserPrompt({
+    content,
+    contentType: contentType || "general",
+  });
 
   try {
     const result = await generateWithClaude({
       systemPrompt,
-      userPrompt: content,
-      maxTokens: 800,
+      userPrompt,
+      model: agent.model,
+      maxTokens: agent.maxTokens,
     });
 
-    // Save to ai_generations
+    const parsed = agent.parseResponse(result.content);
+    const scoreData = parsed.data as {
+      total_score: number;
+      clarity: number;
+      relevance: number;
+      engagement_potential: number;
+      brand_alignment: number;
+      summary: string;
+      top_strength: string;
+      top_improvement: string;
+    };
+
+    // Persist score
     if (projectId) {
+      await supabase.from("content_scores").insert({
+        project_id: projectId,
+        post_id: postId || null,
+        content_type: contentType || "general",
+        content_preview: content.slice(0, 280),
+        total_score: scoreData.total_score,
+        clarity: scoreData.clarity,
+        relevance: scoreData.relevance,
+        engagement_potential: scoreData.engagement_potential,
+        brand_alignment: scoreData.brand_alignment,
+        summary: scoreData.summary,
+        top_strength: scoreData.top_strength,
+        top_improvement: scoreData.top_improvement,
+      });
+
       await supabase.from("ai_generations").insert({
-        user_id: user.id,
         project_id: projectId,
         agent_used: "content-scorer",
         input_tokens: result.inputTokens,
@@ -74,8 +108,7 @@ Respond with ONLY valid JSON, no markdown:
       });
     }
 
-    const parsed = JSON.parse(result.content);
-    return NextResponse.json(parsed);
+    return NextResponse.json(scoreData);
   } catch (e) {
     return NextResponse.json(
       { error: "Failed to score content", details: String(e) },

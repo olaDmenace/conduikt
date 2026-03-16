@@ -21,6 +21,7 @@ interface Notification {
   title: string;
   body: string | null;
   read: boolean;
+  action_url: string | null;
   created_at: string;
 }
 
@@ -87,11 +88,13 @@ export function NotificationPanel() {
       setUnreadCount((c) => Math.max(0, c - 1));
     }
 
-    if (n.project_id) {
+    if (n.action_url) {
+      router.push(n.action_url);
+    } else if (n.project_id) {
       if (n.type === "audit_complete" || n.type === "score_improved") {
         router.push(`/projects/${n.project_id}/audit`);
-      } else if (n.type.startsWith("post_")) {
-        router.push(`/projects/${n.project_id}/calendar`);
+      } else if (n.type.startsWith("post_") || n.type.startsWith("video_")) {
+        router.push(`/projects/${n.project_id}/video`);
       } else if (n.type === "keyword_moved") {
         router.push(`/projects/${n.project_id}/analytics`);
       } else {

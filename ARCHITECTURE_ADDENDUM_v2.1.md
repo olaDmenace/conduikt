@@ -838,4 +838,16 @@ ALTER TABLE ai_generations RENAME COLUMN skill_used TO agent_used;
 
 ---
 
+## 10. ENVIRONMENT VARIABLES (Added by UGC feature)
+
+UGC avatar selection uses a smart fallback strategy:
+1. First tries the filtered UGC avatar pool from the HeyGen API
+2. Falls back to the unfiltered avatar pool (any avatar)
+3. Falls back to `HEYGEN_DEFAULT_AVATAR_ID` (already configured for Presenter videos)
+4. Throws a clear error if no avatar is available at all
+
+No additional environment variables needed — `HEYGEN_DEFAULT_AVATAR_ID` and `HEYGEN_API_KEY` are sufficient.
+
+---
+
 *This addendum should be applied alongside SYSTEM_ARCHITECTURE_v2.md. Feed both documents to Claude Code for the next build session.*

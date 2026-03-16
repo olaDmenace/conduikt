@@ -1,6 +1,8 @@
 import { createServiceClient } from "@/src/lib/supabase/service";
-import { createHeyGenVideo, pollHeyGenVideo } from "@/src/lib/integrations/heygen";
+import { createHeyGenVideo, pollHeyGenVideo, resolveUGCAvatar } from "@/src/lib/integrations/heygen";
+import type { BrandMatchContext } from "@/src/lib/integrations/heygen";
 import { searchUnsplash } from "@/src/lib/integrations/unsplash";
+import { createNotification } from "@/src/lib/notifications";
 
 async function updateJob(
   jobId: string,
@@ -16,6 +18,9 @@ async function updateJob(
  * so we skip the separate ElevenLabs voiceover step.
  */
 export async function runVideoPipeline(jobId: string) {
+  let jobUserId: string | null = null;
+  let jobProjectId: string | null = null;
+  let jobBrief: string | null = null;
   try {
     // Step 1: Fetch job
     const supabase = createServiceClient();
@@ -26,6 +31,9 @@ export async function runVideoPipeline(jobId: string) {
       .single();
 
     if (!job) throw new Error("Job not found");
+    jobUserId = job.user_id as string;
+    jobProjectId = job.project_id as string;
+    jobBrief = job.brief as string;
 
     const scriptData = job.script_data as {
       voiceover_script?: string;
@@ -61,9 +69,47 @@ export async function runVideoPipeline(jobId: string) {
       progress_message: "AI is recording your presenter...",
     });
 
+    const videoType = (job.style as "presenter" | "cinematic" | "ugc") || "presenter";
+
+    // Resolve avatar for UGC videos
+    let avatarId: string | undefined;
+    let resolvedVoiceId: string | undefined;
+    if (videoType === "ugc") {
+      const avatarMode = (job.avatar_mode as "random" | "pick" | "brand-matched") || "random";
+      const projectData = job.projects as { name: string; website_url?: string } | null;
+      const projectContext: BrandMatchContext | undefined = avatarMode === "brand-matched" && projectData
+        ? {
+            projectName: projectData.name,
+            industry: (job as Record<string, unknown>).industry as string | undefined,
+            targetAudience: (job as Record<string, unknown>).target_audience as string | undefined,
+          }
+        : undefined;
+
+      const resolved = await resolveUGCAvatar(avatarMode, {
+        gender: (job.avatar_gender as "male" | "female") || undefined,
+        selectedAvatarId: (job.selected_avatar_id as string) || undefined,
+        projectContext,
+      });
+      avatarId = resolved.avatarId;
+
+      // Match voice gender to avatar gender
+      if (resolved.gender === "male") {
+        resolvedVoiceId = process.env.HEYGEN_DEFAULT_VOICE_ID_MALE ?? process.env.HEYGEN_DEFAULT_VOICE_ID;
+      } else if (resolved.gender === "female") {
+        resolvedVoiceId = process.env.HEYGEN_DEFAULT_VOICE_ID;
+      }
+      // "unknown" → let HeyGen use default
+
+      console.log(`[video-pipeline] ${jobId}: resolved UGC avatar=${avatarId} gender=${resolved.gender} (mode=${avatarMode})`);
+    }
+
     const { jobId: hgJobId } = await createHeyGenVideo({
       script: voiceoverText,
-      backgroundUrl: thumbnailUrl ?? undefined,
+      backgroundUrl: videoType === "ugc" ? undefined : (thumbnailUrl ?? undefined),
+      backgroundStyle: videoType === "ugc" ? "natural" : "studio",
+      videoType,
+      avatarId,
+      voiceId: resolvedVoiceId,
     });
 
     await updateJob(jobId, {
@@ -137,6 +183,17 @@ export async function runVideoPipeline(jobId: string) {
       progress_message: "Your video is ready!",
       completed_at: new Date().toISOString(),
     });
+
+    // Notify user
+    if (jobUserId) {
+      await createNotification(jobUserId, {
+        type: "video_complete",
+        title: "Your video is ready",
+        body: `Video ad "${(jobBrief ?? "").slice(0, 60)}" has finished generating.`,
+        projectId: jobProjectId ?? undefined,
+        actionUrl: `/projects/${jobProjectId}/video`,
+      });
+    }
   } catch (err) {
     console.error(`[video-pipeline] Job ${jobId} failed:`, err);
     let errorMessage = "Unknown error";
@@ -156,5 +213,16 @@ export async function runVideoPipeline(jobId: string) {
       error_message: errorMessage,
       progress_message: "Video generation failed",
     });
+
+    // Notify user of failure
+    if (jobUserId) {
+      await createNotification(jobUserId, {
+        type: "video_failed",
+        title: "Video generation failed",
+        body: errorMessage.slice(0, 200),
+        projectId: jobProjectId ?? undefined,
+        actionUrl: `/projects/${jobProjectId}/video`,
+      });
+    }
   }
 }

@@ -156,7 +156,6 @@ export const AGENT_REGISTRY: AgentDefinition[] = [
     ctaLabel: "View Calendar",
     route: "calendar",
   },
-  // --- Coming Soon ---
   {
     id: "video-ad",
     name: "Video Ad Agent",
@@ -174,11 +173,11 @@ export const AGENT_REGISTRY: AgentDefinition[] = [
     name: "A/B Test Agent",
     shortName: "A/B Tests",
     icon: "GitBranch",
-    description: "Design and analyze marketing experiments",
-    status: "coming_soon",
+    description: "Generate and compare content variants to find what resonates with your audience",
+    status: "active",
     tier: "growth",
     category: "analysis",
-    ctaLabel: "Design Test",
+    ctaLabel: "Create Test",
     route: "ab-test",
   },
 ];

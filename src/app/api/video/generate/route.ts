@@ -36,7 +36,21 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { projectId, brief, style, adLength, sourceAssetId } = body;
+  const {
+    projectId,
+    brief,
+    style,
+    adLength,
+    sourceAssetId,
+    videoType,
+    avatarMode,
+    selectedAvatarId,
+    avatarGender,
+  } = body;
+  const resolvedVideoType = videoType || style || "presenter";
+  const resolvedAvatarMode = resolvedVideoType === "ugc"
+    ? (avatarMode || "random")
+    : undefined;
 
   if (!projectId || !brief || brief.length < 50) {
     return NextResponse.json(
@@ -45,7 +59,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (style === "cinematic") {
+  if (resolvedVideoType === "cinematic") {
     return NextResponse.json(
       { error: "Cinematic mode is coming soon." },
       { status: 400 }
@@ -77,6 +91,8 @@ export async function POST(request: NextRequest) {
   if (performanceCtx) {
     context.performanceContext = performanceCtx;
   }
+  // Inject videoType so buildSystemPrompt can branch on it
+  (context as unknown as Record<string, unknown>).__videoType = resolvedVideoType;
 
   let sourceContent = "";
   if (sourceAssetId) {
@@ -98,6 +114,7 @@ export async function POST(request: NextRequest) {
     brief,
     adLength: adLength || "standard",
     sourceContent,
+    videoType: resolvedVideoType,
   });
 
   const result = await generateWithClaude({
@@ -122,9 +139,13 @@ export async function POST(request: NextRequest) {
       user_id: user.id,
       project_id: projectId,
       brief,
-      style: style || "presenter",
+      style: resolvedVideoType,
+      video_type: resolvedVideoType,
       source_asset_id: sourceAssetId || null,
       script_data: scriptData,
+      avatar_mode: resolvedAvatarMode || null,
+      selected_avatar_id: selectedAvatarId || null,
+      avatar_gender: avatarGender || null,
       status: "scripting",
       progress_message: "Script generated, starting video pipeline...",
     })

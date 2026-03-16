@@ -22,6 +22,24 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Plan gate — Growth and Agency only
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("plan")
+    .eq("id", user.id)
+    .single();
+
+  const allowedPlans = ["growth", "agency"];
+  if (!allowedPlans.includes(profile?.plan ?? "free")) {
+    return NextResponse.json(
+      {
+        error: "A/B Variants are available on Growth and Agency plans.",
+        upgradeUrl: "/settings/billing",
+      },
+      { status: 402 }
+    );
+  }
+
   const agent = getAgent(agentId);
   if (!agent) {
     return NextResponse.json({ error: "Unknown agent" }, { status: 400 });

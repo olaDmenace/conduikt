@@ -50,7 +50,7 @@ export default function WebhooksPage() {
     const res = await fetch("/api/webhooks");
     if (res.ok) {
       const data = await res.json();
-      setWebhooks(data.webhooks);
+      setWebhooks(Array.isArray(data) ? data : data.webhooks ?? []);
     }
     setLoading(false);
   }

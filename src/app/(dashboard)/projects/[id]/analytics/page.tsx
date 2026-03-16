@@ -21,6 +21,7 @@ import {
   Trophy,
   Heart,
   Share2,
+  Download,
 } from "lucide-react";
 import {
   LineChart,
@@ -325,10 +326,22 @@ export default function AnalyticsPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Analytics"
-        description="Impact dashboard — track your marketing progress"
-      />
+      <div className="flex items-start justify-between">
+        <PageHeader
+          title="Analytics"
+          description="Impact dashboard — track your marketing progress"
+        />
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            window.open(`/api/projects/${id}/analytics/pdf`, "_blank");
+          }}
+        >
+          <Download className="h-4 w-4" />
+          Export PDF
+        </Button>
+      </div>
 
       <ProjectNav projectId={id} />
 

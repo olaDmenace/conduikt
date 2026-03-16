@@ -149,6 +149,131 @@ Lemon Squeezy checkout (Pro $49, Growth $99, Agency $249), webhook handler (orde
 9. Onboarding tour
 10. Product Hunt launch prep
 
+### System Hardening
+- System hardening — session scripts and agent checklist — complete — 2026-03-14
+
+### Video Agent — UGC Type
+- UGC video type — script agent, HeyGen pipeline, UI, DB migration — complete — 2026-03-14
+- HEYGEN_UGC_AVATAR_ID — removed — replaced with smart 3-level fallback (unfiltered pool → DEFAULT_AVATAR_ID → clear error)
+
+### UGC Avatar Selection
+- 3-mode avatar selection (random, pick, brand-matched) — complete — 2026-03-14
+- Avatar utility layer: getAvatars, getUGCAvatars, selectRandomAvatar, selectBrandMatchedAvatar, resolveUGCAvatar — complete
+- API route: GET /api/video/avatars with gender filter — complete
+- Avatar picker modal with grid UI — complete
+- Brand context injection into UGC script agent — complete
+- DB migration: avatar_mode, selected_avatar_id, avatar_gender columns on video_jobs — applied
+
+### Phase 3 Full Build — Tier 1
+- Feature 1.1 — Onboarding Questionnaire — complete — 2026-03-14
+  - 5-step flow at /projects/[id]/onboarding (business, audience, brand voice, competitors, confirmation)
+  - DB migration: industry, business_description, audience_pain_point, online_channels, brand_voice_example, primary_goal, onboarding_completed columns
+  - Pre-fills from existing project data, redirects if already completed
+  - Banner on project overview when onboarding not completed
+  - Prompt builder updated to use new onboarding columns
+- Feature 1.2 — Social Engagement Pull-back — complete — 2026-03-14
+  - Inngest scheduled function: sync-social-metrics (every 6 hours, all platforms)
+  - GET /api/analytics/post-metrics/[postId] route with ownership check
+  - Existing manual sync routes verified working
+- Feature 1.3 — AI Content Scoring — complete — 2026-03-14
+  - New content-scorer agent with 4 dimensions: clarity, relevance, engagement_potential, brand_alignment (0-25 each, total 0-100)
+  - Registered in agents/index.ts
+  - content_scores table with RLS — migration applied
+  - Dedicated route: POST /api/agents/content-scorer (persists scores)
+  - Existing /api/ai/score-content rewritten to use new agent and persist
+  - ContentScorePanel component rebuilt with 4 gauges + total
+  - ContentScoreBadge export for inline score display on content lists
+- Feature 1.4 — Analytics Charts — already BUILT — skipped
+- Feature 2.1 — Drag & Drop Calendar — already BUILT — skipped
+- Feature 2.2 — Notifications — complete — 2026-03-14
+  - Migration file for notifications table (already existed in cloud, now versioned)
+  - createNotification() helper at src/lib/notifications.ts
+  - Wired into video pipeline (complete + failed events)
+  - Notification panel updated to support action_url routing
+  - Added video_complete and video_failed notification types
+- Feature 2.3 — Command Palette — already BUILT — skipped
+- Feature 2.4 — Competitor Tracking — complete — 2026-03-14
+  - Migration file for competitor_trackers and competitor_snapshots tables
+  - Inngest weekly scheduled function: sync-competitors (Monday 3am UTC)
+  - Rate limiting: max once per 24 hours per competitor on manual analysis
+  - All existing CRUD routes and UI verified working
+- Feature 3.1 — A/B Content Variants — complete — 2026-03-14
+  - Plan gating added to /api/ai/generate-variants (Growth + Agency only)
+  - VariantPanel integrated into Content Studio page (shown after generation)
+  - Existing component and route verified working
+- Feature 3.2 — Bulk Generation — complete — 2026-03-14
+  - bulk_jobs table with RLS — migration created
+  - POST /api/bulk-jobs: plan-gated (Growth + Agency), creates job + processes in background
+  - GET /api/bulk-jobs/[id]: progress polling with ownership check
+  - BulkGenerateDialog component: paste up to 30 topics, live progress bar, completion notification
+  - Integrated into Content Studio page with "Bulk Generate" button
+  - Auto-saves each generated piece as draft asset + logs to ai_generations
+- Feature 3.3 — White-Label PDF Reports — complete — 2026-03-14
+  - Migration: client_name, client_logo_url, report_accent_color columns on projects
+  - Audit PDF updated with client branding (logo, name, accent color, agency footer)
+  - Analytics PDF report: AnalyticsReportDocument component + GET /api/projects/[id]/analytics/pdf route
+  - Export PDF button on analytics page
+  - Client Branding section in project settings (Agency plan only): logo upload, client name, accent color
+  - File upload API: POST /api/upload (Supabase Storage, 2MB max, image types only)
+  - Agency plan gating on analytics PDF export route
+- Feature 3.4 — Outbound Webhooks — complete — 2026-03-14
+  - Migration: webhook_configs table with RLS
+  - Crypto utility: AES-256-GCM encrypt/decrypt for auth tokens (src/lib/crypto.ts)
+  - Test endpoint: POST /api/webhooks/[id]/test (sends test payload, 10s timeout)
+  - "Send to..." dropdown component integrated into Content Studio
+  - Webhook GET route updated with project_id filtering
+  - Existing CRUD routes and settings page verified working
+- Feature 4.1 — Campaign Orchestrator — complete — 2026-03-14
+  - Visual flow builder using @xyflow/react with custom AgentNode and ActionNode types
+  - Node-based editor: drag-drop agents, connect outputs→inputs, topological sort for execution order
+  - Agent picker panel with all active agents from registry
+  - Action nodes: Publish, Schedule, Wait
+  - Dark-themed canvas matching Mineral design system (dot grid, custom controls/minimap)
+  - "Visual Builder" button added to campaigns page alongside existing template wizard
+  - Existing template campaigns, execution engine, and CampaignRunner verified working
+
+### Navigation Audit & Wiring — complete — 2026-03-16
+- Full audit of all 39 dashboard routes
+- Orphaned routes wired into navigation:
+  - `/projects` — "My Projects" heading in sidebar now clickable
+  - `/projects/[id]/audit` — added to sidebar per-project section + ProjectNav
+  - `/playground` — added to sidebar as global item
+  - `/settings/team` — added as Settings sub-nav item
+  - `/settings/integrations` — added as Settings sub-nav item
+  - `/settings/integrations/webhooks` — added as Settings sub-nav item
+- Per-project sidebar expanded with: Overview, Audit, Analytics, Calendar, Campaigns, Competitors, Video, Library, Settings
+- Settings section now auto-expands sub-nav (Profile, Team, Billing, Integrations, Webhooks) when on /settings/*
+- Verified: NotificationPanel in header, CommandPalette in layout, onboarding banner, Export PDF button, Send to... dropdown, Campaign orchestrator — all reachable
+
+### HeyGen UGC Avatar Fallback Removal — complete — 2026-03-16
+- Removed HEYGEN_UGC_AVATAR_ID from all code, docs, and env references
+- Replaced with 3-level smart fallback in selectRandomAvatar(), selectBrandMatchedAvatar(), resolveUGCAvatar():
+  1. Unfiltered avatar pool (any avatar from API)
+  2. HEYGEN_DEFAULT_AVATAR_ID (already configured for Presenter videos)
+  3. Clear descriptive error throw (never silently proceeds with undefined)
+- Also removed from createHeyGenVideo() — simplified to use req.avatarId ?? DEFAULT_AVATAR_ID
+- Updated ARCHITECTURE_ADDENDUM_v2.1.md to document new fallback strategy
+
+### UGC Video Bug Fixes — complete — 2026-03-16
+- **BUG 1 — Voice/Avatar Gender Mismatch**: `resolveUGCAvatar()` now returns `ResolvedAvatar` object `{ avatarId, gender }` instead of plain string. Both pipeline files updated to use gender-aware voice selection via `HEYGEN_DEFAULT_VOICE_ID_MALE` / `HEYGEN_DEFAULT_VOICE_ID` env vars.
+- **BUG 2 — Studio Background on UGC**: Added `backgroundStyle` parameter to `HeyGenVideoRequest` ("studio" | "natural"). UGC videos now use warm off-white `#F5F5F0` instead of dark navy `#1a1a2e`. Pipeline files pass `backgroundStyle: "natural"` for UGC and skip thumbnailUrl.
+- **BUG 3 — Brand-Matched Gender Consistency**: AI casting director prompt updated to consider avatar gender → voice gender relationship. `selectBrandMatchedAvatar()` returns full `ResolvedAvatar` with gender.
+- Removed `HEYGEN_UGC_AVATAR_ID` from `.env.local`
+- Added `HEYGEN_DEFAULT_VOICE_ID_MALE` to `.env.local`
+
+### A/B Test Agent — activated — 2026-03-16
+- Standalone agent page at /projects/[id]/agents/ab-test
+  - Two-panel workspace: input (content type, brief, variant count) + output (tabbed variants with auto-scoring)
+  - Generates original content via copywriting agent, then creates variants via existing generate-variants API
+  - Each variant auto-scored in background via content-scorer agent (4 dimensions + total)
+  - Save to library and copy-to-clipboard actions per variant
+  - Plan gated: Growth and Agency only, locked state with upgrade prompt for Free/Pro
+- Agent registry updated: ab-test-setup status changed from "coming_soon" to "active"
+- 14 agents now active, 0 coming soon
+- Added to ProjectNav with GitBranch icon
+- Sidebar automatically includes it (uses AGENT_REGISTRY filter)
+- Project overview automatically shows 14 active agents (no more "Coming Soon" section)
+
 ---
 
-*Updated by Claude Code (Sonnet 4.6) on February 19, 2026*
+*Updated by Claude Code (Opus 4.6) on March 16, 2026*

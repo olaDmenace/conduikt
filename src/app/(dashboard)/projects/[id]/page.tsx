@@ -49,6 +49,7 @@ interface Project {
   id: string;
   name: string;
   website_url: string | null;
+  onboarding_completed?: boolean | null;
 }
 
 type MetricsMap = Record<string, AgentMetrics & { lastUsedLabel: string | null }>;
@@ -235,6 +236,26 @@ export default function ProjectOverviewPage({
           </Link>
         </Button>
       </PageHeader>
+
+      {/* Onboarding banner */}
+      {!project.onboarding_completed && (
+        <div className="flex items-center gap-4 px-5 py-4 rounded-xl border border-accent/30 bg-accent-muted/20 mb-6 animate-in">
+          <div className="flex-1">
+            <p className="text-body font-semibold text-text-primary">
+              Complete your brand profile to unlock AI-powered features
+            </p>
+            <p className="text-small text-text-secondary mt-0.5">
+              Help Conduikt understand your business, audience, and goals so every piece of content is tailored to you.
+            </p>
+          </div>
+          <Button size="sm" asChild>
+            <Link href={`/projects/${id}/onboarding`}>
+              Set up profile
+              <ArrowUpRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+      )}
 
       {/* Quick stats strip */}
       <div className="flex items-center gap-6 px-5 py-3 rounded-xl border border-border-default bg-surface-1 mb-8 animate-in overflow-x-auto">

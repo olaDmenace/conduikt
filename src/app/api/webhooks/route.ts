@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -9,13 +9,21 @@ export async function GET() {
   if (!user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data } = await supabase
+  const projectId = request.nextUrl.searchParams.get("project_id");
+
+  let query = supabase
     .from("webhook_configs")
     .select("id, name, type, endpoint_url, active, project_id, created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
-  return NextResponse.json({ webhooks: data ?? [] });
+  if (projectId) {
+    query = query.eq("project_id", projectId);
+  }
+
+  const { data } = await query;
+
+  return NextResponse.json(data ?? []);
 }
 
 export async function POST(request: NextRequest) {

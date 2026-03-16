@@ -17,6 +17,11 @@ import {
   ChevronUp,
   Lock,
   Sparkles,
+  Smartphone,
+  Info,
+  Shuffle,
+  User,
+  Wand2,
 } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent } from "@/src/components/ui/card";
@@ -25,6 +30,20 @@ import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
 import { ProjectNav } from "@/src/components/layout/project-nav";
 import { useToast } from "@/src/components/ui/toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
+
+interface AvatarInfo {
+  avatar_id: string;
+  avatar_name: string;
+  gender: "male" | "female" | "unknown";
+  preview_image_url: string;
+  preview_video_url: string;
+}
 
 interface VideoJob {
   id: string;
@@ -77,7 +96,7 @@ export default function VideoAgentPage({
   const [phase, setPhase] = useState<"style" | "form" | "status" | "done">(
     "style"
   );
-  const [style, setStyle] = useState<"presenter" | "cinematic">("presenter");
+  const [style, setStyle] = useState<"presenter" | "cinematic" | "ugc">("presenter");
   const [brief, setBrief] = useState("");
   const [adLength, setAdLength] = useState<"short" | "standard" | "long">(
     "standard"
@@ -89,6 +108,13 @@ export default function VideoAgentPage({
   const [historyLoading, setHistoryLoading] = useState(true);
   const [planGated, setPlanGated] = useState(false);
   const [scriptExpanded, setScriptExpanded] = useState(false);
+  const [avatarMode, setAvatarMode] = useState<"random" | "pick" | "brand-matched">("random");
+  const [avatarGender, setAvatarGender] = useState<"male" | "female" | undefined>(undefined);
+  const [selectedAvatarId, setSelectedAvatarId] = useState<string | null>(null);
+  const [selectedAvatarName, setSelectedAvatarName] = useState<string | null>(null);
+  const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
+  const [avatars, setAvatars] = useState<AvatarInfo[]>([]);
+  const [avatarsLoading, setAvatarsLoading] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { toast } = useToast();
 
@@ -134,6 +160,27 @@ export default function VideoAgentPage({
     };
   }, [activeJobId, phase, fetchHistory, toast]);
 
+  async function fetchAvatars(gender?: "male" | "female") {
+    setAvatarsLoading(true);
+    try {
+      const url = gender
+        ? `/api/video/avatars?gender=${gender}`
+        : "/api/video/avatars";
+      const res = await fetch(url);
+      if (res.ok) {
+        setAvatars(await res.json());
+      }
+    } catch {
+      // silent fail — picker will show empty state
+    }
+    setAvatarsLoading(false);
+  }
+
+  function openAvatarPicker() {
+    fetchAvatars(avatarGender);
+    setAvatarPickerOpen(true);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (brief.length < 50) return;
@@ -147,6 +194,12 @@ export default function VideoAgentPage({
         brief,
         style,
         adLength,
+        videoType: style,
+        ...(style === "ugc" && {
+          avatarMode,
+          selectedAvatarId: avatarMode === "pick" ? selectedAvatarId : undefined,
+          avatarGender,
+        }),
       }),
     });
 
@@ -252,7 +305,7 @@ export default function VideoAgentPage({
 
       {/* Section A: Style Selector */}
       {phase === "style" && !planGated && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 animate-in">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 animate-in">
           <button
             onClick={() => {
               setStyle("presenter");
@@ -265,7 +318,7 @@ export default function VideoAgentPage({
             </div>
             <h3 className="text-h3 text-text-primary mb-1">Presenter Ad</h3>
             <p className="text-small text-text-secondary">
-              AI spokesperson delivers your script on camera. Best for SaaS
+              Studio-quality, avatar on screen. Best for SaaS
               explainers and LinkedIn ads.
             </p>
             <Badge className="mt-3" variant="success">
@@ -279,12 +332,32 @@ export default function VideoAgentPage({
             </div>
             <h3 className="text-h3 text-text-primary mb-1">Cinematic Ad</h3>
             <p className="text-small text-text-secondary">
-              Scene-based visuals with your brand story. Powered by Runway ML.
+              Scene-based, high-production. Powered by Runway ML.
             </p>
             <Badge className="mt-3" variant="warning">
               Coming Soon
             </Badge>
           </div>
+
+          <button
+            onClick={() => {
+              setStyle("ugc");
+              setPhase("form");
+            }}
+            className="text-left rounded-2xl border-2 border-border-default bg-surface-1 p-6 hover:border-accent hover:bg-surface-2 transition-all group"
+          >
+            <div className="mb-4 rounded-xl bg-accent-muted p-3 w-fit">
+              <Smartphone className="h-6 w-6 text-accent" />
+            </div>
+            <h3 className="text-h3 text-text-primary mb-1">UGC Ad</h3>
+            <p className="text-small text-text-secondary">
+              Authentic, first-person, social-native. Made for TikTok, Reels,
+              and Shorts.
+            </p>
+            <Badge className="mt-3" variant="success">
+              Active
+            </Badge>
+          </button>
         </div>
       )}
 
@@ -293,6 +366,124 @@ export default function VideoAgentPage({
         <Card className="mb-8 animate-in">
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* UGC info message */}
+              {style === "ugc" && (
+                <div className="flex items-start gap-3 rounded-lg border border-accent/30 bg-accent-muted/30 p-4">
+                  <Info className="h-5 w-5 text-accent shrink-0 mt-0.5" />
+                  <p className="text-small text-text-secondary">
+                    UGC videos are vertical (9:16) and optimised for TikTok,
+                    Instagram Reels, and YouTube Shorts.
+                  </p>
+                </div>
+              )}
+
+              {/* Avatar Selection — UGC only */}
+              {style === "ugc" && (
+                <div>
+                  <label className="text-caption text-text-tertiary mb-2 block">
+                    Avatar selection
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                    {([
+                      {
+                        value: "random" as const,
+                        label: "Random",
+                        desc: "System picks a matching avatar",
+                        icon: Shuffle,
+                      },
+                      {
+                        value: "pick" as const,
+                        label: "Pick",
+                        desc: "Browse and choose your avatar",
+                        icon: User,
+                      },
+                      {
+                        value: "brand-matched" as const,
+                        label: "Brand-matched",
+                        desc: "AI selects based on your brand",
+                        icon: Wand2,
+                      },
+                    ]).map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => {
+                          setAvatarMode(opt.value);
+                          setSelectedAvatarId(null);
+                          setSelectedAvatarName(null);
+                        }}
+                        className={`text-left rounded-xl border-2 p-4 transition-all ${
+                          avatarMode === opt.value
+                            ? "border-accent bg-accent-muted/30"
+                            : "border-border-default bg-surface-0 hover:border-border-strong"
+                        }`}
+                      >
+                        <opt.icon className={`h-5 w-5 mb-2 ${
+                          avatarMode === opt.value ? "text-accent" : "text-text-tertiary"
+                        }`} />
+                        <p className="text-small font-medium text-text-primary">{opt.label}</p>
+                        <p className="text-caption text-text-tertiary">{opt.desc}</p>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Gender filter — for random and pick modes */}
+                  {(avatarMode === "random" || avatarMode === "pick") && (
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="text-caption text-text-tertiary">Gender:</span>
+                      {([
+                        { value: undefined, label: "Any" },
+                        { value: "male" as const, label: "Male" },
+                        { value: "female" as const, label: "Female" },
+                      ]).map((g) => (
+                        <button
+                          key={g.label}
+                          type="button"
+                          onClick={() => setAvatarGender(g.value)}
+                          className={`rounded-lg border px-3 py-1.5 text-caption transition-colors ${
+                            avatarGender === g.value
+                              ? "border-accent bg-accent-muted text-text-primary"
+                              : "border-border-default bg-surface-0 text-text-secondary hover:bg-surface-2"
+                          }`}
+                        >
+                          {g.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Pick mode — browse button + selected avatar */}
+                  {avatarMode === "pick" && (
+                    <div className="flex items-center gap-3">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={openAvatarPicker}
+                      >
+                        <User className="h-4 w-4" />
+                        {selectedAvatarId ? "Change Avatar" : "Browse Avatars"}
+                      </Button>
+                      {selectedAvatarName && (
+                        <span className="text-small text-text-secondary">
+                          Selected: <strong className="text-text-primary">{selectedAvatarName}</strong>
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Brand-matched info */}
+                  {avatarMode === "brand-matched" && (
+                    <div className="flex items-start gap-2 rounded-lg border border-accent/20 bg-accent-muted/20 p-3">
+                      <Wand2 className="h-4 w-4 text-accent shrink-0 mt-0.5" />
+                      <p className="text-caption text-text-secondary">
+                        Claude AI will analyse your project&apos;s industry and target audience to pick the best-fit avatar.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Brief */}
               <div>
                 <label className="text-caption text-text-tertiary mb-2 block">
@@ -301,7 +492,11 @@ export default function VideoAgentPage({
                 <textarea
                   value={brief}
                   onChange={(e) => setBrief(e.target.value)}
-                  placeholder="Describe your product, the pain point it solves, and who it's for. Be specific. (min 50 characters)"
+                  placeholder={
+                    style === "ugc"
+                      ? "Describe what the creator is talking about. What is the product? What problem does it solve? Write it like you are briefing a friend, not writing an ad. (min 50 characters)"
+                      : "Describe your product, the pain point it solves, and who it's for. Be specific. (min 50 characters)"
+                  }
                   rows={4}
                   required
                   minLength={50}
@@ -312,7 +507,8 @@ export default function VideoAgentPage({
                 </p>
               </div>
 
-              {/* Ad Length */}
+              {/* Ad Length — hidden for UGC (fixed 20-30s) */}
+              {style !== "ugc" && (
               <div>
                 <label className="text-caption text-text-tertiary mb-2 block">
                   Ad length
@@ -346,6 +542,7 @@ export default function VideoAgentPage({
                   ))}
                 </div>
               </div>
+              )}
 
               {/* Actions */}
               <div className="flex items-center justify-between pt-2">
@@ -448,12 +645,12 @@ export default function VideoAgentPage({
             </div>
 
             {/* Video Player */}
-            <div className="rounded-xl overflow-hidden bg-surface-0 border border-border-default mb-6">
+            <div className={`rounded-xl overflow-hidden bg-surface-0 border border-border-default mb-6 ${style === "ugc" ? "max-w-sm mx-auto" : ""}`}>
               <video
                 src={jobStatus.videoUrl}
                 poster={jobStatus.thumbnailUrl ?? undefined}
                 controls
-                className="w-full aspect-video"
+                className={`w-full ${style === "ugc" ? "aspect-[9/16]" : "aspect-video"}`}
               />
             </div>
 
@@ -495,6 +692,89 @@ export default function VideoAgentPage({
           </CardContent>
         </Card>
       )}
+
+      {/* Avatar Picker Dialog */}
+      <Dialog open={avatarPickerOpen} onOpenChange={setAvatarPickerOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Choose your avatar</DialogTitle>
+          </DialogHeader>
+
+          {/* Gender filter inside dialog */}
+          <div className="flex items-center gap-2 mb-4">
+            {([
+              { value: undefined, label: "All" },
+              { value: "male" as const, label: "Male" },
+              { value: "female" as const, label: "Female" },
+            ]).map((g) => (
+              <button
+                key={g.label}
+                onClick={() => {
+                  setAvatarGender(g.value);
+                  fetchAvatars(g.value);
+                }}
+                className={`rounded-lg border px-3 py-1.5 text-caption transition-colors ${
+                  avatarGender === g.value
+                    ? "border-accent bg-accent-muted text-text-primary"
+                    : "border-border-default bg-surface-0 text-text-secondary hover:bg-surface-2"
+                }`}
+              >
+                {g.label}
+              </button>
+            ))}
+          </div>
+
+          {avatarsLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 text-accent animate-spin" />
+            </div>
+          ) : avatars.length === 0 ? (
+            <p className="text-body text-text-secondary text-center py-8">
+              No avatars available. Check your HeyGen API key.
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {avatars.map((avatar) => (
+                <button
+                  key={avatar.avatar_id}
+                  onClick={() => {
+                    setSelectedAvatarId(avatar.avatar_id);
+                    setSelectedAvatarName(avatar.avatar_name);
+                    setAvatarPickerOpen(false);
+                  }}
+                  className={`rounded-xl border-2 overflow-hidden transition-all ${
+                    selectedAvatarId === avatar.avatar_id
+                      ? "border-accent ring-2 ring-accent/30"
+                      : "border-border-default hover:border-border-strong"
+                  }`}
+                >
+                  <div className="aspect-square bg-surface-2">
+                    {avatar.preview_image_url ? (
+                      <img
+                        src={avatar.preview_image_url}
+                        alt={avatar.avatar_name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <User className="h-8 w-8 text-text-tertiary" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-2">
+                    <p className="text-caption font-medium text-text-primary truncate">
+                      {avatar.avatar_name}
+                    </p>
+                    <p className="text-caption text-text-tertiary capitalize">
+                      {avatar.gender}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Section E: Video History */}
       <div className="mb-8">
@@ -542,7 +822,7 @@ export default function VideoAgentPage({
                         {job.brief.length > 60 ? "..." : ""}
                       </p>
                       <p className="text-small text-text-tertiary">
-                        {job.style === "presenter" ? "Presenter" : "Cinematic"}
+                        {job.style === "ugc" ? "UGC" : job.style === "presenter" ? "Presenter" : "Cinematic"}
                         {job.duration_seconds
                           ? ` · ${job.duration_seconds}s`
                           : ""}

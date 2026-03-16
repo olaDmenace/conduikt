@@ -7,62 +7,78 @@ import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 
 interface ScoreResult {
-  scores: {
-    readability: number;
-    seoFit: number | null;
-    engagementPotential: number;
-    overall: number;
-  };
-  suggestions: string[];
-  verdict: "publish" | "improve" | "rewrite";
+  total_score: number;
+  clarity: number;
+  relevance: number;
+  engagement_potential: number;
+  brand_alignment: number;
+  summary: string;
+  top_strength: string;
+  top_improvement: string;
 }
 
 interface ContentScorePanelProps {
   content: string;
-  contentType: "blog" | "social" | "copy" | "email";
-  targetKeyword?: string;
-  channel?: "x" | "linkedin";
+  contentType: string;
   projectId: string;
-  onImprove?: (suggestions: string[]) => void;
+  postId?: string;
+  onImprove?: (improvement: string) => void;
 }
 
-function ScoreGauge({ score, label, size = 80 }: { score: number; label: string; size?: number }) {
+function ScoreGauge({
+  score,
+  maxScore,
+  label,
+  size = 72,
+}: {
+  score: number;
+  maxScore: number;
+  label: string;
+  size?: number;
+}) {
   const radius = (size - 8) / 2;
   const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (score / 100) * circumference;
-  const color = score > 75 ? "#4ADE80" : score >= 50 ? "#F59E0B" : "#EF4444";
+  const pct = score / maxScore;
+  const offset = circumference - pct * circumference;
+  const color = pct > 0.75 ? "#4ADE80" : pct >= 0.5 ? "#F59E0B" : "#EF4444";
 
   return (
     <div className="flex flex-col items-center gap-1.5">
-      <svg width={size} height={size} className="transform -rotate-90">
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="var(--surface-2)"
-          strokeWidth={4}
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke={color}
-          strokeWidth={4}
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-          className="transition-all duration-700 ease-out"
-        />
-      </svg>
-      <div
-        className="absolute font-mono font-semibold text-text-primary"
-        style={{ fontSize: size * 0.22 }}
-      >
-        {score}
+      <div className="relative" style={{ width: size, height: size }}>
+        <svg width={size} height={size} className="transform -rotate-90">
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke="var(--surface-2)"
+            strokeWidth={4}
+          />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke={color}
+            strokeWidth={4}
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            strokeLinecap="round"
+            className="transition-all duration-700 ease-out"
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span
+            className="font-mono font-semibold text-text-primary"
+            style={{ fontSize: size * 0.22 }}
+          >
+            {score}
+          </span>
+        </div>
       </div>
-      <span className="text-caption text-text-tertiary">{label}</span>
+      <span className="text-caption text-text-tertiary text-center leading-tight">
+        {label}
+      </span>
     </div>
   );
 }
@@ -70,9 +86,8 @@ function ScoreGauge({ score, label, size = 80 }: { score: number; label: string;
 export function ContentScorePanel({
   content,
   contentType,
-  targetKeyword,
-  channel,
   projectId,
+  postId,
   onImprove,
 }: ContentScorePanelProps) {
   const [result, setResult] = useState<ScoreResult | null>(null);
@@ -94,7 +109,7 @@ export function ContentScorePanel({
         const res = await fetch("/api/ai/score-content", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content, contentType, targetKeyword, channel, projectId }),
+          body: JSON.stringify({ content, contentType, projectId, postId }),
         });
         if (res.ok) {
           setResult(await res.json());
@@ -108,7 +123,7 @@ export function ContentScorePanel({
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [content, contentType, targetKeyword, channel, projectId]);
+  }, [content, contentType, projectId, postId]);
 
   if (!content || content.length < 50) return null;
 
@@ -117,7 +132,9 @@ export function ContentScorePanel({
       <Card className="animate-in mt-4">
         <CardContent className="flex items-center justify-center gap-2 py-6">
           <Loader2 className="h-4 w-4 text-accent animate-spin" />
-          <span className="text-small text-text-secondary">Scoring content quality...</span>
+          <span className="text-small text-text-secondary">
+            Scoring content quality...
+          </span>
         </CardContent>
       </Card>
     );
@@ -125,71 +142,106 @@ export function ContentScorePanel({
 
   if (!result) return null;
 
+  const verdict =
+    result.total_score >= 75
+      ? "publish"
+      : result.total_score >= 50
+        ? "improve"
+        : "rewrite";
+
   const verdictConfig = {
-    publish: { label: "Ready to Publish", variant: "success" as const, color: "text-success" },
-    improve: { label: "Could be Stronger", variant: "warning" as const, color: "text-warning" },
-    rewrite: { label: "Needs Rework", variant: "error" as const, color: "text-error" },
+    publish: { label: "Ready to Publish", variant: "success" as const },
+    improve: { label: "Could be Stronger", variant: "warning" as const },
+    rewrite: { label: "Needs Rework", variant: "secondary" as const },
   };
 
-  const v = verdictConfig[result.verdict];
+  const v = verdictConfig[verdict];
 
   return (
     <Card className="animate-in mt-4">
       <CardContent className="p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-body font-medium text-text-primary">Content Quality Score</h3>
-          <Badge variant={v.variant === "error" ? "secondary" : v.variant === "warning" ? "secondary" : "success"}>
-            {v.label}
-          </Badge>
+          <h3 className="text-body font-medium text-text-primary">
+            Content Quality Score
+          </h3>
+          <Badge variant={v.variant}>{v.label}</Badge>
         </div>
 
-        {/* Score Gauges */}
-        <div className="flex items-center justify-center gap-8">
-          <div className="relative flex flex-col items-center">
-            <ScoreGauge score={result.scores.readability} label="Readability" />
-          </div>
-          {result.scores.seoFit !== null && (
-            <div className="relative flex flex-col items-center">
-              <ScoreGauge score={result.scores.seoFit} label="SEO Fit" />
-            </div>
-          )}
-          <div className="relative flex flex-col items-center">
-            <ScoreGauge score={result.scores.engagementPotential} label="Engagement" />
-          </div>
-          <div className="relative flex flex-col items-center">
-            <ScoreGauge score={result.scores.overall} label="Overall" size={96} />
-          </div>
+        {/* Score Gauges — 4 dimensions + total */}
+        <div className="flex items-center justify-center gap-6 flex-wrap">
+          <ScoreGauge score={result.clarity} maxScore={25} label="Clarity" />
+          <ScoreGauge
+            score={result.relevance}
+            maxScore={25}
+            label="Relevance"
+          />
+          <ScoreGauge
+            score={result.engagement_potential}
+            maxScore={25}
+            label="Engagement"
+          />
+          <ScoreGauge
+            score={result.brand_alignment}
+            maxScore={25}
+            label="Brand Fit"
+          />
+          <ScoreGauge
+            score={result.total_score}
+            maxScore={100}
+            label="Total"
+            size={88}
+          />
         </div>
 
-        {/* Suggestions */}
-        {result.suggestions.length > 0 && (
-          <div>
-            <button
-              onClick={() => setExpanded(!expanded)}
-              className="flex items-center gap-1.5 text-small text-text-secondary hover:text-text-primary transition-colors"
-            >
-              {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-              {result.suggestions.length} suggestion{result.suggestions.length !== 1 ? "s" : ""}
-            </button>
-            {expanded && (
-              <ul className="mt-2 space-y-1.5 pl-4">
-                {result.suggestions.map((s, i) => (
-                  <li key={i} className="text-small text-text-secondary list-disc">
-                    {s}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+        {/* Summary */}
+        {result.summary && (
+          <p className="text-small text-text-secondary text-center">
+            {result.summary}
+          </p>
         )}
 
+        {/* Strengths & Improvements */}
+        <div>
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="flex items-center gap-1.5 text-small text-text-secondary hover:text-text-primary transition-colors"
+          >
+            {expanded ? (
+              <ChevronUp className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronDown className="h-3.5 w-3.5" />
+            )}
+            Details & improvement tip
+          </button>
+          {expanded && (
+            <div className="mt-3 space-y-2">
+              {result.top_strength && (
+                <div className="flex gap-2 text-small">
+                  <span className="text-success shrink-0">Strength:</span>
+                  <span className="text-text-secondary">
+                    {result.top_strength}
+                  </span>
+                </div>
+              )}
+              {result.top_improvement && (
+                <div className="flex gap-2 text-small">
+                  <span className="text-warning shrink-0">Improve:</span>
+                  <span className="text-text-secondary">
+                    {result.top_improvement}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Improve Button */}
-        {onImprove && result.verdict !== "publish" && (
+        {onImprove && verdict !== "publish" && result.top_improvement && (
           <div className="flex justify-end">
             <Button
               size="sm"
               variant="secondary"
-              onClick={() => onImprove(result.suggestions)}
+              onClick={() => onImprove(result.top_improvement)}
             >
               <Sparkles className="h-3.5 w-3.5 mr-1.5" />
               Improve with AI
@@ -198,5 +250,23 @@ export function ContentScorePanel({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+/** Small inline score badge for content lists */
+export function ContentScoreBadge({ score }: { score: number }) {
+  const color =
+    score >= 75
+      ? "bg-success/20 text-success"
+      : score >= 50
+        ? "bg-warning/20 text-warning"
+        : "bg-error/20 text-error";
+
+  return (
+    <span
+      className={`inline-flex items-center justify-center rounded-md px-1.5 py-0.5 text-caption font-mono font-semibold ${color}`}
+    >
+      {score}
+    </span>
   );
 }

@@ -18,6 +18,7 @@ import {
   Megaphone,
   Swords,
   Video,
+  GitBranch,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils/cn";
 
@@ -32,7 +33,8 @@ export function ProjectNav({ projectId }: ProjectNavProps) {
 
   const items = [
     { name: "Overview",  href: base,                          icon: BarChart3   },
-    { name: "SEO Audit", href: `${agentsBase}/seo-audit`,     icon: AlertTriangle },
+    { name: "Audit",     href: `${base}/audit`,               icon: AlertTriangle },
+    { name: "SEO Audit", href: `${agentsBase}/seo-audit`,     icon: Search      },
     { name: "Content",   href: `${agentsBase}/content`,       icon: FileText    },
     { name: "Blog",      href: `${agentsBase}/blog`,          icon: Globe       },
     { name: "Video",     href: `${base}/video`,               icon: Video       },
@@ -44,6 +46,7 @@ export function ProjectNav({ projectId }: ProjectNavProps) {
     { name: "Competitors", href: `${base}/competitors`,        icon: Swords      },
     { name: "Calendar",  href: `${agentsBase}/calendar`,      icon: Calendar    },
     { name: "Emails",    href: `${base}/emails`,              icon: Mail        },
+    { name: "A/B Tests", href: `${agentsBase}/ab-test`,        icon: GitBranch   },
     { name: "Library",   href: `${base}/library`,             icon: FolderOpen  },
     { name: "Settings",  href: `${base}/settings`,            icon: Settings    },
   ];

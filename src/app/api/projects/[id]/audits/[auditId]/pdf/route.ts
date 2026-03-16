@@ -30,11 +30,18 @@ export async function GET(
     return NextResponse.json({ error: "Audit not found" }, { status: 404 });
   }
 
-  // Fetch project name
+  // Fetch project with branding fields
   const { data: project } = await supabase
     .from("projects")
-    .select("name, website_url")
+    .select("name, website_url, client_name, client_logo_url, report_accent_color")
     .eq("id", id)
+    .single();
+
+  // Fetch agency name from profile
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name, plan")
+    .eq("id", user.id)
     .single();
 
   const doc = React.createElement(AuditReportDocument, {
@@ -47,6 +54,12 @@ export async function GET(
     }),
     score: audit.score ?? 0,
     findings: audit.findings ?? [],
+    branding: profile?.plan === "agency" ? {
+      clientName: project?.client_name,
+      clientLogoUrl: project?.client_logo_url,
+      reportAccentColor: project?.report_accent_color,
+      agencyName: profile?.full_name,
+    } : undefined,
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
