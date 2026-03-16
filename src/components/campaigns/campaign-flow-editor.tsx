@@ -148,30 +148,30 @@ const actionNodes = [
 
 function flowToSteps(nodes: Node[], edges: Edge[]) {
   // Topological sort based on edges
-  const adjacency = new Map<string, string[]>();
-  const inDegree = new Map<string, number>();
+  const adjacency: Record<string, string[]> = {};
+  const inDegree: Record<string, number> = {};
 
   for (const node of nodes) {
-    adjacency.set(node.id, []);
-    inDegree.set(node.id, 0);
+    adjacency[node.id] = [];
+    inDegree[node.id] = 0;
   }
   for (const edge of edges) {
-    adjacency.get(edge.source)?.push(edge.target);
-    inDegree.set(edge.target, (inDegree.get(edge.target) ?? 0) + 1);
+    adjacency[edge.source]?.push(edge.target);
+    inDegree[edge.target] = (inDegree[edge.target] ?? 0) + 1;
   }
 
   const queue: string[] = [];
-  for (const [id, deg] of inDegree) {
-    if (deg === 0) queue.push(id);
+  for (const id of Object.keys(inDegree)) {
+    if (inDegree[id] === 0) queue.push(id);
   }
 
   const sorted: string[] = [];
   while (queue.length > 0) {
     const current = queue.shift()!;
     sorted.push(current);
-    for (const neighbor of adjacency.get(current) ?? []) {
-      inDegree.set(neighbor, (inDegree.get(neighbor) ?? 0) - 1);
-      if (inDegree.get(neighbor) === 0) queue.push(neighbor);
+    for (const neighbor of adjacency[current] ?? []) {
+      inDegree[neighbor] = (inDegree[neighbor] ?? 0) - 1;
+      if (inDegree[neighbor] === 0) queue.push(neighbor);
     }
   }
 
