@@ -136,9 +136,15 @@ export function Sidebar() {
       if (document.visibilityState === "visible") loadData();
     }
     document.addEventListener("visibilitychange", onVisibilityChange);
-    // Also refetch on route changes (pathname updates)
-    loadData();
-    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+
+    // Refetch when a generation completes (dispatched by content/playground pages)
+    function onGeneration() { loadData(); }
+    window.addEventListener("conduikt:generation", onGeneration);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("conduikt:generation", onGeneration);
+    };
   }, [pathname]);
 
   async function handleLogout() {

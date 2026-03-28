@@ -485,6 +485,8 @@ function ContentPageInner({
     }
 
     setGenerating(false);
+    // Notify sidebar to refresh generation counter
+    window.dispatchEvent(new Event("conduikt:generation"));
   }
 
   // ---------- save asset ----------

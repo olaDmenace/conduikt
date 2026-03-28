@@ -4,6 +4,9 @@ import { generateWithClaude } from "@/src/lib/ai/client";
 import { seoAuditSkill } from "@/src/lib/ai/agents/seo-audit";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
 
+// Force Node.js runtime — Edge runtime can't fetch arbitrary external URLs
+export const runtime = "nodejs";
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
 

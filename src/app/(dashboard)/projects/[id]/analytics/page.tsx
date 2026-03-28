@@ -388,7 +388,10 @@ export default function AnalyticsPage() {
                 <CardContent className="flex items-start justify-between p-5">
                   <div className="min-w-0">
                     <p className="text-caption text-text-tertiary">{stat.label}</p>
-                    <p className={`mt-1 font-semibold font-mono text-text-primary truncate ${stat.small ? "text-lg" : "text-2xl"}`}>
+                    <p
+                      className={`mt-1 font-semibold font-mono text-text-primary truncate ${stat.small ? "text-base" : "text-2xl"}`}
+                      title={String(stat.value)}
+                    >
                       {stat.value}
                     </p>
                   </div>

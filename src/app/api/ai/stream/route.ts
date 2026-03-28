@@ -13,6 +13,7 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
+      headers: { "Content-Type": "application/json" },
     });
   }
 
@@ -23,6 +24,7 @@ export async function POST(request: NextRequest) {
   if (!skill) {
     return new Response(JSON.stringify({ error: "Unknown agent" }), {
       status: 400,
+      headers: { "Content-Type": "application/json" },
     });
   }
 
@@ -43,7 +45,7 @@ export async function POST(request: NextRequest) {
   if ((profile?.generation_count ?? 0) >= limit) {
     return new Response(
       JSON.stringify({ error: "Generation limit reached. Upgrade your plan." }),
-      { status: 429 }
+      { status: 429, headers: { "Content-Type": "application/json" } }
     );
   }
 

@@ -55,6 +55,11 @@ export default function FeaturesPage() {
             </div>
             <span className="font-display text-lg text-text-primary">Conduikt</span>
           </Link>
+          <div className="hidden items-center gap-8 md:flex">
+            <Link href="/#pricing" className="text-small text-text-secondary hover:text-text-primary transition-colors">Pricing</Link>
+            <Link href="/compare/jasper" className="text-small text-text-secondary hover:text-text-primary transition-colors">Compare</Link>
+            <Link href="/launch" className="text-small text-text-secondary hover:text-text-primary transition-colors">Launch</Link>
+          </div>
           <div className="flex items-center gap-3">
             <Button variant="ghost" asChild><Link href="/login">Sign in</Link></Button>
             <Button asChild><Link href="/signup">Get Started</Link></Button>

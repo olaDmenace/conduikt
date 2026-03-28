@@ -93,6 +93,82 @@ interface UsageInfo {
   durationMs: number;
 }
 
+/** Renders parsed JSON as human-readable formatted content */
+function FormattedOutput({ data }: { data: unknown }) {
+  if (data == null) return null;
+
+  // Array of items (posts, variants, keywords, emails, etc.)
+  if (Array.isArray(data)) {
+    return (
+      <div className="space-y-3">
+        {data.map((item, i) => (
+          <div
+            key={i}
+            className="rounded-lg border border-border-default bg-surface-1 p-4"
+            style={{ animationDelay: `${i * 60}ms` }}
+          >
+            <FormattedOutput data={item} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Object with fields
+  if (typeof data === "object") {
+    const obj = data as Record<string, unknown>;
+    // Check for common wrapper patterns: { variants: [...] }, { posts: [...] }, { keywords: [...] }
+    const arrayKey = Object.keys(obj).find((k) => Array.isArray(obj[k]));
+    const scalarKeys = Object.keys(obj).filter(
+      (k) => !Array.isArray(obj[k]) && typeof obj[k] !== "object"
+    );
+    const objectKeys = Object.keys(obj).filter(
+      (k) => typeof obj[k] === "object" && !Array.isArray(obj[k]) && obj[k] !== null
+    );
+
+    return (
+      <div className="space-y-3">
+        {/* Render scalar fields as labeled values */}
+        {scalarKeys.map((key) => (
+          <div key={key}>
+            <span className="text-caption text-accent font-medium uppercase tracking-wider">
+              {key.replace(/_/g, " ")}
+            </span>
+            <p className="mt-0.5 text-body text-text-primary whitespace-pre-wrap">
+              {String(obj[key])}
+            </p>
+          </div>
+        ))}
+        {/* Render nested objects */}
+        {objectKeys.map((key) => (
+          <div key={key} className="mt-2">
+            <span className="text-caption text-accent font-medium uppercase tracking-wider">
+              {key.replace(/_/g, " ")}
+            </span>
+            <div className="mt-1 pl-3 border-l-2 border-accent/20">
+              <FormattedOutput data={obj[key]} />
+            </div>
+          </div>
+        ))}
+        {/* Render the main array (variants, posts, etc.) */}
+        {arrayKey && (
+          <div className="mt-2">
+            <span className="text-caption text-accent font-medium uppercase tracking-wider">
+              {arrayKey.replace(/_/g, " ")} ({(obj[arrayKey] as unknown[]).length})
+            </span>
+            <div className="mt-2">
+              <FormattedOutput data={obj[arrayKey]} />
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Primitive
+  return <p className="text-body text-text-primary whitespace-pre-wrap">{String(data)}</p>;
+}
+
 function PlaygroundInner() {
   const searchParams = useSearchParams();
   const initialAgent = searchParams.get("agent") ?? "copywriting";
@@ -121,18 +197,22 @@ function PlaygroundInner() {
 
   const currentAgent = agents.find((s) => s.id === selectedAgent)!;
 
-  // Strip markdown code fences and attempt JSON formatting
-  const formattedResult = useMemo(() => {
-    if (!result) return "";
+  // Strip markdown code fences and parse JSON if possible
+  const parsedResult = useMemo(() => {
+    if (!result) return null;
     // Strip ```json ... ``` fences
-    let cleaned = result.replace(/^```(?:json)?\s*\n?/gm, "").replace(/\n?```\s*$/gm, "");
-    // Try to pretty-print if it's valid JSON
+    const cleaned = result.replace(/^```(?:json)?\s*\n?/gm, "").replace(/\n?```\s*$/gm, "");
     try {
-      const parsed = JSON.parse(cleaned);
-      return JSON.stringify(parsed, null, 2);
+      return JSON.parse(cleaned);
     } catch {
-      return cleaned;
+      return null;
     }
+  }, [result]);
+
+  // Plain text version for copy/save (strip fences)
+  const cleanedResult = useMemo(() => {
+    if (!result) return "";
+    return result.replace(/^```(?:json)?\s*\n?/gm, "").replace(/\n?```\s*$/gm, "");
   }, [result]);
 
   // Auto-scroll output during streaming
@@ -207,6 +287,8 @@ function PlaygroundInner() {
     }
 
     setGenerating(false);
+    // Notify sidebar to refresh generation counter
+    window.dispatchEvent(new Event("conduikt:generation"));
   }
 
   function buildInput(): Record<string, unknown> {
@@ -238,7 +320,7 @@ function PlaygroundInner() {
 
   function handleCopy() {
     if (result) {
-      navigator.clipboard.writeText(result);
+      navigator.clipboard.writeText(cleanedResult);
       setCopied(true);
       toast("Copied to clipboard!", "info");
       setTimeout(() => setCopied(false), 2000);
@@ -261,7 +343,7 @@ function PlaygroundInner() {
         body: JSON.stringify({
           agent_id: selectedAgent,
           prompt,
-          result: formattedResult,
+          result: cleanedResult,
           usage,
         }),
       });
@@ -396,12 +478,18 @@ function PlaygroundInner() {
                   ref={outputRef}
                   className="rounded-lg border border-border-default bg-surface-0 p-4 max-h-[500px] overflow-y-auto"
                 >
-                  <pre className="whitespace-pre-wrap text-body text-text-primary font-sans">
-                    {generating ? result : formattedResult}
-                    {generating && (
+                  {generating ? (
+                    <pre className="whitespace-pre-wrap text-body text-text-primary font-sans">
+                      {result}
                       <span className="inline-block w-2 h-4 bg-accent animate-pulse ml-0.5" />
-                    )}
-                  </pre>
+                    </pre>
+                  ) : parsedResult ? (
+                    <FormattedOutput data={parsedResult} />
+                  ) : (
+                    <pre className="whitespace-pre-wrap text-body text-text-primary font-sans">
+                      {cleanedResult}
+                    </pre>
+                  )}
                 </div>
 
                 {/* Usage stats */}

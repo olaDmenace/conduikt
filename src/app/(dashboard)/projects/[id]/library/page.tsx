@@ -202,13 +202,20 @@ export default function LibraryPage({
             <FolderOpen className="h-12 w-12 text-text-tertiary mb-4" />
             <h3 className="text-h3 text-text-primary">No assets yet</h3>
             <p className="mt-2 text-body text-text-secondary max-w-md">
-              Generate content using any agent to start building your library.
+              Generate content using Content Studio or the Playground, then save drafts to build your library.
             </p>
-            <Button className="mt-6" asChild>
-              <Link href={`/projects/${projectId}/agents/content`}>
-                Generate Content
-              </Link>
-            </Button>
+            <div className="flex items-center gap-3 mt-6">
+              <Button asChild>
+                <Link href={`/projects/${projectId}/content`}>
+                  Content Studio
+                </Link>
+              </Button>
+              <Button variant="secondary" asChild>
+                <Link href="/playground">
+                  Playground
+                </Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ) : (

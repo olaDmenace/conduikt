@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { User, CreditCard, Zap, Users, Loader2 } from "lucide-react";
+import { User, CreditCard, Zap, Users, Loader2, Webhook } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Input } from "@/src/components/ui/input";
@@ -35,6 +35,12 @@ const settingsNav = [
     active: false,
   },
   { name: "Team", href: "/settings/team", icon: Users, active: false },
+  {
+    name: "Webhooks",
+    href: "/settings/integrations/webhooks",
+    icon: Webhook,
+    active: false,
+  },
 ];
 
 export default function SettingsPage() {

@@ -22,7 +22,7 @@ export default function MarketingLayout({
           </Link>
           <div className="hidden items-center gap-8 md:flex">
             <Link
-              href="/#features"
+              href="/features"
               className="text-small text-text-secondary hover:text-text-primary transition-colors"
             >
               Features
@@ -32,6 +32,12 @@ export default function MarketingLayout({
               className="text-small text-text-secondary hover:text-text-primary transition-colors"
             >
               Pricing
+            </Link>
+            <Link
+              href="/compare/jasper"
+              className="text-small text-text-secondary hover:text-text-primary transition-colors"
+            >
+              Compare
             </Link>
             <Link
               href="/launch"

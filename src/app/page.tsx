@@ -134,7 +134,7 @@ export default function LandingPage() {
           </Link>
           <div className="hidden items-center gap-8 md:flex">
             <Link
-              href="#features"
+              href="/features"
               className="text-small text-text-secondary hover:text-text-primary transition-colors"
             >
               Features
