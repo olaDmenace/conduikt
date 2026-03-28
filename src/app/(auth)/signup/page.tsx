@@ -2,12 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/src/lib/supabase/client";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
-import { useToast } from "@/src/components/ui/toast";
-import { Twitter, Linkedin } from "lucide-react";
+import { Twitter, Linkedin, Mail } from "lucide-react";
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState("");
@@ -15,10 +13,8 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [socialLoading, setSocialLoading] = useState<"twitter" | "linkedin_oidc" | null>(null);
-  const router = useRouter();
+  const [emailSent, setEmailSent] = useState(false);
   const supabase = createClient();
-  const { toast } = useToast();
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
@@ -43,24 +39,44 @@ export default function SignupPage() {
       return;
     }
 
-    toast("Account created successfully! Welcome to Conduikt.", "success");
-    router.push("/dashboard");
-    router.refresh();
+    setEmailSent(true);
+    setLoading(false);
   }
 
-  async function handleSocialLogin(provider: "twitter" | "linkedin_oidc") {
-    setSocialLoading(provider);
-    const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin;
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: `${siteUrl}/auth/confirm?next=/dashboard`,
-      },
-    });
-    if (error) {
-      setError(error.message);
-      setSocialLoading(null);
-    }
+  if (emailSent) {
+    return (
+      <div className="animate-in text-center">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent/10">
+          <Mail className="h-7 w-7 text-accent" />
+        </div>
+        <h1 className="text-h1">Check your email</h1>
+        <p className="mt-3 text-body text-text-secondary">
+          We sent a confirmation link to{" "}
+          <span className="font-medium text-text-primary">{email}</span>.
+          Click the link to verify your account and get started.
+        </p>
+        <p className="mt-6 text-small text-text-tertiary">
+          Didn&apos;t receive it? Check your spam folder, or{" "}
+          <button
+            type="button"
+            onClick={() => setEmailSent(false)}
+            className="text-accent-secondary hover:text-accent-secondary-hover transition-colors"
+          >
+            try signing up again
+          </button>
+          .
+        </p>
+        <p className="mt-4 text-small text-text-secondary">
+          Already confirmed?{" "}
+          <Link
+            href="/login"
+            className="text-accent-secondary hover:text-accent-secondary-hover transition-colors"
+          >
+            Sign in
+          </Link>
+        </p>
+      </div>
+    );
   }
 
   return (
@@ -76,25 +92,27 @@ export default function SignupPage() {
         </p>
       </div>
 
-      {/* Social login */}
+      {/* Social login — coming soon */}
       <div className="mb-6 space-y-3">
         <button
           type="button"
-          onClick={() => handleSocialLogin("twitter")}
-          disabled={!!socialLoading}
-          className="flex w-full items-center justify-center gap-3 rounded-lg border border-surface-3 bg-surface-1 px-4 py-2.5 text-small font-medium text-text-primary transition-colors hover:bg-surface-2 disabled:opacity-50"
+          disabled
+          title="X login coming soon"
+          className="flex w-full items-center justify-center gap-3 rounded-lg border border-surface-3 bg-surface-1 px-4 py-2.5 text-small font-medium text-text-tertiary opacity-50 cursor-not-allowed"
         >
           <Twitter className="h-4 w-4" />
-          {socialLoading === "twitter" ? "Redirecting…" : "Continue with X"}
+          Continue with X
+          <span className="ml-auto rounded bg-surface-2 px-1.5 py-0.5 text-[0.6875rem] text-text-tertiary">Soon</span>
         </button>
         <button
           type="button"
-          onClick={() => handleSocialLogin("linkedin_oidc")}
-          disabled={!!socialLoading}
-          className="flex w-full items-center justify-center gap-3 rounded-lg border border-surface-3 bg-surface-1 px-4 py-2.5 text-small font-medium text-text-primary transition-colors hover:bg-surface-2 disabled:opacity-50"
+          disabled
+          title="LinkedIn login coming soon"
+          className="flex w-full items-center justify-center gap-3 rounded-lg border border-surface-3 bg-surface-1 px-4 py-2.5 text-small font-medium text-text-tertiary opacity-50 cursor-not-allowed"
         >
           <Linkedin className="h-4 w-4" />
-          {socialLoading === "linkedin_oidc" ? "Redirecting…" : "Continue with LinkedIn"}
+          Continue with LinkedIn
+          <span className="ml-auto rounded bg-surface-2 px-1.5 py-0.5 text-[0.6875rem] text-text-tertiary">Soon</span>
         </button>
       </div>
 
@@ -114,6 +132,7 @@ export default function SignupPage() {
           label="Full name"
           type="text"
           placeholder="Olayinka Doe"
+          autoComplete="name"
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
           required
@@ -122,6 +141,7 @@ export default function SignupPage() {
           label="Email"
           type="email"
           placeholder="you@example.com"
+          autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -130,6 +150,7 @@ export default function SignupPage() {
           label="Password"
           type="password"
           placeholder="Min 8 characters"
+          autoComplete="new-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required

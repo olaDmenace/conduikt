@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect, Suspense } from "react";
+import { useState, useRef, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Sparkles, Copy, Check, RotateCcw, Loader2, Zap } from "lucide-react";
+import { Sparkles, Copy, Check, RotateCcw, Loader2, Zap, Save } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -113,11 +113,27 @@ function PlaygroundInner() {
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<string>("");
   const [copied, setCopied] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [usage, setUsage] = useState<UsageInfo | null>(null);
   const outputRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const currentAgent = agents.find((s) => s.id === selectedAgent)!;
+
+  // Strip markdown code fences and attempt JSON formatting
+  const formattedResult = useMemo(() => {
+    if (!result) return "";
+    // Strip ```json ... ``` fences
+    let cleaned = result.replace(/^```(?:json)?\s*\n?/gm, "").replace(/\n?```\s*$/gm, "");
+    // Try to pretty-print if it's valid JSON
+    try {
+      const parsed = JSON.parse(cleaned);
+      return JSON.stringify(parsed, null, 2);
+    } catch {
+      return cleaned;
+    }
+  }, [result]);
 
   // Auto-scroll output during streaming
   useEffect(() => {
@@ -232,6 +248,34 @@ function PlaygroundInner() {
   function handleReset() {
     setResult("");
     setUsage(null);
+    setSaved(false);
+  }
+
+  async function handleSave() {
+    if (!result) return;
+    setSaving(true);
+    try {
+      const res = await fetch("/api/playground/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          agent_id: selectedAgent,
+          prompt,
+          result: formattedResult,
+          usage,
+        }),
+      });
+      if (res.ok) {
+        setSaved(true);
+        toast("Saved to your library!", "success");
+      } else {
+        const err = await res.json();
+        toast(err.error || "Failed to save", "error");
+      }
+    } catch {
+      toast("Failed to save", "error");
+    }
+    setSaving(false);
   }
 
   return (
@@ -316,6 +360,21 @@ function PlaygroundInner() {
               <CardTitle>Output</CardTitle>
               {result && (
                 <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleSave}
+                    disabled={saving || saved}
+                    title="Save to library"
+                  >
+                    {saved ? (
+                      <Check className="h-4 w-4 text-success" />
+                    ) : saving ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4" />
+                    )}
+                  </Button>
                   <Button variant="ghost" size="sm" onClick={handleCopy}>
                     {copied ? (
                       <Check className="h-4 w-4 text-success" />
@@ -338,7 +397,7 @@ function PlaygroundInner() {
                   className="rounded-lg border border-border-default bg-surface-0 p-4 max-h-[500px] overflow-y-auto"
                 >
                   <pre className="whitespace-pre-wrap text-body text-text-primary font-sans">
-                    {result}
+                    {generating ? result : formattedResult}
                     {generating && (
                       <span className="inline-block w-2 h-4 bg-accent animate-pulse ml-0.5" />
                     )}

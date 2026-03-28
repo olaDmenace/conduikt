@@ -130,7 +130,16 @@ export function Sidebar() {
       if (profileRes.data) setProfile(profileRes.data);
     }
     loadData();
-  }, []);
+
+    // Refetch profile when tab regains focus (e.g. after generation)
+    function onVisibilityChange() {
+      if (document.visibilityState === "visible") loadData();
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    // Also refetch on route changes (pathname updates)
+    loadData();
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [pathname]);
 
   async function handleLogout() {
     await supabase.auth.signOut();

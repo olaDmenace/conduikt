@@ -42,7 +42,7 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { name, steps } = await request.json();
+  const { name, steps, type: explicitType } = await request.json();
 
   if (!name || !steps || !Array.isArray(steps) || steps.length === 0) {
     return NextResponse.json(
@@ -51,12 +51,46 @@ export async function POST(
     );
   }
 
+  // Infer campaign type from first agent if not explicitly provided
+  const agentToType: Record<string, string> = {
+    "seo-audit": "seo_audit",
+    "cro-analysis": "page_cro",
+    "email-sequence": "email_sequence",
+    "social-content": "social_content",
+    "programmatic-seo": "programmatic_seo",
+    "ab-test": "ab_test",
+    "blog-post": "full_funnel",
+    "keyword-research": "seo_audit",
+    "copywriting": "social_content",
+    "growth-playbook": "full_funnel",
+    "content-strategy": "full_funnel",
+    "competitor-intel": "full_funnel",
+  };
+
+  const validTypes = [
+    "seo_audit",
+    "page_cro",
+    "email_sequence",
+    "social_content",
+    "programmatic_seo",
+    "launch",
+    "ab_test",
+    "full_funnel",
+  ];
+
+  const firstAgentId = steps[0]?.agent_id as string | undefined;
+  const inferredType = firstAgentId ? agentToType[firstAgentId] : undefined;
+  const campaignType = validTypes.includes(explicitType)
+    ? explicitType
+    : inferredType ?? "full_funnel";
+
   // Create campaign
   const { data: campaign, error: campaignError } = await supabase
     .from("campaigns")
     .insert({
       project_id: id,
       name,
+      type: campaignType,
       status: "draft",
     })
     .select()

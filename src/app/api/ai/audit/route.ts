@@ -51,18 +51,44 @@ export async function POST(request: NextRequest) {
   // Fetch the page HTML
   let html: string;
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+
     const response = await fetch(url, {
       headers: {
         "User-Agent":
           "Mozilla/5.0 (compatible; ConduiktBot/1.0; +https://conduikt.io)",
+        Accept: "text/html,application/xhtml+xml,*/*",
       },
+      redirect: "follow",
+      signal: controller.signal,
     });
+
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      return NextResponse.json(
+        {
+          error: `Failed to fetch URL: ${response.status} ${response.statusText}`,
+        },
+        { status: 400 }
+      );
+    }
+
     html = await response.text();
-  } catch {
-    return NextResponse.json(
-      { error: "Failed to fetch URL" },
-      { status: 400 }
-    );
+
+    if (!html || html.length < 50) {
+      return NextResponse.json(
+        { error: "URL returned empty or very short content" },
+        { status: 400 }
+      );
+    }
+  } catch (err) {
+    const message =
+      err instanceof Error && err.name === "AbortError"
+        ? "URL took too long to respond (15s timeout)"
+        : "Failed to fetch URL — check the URL is publicly accessible";
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 
   // Build context and run audit

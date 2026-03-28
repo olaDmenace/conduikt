@@ -22,8 +22,10 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin;
+    // Route through /auth/confirm so the PKCE code exchange happens server-side.
+    // This ensures reset links work when opened in a new tab (email clients).
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${siteUrl}/reset-password`,
+      redirectTo: `${siteUrl}/auth/confirm?type=recovery`,
     });
 
     if (error) {
