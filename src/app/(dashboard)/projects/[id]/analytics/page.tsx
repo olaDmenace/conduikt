@@ -604,24 +604,7 @@ export default function AnalyticsPage() {
                 </CardContent>
               </Card>
             )}
-            {estimatedCost > 0 && (
-              <Card className="animate-in" style={{ animationDelay: "360ms" }}>
-                <CardContent className="p-5 flex items-center gap-4">
-                  <div className="rounded-xl p-3 bg-info/10">
-                    <DollarSign className="h-5 w-5 text-info" />
-                  </div>
-                  <div>
-                    <p className="text-caption text-text-tertiary">AI Costs This Month</p>
-                    <p className="text-body font-medium text-text-primary font-mono">
-                      ~${estimatedCost.toFixed(2)}
-                    </p>
-                    <p className="text-small text-text-tertiary">
-                      {totalInputTokens.toLocaleString()} in + {totalOutputTokens.toLocaleString()} out tokens
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            {/* AI cost card hidden */}
           </div>
 
           {/* Social Performance Section */}
@@ -938,7 +921,6 @@ export default function AnalyticsPage() {
                     <thead>
                       <tr className="border-b border-border-subtle">
                         <th className="px-6 py-3 text-caption text-text-tertiary font-medium">Agent</th>
-                        <th className="px-6 py-3 text-caption text-text-tertiary font-medium">Model</th>
                         <th className="px-6 py-3 text-caption text-text-tertiary font-medium text-right">Tokens</th>
                         <th className="px-6 py-3 text-caption text-text-tertiary font-medium text-right">Duration</th>
                         <th className="px-6 py-3 text-caption text-text-tertiary font-medium text-right">Date</th>
@@ -956,9 +938,6 @@ export default function AnalyticsPage() {
                               <Badge variant="secondary">
                                 {agentLabels[gen.agent_used as string] ?? gen.agent_used}
                               </Badge>
-                            </td>
-                            <td className="px-6 py-4 text-small text-text-secondary font-mono">
-                              {gen.model ? gen.model.replace("claude-", "").slice(0, 20) : "—"}
                             </td>
                             <td className="px-6 py-4 text-small text-text-secondary font-mono text-right">
                               {tokens.toLocaleString()}

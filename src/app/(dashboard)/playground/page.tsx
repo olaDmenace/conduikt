@@ -512,7 +512,7 @@ function PlaygroundInner() {
                   Select an agent, write your prompt, and hit Generate
                 </p>
                 <p className="text-small text-text-tertiary mt-2">
-                  Results stream in real-time from Claude AI
+                  Results stream in real-time
                 </p>
               </div>
             )}

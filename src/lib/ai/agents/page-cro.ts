@@ -44,14 +44,17 @@ Return valid JSON:
 }
   `.trim(),
 
-  buildUserPrompt: (input: Record<string, unknown>) => `
-Analyze this page for CRO: ${input.url}
+  buildUserPrompt: (input: Record<string, unknown>) => {
+    const url = input.url ?? "";
+    const context = input.context ?? "";
+    const html = input.html as string | undefined;
 
-Page HTML:
-\`\`\`html
-${(input.html as string).substring(0, 30000)}
-\`\`\`
-  `.trim(),
+    if (html) {
+      return `Analyze this page for CRO: ${url}\n\nPage HTML:\n\`\`\`html\n${html.substring(0, 30000)}\n\`\`\``;
+    }
+
+    return `Analyze this page/flow for CRO: ${url}\n\nAdditional context: ${context}\n\nNote: No page HTML was provided. Provide your CRO analysis based on the URL, project context, and the description above. Focus on general best practices for this type of page and provide actionable recommendations.`;
+  },
 
   parseResponse: (response: string): SkillOutput => {
     const jsonMatch = response.match(/\{[\s\S]*\}/);

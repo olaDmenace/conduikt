@@ -477,7 +477,7 @@ export default function VideoAgentPage({
                     <div className="flex items-start gap-2 rounded-lg border border-accent/20 bg-accent-muted/20 p-3">
                       <Wand2 className="h-4 w-4 text-accent shrink-0 mt-0.5" />
                       <p className="text-caption text-text-secondary">
-                        Claude AI will analyse your project&apos;s industry and target audience to pick the best-fit avatar.
+                        We&apos;ll analyse your project&apos;s industry and target audience to pick the best-fit avatar.
                       </p>
                     </div>
                   )}

@@ -5,12 +5,13 @@ import Link from "next/link";
 import { createClient } from "@/src/lib/supabase/client";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
-import { Twitter, Linkedin, Mail } from "lucide-react";
+import { Twitter, Linkedin, Mail, Eye, EyeOff } from "lucide-react";
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
@@ -146,16 +147,29 @@ export default function SignupPage() {
           onChange={(e) => setEmail(e.target.value)}
           required
         />
-        <Input
-          label="Password"
-          type="password"
-          placeholder="Min 8 characters"
-          autoComplete="new-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={8}
-        />
+        <div className="relative">
+          <Input
+            label="Password"
+            type={showPassword ? "text" : "password"}
+            placeholder="Min 8 characters"
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={8}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            className="absolute right-3 top-10 text-text-tertiary hover:text-text-primary transition-colors"
+          >
+            {showPassword ? (
+              <EyeOff className="h-4 w-4" />
+            ) : (
+              <Eye className="h-4 w-4" />
+            )}
+          </button>
+        </div>
 
         {error && (
           <div className="rounded-lg border border-error/20 bg-error/10 px-4 py-3 text-small text-error">

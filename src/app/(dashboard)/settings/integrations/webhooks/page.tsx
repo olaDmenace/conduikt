@@ -9,6 +9,8 @@ import {
   Zap,
   ToggleLeft,
   ToggleRight,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
@@ -38,6 +40,7 @@ export default function WebhooksPage() {
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showAuthToken, setShowAuthToken] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -145,13 +148,26 @@ export default function WebhooksPage() {
                 onChange={(e) => setForm({ ...form, endpoint_url: e.target.value })}
                 required
               />
-              <Input
-                label="Auth Token (optional)"
-                type="password"
-                placeholder="Bearer token or application password"
-                value={form.auth_token}
-                onChange={(e) => setForm({ ...form, auth_token: e.target.value })}
-              />
+              <div className="relative">
+                <Input
+                  label="Auth Token (optional)"
+                  type={showAuthToken ? "text" : "password"}
+                  placeholder="Bearer token or application password"
+                  value={form.auth_token}
+                  onChange={(e) => setForm({ ...form, auth_token: e.target.value })}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowAuthToken((v) => !v)}
+                  className="absolute right-3 top-10 text-text-tertiary hover:text-text-primary transition-colors"
+                >
+                  {showAuthToken ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
               <div className="flex justify-end gap-2">
                 <Button
                   type="button"

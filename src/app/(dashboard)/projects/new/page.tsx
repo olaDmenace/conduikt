@@ -568,7 +568,7 @@ export default function NewProjectPage() {
               {(
                 [
                   { key: "fetching", label: "Fetching page content" },
-                  { key: "analyzing", label: "Analyzing with Claude AI" },
+                  { key: "analyzing", label: "Analyzing your project" },
                   { key: "saving", label: "Saving results" },
                 ] as const
               ).map((item) => (

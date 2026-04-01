@@ -430,7 +430,7 @@ export function AgentSandbox({ agent }: { agent: AgentDefinition }) {
                   Fill in the details and hit &ldquo;{agent.ctaLabel}&rdquo;
                 </p>
                 <p className="text-small text-text-tertiary mt-2">
-                  Results stream in real-time from Claude AI
+                  Results stream in real-time
                 </p>
               </div>
             )}

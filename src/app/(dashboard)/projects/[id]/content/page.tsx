@@ -171,7 +171,7 @@ function buildSkillInput(
     case "email-sequence":
       return { type: "welcome", goal: prompt, context: prompt, count: 5 };
     case "page-cro":
-      return { url: prompt, context: prompt };
+      return { url: prompt, context: prompt, html: "" };
     case "content-strategy":
       return { goal: prompt, context: prompt };
     case "competitor-analysis":
@@ -241,6 +241,10 @@ function ContentPageInner({
 
   // Social posts parsed state
   const [parsedPosts, setParsedPosts] = useState<SocialPost[] | null>(null);
+
+  // Parsed structured content for other skills
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [parsedContent, setParsedContent] = useState<Record<string, any> | null>(null);
 
   // Publish state
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
@@ -417,6 +421,7 @@ function ContentPageInner({
     setUsage(null);
     setSavedAssetId(null);
     setParsedPosts(null);
+    setParsedContent(null);
 
     try {
       const res = await fetch("/api/ai/stream", {
@@ -478,6 +483,17 @@ function ContentPageInner({
           if (Array.isArray(parsed?.posts)) setParsedPosts(parsed.posts);
         } catch {
           // Not valid JSON — leave parsedPosts null, raw text will display
+        }
+      }
+
+      // Parse JSON for copywriting, content-strategy, email-sequence
+      if (["copywriting", "content-strategy", "email-sequence"].includes(selectedSkill) && fullText) {
+        try {
+          const jsonMatch = fullText.match(/\{[\s\S]*\}/);
+          const parsed = JSON.parse(jsonMatch?.[0] ?? fullText);
+          setParsedContent(parsed);
+        } catch {
+          setParsedContent(null);
         }
       }
     } catch {
@@ -615,32 +631,245 @@ function ContentPageInner({
     );
   }
 
-  function EmailPreview({ text }: { text: string }) {
-    // Try to extract subject/body from structured output
-    let subject = "Your subject line here";
-    let body = text;
-    const subjectMatch = text.match(/"subject_line"\s*:\s*"([^"]+)"/);
-    if (subjectMatch) subject = subjectMatch[1];
-    const bodyMatch = text.match(/"body_html"\s*:\s*"([\s\S]*?)(?:(?<!\\)")/);
-    if (bodyMatch) body = bodyMatch[1].replace(/\\n/g, "\n").replace(/\\"/g, '"');
+  function EmailPreview({ data }: { data: Record<string, unknown> | null; }) {
+    const [emailCopied, setEmailCopied] = useState(false);
+    const [activeEmail, setActiveEmail] = useState(0);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const emails = (data?.emails as any[]) ?? [];
+
+    if (emails.length === 0) return null;
+
+    const email = emails[activeEmail];
+    const htmlBody = email?.body_html ?? "";
+
+    function copyHtml() {
+      navigator.clipboard.writeText(htmlBody);
+      setEmailCopied(true);
+      toast("HTML copied!", "info");
+      setTimeout(() => setEmailCopied(false), 2000);
+    }
 
     return (
-      <div className="rounded-xl border border-border-default bg-surface-0 overflow-hidden">
-        <div className="border-b border-border-default px-4 py-3 bg-surface-1">
-          <div className="flex items-center gap-2 text-small text-text-secondary">
-            <span className="font-medium text-text-primary">Subject:</span>
-            {subject}
+      <div className="space-y-3">
+        {data?.sequence_name && (
+          <p className="text-small font-medium text-text-primary">{String(data.sequence_name)}</p>
+        )}
+        {/* Email step tabs */}
+        <div className="flex gap-2 flex-wrap">
+          {emails.map((_: unknown, i: number) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setActiveEmail(i)}
+              className={`px-3 py-1.5 rounded-lg text-small font-medium transition-colors ${
+                i === activeEmail
+                  ? "bg-accent text-surface-0"
+                  : "bg-surface-2 text-text-secondary hover:bg-surface-3"
+              }`}
+            >
+              Email {i + 1}
+            </button>
+          ))}
+        </div>
+        <div className="rounded-xl border border-border-default bg-surface-0 overflow-hidden">
+          <div className="border-b border-border-default px-4 py-3 bg-surface-1 flex items-center justify-between">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-small text-text-secondary">
+                <span className="font-medium text-text-primary">Subject:</span>
+                {email?.subject_line ?? "No subject"}
+              </div>
+              <div className="flex items-center gap-2 text-small text-text-tertiary">
+                <span>From:</span>
+                {project?.name || "Conduikt"} &lt;hello@conduikt.io&gt;
+              </div>
+              {email?.goal && (
+                <div className="flex items-center gap-2 text-small text-text-tertiary">
+                  <span>Goal:</span> {email.goal}
+                </div>
+              )}
+              {email?.delay_hours != null && (
+                <div className="flex items-center gap-2 text-small text-text-tertiary">
+                  <Clock className="h-3 w-3" />
+                  Send after {email.delay_hours}h
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={copyHtml}
+              className="p-2 rounded-lg hover:bg-surface-2 text-text-tertiary hover:text-text-primary transition-colors"
+              title="Copy HTML"
+            >
+              {emailCopied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
+            </button>
           </div>
-          <div className="flex items-center gap-2 text-small text-text-tertiary mt-1">
-            <span>From:</span>
-            {project?.name || "Conduikt"} &lt;hello@conduikt.io&gt;
+          <div className="p-1 bg-white">
+            <iframe
+              srcDoc={htmlBody}
+              title="Email preview"
+              className="w-full min-h-[400px] border-0 rounded-lg"
+              sandbox=""
+            />
           </div>
         </div>
-        <div className="p-4">
-          <div className="text-body text-text-primary whitespace-pre-line break-words max-h-[300px] overflow-y-auto">
-            {body}
+        {Array.isArray(data?.exit_conditions) && (data.exit_conditions as string[]).length > 0 && (
+          <div className="text-small text-text-tertiary">
+            <span className="font-medium text-text-secondary">Exit conditions: </span>
+            {(data.exit_conditions as string[]).join(" · ")}
           </div>
-        </div>
+        )}
+      </div>
+    );
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function CopywritingPreview({ data }: { data: Record<string, any> }) {
+    const variants = data?.variants ?? [];
+    const recommendations = data?.recommendations ?? [];
+
+    return (
+      <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
+        {variants.map((v: { text: string; rationale?: string; tone?: string }, i: number) => (
+          <div
+            key={i}
+            className="rounded-xl border border-border-default bg-surface-0 p-4 space-y-3 animate-in"
+            style={{ animationDelay: `${i * 60}ms` }}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <Badge variant="secondary">Variant {i + 1}</Badge>
+              {data?.type && <Badge variant="secondary" className="text-text-tertiary">{data.type}</Badge>}
+            </div>
+            <p className="text-body text-text-primary font-medium leading-relaxed">
+              {v.text}
+            </p>
+            {v.rationale && (
+              <p className="text-small text-text-secondary">
+                <span className="font-medium text-text-primary">Why it works: </span>
+                {v.rationale}
+              </p>
+            )}
+            {v.tone && (
+              <p className="text-small text-text-tertiary">
+                <span className="font-medium text-text-secondary">Tone: </span>
+                {v.tone}
+              </p>
+            )}
+          </div>
+        ))}
+        {recommendations.length > 0 && (
+          <div className="rounded-xl border border-border-default bg-surface-1 p-4 space-y-2">
+            <p className="text-small font-medium text-text-primary">Recommendations</p>
+            <ul className="space-y-1.5">
+              {recommendations.map((r: string, i: number) => (
+                <li key={i} className="text-small text-text-secondary flex gap-2">
+                  <span className="text-accent shrink-0">•</span>
+                  <span>{r}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function ContentStrategyPreview({ data }: { data: Record<string, any> }) {
+    const pillars = data?.pillars ?? [];
+    const calendar = data?.content_calendar ?? [];
+    const kpis = data?.kpis ?? [];
+    const quickWins = data?.quick_wins ?? [];
+
+    return (
+      <div className="space-y-5 max-h-[600px] overflow-y-auto pr-1">
+        {data?.strategy_name && (
+          <div className="space-y-1">
+            <h3 className="text-body font-medium text-text-primary">{data.strategy_name}</h3>
+            {data?.time_horizon && (
+              <p className="text-small text-text-tertiary">Timeline: {data.time_horizon}</p>
+            )}
+          </div>
+        )}
+
+        {/* Quick wins */}
+        {quickWins.length > 0 && (
+          <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 space-y-2">
+            <p className="text-small font-medium text-accent">Quick Wins</p>
+            <ul className="space-y-1.5">
+              {quickWins.map((w: string, i: number) => (
+                <li key={i} className="text-small text-text-secondary flex gap-2">
+                  <span className="text-accent shrink-0">{i + 1}.</span>
+                  <span>{w}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Content pillars */}
+        {pillars.map((pillar: { topic: string; intent?: string; search_opportunity?: string; content_pieces?: { title: string; format?: string; channel?: string; priority?: string; brief?: string }[] }, pi: number) => (
+          <div key={pi} className="rounded-xl border border-border-default bg-surface-0 p-4 space-y-3 animate-in" style={{ animationDelay: `${pi * 60}ms` }}>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-body font-medium text-text-primary">{pillar.topic}</span>
+              {pillar.intent && <Badge variant="secondary">{pillar.intent}</Badge>}
+              {pillar.search_opportunity && (
+                <Badge variant="secondary" className="text-text-tertiary">SEO: {pillar.search_opportunity}</Badge>
+              )}
+            </div>
+            {pillar.content_pieces?.map((piece, ci: number) => (
+              <div key={ci} className="ml-3 pl-3 border-l border-border-subtle space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-small font-medium text-text-primary">{piece.title}</span>
+                  {piece.format && <Badge variant="secondary" className="text-[0.65rem]">{piece.format}</Badge>}
+                  {piece.channel && <Badge variant="secondary" className="text-[0.65rem] text-text-tertiary">{piece.channel}</Badge>}
+                  {piece.priority && (
+                    <Badge variant="secondary" className={`text-[0.65rem] ${piece.priority === "high" ? "text-error" : piece.priority === "medium" ? "text-warning" : "text-text-tertiary"}`}>
+                      {piece.priority}
+                    </Badge>
+                  )}
+                </div>
+                {piece.brief && <p className="text-small text-text-tertiary">{piece.brief}</p>}
+              </div>
+            ))}
+          </div>
+        ))}
+
+        {/* Calendar */}
+        {calendar.length > 0 && (
+          <div className="rounded-xl border border-border-default bg-surface-0 p-4 space-y-3">
+            <p className="text-small font-medium text-text-primary">Content Calendar</p>
+            {calendar.map((week: { week: number; pieces: string[]; theme?: string }, wi: number) => (
+              <div key={wi} className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary">Week {week.week}</Badge>
+                  {week.theme && <span className="text-small text-text-tertiary">{week.theme}</span>}
+                </div>
+                <ul className="ml-4 space-y-0.5">
+                  {week.pieces.map((p, pi: number) => (
+                    <li key={pi} className="text-small text-text-secondary flex gap-2">
+                      <span className="text-text-tertiary shrink-0">•</span>{p}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* KPIs */}
+        {kpis.length > 0 && (
+          <div className="rounded-xl border border-border-default bg-surface-1 p-4 space-y-2">
+            <p className="text-small font-medium text-text-primary">KPIs</p>
+            <ul className="space-y-1">
+              {kpis.map((kpi: string, i: number) => (
+                <li key={i} className="text-small text-text-secondary flex gap-2">
+                  <span className="text-accent shrink-0">•</span>{kpi}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     );
   }
@@ -846,9 +1075,20 @@ function ContentPageInner({
             {project.target_audience != null && (
               <p className="text-text-tertiary truncate">
                 Audience:{" "}
-                {typeof project.target_audience === "object"
-                  ? JSON.stringify(project.target_audience)
-                  : String(project.target_audience)}
+                {(() => {
+                  const ta = project.target_audience as { personas?: string[]; pain_points?: string[] } | null;
+                  if (ta && typeof ta === "object") {
+                    const parts: string[] = [];
+                    if (Array.isArray(ta.personas) && ta.personas.length > 0) {
+                      parts.push(ta.personas.join(", "));
+                    }
+                    if (Array.isArray(ta.pain_points) && ta.pain_points.length > 0) {
+                      parts.push(`Pain points: ${ta.pain_points.join(", ")}`);
+                    }
+                    return parts.length > 0 ? parts.join(" · ") : "Not specified";
+                  }
+                  return String(project.target_audience);
+                })()}
               </p>
             )}
           </div>
@@ -1122,26 +1362,94 @@ function ContentPageInner({
                       </div>
                     )
                   ) : selectedSkill === "email-sequence" ? (
-                    <Tabs defaultValue="email">
-                      <TabsList>
-                        <TabsTrigger value="email">
-                          <Mail className="h-3.5 w-3.5 mr-1.5" />
-                          Email Preview
-                        </TabsTrigger>
-                        <TabsTrigger value="raw">
-                          <FileText className="h-3.5 w-3.5 mr-1.5" />
-                          Raw
-                        </TabsTrigger>
-                      </TabsList>
-                      <TabsContent value="email">
-                        <EmailPreview text={result} />
-                      </TabsContent>
-                      <TabsContent value="raw">
-                        <div ref={outputRef}>
+                    generating ? (
+                      <div ref={outputRef}>
+                        <RawPreview text={result} />
+                      </div>
+                    ) : parsedContent ? (
+                      <Tabs defaultValue="email">
+                        <TabsList>
+                          <TabsTrigger value="email">
+                            <Mail className="h-3.5 w-3.5 mr-1.5" />
+                            Email Preview
+                          </TabsTrigger>
+                          <TabsTrigger value="raw">
+                            <FileText className="h-3.5 w-3.5 mr-1.5" />
+                            Raw
+                          </TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="email">
+                          <EmailPreview data={parsedContent} />
+                        </TabsContent>
+                        <TabsContent value="raw">
+                          <div ref={outputRef}>
+                            <RawPreview text={result} />
+                          </div>
+                        </TabsContent>
+                      </Tabs>
+                    ) : (
+                      <div ref={outputRef}>
+                        <RawPreview text={result} />
+                      </div>
+                    )
+                  ) : selectedSkill === "copywriting" ? (
+                    generating ? (
+                      <div ref={outputRef}>
+                        <RawPreview text={result} />
+                      </div>
+                    ) : parsedContent ? (
+                      <Tabs defaultValue="formatted">
+                        <TabsList>
+                          <TabsTrigger value="formatted">
+                            <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+                            Variants
+                          </TabsTrigger>
+                          <TabsTrigger value="raw">
+                            <FileText className="h-3.5 w-3.5 mr-1.5" />
+                            Raw JSON
+                          </TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="formatted">
+                          <CopywritingPreview data={parsedContent} />
+                        </TabsContent>
+                        <TabsContent value="raw">
                           <RawPreview text={result} />
-                        </div>
-                      </TabsContent>
-                    </Tabs>
+                        </TabsContent>
+                      </Tabs>
+                    ) : (
+                      <div ref={outputRef}>
+                        <RawPreview text={result} />
+                      </div>
+                    )
+                  ) : selectedSkill === "content-strategy" ? (
+                    generating ? (
+                      <div ref={outputRef}>
+                        <RawPreview text={result} />
+                      </div>
+                    ) : parsedContent ? (
+                      <Tabs defaultValue="formatted">
+                        <TabsList>
+                          <TabsTrigger value="formatted">
+                            <Map className="h-3.5 w-3.5 mr-1.5" />
+                            Strategy
+                          </TabsTrigger>
+                          <TabsTrigger value="raw">
+                            <FileText className="h-3.5 w-3.5 mr-1.5" />
+                            Raw JSON
+                          </TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="formatted">
+                          <ContentStrategyPreview data={parsedContent} />
+                        </TabsContent>
+                        <TabsContent value="raw">
+                          <RawPreview text={result} />
+                        </TabsContent>
+                      </Tabs>
+                    ) : (
+                      <div ref={outputRef}>
+                        <RawPreview text={result} />
+                      </div>
+                    )
                   ) : (
                     <Tabs defaultValue="formatted">
                       <TabsList>
@@ -1176,7 +1484,7 @@ function ContentPageInner({
                   {generating && (
                     <div className="flex items-center gap-2 text-small text-accent">
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      Streaming from Claude...
+                      Generating...
                     </div>
                   )}
 
