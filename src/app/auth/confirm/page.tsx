@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/src/lib/supabase/client";
 import { Loader2 } from "lucide-react";
 
-export default function ConfirmPage() {
+function ConfirmInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
@@ -22,14 +22,11 @@ export default function ConfirmPage() {
       let confirmed = false;
 
       if (code) {
-        // PKCE flow — exchange code for session (client-side so the
-        // code-verifier cookie set during signUp() is available)
         const { error } = await supabase.auth.exchangeCodeForSession(code);
         if (!error) confirmed = true;
       }
 
       if (!confirmed && tokenHash && type) {
-        // Token hash flow — older Supabase email templates
         const { error } = await supabase.auth.verifyOtp({
           type: type as "signup" | "recovery" | "email" | "invite",
           token_hash: tokenHash,
@@ -38,7 +35,6 @@ export default function ConfirmPage() {
       }
 
       if (confirmed) {
-        // Fire welcome email for new signups (non-blocking)
         if (type === "signup" || !type) {
           fetch("/api/auth/welcome", { method: "POST" }).catch(() => {});
         }
@@ -75,5 +71,22 @@ export default function ConfirmPage() {
         <p className="text-body text-text-secondary">Confirming your account...</p>
       </div>
     </div>
+  );
+}
+
+export default function ConfirmPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-6 w-6 animate-spin text-accent" />
+            <p className="text-body text-text-secondary">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <ConfirmInner />
+    </Suspense>
   );
 }
