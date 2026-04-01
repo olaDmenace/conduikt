@@ -652,9 +652,9 @@ function ContentPageInner({
 
     return (
       <div className="space-y-3">
-        {data?.sequence_name && (
+        {data?.sequence_name ? (
           <p className="text-small font-medium text-text-primary">{String(data.sequence_name)}</p>
-        )}
+        ) : null}
         {/* Email step tabs */}
         <div className="flex gap-2 flex-wrap">
           {emails.map((_: unknown, i: number) => (
