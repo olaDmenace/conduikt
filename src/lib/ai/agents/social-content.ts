@@ -35,8 +35,11 @@ LinkedIn:
 Rotate between: educational, storytelling, opinion/hot take, data/stats, behind-the-scenes, social proof
 ${context.performanceContext || ""}
 
+## Rules
+- Do NOT use emojis anywhere in the output unless the user's prompt explicitly requests them.
+
 ## Output Format
-Return valid JSON:
+Return valid JSON (and ONLY JSON — no markdown code fences, no explanation before or after):
 {
   "posts": [
     {

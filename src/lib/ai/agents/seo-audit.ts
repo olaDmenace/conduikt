@@ -24,8 +24,11 @@ Analyze the provided page HTML and return a structured audit with:
 4. Opportunities (nice to have)
 5. For each finding: title, explanation, specific fix with code if applicable
 
+## Rules
+- Do NOT use emojis anywhere in the output unless the user's prompt explicitly requests them.
+
 ## Output Format
-Return valid JSON matching this schema:
+Return valid JSON (and ONLY JSON — no markdown code fences, no explanation before or after) matching this schema:
 {
   "score": number,
   "findings": [

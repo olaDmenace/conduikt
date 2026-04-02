@@ -157,6 +157,23 @@ const contentSkills = [
 
 // ---------- helpers ----------
 
+/** Strip markdown code fences and extract JSON */
+function extractJson(text: string): Record<string, unknown> | null {
+  // Remove ```json ... ``` or ``` ... ``` wrappers
+  let cleaned = text.replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/i, "");
+  // Try to extract the outermost JSON object
+  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) return null;
+  try {
+    return JSON.parse(jsonMatch[0]);
+  } catch {
+    return null;
+  }
+}
+
+/** Skills that return structured JSON we can parse and render */
+const jsonSkills = ["copywriting", "content-strategy", "email-sequence", "competitor-analysis", "page-cro", "blog-post"];
+
 function buildSkillInput(
   skillId: string,
   prompt: string
@@ -486,15 +503,10 @@ function ContentPageInner({
         }
       }
 
-      // Parse JSON for copywriting, content-strategy, email-sequence
-      if (["copywriting", "content-strategy", "email-sequence"].includes(selectedSkill) && fullText) {
-        try {
-          const jsonMatch = fullText.match(/\{[\s\S]*\}/);
-          const parsed = JSON.parse(jsonMatch?.[0] ?? fullText);
-          setParsedContent(parsed);
-        } catch {
-          setParsedContent(null);
-        }
+      // Parse JSON for structured skills after streaming completes
+      if (jsonSkills.includes(selectedSkill) && fullText) {
+        const parsed = extractJson(fullText);
+        setParsedContent(parsed);
       }
     } catch {
       toast("Failed to connect to AI service", "error");
@@ -874,6 +886,267 @@ function ContentPageInner({
     );
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function CompetitorAnalysisPreview({ data }: { data: Record<string, any> }) {
+    const competitors = data?.competitors ?? [];
+    const gaps = data?.positioning_gaps ?? [];
+    const contentOpps = data?.content_opportunities ?? [];
+    const messagingRecs = data?.messaging_recommendations ?? [];
+    const quickWins = data?.quick_wins ?? [];
+
+    return (
+      <div className="space-y-5 max-h-[600px] overflow-y-auto pr-1">
+        {data?.analysis_name && (
+          <h3 className="text-body font-medium text-text-primary">{data.analysis_name}</h3>
+        )}
+
+        {/* Competitors */}
+        {competitors.map((c: { name: string; url?: string; positioning?: string; strengths?: string[]; weaknesses?: string[]; messaging_analysis?: string; pricing_model?: string }, i: number) => (
+          <div key={i} className="rounded-xl border border-border-default bg-surface-0 p-4 space-y-3 animate-in" style={{ animationDelay: `${i * 60}ms` }}>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-body font-medium text-text-primary">{c.name}</span>
+              {c.url && <Badge variant="secondary" className="text-text-tertiary text-[0.65rem]">{c.url}</Badge>}
+            </div>
+            {c.positioning && <p className="text-small text-text-secondary">{c.positioning}</p>}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {c.strengths && c.strengths.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-small font-medium text-success">Strengths</p>
+                  <ul className="space-y-1">
+                    {c.strengths.map((s: string, si: number) => (
+                      <li key={si} className="text-small text-text-secondary flex gap-2">
+                        <span className="text-success shrink-0">+</span><span>{s}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {c.weaknesses && c.weaknesses.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-small font-medium text-error">Weaknesses</p>
+                  <ul className="space-y-1">
+                    {c.weaknesses.map((w: string, wi: number) => (
+                      <li key={wi} className="text-small text-text-secondary flex gap-2">
+                        <span className="text-error shrink-0">−</span><span>{w}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+            {c.messaging_analysis && (
+              <p className="text-small text-text-tertiary">
+                <span className="font-medium text-text-secondary">Messaging: </span>{c.messaging_analysis}
+              </p>
+            )}
+          </div>
+        ))}
+
+        {/* Positioning gaps */}
+        {gaps.length > 0 && (
+          <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 space-y-3">
+            <p className="text-small font-medium text-accent">Positioning Gaps</p>
+            {gaps.map((g: { gap: string; opportunity: string; impact?: string; effort?: string }, i: number) => (
+              <div key={i} className="space-y-1 pb-3 border-b border-border-subtle last:border-0 last:pb-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-small font-medium text-text-primary">{g.gap}</span>
+                  {g.impact && <Badge variant="secondary" className={`text-[0.65rem] ${g.impact === "high" ? "text-error" : g.impact === "medium" ? "text-warning" : "text-text-tertiary"}`}>{g.impact} impact</Badge>}
+                  {g.effort && <Badge variant="secondary" className="text-[0.65rem] text-text-tertiary">{g.effort} effort</Badge>}
+                </div>
+                <p className="text-small text-text-secondary">{g.opportunity}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Content opportunities */}
+        {contentOpps.length > 0 && (
+          <div className="rounded-xl border border-border-default bg-surface-0 p-4 space-y-3">
+            <p className="text-small font-medium text-text-primary">Content Opportunities</p>
+            {contentOpps.map((c: { topic: string; rationale: string; suggested_format?: string; priority?: string }, i: number) => (
+              <div key={i} className="space-y-1 pb-3 border-b border-border-subtle last:border-0 last:pb-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-small font-medium text-text-primary">{c.topic}</span>
+                  {c.priority && <Badge variant="secondary" className={`text-[0.65rem] ${c.priority === "high" ? "text-error" : "text-text-tertiary"}`}>{c.priority}</Badge>}
+                  {c.suggested_format && <Badge variant="secondary" className="text-[0.65rem] text-text-tertiary">{c.suggested_format}</Badge>}
+                </div>
+                <p className="text-small text-text-secondary">{c.rationale}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Messaging recommendations */}
+        {messagingRecs.length > 0 && (
+          <div className="rounded-xl border border-border-default bg-surface-1 p-4 space-y-3">
+            <p className="text-small font-medium text-text-primary">Messaging Recommendations</p>
+            {messagingRecs.map((r: { area: string; current_issue?: string; recommendation: string; example?: string }, i: number) => (
+              <div key={i} className="space-y-1 pb-3 border-b border-border-subtle last:border-0 last:pb-0">
+                <Badge variant="secondary">{r.area}</Badge>
+                {r.current_issue && <p className="text-small text-error">{r.current_issue}</p>}
+                <p className="text-small text-text-secondary">{r.recommendation}</p>
+                {r.example && <p className="text-small text-accent italic">&ldquo;{r.example}&rdquo;</p>}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Quick wins */}
+        {quickWins.length > 0 && (
+          <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 space-y-2">
+            <p className="text-small font-medium text-accent">Quick Wins</p>
+            <ul className="space-y-1.5">
+              {quickWins.map((w: string, i: number) => (
+                <li key={i} className="text-small text-text-secondary flex gap-2">
+                  <span className="text-accent shrink-0">{i + 1}.</span><span>{w}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function BlogPostPreview({ data }: { data: Record<string, any> }) {
+    const markdown = data?.content_markdown ?? "";
+    const socialPromo = data?.social_promotion;
+
+    return (
+      <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
+        {/* Meta info */}
+        <div className="rounded-xl border border-border-default bg-surface-1 p-4 space-y-2">
+          {data?.meta_title && (
+            <div>
+              <span className="text-small font-medium text-text-tertiary">SEO Title: </span>
+              <span className="text-small text-text-primary">{data.meta_title}</span>
+            </div>
+          )}
+          {data?.meta_description && (
+            <div>
+              <span className="text-small font-medium text-text-tertiary">Meta Description: </span>
+              <span className="text-small text-text-secondary">{data.meta_description}</span>
+            </div>
+          )}
+          <div className="flex gap-3 flex-wrap">
+            {data?.slug && <Badge variant="secondary">/{data.slug}</Badge>}
+            {data?.word_count && <Badge variant="secondary">{data.word_count} words</Badge>}
+            {data?.reading_time_minutes && <Badge variant="secondary">{data.reading_time_minutes} min read</Badge>}
+          </div>
+        </div>
+
+        {/* Blog content rendered from markdown */}
+        <div className="rounded-xl border border-border-default bg-surface-0 p-6">
+          <div className="prose prose-invert max-w-none text-text-primary">
+            <div
+              className="whitespace-pre-wrap text-body font-sans leading-relaxed"
+              dangerouslySetInnerHTML={{
+                __html: markdown
+                  .replace(/^### (.+)$/gm, '<h3 class="text-body font-medium text-text-primary mt-6 mb-2">$1</h3>')
+                  .replace(/^## (.+)$/gm, '<h2 class="text-h3 font-medium text-text-primary mt-8 mb-3">$1</h2>')
+                  .replace(/^# (.+)$/gm, '<h1 class="text-h2 font-medium text-text-primary mt-8 mb-4">$1</h1>')
+                  .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-text-primary">$1</strong>')
+                  .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                  .replace(/^- (.+)$/gm, '<li class="ml-4 text-text-secondary">$1</li>')
+                  .replace(/^(\d+)\. (.+)$/gm, '<li class="ml-4 text-text-secondary">$1. $2</li>')
+                  .replace(/\n\n/g, '<br/><br/>')
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Social promotion */}
+        {socialPromo && (
+          <div className="rounded-xl border border-border-default bg-surface-1 p-4 space-y-3">
+            <p className="text-small font-medium text-text-primary">Social Promotion</p>
+            {socialPromo.x_post && (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Twitter className="h-3.5 w-3.5 text-text-primary" />
+                  <span className="text-small font-medium text-text-secondary">X Post</span>
+                </div>
+                <p className="text-small text-text-secondary bg-surface-0 rounded-lg p-3">{socialPromo.x_post}</p>
+              </div>
+            )}
+            {socialPromo.linkedin_post && (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Linkedin className="h-3.5 w-3.5 text-[#0A66C2]" />
+                  <span className="text-small font-medium text-text-secondary">LinkedIn</span>
+                </div>
+                <p className="text-small text-text-secondary bg-surface-0 rounded-lg p-3 whitespace-pre-line">{socialPromo.linkedin_post}</p>
+              </div>
+            )}
+            {socialPromo.email_subject && (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Mail className="h-3.5 w-3.5 text-text-tertiary" />
+                  <span className="text-small font-medium text-text-secondary">Email Subject</span>
+                </div>
+                <p className="text-small text-text-secondary bg-surface-0 rounded-lg p-3">{socialPromo.email_subject}</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function CroReportPreview({ data }: { data: Record<string, any> }) {
+    const findings = data?.findings ?? [];
+    const quickWins = data?.quick_wins ?? [];
+    const severityColor: Record<string, string> = { critical: "text-error", warning: "text-warning", info: "text-info" };
+
+    return (
+      <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
+        {data?.score != null && (
+          <div className="flex items-center gap-4">
+            <div className={`text-h1 font-bold font-mono ${data.score >= 70 ? "text-success" : data.score >= 40 ? "text-warning" : "text-error"}`}>
+              {data.score}
+            </div>
+            <div>
+              <p className="text-body font-medium text-text-primary">CRO Score</p>
+              <p className="text-small text-text-tertiary">out of 100</p>
+            </div>
+          </div>
+        )}
+        {data?.summary && <p className="text-small text-text-secondary">{data.summary}</p>}
+
+        {findings.map((f: { severity: string; category?: string; title: string; detail?: string; recommendation?: string; impact?: string }, i: number) => (
+          <div key={i} className="rounded-xl border border-border-default bg-surface-0 p-4 space-y-2 animate-in" style={{ animationDelay: `${i * 40}ms` }}>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className={`text-small font-bold uppercase ${severityColor[f.severity] ?? "text-text-tertiary"}`}>{f.severity}</span>
+              {f.category && <Badge variant="secondary">{f.category}</Badge>}
+              {f.impact && <Badge variant="secondary" className="text-text-tertiary">{f.impact} impact</Badge>}
+            </div>
+            <p className="text-small font-medium text-text-primary">{f.title}</p>
+            {f.detail && <p className="text-small text-text-secondary">{f.detail}</p>}
+            {f.recommendation && (
+              <p className="text-small text-accent">
+                <span className="font-medium">Fix: </span>{f.recommendation}
+              </p>
+            )}
+          </div>
+        ))}
+
+        {quickWins.length > 0 && (
+          <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 space-y-2">
+            <p className="text-small font-medium text-accent">Quick Wins</p>
+            <ul className="space-y-1.5">
+              {quickWins.map((w: string, i: number) => (
+                <li key={i} className="text-small text-text-secondary flex gap-2">
+                  <span className="text-accent shrink-0">{i + 1}.</span><span>{w}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   function RawPreview({ text }: { text: string }) {
     return (
       <div className="rounded-xl border border-border-default bg-surface-0 p-4">
@@ -1217,12 +1490,16 @@ function ContentPageInner({
                           setUsage(null);
                           setSavedAssetId(asset.id);
                           setParsedPosts(null);
+                          setParsedContent(null);
                           if (assetSkill === "social-content" && raw) {
                             try {
                               const jsonMatch = raw.match(/\{[\s\S]*\}/);
                               const parsed = JSON.parse(jsonMatch?.[0] ?? raw);
                               if (Array.isArray(parsed?.posts)) setParsedPosts(parsed.posts);
                             } catch { /* not JSON */ }
+                          }
+                          if (jsonSkills.includes(assetSkill) && raw) {
+                            setParsedContent(extractJson(raw));
                           }
                         }}
                         className="w-full text-left rounded-lg border border-border-default p-3 hover:bg-surface-2 transition-colors"
@@ -1440,6 +1717,93 @@ function ContentPageInner({
                         </TabsList>
                         <TabsContent value="formatted">
                           <ContentStrategyPreview data={parsedContent} />
+                        </TabsContent>
+                        <TabsContent value="raw">
+                          <RawPreview text={result} />
+                        </TabsContent>
+                      </Tabs>
+                    ) : (
+                      <div ref={outputRef}>
+                        <RawPreview text={result} />
+                      </div>
+                    )
+                  ) : selectedSkill === "competitor-analysis" ? (
+                    generating ? (
+                      <div ref={outputRef}>
+                        <RawPreview text={result} />
+                      </div>
+                    ) : parsedContent ? (
+                      <Tabs defaultValue="formatted">
+                        <TabsList>
+                          <TabsTrigger value="formatted">
+                            <Crosshair className="h-3.5 w-3.5 mr-1.5" />
+                            Analysis
+                          </TabsTrigger>
+                          <TabsTrigger value="raw">
+                            <FileText className="h-3.5 w-3.5 mr-1.5" />
+                            Raw JSON
+                          </TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="formatted">
+                          <CompetitorAnalysisPreview data={parsedContent} />
+                        </TabsContent>
+                        <TabsContent value="raw">
+                          <RawPreview text={result} />
+                        </TabsContent>
+                      </Tabs>
+                    ) : (
+                      <div ref={outputRef}>
+                        <RawPreview text={result} />
+                      </div>
+                    )
+                  ) : selectedSkill === "blog-post" ? (
+                    generating ? (
+                      <div ref={outputRef}>
+                        <RawPreview text={result} />
+                      </div>
+                    ) : parsedContent ? (
+                      <Tabs defaultValue="formatted">
+                        <TabsList>
+                          <TabsTrigger value="formatted">
+                            <Globe className="h-3.5 w-3.5 mr-1.5" />
+                            Article
+                          </TabsTrigger>
+                          <TabsTrigger value="raw">
+                            <FileText className="h-3.5 w-3.5 mr-1.5" />
+                            Raw JSON
+                          </TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="formatted">
+                          <BlogPostPreview data={parsedContent} />
+                        </TabsContent>
+                        <TabsContent value="raw">
+                          <RawPreview text={result} />
+                        </TabsContent>
+                      </Tabs>
+                    ) : (
+                      <div ref={outputRef}>
+                        <RawPreview text={result} />
+                      </div>
+                    )
+                  ) : selectedSkill === "page-cro" ? (
+                    generating ? (
+                      <div ref={outputRef}>
+                        <RawPreview text={result} />
+                      </div>
+                    ) : parsedContent ? (
+                      <Tabs defaultValue="formatted">
+                        <TabsList>
+                          <TabsTrigger value="formatted">
+                            <ArrowUpRight className="h-3.5 w-3.5 mr-1.5" />
+                            CRO Report
+                          </TabsTrigger>
+                          <TabsTrigger value="raw">
+                            <FileText className="h-3.5 w-3.5 mr-1.5" />
+                            Raw JSON
+                          </TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="formatted">
+                          <CroReportPreview data={parsedContent} />
                         </TabsContent>
                         <TabsContent value="raw">
                           <RawPreview text={result} />

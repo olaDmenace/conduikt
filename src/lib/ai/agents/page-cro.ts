@@ -25,8 +25,11 @@ Analyze the page for conversion optimization opportunities. Focus on:
 5. Above-the-fold content effectiveness
 6. Copy clarity and persuasiveness
 
+## Rules
+- Do NOT use emojis anywhere in the output unless the user's prompt explicitly requests them.
+
 ## Output Format
-Return valid JSON:
+Return valid JSON (and ONLY JSON — no markdown code fences, no explanation before or after):
 {
   "score": number (0-100),
   "findings": [

@@ -70,7 +70,6 @@ export async function POST(request: NextRequest) {
           plan,
           lemon_squeezy_customer_id: customerId,
           lemon_squeezy_variant_id: variantId,
-          generation_count: 0,
           updated_at: new Date().toISOString(),
         })
         .eq("id", userId);
@@ -115,8 +114,7 @@ export async function POST(request: NextRequest) {
           lemon_squeezy_customer_id: customerId,
           lemon_squeezy_subscription_id: subscriptionId,
           lemon_squeezy_variant_id: variantId,
-          // Reset generation count on new subscription or plan change
-          ...(eventName === "subscription_created" ? { generation_count: 0 } : {}),
+          // Note: generation_count is NOT reset on plan change — only on monthly billing cycle
           updated_at: new Date().toISOString(),
         })
         .eq("id", userId);

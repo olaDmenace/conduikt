@@ -27,8 +27,11 @@ You are an expert SEO strategist performing keyword research for a specific prod
 6. Include question-based keywords (People Also Ask) for featured snippet opportunities
 7. Recommend the best content format for each keyword cluster
 
+## Rules
+- Do NOT use emojis anywhere in the output unless the user's prompt explicitly requests them.
+
 ## Output Format
-Return valid JSON (and ONLY JSON — no markdown wrapper):
+Return valid JSON (and ONLY JSON — no markdown code fences, no explanation before or after):
 {
   "seed_keyword": "string",
   "primary_keywords": [
