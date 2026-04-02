@@ -14,7 +14,7 @@ import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
-import { ProjectNav } from "@/src/components/layout/project-nav";
+
 import { useToast } from "@/src/components/ui/toast";
 import {
   Dialog,
@@ -154,7 +154,6 @@ export default function EmailsPage({
         </Button>
       </PageHeader>
 
-      <ProjectNav projectId={projectId} />
 
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">

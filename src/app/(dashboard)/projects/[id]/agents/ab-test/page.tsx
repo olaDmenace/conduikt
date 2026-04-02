@@ -14,7 +14,7 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { PageHeader } from "@/src/components/layout/page-header";
-import { ProjectNav } from "@/src/components/layout/project-nav";
+
 import { useToast } from "@/src/components/ui/toast";
 import Link from "next/link";
 
@@ -309,7 +309,6 @@ export default function ABTestAgentPage({
 
   return (
     <div>
-      <ProjectNav projectId={projectId} />
       <PageHeader
         title="A/B Test Agent"
         description="Generate and compare content variants to find what resonates with your audience"

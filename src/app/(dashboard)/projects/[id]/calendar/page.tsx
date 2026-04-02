@@ -14,13 +14,14 @@ import {
   Trash2,
   CalendarRange,
   X,
+  Download,
 } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/src/components/ui/tabs";
 import { PageHeader } from "@/src/components/layout/page-header";
-import { ProjectNav } from "@/src/components/layout/project-nav";
+
 import { useToast } from "@/src/components/ui/toast";
 import { createClient } from "@/src/lib/supabase/client";
 import { CalendarGrid, type ScheduledPost } from "@/src/components/calendar/calendar-grid";
@@ -79,6 +80,24 @@ function formatDateGroup(iso: string) {
     month: "long",
     day: "numeric",
   });
+}
+
+function exportPostsCsv(posts: ScheduledPost[], projectId: string) {
+  const header = "Date,Channel,Status,Content";
+  const rows = posts.map((p) => {
+    const date = new Date(p.scheduled_for).toISOString();
+    const channel = p.channel === "x" ? "X (Twitter)" : p.channel === "linkedin" ? "LinkedIn" : "Email";
+    const content = (p.assets?.content || "").slice(0, 200).replace(/"/g, '""').replace(/[\r\n]+/g, " ");
+    return `"${date}","${channel}","${p.status}","${content}"`;
+  });
+  const csv = [header, ...rows].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `content-calendar-${projectId}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function isSameDay(a: Date, b: Date) {
@@ -194,14 +213,24 @@ export default function CalendarPage({
         title="Content Calendar"
         description="Your scheduled posts across X, LinkedIn, and Email"
       >
-        <Button asChild>
-          <Link href={`/projects/${projectId}/agents/content`}>
-            Schedule More
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          {posts.length > 0 && (
+            <Button
+              variant="secondary"
+              onClick={() => exportPostsCsv(posts, projectId)}
+            >
+              <Download className="h-4 w-4 mr-1.5" />
+              Download CSV
+            </Button>
+          )}
+          <Button asChild>
+            <Link href={`/projects/${projectId}/agents/content`}>
+              Schedule More
+            </Link>
+          </Button>
+        </div>
       </PageHeader>
 
-      <ProjectNav projectId={projectId} />
 
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">

@@ -40,7 +40,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/ca
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
-import { ProjectNav } from "@/src/components/layout/project-nav";
+
 
 // ---------- types ----------
 
@@ -343,7 +343,6 @@ export default function AnalyticsPage() {
         </Button>
       </div>
 
-      <ProjectNav projectId={id} />
 
       {loading ? (
         <div className="flex justify-center py-12">

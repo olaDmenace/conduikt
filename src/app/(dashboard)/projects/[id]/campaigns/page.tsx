@@ -3,7 +3,7 @@
 import { useEffect, useState, use } from "react";
 import { Megaphone, Plus, Loader2, Workflow } from "lucide-react";
 import { PageHeader } from "@/src/components/layout/page-header";
-import { ProjectNav } from "@/src/components/layout/project-nav";
+
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { CampaignWizard } from "@/src/components/campaigns/campaign-wizard";
@@ -70,7 +70,6 @@ export default function CampaignsPage({
         </div>
       </PageHeader>
 
-      <ProjectNav projectId={id} />
 
       {showFlowEditor && (
         <CampaignFlowEditor

@@ -19,7 +19,7 @@ import {
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
-import { ProjectNav } from "@/src/components/layout/project-nav";
+
 import { useToast } from "@/src/components/ui/toast";
 
 interface Finding {
@@ -131,7 +131,6 @@ export default function AuditPage({
             {rerunning ? "Running..." : "Run First Audit"}
           </Button>
         </PageHeader>
-        <ProjectNav projectId={id} />
         <Card className="border-dashed border-border-strong">
           <CardContent className="flex flex-col items-center py-16 text-center">
             <AlertTriangle className="h-10 w-10 text-text-tertiary mb-4" />
@@ -202,7 +201,6 @@ export default function AuditPage({
         </div>
       </PageHeader>
 
-      <ProjectNav projectId={id} />
 
       {/* Score Gauge */}
       <Card className="mb-8 animate-in">

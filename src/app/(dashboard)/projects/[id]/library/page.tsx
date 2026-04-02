@@ -22,7 +22,7 @@ import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { PageHeader } from "@/src/components/layout/page-header";
-import { ProjectNav } from "@/src/components/layout/project-nav";
+
 import { useToast } from "@/src/components/ui/toast";
 import {
   Dialog,
@@ -190,7 +190,6 @@ export default function LibraryPage({
         description="Browse and manage all your generated assets"
       />
 
-      <ProjectNav projectId={projectId} />
 
       {loading ? (
         <div className="flex justify-center py-20">

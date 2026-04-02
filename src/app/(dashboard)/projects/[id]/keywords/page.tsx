@@ -28,7 +28,7 @@ import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { PageHeader } from "@/src/components/layout/page-header";
-import { ProjectNav } from "@/src/components/layout/project-nav";
+
 import { useToast } from "@/src/components/ui/toast";
 
 // ---------- types ----------
@@ -277,7 +277,6 @@ export default function KeywordsPage({
         description="Discover high-value keywords and content clusters powered by AI"
       />
 
-      <ProjectNav projectId={projectId} />
 
       {/* Seed Input */}
       <form onSubmit={handleGenerate} className="mb-8">

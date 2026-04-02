@@ -37,7 +37,7 @@ import {
   TabsContent,
 } from "@/src/components/ui/tabs";
 import { PageHeader } from "@/src/components/layout/page-header";
-import { ProjectNav } from "@/src/components/layout/project-nav";
+
 import { useToast } from "@/src/components/ui/toast";
 import type { UnsplashPhoto } from "@/src/lib/integrations/unsplash";
 
@@ -274,7 +274,6 @@ function BlogPageInner({
         description="Generate SEO-optimized long-form content with meta tags and social promotion snippets"
       />
 
-      <ProjectNav projectId={projectId} />
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* ---- Left: Input Panel ---- */}

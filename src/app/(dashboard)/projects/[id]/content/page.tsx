@@ -38,7 +38,7 @@ import {
   TabsContent,
 } from "@/src/components/ui/tabs";
 import { PageHeader } from "@/src/components/layout/page-header";
-import { ProjectNav } from "@/src/components/layout/project-nav";
+
 import { useToast } from "@/src/components/ui/toast";
 import { VariantPanel } from "@/src/components/content/variant-panel";
 import { BulkGenerateDialog } from "@/src/components/content/bulk-generate-dialog";
@@ -1330,7 +1330,6 @@ function ContentPageInner({
         }
       />
 
-      <ProjectNav projectId={projectId} />
 
       {/* Project context banner */}
       {project && (
@@ -1384,27 +1383,16 @@ function ContentPageInner({
             </CardHeader>
             <CardContent>
               {/* Skill Selector */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
-                {contentSkills.map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => {
-                      setSelectedSkill(s.id);
-                      if (result) {
-                        setResult("");
-                        setUsage(null);
-                      }
-                    }}
-                    className={`flex items-center gap-2 rounded-lg border p-3 text-small font-medium transition-all text-left ${
-                      selectedSkill === s.id
-                        ? "border-accent bg-accent-muted text-accent"
-                        : "border-border-default text-text-secondary hover:border-border-strong hover:text-text-primary"
-                    }`}
-                  >
-                    <s.icon className="h-4 w-4 shrink-0" />
-                    <span>{s.name}</span>
-                  </button>
-                ))}
+              <div className="mb-4">
+                <select
+                  value={selectedSkill}
+                  onChange={(e) => { setSelectedSkill(e.target.value); setResult(""); setParsedPosts(null); setParsedContent(null); }}
+                  className="w-full rounded-lg border border-border-strong bg-surface-0 px-4 py-2.5 text-text-primary text-small font-medium transition-all duration-150 focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-glow)] appearance-none cursor-pointer"
+                >
+                  {contentSkills.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name} — {s.description}</option>
+                  ))}
+                </select>
               </div>
 
               <p className="text-small text-text-tertiary mb-3">

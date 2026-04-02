@@ -28,7 +28,7 @@ import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
-import { ProjectNav } from "@/src/components/layout/project-nav";
+
 import { useToast } from "@/src/components/ui/toast";
 import {
   Dialog,
@@ -277,7 +277,6 @@ export default function VideoAgentPage({
         title="Video Ad Agent"
         description="Generate presenter-style video ads with AI"
       />
-      <ProjectNav projectId={id} />
 
       {/* Plan gate overlay */}
       {planGated && (

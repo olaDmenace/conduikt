@@ -44,7 +44,7 @@ export function ProjectNav({ projectId }: ProjectNavProps) {
     { name: "Analytics", href: `${base}/analytics`,           icon: TrendingUp  },
     { name: "Campaigns", href: `${base}/campaigns`,            icon: Megaphone   },
     { name: "Competitors", href: `${base}/competitors`,        icon: Swords      },
-    { name: "Calendar",  href: `${agentsBase}/calendar`,      icon: Calendar    },
+    { name: "Calendar",  href: `${base}/calendar`,             icon: Calendar    },
     { name: "Emails",    href: `${base}/emails`,              icon: Mail        },
     { name: "A/B Tests", href: `${agentsBase}/ab-test`,        icon: GitBranch   },
     { name: "Library",   href: `${base}/library`,             icon: FolderOpen  },

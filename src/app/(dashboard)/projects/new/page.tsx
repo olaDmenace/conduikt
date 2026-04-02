@@ -125,33 +125,10 @@ export default function NewProjectPage() {
 
   const stepIndex = STEPS.indexOf(step);
 
-  async function handleStep1(e: React.FormEvent) {
+  function handleStep1(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    setLoading(true);
-
-    const res = await fetch("/api/projects", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: projectName,
-        website_url: websiteUrl,
-        description,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      setError(data.error || "Failed to create project");
-      setLoading(false);
-      return;
-    }
-
-    setProjectId(data.id);
-    toast("Project created successfully!", "success");
     setStep("setup");
-    setLoading(false);
   }
 
   function handleSelectOption(questionId: string, option: string, multi?: boolean) {
@@ -181,47 +158,54 @@ export default function NewProjectPage() {
     return true;
   }
 
-  async function handleSetupComplete() {
-    setLoading(true);
-    if (projectId) {
-      await fetch(`/api/projects/${projectId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ onboarding_answers: setupAnswers }),
-      });
-    }
+  function handleSetupComplete() {
     setStep("context");
-    setLoading(false);
   }
 
   async function handleStep3(e: React.FormEvent) {
     e.preventDefault();
+    setError("");
     setLoading(true);
 
-    if (projectId) {
-      await fetch(`/api/projects/${projectId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          target_audience: targetAudience
-            ? { personas: [targetAudience], pain_points: [] }
-            : null,
-          value_proposition: valueProposition || null,
-        }),
-      });
+    // Create the project with all collected data in a single POST
+    const res = await fetch("/api/projects", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: projectName,
+        website_url: websiteUrl,
+        description,
+        onboarding_answers: setupAnswers,
+        target_audience: targetAudience
+          ? { personas: [targetAudience], pain_points: [] }
+          : null,
+        value_proposition: valueProposition || null,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setError(data.error || "Failed to create project");
+      setLoading(false);
+      return;
     }
 
+    const newProjectId = data.id;
+    setProjectId(newProjectId);
+    toast("Project created successfully!", "success");
     setStep("audit");
     setLoading(false);
 
-    if (projectId && websiteUrl) {
-      runAudit();
+    if (newProjectId && websiteUrl) {
+      runAudit(newProjectId);
     } else {
-      setTimeout(() => router.push(`/projects/${projectId}`), 1000);
+      setTimeout(() => router.push(`/projects/${newProjectId}`), 1000);
     }
   }
 
-  async function runAudit() {
+  async function runAudit(auditProjectId?: string) {
+    const pid = auditProjectId || projectId;
     setAuditProgress({
       fetching: "running",
       analyzing: "pending",
@@ -232,27 +216,27 @@ export default function NewProjectPage() {
       const res = await fetch("/api/ai/audit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId, url: websiteUrl }),
+        body: JSON.stringify({ projectId: pid, url: websiteUrl }),
       });
 
       if (!res.ok) {
         const err = await res.json();
         setAuditProgress((p) => ({ ...p, fetching: "error" }));
         toast(err.error || "Audit failed", "error");
-        setTimeout(() => router.push(`/projects/${projectId}`), 2000);
+        setTimeout(() => router.push(`/projects/${pid}`), 2000);
         return;
       }
 
       setAuditProgress({ fetching: "done", analyzing: "done", saving: "done" });
       toast("SEO audit complete!", "success");
-      setTimeout(() => router.push(`/projects/${projectId}/audit`), 1500);
+      setTimeout(() => router.push(`/projects/${pid}/audit`), 1500);
     } catch {
       setAuditProgress((p) => ({ ...p, fetching: "error" }));
       toast(
         "Failed to run audit. You can retry from the project page.",
         "error"
       );
-      setTimeout(() => router.push(`/projects/${projectId}`), 2000);
+      setTimeout(() => router.push(`/projects/${pid}`), 2000);
     }
   }
 
@@ -339,15 +323,9 @@ export default function NewProjectPage() {
               )}
 
               <div className="flex justify-end pt-2">
-                <Button type="submit" disabled={loading}>
-                  {loading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      Create Project
-                      <ArrowRight className="h-4 w-4" />
-                    </>
-                  )}
+                <Button type="submit">
+                  Next
+                  <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
             </form>
@@ -447,17 +425,11 @@ export default function NewProjectPage() {
               ) : (
                 <Button
                   type="button"
-                  disabled={!canAdvanceQuestion() || loading}
+                  disabled={!canAdvanceQuestion()}
                   onClick={handleSetupComplete}
                 >
-                  {loading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      Continue
-                      <ArrowRight className="h-4 w-4" />
-                    </>
-                  )}
+                  Continue
+                  <ArrowRight className="h-4 w-4" />
                 </Button>
               )}
             </div>
@@ -505,6 +477,12 @@ export default function NewProjectPage() {
                   className="w-full rounded-lg border border-border-strong bg-surface-0 px-4 py-3 text-text-primary placeholder:text-text-tertiary font-sans text-[0.9375rem] transition-all duration-150 focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-glow)] resize-none"
                 />
               </div>
+              {error && (
+                <div className="rounded-lg border border-error/20 bg-error/10 px-4 py-3 text-small text-error">
+                  {error}
+                </div>
+              )}
+
               <div className="flex justify-between pt-2">
                 <Button
                   type="button"
@@ -519,12 +497,12 @@ export default function NewProjectPage() {
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : websiteUrl ? (
                     <>
-                      Run Initial Audit
+                      Create &amp; Run Audit
                       <ArrowRight className="h-4 w-4" />
                     </>
                   ) : (
                     <>
-                      Finish Setup
+                      Create Project
                       <ArrowRight className="h-4 w-4" />
                     </>
                   )}

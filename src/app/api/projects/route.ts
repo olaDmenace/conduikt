@@ -63,7 +63,14 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { name, website_url, description } = body;
+  const {
+    name,
+    website_url,
+    description,
+    onboarding_answers,
+    target_audience,
+    value_proposition,
+  } = body;
 
   if (!name || typeof name !== "string" || name.trim().length === 0) {
     return NextResponse.json(
@@ -79,6 +86,9 @@ export async function POST(request: NextRequest) {
       name: name.trim(),
       website_url: website_url || null,
       description: description || null,
+      onboarding_answers: onboarding_answers || null,
+      target_audience: target_audience || null,
+      value_proposition: value_proposition || null,
     })
     .select()
     .single();

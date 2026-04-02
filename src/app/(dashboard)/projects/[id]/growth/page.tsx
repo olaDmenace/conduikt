@@ -28,7 +28,7 @@ import {
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
-import { ProjectNav } from "@/src/components/layout/project-nav";
+
 import { useToast } from "@/src/components/ui/toast";
 
 // ---------- types ----------
@@ -322,7 +322,6 @@ export default function GrowthPage({
         description="AI-generated 90-day growth plan with prioritised actions across SEO, content, and conversion"
       />
 
-      <ProjectNav projectId={projectId} />
 
       {/* Input form */}
       {!playbook && (

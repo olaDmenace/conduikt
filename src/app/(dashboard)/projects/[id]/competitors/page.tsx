@@ -17,7 +17,7 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Badge } from "@/src/components/ui/badge";
 import { PageHeader } from "@/src/components/layout/page-header";
-import { ProjectNav } from "@/src/components/layout/project-nav";
+
 import { useToast } from "@/src/components/ui/toast";
 
 interface Snapshot {
@@ -117,7 +117,6 @@ export default function CompetitorsPage() {
           Add Competitor
         </Button>
       </PageHeader>
-      <ProjectNav projectId={id} />
 
       {showForm && (
         <Card className="animate-in mb-6">

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/ca
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
-import { ProjectNav } from "@/src/components/layout/project-nav";
+
 import { useToast } from "@/src/components/ui/toast";
 
 interface Project {
@@ -203,7 +203,6 @@ export default function ProjectSettingsPage() {
     <div>
       <PageHeader title="Project Settings" description="Manage project configuration" />
 
-      <ProjectNav projectId={id} />
 
       <form onSubmit={handleSave} className="space-y-6 max-w-2xl">
         {/* General */}
