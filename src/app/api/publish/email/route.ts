@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "Conduikt <hello@conduikt.io>",
+      from: "Conduikt <hello@conduikt.com>",
       to: Array.isArray(to) ? to : [to],
       subject,
       html,

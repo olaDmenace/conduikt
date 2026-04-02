@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 
-const FROM = "Conduikt <hello@conduikt.io>";
+const FROM = "Conduikt <hello@conduikt.com>";
 
 // Lazy client — only instantiated when RESEND_API_KEY is present
 function getResend(): Resend {
@@ -77,7 +77,7 @@ function welcomeHtml(name: string): string {
           <tr>
             <td style="background:#f9f6f2;padding:20px 40px;border-top:1px solid #e5e0db;">
               <p style="margin:0;font-size:12px;color:#8a8176;line-height:1.6;">You received this because you created a Conduikt account. Questions? Reply to this email — we read every one.</p>
-              <p style="margin:8px 0 0;font-size:12px;"><a href="${appUrl}" style="color:#C88540;text-decoration:none;">conduikt.vercel.app</a></p>
+              <p style="margin:8px 0 0;font-size:12px;"><a href="${appUrl}" style="color:#C88540;text-decoration:none;">conduikt.com</a></p>
             </td>
           </tr>
         </table>

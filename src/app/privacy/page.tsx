@@ -51,10 +51,10 @@ export default function PrivacyPage() {
               Technicity Digital. Our registered address is Lagos, Nigeria. You can
               reach us at{" "}
               <a
-                href="mailto:hello@conduikt.io"
+                href="mailto:hello@conduikt.com"
                 className="text-accent hover:underline"
               >
-                hello@conduikt.io
+                hello@conduikt.com
               </a>
               .
             </p>
@@ -144,10 +144,10 @@ export default function PrivacyPage() {
             <p className="text-body leading-relaxed">
               To exercise any of these rights, contact us at{" "}
               <a
-                href="mailto:hello@conduikt.io"
+                href="mailto:hello@conduikt.com"
                 className="text-accent hover:underline"
               >
-                hello@conduikt.io
+                hello@conduikt.com
               </a>
               .
             </p>
@@ -187,10 +187,10 @@ export default function PrivacyPage() {
             <p className="text-body leading-relaxed">
               Questions about this Privacy Policy? Email us at{" "}
               <a
-                href="mailto:hello@conduikt.io"
+                href="mailto:hello@conduikt.com"
                 className="text-accent hover:underline"
               >
-                hello@conduikt.io
+                hello@conduikt.com
               </a>
               .
             </p>

@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     const response = await fetch(url, {
       headers: {
         "User-Agent":
-          "Mozilla/5.0 (compatible; ConduiktBot/1.0; +https://conduikt.io)",
+          "Mozilla/5.0 (compatible; ConduiktBot/1.0; +https://conduikt.com)",
         Accept: "text/html,application/xhtml+xml,*/*",
       },
       redirect: "follow",

@@ -166,10 +166,10 @@ export default function TermsPage() {
             <p className="text-body leading-relaxed">
               Questions about these terms? Contact us at{" "}
               <a
-                href="mailto:hello@conduikt.io"
+                href="mailto:hello@conduikt.com"
                 className="text-accent hover:underline"
               >
-                hello@conduikt.io
+                hello@conduikt.com
               </a>
               .
             </p>

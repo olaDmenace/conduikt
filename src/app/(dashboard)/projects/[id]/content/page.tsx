@@ -693,7 +693,7 @@ function ContentPageInner({
               </div>
               <div className="flex items-center gap-2 text-small text-text-tertiary">
                 <span>From:</span>
-                {project?.name || "Conduikt"} &lt;hello@conduikt.io&gt;
+                {project?.name || "Conduikt"} &lt;hello@conduikt.com&gt;
               </div>
               {email?.goal && (
                 <div className="flex items-center gap-2 text-small text-text-tertiary">
