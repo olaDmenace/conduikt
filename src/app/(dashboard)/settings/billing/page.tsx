@@ -139,7 +139,7 @@ function BillingContent() {
   function getCheckoutUrl(plan: (typeof plans)[number]) {
     if (!plan.checkoutParam || !profile?.id) return null;
     const successUrl = encodeURIComponent(
-      `${process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin}/settings/billing?payment=success`
+      `${window.location.origin}/settings/billing?payment=success`
     );
     return `${plan.checkoutParam}?checkout[custom][user_id]=${profile.id}&checkout[success_url]=${successUrl}`;
   }

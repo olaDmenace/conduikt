@@ -58,7 +58,7 @@ export default function LoginPage() {
       return;
     }
     setResending(true);
-    const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin;
+    const siteUrl = window.location.origin;
     const { error: resendError } = await supabase.auth.resend({
       type: "signup",
       email,
