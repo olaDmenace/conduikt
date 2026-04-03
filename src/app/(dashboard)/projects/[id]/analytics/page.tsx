@@ -23,6 +23,7 @@ import {
   Share2,
   Download,
 } from "lucide-react";
+import { PdfDownloadButton } from "@/src/components/ui/pdf-download-button";
 import {
   LineChart,
   Line,
@@ -331,16 +332,10 @@ export default function AnalyticsPage() {
           title="Analytics"
           description="Impact dashboard — track your marketing progress"
         />
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => {
-            window.open(`/api/projects/${id}/analytics/pdf`, "_blank");
-          }}
-        >
-          <Download className="h-4 w-4" />
-          Export PDF
-        </Button>
+        <PdfDownloadButton
+          href={`/api/projects/${id}/analytics/pdf`}
+          filename="analytics-report.pdf"
+        />
       </div>
 
 

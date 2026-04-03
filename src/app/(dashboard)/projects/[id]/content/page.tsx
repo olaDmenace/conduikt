@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, use, Suspense } from "react";
+import Link from "next/link";
+import { PdfDownloadButton } from "@/src/components/ui/pdf-download-button";
 import { useSearchParams } from "next/navigation";
 import {
   Sparkles,
@@ -22,6 +24,7 @@ import {
   CalendarClock,
   ChevronDown,
   GitBranch,
+  Download,
 } from "lucide-react";
 import {
   Card,
@@ -242,9 +245,11 @@ function ContentPageInner({
   const [project, setProject] = useState<ProjectContext | null>(null);
 
   // Generation state — seed from URL params if present
-  const [selectedSkill, setSelectedSkill] = useState(
-    () => searchParams.get("skill") ?? "copywriting"
-  );
+  // Guard: only accept skill IDs that exist in contentSkills (e.g. ?skill=growth-playbook would crash)
+  const [selectedSkill, setSelectedSkill] = useState(() => {
+    const param = searchParams.get("skill");
+    return param && contentSkills.some((s) => s.id === param) ? param : "copywriting";
+  });
   const [prompt, setPrompt] = useState(() => searchParams.get("prompt") ?? "");
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState("");
@@ -273,7 +278,7 @@ function ContentPageInner({
   const [bulkOpen, setBulkOpen] = useState(false);
   const [scheduleDateTime, setScheduleDateTime] = useState("");
 
-  const skill = contentSkills.find((s) => s.id === selectedSkill)!;
+  const skill = contentSkills.find((s) => s.id === selectedSkill) ?? contentSkills[0];
 
   // ---------- data fetching ----------
 
@@ -282,6 +287,36 @@ function ContentPageInner({
     fetchAssets();
     fetchConnectedAccounts();
   }, [projectId]);
+
+  // Load a saved asset from ?assetId= param
+  useEffect(() => {
+    const assetId = searchParams.get("assetId");
+    if (!assetId) return;
+    fetch(`/api/projects/${projectId}/assets/${assetId}`)
+      .then((r) => r.json())
+      .then((asset) => {
+        const content = asset?.content as Record<string, unknown> | undefined;
+        const raw = typeof content?.raw === "string" ? content.raw : "";
+        const assetSkill = typeof content?.skill === "string" ? content.skill : "copywriting";
+        const safeSkill = contentSkills.some((s) => s.id === assetSkill) ? assetSkill : "copywriting";
+        setResult(raw);
+        setSelectedSkill(safeSkill);
+        setPrompt(typeof content?.prompt === "string" ? content.prompt : "");
+        setSavedAssetId(assetId);
+        if (assetSkill === "social-content" && raw) {
+          try {
+            const jsonMatch = raw.match(/\{[\s\S]*\}/);
+            const parsed = JSON.parse(jsonMatch?.[0] ?? raw);
+            if (Array.isArray(parsed?.posts)) setParsedPosts(parsed.posts);
+          } catch { /* not JSON */ }
+        }
+        if (jsonSkills.includes(assetSkill) && raw) {
+          setParsedContent(extractJson(raw));
+        }
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function fetchProject() {
     const res = await fetch(`/api/projects/${projectId}`);
@@ -1466,32 +1501,11 @@ function ContentPageInner({
                   {assets.map((asset) => {
                     const ChannelIcon =
                       channelIcons[asset.channel ?? "web"] ?? Globe;
-                    return (
-                      <button
-                        key={asset.id}
-                        onClick={() => {
-                          const raw = asset.content?.raw ?? "";
-                          const assetSkill = asset.content?.skill ?? "copywriting";
-                          setResult(raw);
-                          setSelectedSkill(assetSkill);
-                          setPrompt(asset.content?.prompt ?? "");
-                          setUsage(null);
-                          setSavedAssetId(asset.id);
-                          setParsedPosts(null);
-                          setParsedContent(null);
-                          if (assetSkill === "social-content" && raw) {
-                            try {
-                              const jsonMatch = raw.match(/\{[\s\S]*\}/);
-                              const parsed = JSON.parse(jsonMatch?.[0] ?? raw);
-                              if (Array.isArray(parsed?.posts)) setParsedPosts(parsed.posts);
-                            } catch { /* not JSON */ }
-                          }
-                          if (jsonSkills.includes(assetSkill) && raw) {
-                            setParsedContent(extractJson(raw));
-                          }
-                        }}
-                        className="w-full text-left rounded-lg border border-border-default p-3 hover:bg-surface-2 transition-colors"
-                      >
+                    const hasRaw = typeof asset.content?.raw === "string" && asset.content.raw.length > 0;
+                    const itemClass = "w-full text-left rounded-lg border border-border-default p-3 hover:bg-surface-2 transition-colors block";
+
+                    const itemContent = (
+                      <>
                         <div className="flex items-center gap-2 mb-1">
                           <ChannelIcon className="h-3.5 w-3.5 text-text-tertiary" />
                           <span className="text-small font-medium text-text-primary truncate">
@@ -1516,6 +1530,49 @@ function ContentPageInner({
                             {asset.status}
                           </Badge>
                         </div>
+                      </>
+                    );
+
+                    if (!hasRaw) {
+                      return (
+                        <Link
+                          key={asset.id}
+                          href={`/projects/${projectId}/assets/${asset.id}`}
+                          className={itemClass}
+                        >
+                          {itemContent}
+                        </Link>
+                      );
+                    }
+
+                    return (
+                      <button
+                        key={asset.id}
+                        onClick={() => {
+                          const raw = asset.content?.raw ?? "";
+                          const assetSkill = asset.content?.skill ?? "copywriting";
+                          const safeSkill = contentSkills.some((s) => s.id === assetSkill) ? assetSkill : "copywriting";
+                          setResult(raw);
+                          setSelectedSkill(safeSkill);
+                          setPrompt(asset.content?.prompt ?? "");
+                          setUsage(null);
+                          setSavedAssetId(asset.id);
+                          setParsedPosts(null);
+                          setParsedContent(null);
+                          if (assetSkill === "social-content" && raw) {
+                            try {
+                              const jsonMatch = raw.match(/\{[\s\S]*\}/);
+                              const parsed = JSON.parse(jsonMatch?.[0] ?? raw);
+                              if (Array.isArray(parsed?.posts)) setParsedPosts(parsed.posts);
+                            } catch { /* not JSON */ }
+                          }
+                          if (jsonSkills.includes(assetSkill) && raw) {
+                            setParsedContent(extractJson(raw));
+                          }
+                        }}
+                        className={itemClass}
+                      >
+                        {itemContent}
                       </button>
                     );
                   })}
@@ -1557,6 +1614,12 @@ function ContentPageInner({
                       )}
                       {saving ? "Saving..." : "Save Draft"}
                     </Button>
+                    {savedAssetId && (
+                      <PdfDownloadButton
+                        href={`/api/projects/${projectId}/assets/${savedAssetId}/pdf`}
+                        filename="content-export.pdf"
+                      />
+                    )}
                     <SendToWebhook
                       title={skill.name}
                       content={result}

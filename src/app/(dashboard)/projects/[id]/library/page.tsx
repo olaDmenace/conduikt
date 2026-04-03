@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use, useMemo } from "react";
+import { useEffect, useState, use, useMemo, useTransition } from "react";
 import {
   FileText,
   Globe,
@@ -16,6 +16,9 @@ import {
   List,
   Calendar,
   Tag,
+  TrendingUp,
+  Download,
+  ExternalLink,
 } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
@@ -24,6 +27,7 @@ import { Input } from "@/src/components/ui/input";
 import { PageHeader } from "@/src/components/layout/page-header";
 
 import { useToast } from "@/src/components/ui/toast";
+import { PdfDownloadButton } from "@/src/components/ui/pdf-download-button";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +36,7 @@ import {
   DialogDescription,
 } from "@/src/components/ui/dialog";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface Asset {
   id: string;
@@ -56,6 +61,7 @@ const TYPE_ICONS: Record<string, typeof FileText> = {
   ad_copy: FileText,
   meta_tags: Tag,
   schema_markup: Tag,
+  growth_playbook: TrendingUp,
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -71,6 +77,7 @@ const TYPE_LABELS: Record<string, string> = {
   ad_copy: "Ad Copy",
   meta_tags: "Meta Tags",
   schema_markup: "Schema Markup",
+  growth_playbook: "Growth Playbook",
 };
 
 const CHANNEL_LABELS: Record<string, string> = {
@@ -81,6 +88,43 @@ const CHANNEL_LABELS: Record<string, string> = {
   google_ads: "Google Ads",
   meta_ads: "Meta Ads",
 };
+
+function AssetPreview({ asset }: { asset: Asset }) {
+  const c = asset.content;
+
+  if (asset.type === "growth_playbook") {
+    const parsed = (c?.parsed ?? c) as Record<string, unknown>;
+    const summary = parsed?.executive_summary as string | undefined;
+    const phases = parsed?.phases as Array<{ phase: number; name: string; timeline: string; actions?: unknown[] }> | undefined;
+    return (
+      <div className="space-y-3">
+        {summary && <p className="leading-relaxed">{summary}</p>}
+        {phases && phases.length > 0 && (
+          <div className="space-y-1 mt-2">
+            {phases.map((ph) => (
+              <div key={ph.phase} className="flex items-center justify-between text-small">
+                <span className="text-text-primary font-medium">Phase {ph.phase}: {ph.name}</span>
+                <span className="text-text-tertiary">{ph.timeline} · {ph.actions?.length ?? 0} actions</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (asset.type === "blog_post") {
+    const parsed = (c?.parsed ?? c) as Record<string, unknown>;
+    const md = parsed?.content_markdown as string | undefined;
+    const preview = md ? md.slice(0, 600) + (md.length > 600 ? "…" : "") : getTextContent(asset);
+    return <p className="whitespace-pre-wrap leading-relaxed">{preview}</p>;
+  }
+
+  // Default: raw text
+  const text = getTextContent(asset);
+  const preview = text.slice(0, 800) + (text.length > 800 ? "…" : "");
+  return <p className="whitespace-pre-wrap font-mono leading-relaxed">{preview}</p>;
+}
 
 function statusVariant(
   status: string
@@ -111,6 +155,8 @@ export default function LibraryPage({
 }) {
   const { id: projectId } = use(params);
   const { toast } = useToast();
+  const router = useRouter();
+  const [navigating, startNavigation] = useTransition();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
@@ -403,11 +449,26 @@ export default function LibraryPage({
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="mt-2 rounded-lg border border-border-default bg-surface-0 p-4 text-small text-text-secondary whitespace-pre-wrap break-words font-mono max-h-[400px] overflow-y-auto">
-                {getTextContent(selectedAsset)}
+              {/* Content preview */}
+              <div className="mt-2 rounded-lg border border-border-default bg-surface-0 p-4 text-small text-text-secondary max-h-[360px] overflow-y-auto">
+                <AssetPreview asset={selectedAsset} />
               </div>
 
-              <div className="flex items-center gap-2 mt-4">
+              <div className="flex items-center gap-2 mt-4 flex-wrap">
+                <Button
+                  disabled={navigating}
+                  onClick={() => startNavigation(() => router.push(`/projects/${projectId}/assets/${selectedAsset.id}`))}
+                >
+                  {navigating
+                    ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                    : <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                  }
+                  {navigating ? "Opening…" : "Open Full View"}
+                </Button>
+                <PdfDownloadButton
+                  href={`/api/projects/${projectId}/assets/${selectedAsset.id}/pdf`}
+                  filename={`${selectedAsset.title ?? "asset"}.pdf`}
+                />
                 <Button
                   size="sm"
                   variant="ghost"
@@ -417,9 +478,7 @@ export default function LibraryPage({
                   Copy
                 </Button>
                 <Button size="sm" variant="ghost" asChild>
-                  <Link
-                    href={`/projects/${projectId}/agents/calendar`}
-                  >
+                  <Link href={`/projects/${projectId}/agents/calendar`}>
                     <Calendar className="h-3.5 w-3.5 mr-1.5" />
                     Schedule
                   </Link>

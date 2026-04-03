@@ -20,6 +20,7 @@ import {
   Image as ImageIcon,
   X as CloseIcon,
   ChevronRight,
+  Download,
 } from "lucide-react";
 import {
   Card,
@@ -39,6 +40,7 @@ import {
 import { PageHeader } from "@/src/components/layout/page-header";
 
 import { useToast } from "@/src/components/ui/toast";
+import { PdfDownloadButton } from "@/src/components/ui/pdf-download-button";
 import type { UnsplashPhoto } from "@/src/lib/integrations/unsplash";
 
 // ---------- types ----------
@@ -97,6 +99,29 @@ function BlogPageInner({
 
   // Copy states per field
   const [copied, setCopied] = useState<string | null>(null);
+  const [loadingAsset, setLoadingAsset] = useState(false);
+
+  // Load saved blog post from ?assetId= param
+  useEffect(() => {
+    const assetId = searchParams.get("assetId");
+    if (!assetId) return;
+    setLoadingAsset(true);
+    fetch(`/api/projects/${projectId}/assets/${assetId}`)
+      .then((r) => r.json())
+      .then((asset) => {
+        const content = asset?.content as Record<string, unknown> | undefined;
+        const parsedData = content?.parsed as BlogPost | undefined;
+        if (parsedData?.meta_title) {
+          setParsed(parsedData);
+          setRawResult(typeof content?.raw === "string" ? content.raw : "");
+          setTopic(typeof content?.prompt === "string" ? content.prompt : parsedData.meta_title);
+          setSavedId(assetId);
+        }
+      })
+      .catch(() => toast("Could not load saved blog post", "error"))
+      .finally(() => setLoadingAsset(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function copy(text: string, key: string) {
     navigator.clipboard.writeText(text);
@@ -390,6 +415,12 @@ function BlogPageInner({
                       )}
                       {saving ? "Saving..." : savedId ? "Saved" : "Save Draft"}
                     </Button>
+                    {savedId && (
+                      <PdfDownloadButton
+                        href={`/api/projects/${projectId}/assets/${savedId}/pdf`}
+                        filename="blog-post.pdf"
+                      />
+                    )}
                   </div>
                 )}
               </div>

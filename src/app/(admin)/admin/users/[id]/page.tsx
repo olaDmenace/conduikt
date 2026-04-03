@@ -2,6 +2,7 @@ import { getUserDetail } from "@/src/lib/admin/queries";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { notFound } from "next/navigation";
+import { UserActions } from "./user-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -46,27 +47,8 @@ export default async function UserDetailPage({
         <InfoCard label="Last Sign In" value={profile.lastSignIn ? new Date(profile.lastSignIn).toLocaleDateString() : "Never"} />
       </div>
 
-      {/* Action buttons (Phase 2 placeholders) */}
-      <div className="flex gap-3">
-        <button
-          disabled
-          className="rounded-lg border border-border-default bg-surface-2 px-4 py-2 text-[0.8125rem] font-medium text-text-secondary cursor-not-allowed opacity-60"
-        >
-          Change Plan
-        </button>
-        <button
-          disabled
-          className="rounded-lg border border-border-default bg-surface-2 px-4 py-2 text-[0.8125rem] font-medium text-text-secondary cursor-not-allowed opacity-60"
-        >
-          Reset Generation Count
-        </button>
-        <button
-          disabled
-          className="rounded-lg border border-error/20 bg-error/5 px-4 py-2 text-[0.8125rem] font-medium text-error cursor-not-allowed opacity-60"
-        >
-          Disable Account
-        </button>
-      </div>
+      {/* Admin actions */}
+      <UserActions userId={profile.id} currentPlan={profile.plan ?? "free"} />
 
       {/* Projects */}
       <div className="rounded-xl border border-border-default bg-surface-1 p-6">

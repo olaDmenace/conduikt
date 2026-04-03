@@ -58,6 +58,8 @@ export async function POST(
     "ad_copy",
     "schema_markup",
     "audit_report",
+    "blog_post",
+    "growth_playbook",
   ];
   if (!type || !validTypes.includes(type)) {
     return NextResponse.json(

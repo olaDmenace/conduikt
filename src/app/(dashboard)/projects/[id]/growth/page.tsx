@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, use, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Sparkles,
@@ -18,6 +19,7 @@ import {
   ChevronDown,
   ChevronUp,
   Check,
+  Download,
 } from "lucide-react";
 import {
   Card,
@@ -30,6 +32,7 @@ import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
 
 import { useToast } from "@/src/components/ui/toast";
+import { PdfDownloadButton } from "@/src/components/ui/pdf-download-button";
 
 // ---------- types ----------
 
@@ -187,13 +190,14 @@ function ActionCard({
 
 // ---------- component ----------
 
-export default function GrowthPage({
+function GrowthPageInner({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id: projectId } = use(params);
   const { toast } = useToast();
+  const searchParams = useSearchParams();
 
   const [primaryGoal, setPrimaryGoal] = useState("");
   const [challenge, setChallenge] = useState("");
@@ -201,6 +205,7 @@ export default function GrowthPage({
   const [generating, setGenerating] = useState(false);
   const [rawText, setRawText] = useState("");
   const [playbook, setPlaybook] = useState<GrowthPlaybook | null>(null);
+  const [loadingAsset, setLoadingAsset] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
@@ -208,6 +213,26 @@ export default function GrowthPage({
   // Track checked actions
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [expandedPhase, setExpandedPhase] = useState<number | null>(1);
+
+  // Load saved playbook from ?assetId= param
+  useEffect(() => {
+    const assetId = searchParams.get("assetId");
+    if (!assetId) return;
+    setLoadingAsset(true);
+    fetch(`/api/projects/${projectId}/assets/${assetId}`)
+      .then((r) => r.json())
+      .then((asset) => {
+        const parsed = asset?.content?.parsed as GrowthPlaybook | undefined;
+        if (parsed?.phases) {
+          setPlaybook(parsed);
+          setSavedId(assetId);
+          setExpandedPhase(1);
+        }
+      })
+      .catch(() => toast("Could not load saved playbook", "error"))
+      .finally(() => setLoadingAsset(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function toggleCheck(id: string) {
     setChecked((prev) => {
@@ -403,6 +428,12 @@ export default function GrowthPage({
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : savedId ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
                 {savedId ? "Saved" : "Save Playbook"}
               </Button>
+              {savedId && (
+                <PdfDownloadButton
+                  href={`/api/projects/${projectId}/assets/${savedId}/pdf`}
+                  filename="growth-playbook.pdf"
+                />
+              )}
             </div>
           </div>
 
@@ -544,8 +575,15 @@ export default function GrowthPage({
         </div>
       )}
 
+      {/* Loading saved asset */}
+      {loadingAsset && (
+        <div className="flex justify-center py-20">
+          <Loader2 className="h-8 w-8 text-accent animate-spin" />
+        </div>
+      )}
+
       {/* Empty state */}
-      {!playbook && !generating && (
+      {!playbook && !generating && !loadingAsset && (
         <Card className="border-dashed border-border-strong">
           <CardContent className="flex flex-col items-center py-16 text-center">
             <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent-muted">
@@ -559,5 +597,17 @@ export default function GrowthPage({
         </Card>
       )}
     </div>
+  );
+}
+
+export default function GrowthPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="h-8 w-8 text-accent animate-spin" /></div>}>
+      <GrowthPageInner params={params} />
+    </Suspense>
   );
 }
