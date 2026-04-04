@@ -8,7 +8,7 @@ import { useToast } from "@/src/components/ui/toast";
 interface PdfDownloadButtonProps {
   href: string;
   filename?: string;
-  size?: "sm" | "default";
+  size?: "sm" | "md" | "lg";
   variant?: "primary" | "secondary" | "ghost";
   className?: string;
 }
