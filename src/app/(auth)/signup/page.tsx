@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/src/lib/supabase/client";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
+import { useToast } from "@/src/components/ui/toast";
 import { Twitter, Linkedin, Mail, Eye, EyeOff } from "lucide-react";
 
 export default function SignupPage() {
@@ -15,7 +16,9 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [resending, setResending] = useState(false);
   const supabase = createClient();
+  const { toast } = useToast();
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
@@ -60,10 +63,27 @@ export default function SignupPage() {
           Didn&apos;t receive it? Check your spam folder, or{" "}
           <button
             type="button"
-            onClick={() => setEmailSent(false)}
-            className="text-accent-secondary hover:text-accent-secondary-hover transition-colors"
+            disabled={resending}
+            onClick={async () => {
+              setResending(true);
+              const siteUrl = window.location.origin;
+              const { error } = await supabase.auth.resend({
+                type: "signup",
+                email,
+                options: {
+                  emailRedirectTo: `${siteUrl}/auth/confirm?next=/dashboard`,
+                },
+              });
+              setResending(false);
+              if (error) {
+                toast(error.message, "error");
+              } else {
+                toast("Verification email resent! Check your inbox.", "success");
+              }
+            }}
+            className="text-accent-secondary hover:text-accent-secondary-hover transition-colors disabled:opacity-50"
           >
-            try signing up again
+            {resending ? "Sending..." : "resend the verification email"}
           </button>
           .
         </p>
@@ -93,17 +113,26 @@ export default function SignupPage() {
         </p>
       </div>
 
-      {/* Social login — coming soon */}
+      {/* Social login */}
       <div className="mb-6 space-y-3">
         <button
           type="button"
-          disabled
-          title="X login coming soon"
-          className="flex w-full items-center justify-center gap-3 rounded-lg border border-surface-3 bg-surface-1 px-4 py-2.5 text-small font-medium text-text-tertiary opacity-50 cursor-not-allowed"
+          onClick={async () => {
+            try {
+              const siteUrl = window.location.origin;
+              const { error } = await supabase.auth.signInWithOAuth({
+                provider: "twitter",
+                options: { redirectTo: `${siteUrl}/auth/confirm?next=/dashboard` },
+              });
+              if (error) toast(error.message === "Unsupported provider: provider is not enabled" ? "X login is not available right now. Please use email and password." : error.message, "error");
+            } catch {
+              toast("Something went wrong. Please try again.", "error");
+            }
+          }}
+          className="flex w-full items-center justify-center gap-3 rounded-lg border border-surface-3 bg-surface-1 px-4 py-2.5 text-small font-medium text-text-primary hover:bg-surface-2 transition-colors"
         >
           <Twitter className="h-4 w-4" />
           Continue with X
-          <span className="ml-auto rounded bg-surface-2 px-1.5 py-0.5 text-[0.6875rem] text-text-tertiary">Soon</span>
         </button>
         <button
           type="button"

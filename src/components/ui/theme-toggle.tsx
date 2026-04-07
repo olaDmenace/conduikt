@@ -2,15 +2,24 @@
 
 import { Sun, Moon } from "lucide-react";
 import { useUIStore } from "@/src/stores/ui-store";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 export function ThemeToggle() {
-  const { theme, toggleTheme, setTheme } = useUIStore();
+  const theme = useUIStore((s) => s.theme);
+  const toggleTheme = useUIStore((s) => s.toggleTheme);
+  const setTheme = useUIStore((s) => s.setTheme);
+  const synced = useRef(false);
 
-  // Sync theme on mount (hydration)
+  // Sync theme on mount (hydration) — only once
   useEffect(() => {
-    setTheme(theme);
-  }, []);
+    if (!synced.current) {
+      synced.current = true;
+      const current = document.documentElement.getAttribute("data-theme");
+      if (current !== theme) {
+        setTheme(theme);
+      }
+    }
+  }, [theme, setTheme]);
 
   return (
     <button

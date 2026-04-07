@@ -87,17 +87,26 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {/* Social login — coming soon */}
+      {/* Social login */}
       <div className="mb-6 space-y-3">
         <button
           type="button"
-          disabled
-          title="X login coming soon"
-          className="flex w-full items-center justify-center gap-3 rounded-lg border border-surface-3 bg-surface-1 px-4 py-2.5 text-small font-medium text-text-tertiary opacity-50 cursor-not-allowed"
+          onClick={async () => {
+            try {
+              const siteUrl = window.location.origin;
+              const { error } = await supabase.auth.signInWithOAuth({
+                provider: "twitter",
+                options: { redirectTo: `${siteUrl}/auth/confirm?next=/dashboard` },
+              });
+              if (error) toast(error.message === "Unsupported provider: provider is not enabled" ? "X login is not available right now. Please use email and password." : error.message, "error");
+            } catch {
+              toast("Something went wrong. Please try again.", "error");
+            }
+          }}
+          className="flex w-full items-center justify-center gap-3 rounded-lg border border-surface-3 bg-surface-1 px-4 py-2.5 text-small font-medium text-text-primary hover:bg-surface-2 transition-colors"
         >
           <Twitter className="h-4 w-4" />
           Continue with X
-          <span className="ml-auto rounded bg-surface-2 px-1.5 py-0.5 text-[0.6875rem] text-text-tertiary">Soon</span>
         </button>
         <button
           type="button"

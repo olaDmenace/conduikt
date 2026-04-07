@@ -179,7 +179,7 @@ export default async function GuidePage({
   return (
     <div>
       {/* Hero */}
-      <section className="py-20">
+      <section className="pt-8 pb-20">
         <div className="mx-auto max-w-3xl px-6">
           <div className="flex items-center gap-2 mb-6">
             <Badge>

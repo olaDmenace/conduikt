@@ -90,14 +90,12 @@ const AgentsMenuIcon = Sparkles;
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const {
-    sidebarCollapsed,
-    toggleSidebar,
-    mobileMenuOpen,
-    setMobileMenuOpen,
-    expandedProjectIds,
-    toggleProjectExpanded,
-  } = useUIStore();
+  const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
+  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
+  const mobileMenuOpen = useUIStore((s) => s.mobileMenuOpen);
+  const setMobileMenuOpen = useUIStore((s) => s.setMobileMenuOpen);
+  const expandedProjectIds = useUIStore((s) => s.expandedProjectIds);
+  const toggleProjectExpanded = useUIStore((s) => s.toggleProjectExpanded);
 
   const supabase = createClient();
   const { toast } = useToast();

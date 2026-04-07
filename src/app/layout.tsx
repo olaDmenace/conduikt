@@ -23,19 +23,40 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://conduikt.com"),
   title: {
-    default: "Conduikt — AI Marketing Automation",
+    default: "Conduikt: AI Marketing Automation for SaaS Founders",
     template: "%s | Conduikt",
   },
   description:
     "Connect your site. Get a marketing team that never sleeps. AI-powered marketing automation for founders, marketers, and agencies.",
-  keywords: [
-    "AI marketing",
-    "marketing automation",
-    "SEO audit",
-    "content generation",
-    "social media automation",
-  ],
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    type: "website",
+    title: "Conduikt — AI Marketing Automation",
+    description:
+      "Connect your site. Get a marketing team that never sleeps. AI-powered marketing automation for founders, marketers, and agencies.",
+    url: "https://conduikt.com/",
+    siteName: "Conduikt",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Conduikt — AI Marketing Automation",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Conduikt — AI Marketing Automation",
+    description:
+      "Connect your site. Get a marketing team that never sleeps. AI-powered marketing automation for founders, marketers, and agencies.",
+    images: ["/og-image.png"],
+  },
 };
 
 export default function RootLayout({

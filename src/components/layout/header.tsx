@@ -9,7 +9,8 @@ import { useUIStore } from "@/src/stores/ui-store";
 import { cn } from "@/src/lib/utils/cn";
 
 export function Header() {
-  const { sidebarCollapsed, toggleMobileMenu } = useUIStore();
+  const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
+  const toggleMobileMenu = useUIStore((s) => s.toggleMobileMenu);
 
   return (
     <header

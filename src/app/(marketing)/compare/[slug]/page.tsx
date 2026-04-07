@@ -162,7 +162,7 @@ export default async function ComparePage({
   return (
     <div>
       {/* Hero */}
-      <section className="py-20">
+      <section className="pt-8 pb-20">
         <div className="mx-auto max-w-4xl px-6 text-center">
           <Badge className="mb-6">Comparison</Badge>
           <h1 className="text-hero text-text-primary">

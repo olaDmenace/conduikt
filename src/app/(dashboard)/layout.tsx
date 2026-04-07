@@ -11,7 +11,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { sidebarCollapsed } = useUIStore();
+  const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
 
   return (
     <div className="min-h-screen bg-surface-0">

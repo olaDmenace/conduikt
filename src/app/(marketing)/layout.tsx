@@ -34,10 +34,16 @@ export default function MarketingLayout({
               Pricing
             </Link>
             <Link
-              href="/compare/jasper"
+              href="/compare"
               className="text-small text-text-secondary hover:text-text-primary transition-colors"
             >
               Compare
+            </Link>
+            <Link
+              href="/guides"
+              className="text-small text-text-secondary hover:text-text-primary transition-colors"
+            >
+              Guides
             </Link>
             <Link
               href="/launch"
@@ -75,10 +81,10 @@ export default function MarketingLayout({
             </span>
           </div>
           <div className="flex items-center gap-6 text-small text-text-tertiary">
-            <Link href="/compare/jasper" className="hover:text-text-secondary transition-colors">
+            <Link href="/compare" className="hover:text-text-secondary transition-colors">
               Compare
             </Link>
-            <Link href="/guides/social-media-marketing" className="hover:text-text-secondary transition-colors">
+            <Link href="/guides" className="hover:text-text-secondary transition-colors">
               Guides
             </Link>
             <Link href="/launch" className="hover:text-text-secondary transition-colors">

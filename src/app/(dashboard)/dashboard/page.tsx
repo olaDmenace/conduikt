@@ -17,6 +17,11 @@ import {
   Rocket,
   Sparkles,
   Video,
+  Target,
+  Flag,
+  Calendar,
+  GitBranch,
+  User,
 } from "lucide-react";
 import Link from "next/link";
 import { OnboardingTour } from "@/src/components/onboarding/onboarding-tour";
@@ -41,6 +46,8 @@ interface DashboardStats {
   plan: string;
   latestProjectId: string | null;
   onboardingCompleted: boolean;
+  userEmail: string;
+  userName: string;
 }
 
 export default function DashboardPage() {
@@ -163,15 +170,20 @@ export default function DashboardPage() {
   // All platform tools — shown as a reference grid when projects exist
   const allTools = pid
     ? [
-        { name: "SEO Audit",         href: `/projects/${pid}/audit`,     icon: BarChart3,  desc: "Technical & on-page analysis"           },
+        { name: "SEO Audit",         href: `/projects/${pid}/audit`,       icon: BarChart3,  desc: "Technical & on-page analysis"           },
+        { name: "CRO Analysis",     href: `/projects/${pid}/content?skill=page-cro`, icon: Target, desc: "Conversion rate optimization"     },
         { name: "Content Studio",    href: `/projects/${pid}/content`,   icon: Sparkles,   desc: "10 AI skills for all channels"           },
         { name: "Blog Generator",    href: `/projects/${pid}/blog`,      icon: PenLine,    desc: "SEO posts with meta & social snippets"   },
         { name: "Keyword Research",  href: `/projects/${pid}/keywords`,  icon: Search,     desc: "Clusters, long-tail & question keywords" },
         { name: "Growth Playbook",   href: `/projects/${pid}/growth`,    icon: Rocket,     desc: "90-day AI-powered growth plan"           },
+        { name: "Competitors",       href: `/projects/${pid}/competitors`, icon: Flag,     desc: "Analyze positioning & gaps"              },
+        { name: "Campaigns",         href: `/projects/${pid}/campaigns`, icon: Zap,        desc: "Multi-step marketing automation"         },
+        { name: "Calendar",          href: `/projects/${pid}/calendar`,  icon: Calendar,   desc: "Schedule & manage publishing"            },
         { name: "Analytics",         href: `/projects/${pid}/analytics`, icon: TrendingUp, desc: "Impact dashboard & skill usage"          },
-        { name: "Email Sequence",    href: `/projects/${pid}/content`,   icon: Mail,       desc: "AI-written drip campaigns"               },
-        { name: "Social Content",    href: `/projects/${pid}/content`,   icon: Twitter,    desc: "X and LinkedIn post generation"          },
-        { name: "Video Ads",        href: `/projects/${pid}/video`,     icon: Video,      desc: "AI presenter video ads via HeyGen"       },
+        { name: "Email Sequence",    href: `/projects/${pid}/content?skill=email-sequence`, icon: Mail, desc: "AI-written drip campaigns"  },
+        { name: "Social Content",    href: `/projects/${pid}/content?skill=social-content`, icon: Twitter, desc: "X and LinkedIn post generation" },
+        { name: "Video Ads",         href: `/projects/${pid}/video`,     icon: Video,      desc: "AI presenter video ads via HeyGen"       },
+        { name: "A/B Tests",         href: `/projects/${pid}/agents/ab-test`, icon: GitBranch, desc: "Compare content variants"            },
       ]
     : [];
 
@@ -181,15 +193,26 @@ export default function DashboardPage() {
         <OnboardingTour onComplete={() => setShowOnboarding(false)} />
       )}
       <PageHeader
-        title="Dashboard"
+        title={stats?.userName ? `Welcome, ${stats.userName.split(" ")[0]}` : "Dashboard"}
         description="Your AI marketing command center"
       >
-        <Button asChild>
-          <Link href="/projects/new">
-            <Plus className="h-4 w-4" />
-            New Project
-          </Link>
-        </Button>
+        <div className="flex items-center gap-3">
+          {stats && (
+            <div className="hidden sm:flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-1.5">
+              <User className="h-3.5 w-3.5 text-text-tertiary" />
+              <span className="text-small text-text-secondary">{stats.userEmail}</span>
+              <Badge variant={stats.plan === "free" ? "secondary" : "success"} className="ml-1">
+                {stats.plan}
+              </Badge>
+            </div>
+          )}
+          <Button asChild>
+            <Link href="/projects/new">
+              <Plus className="h-4 w-4" />
+              New Project
+            </Link>
+          </Button>
+        </div>
       </PageHeader>
 
       {/* Stats Grid */}

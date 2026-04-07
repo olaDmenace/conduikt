@@ -79,5 +79,7 @@ export async function GET() {
     plan,
     latestProjectId,
     onboardingCompleted: profile?.onboarding_completed ?? false,
+    userEmail: user.email ?? "",
+    userName: user.user_metadata?.full_name ?? "",
   });
 }

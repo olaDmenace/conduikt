@@ -70,7 +70,7 @@ export default function LaunchPage() {
   return (
     <div>
       {/* Hero */}
-      <section className="py-24 relative overflow-hidden">
+      <section className="pt-8 pb-24 relative overflow-hidden">
         <div className="mx-auto max-w-4xl px-6 text-center">
           <Badge className="mb-6 animate-in">Launching on Product Hunt</Badge>
           <h1 className="text-hero text-text-primary leading-[1.1] animate-in" style={{ animationDelay: "60ms" }}>
