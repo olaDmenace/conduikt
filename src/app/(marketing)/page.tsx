@@ -17,10 +17,21 @@ import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 
-export const metadata: Metadata = {
-  alternates: {
-    canonical: "https://conduikt.com/",
-  },
+const softwareAppJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Conduikt",
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Web",
+  description:
+    "AI-powered marketing automation for founders, marketers, and agencies.",
+  url: "https://conduikt.com/",
+  offers: [
+    { "@type": "Offer", name: "Free", price: "0", priceCurrency: "USD" },
+    { "@type": "Offer", name: "Pro", price: "49", priceCurrency: "USD" },
+    { "@type": "Offer", name: "Growth", price: "99", priceCurrency: "USD" },
+    { "@type": "Offer", name: "Agency", price: "249", priceCurrency: "USD" },
+  ],
 };
 
 const faqs = [
@@ -156,9 +167,32 @@ const tiers = [
   },
 ];
 
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((faq) => ({
+    "@type": "Question",
+    name: faq.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: faq.answer,
+    },
+  })),
+};
+
 export default function LandingPage() {
   return (
     <>
+      {/* Structured Data — placed first so crawlers find it early */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+
       {/* Hero Section */}
       <section className="relative pt-16 pb-20 overflow-hidden">
         <div className="mx-auto max-w-6xl px-6">
@@ -166,10 +200,8 @@ export default function LandingPage() {
             <div className="animate-in">
               <Badge className="mb-6">Now in Beta</Badge>
               <h1 className="text-hero text-text-primary leading-[1.1]">
-                AI Marketing Automation —
-                <br />
-                <span className="text-accent">Connect Your Site,</span>
-                <br />
+                AI Marketing Automation —{" "}
+                <span className="text-accent">Connect Your Site,</span>{" "}
                 Get a Team That Never Sleeps.
               </h1>
               <p className="mt-6 text-lg leading-relaxed text-text-secondary max-w-lg">
@@ -201,7 +233,7 @@ export default function LandingPage() {
             </div>
 
             {/* Dashboard Preview */}
-            <div className="animate-in relative" style={{ animationDelay: "120ms" }}>
+            <div className="animate-in relative" style={{ animationDelay: "120ms" }} aria-label="Conduikt dashboard showing SEO score 87, CRO score 92, and 24 marketing assets" role="img">
               <div className="rounded-xl border border-border-default bg-surface-1 p-4 shadow-[var(--shadow-elevated)] transform rotate-1 hover:rotate-0 transition-transform duration-500">
                 <div className="rounded-lg bg-surface-0 p-4 space-y-3">
                   <div className="flex items-center justify-between">
@@ -376,45 +408,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Structured Data */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "SoftwareApplication",
-            name: "Conduikt",
-            applicationCategory: "BusinessApplication",
-            operatingSystem: "Web",
-            description:
-              "AI-powered marketing automation for founders, marketers, and agencies.",
-            url: "https://conduikt.com/",
-            offers: [
-              { "@type": "Offer", name: "Free", price: "0", priceCurrency: "USD" },
-              { "@type": "Offer", name: "Pro", price: "49", priceCurrency: "USD" },
-              { "@type": "Offer", name: "Growth", price: "99", priceCurrency: "USD" },
-              { "@type": "Offer", name: "Agency", price: "249", priceCurrency: "USD" },
-            ],
-          }),
-        }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            mainEntity: faqs.map((faq) => ({
-              "@type": "Question",
-              name: faq.question,
-              acceptedAnswer: {
-                "@type": "Answer",
-                text: faq.answer,
-              },
-            })),
-          }),
-        }}
-      />
     </>
   );
 }

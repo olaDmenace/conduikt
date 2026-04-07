@@ -34,9 +34,20 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  alternates: {
+    canonical: "https://conduikt.com/",
+    languages: {
+      en: "https://conduikt.com/",
+    },
+  },
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
+  manifest: "/site.webmanifest",
   openGraph: {
     type: "website",
-    title: "Conduikt — AI Marketing Automation",
+    title: "Conduikt: AI Marketing Automation for SaaS Founders",
     description:
       "Connect your site. Get a marketing team that never sleeps. AI-powered marketing automation for founders, marketers, and agencies.",
     url: "https://conduikt.com/",
@@ -46,13 +57,14 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Conduikt — AI Marketing Automation",
+        alt: "Conduikt: AI Marketing Automation for SaaS Founders",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Conduikt — AI Marketing Automation",
+    site: "@conduikiHQ",
+    title: "Conduikt: AI Marketing Automation for SaaS Founders",
     description:
       "Connect your site. Get a marketing team that never sleeps. AI-powered marketing automation for founders, marketers, and agencies.",
     images: ["/og-image.png"],
