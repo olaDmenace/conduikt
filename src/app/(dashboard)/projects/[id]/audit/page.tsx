@@ -21,6 +21,7 @@ import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
 
 import { useToast } from "@/src/components/ui/toast";
+import { ExpectationBanner } from "@/src/components/ui/expectation-banner";
 
 interface Finding {
   severity: "critical" | "warning" | "info";
@@ -201,6 +202,16 @@ export default function AuditPage({
         </div>
       </PageHeader>
 
+
+      <ExpectationBanner
+        storageKey="conduikt-expect-audit"
+        message="SEO improvements take 2-8 weeks to reflect in search rankings. Implement fixes gradually, starting with critical issues, and re-run audits regularly to track progress."
+        details={[
+          "A score of 80+ means your site is well optimized — that's the goal.",
+          "50-79 is a solid foundation with room to grow. Focus on the red items first.",
+          "Below 50 needs work, but every fix moves the needle. Start small, stay consistent.",
+        ]}
+      />
 
       {/* Score Gauge */}
       <Card className="mb-8 animate-in">

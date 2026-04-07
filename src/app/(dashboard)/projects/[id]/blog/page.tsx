@@ -38,6 +38,7 @@ import {
   TabsContent,
 } from "@/src/components/ui/tabs";
 import { PageHeader } from "@/src/components/layout/page-header";
+import { ExpectationBanner } from "@/src/components/ui/expectation-banner";
 
 import { useToast } from "@/src/components/ui/toast";
 import { PdfDownloadButton } from "@/src/components/ui/pdf-download-button";
@@ -299,6 +300,16 @@ function BlogPageInner({
         description="Generate SEO-optimized long-form content with meta tags and social promotion snippets"
       />
 
+
+      <ExpectationBanner
+        storageKey="conduikt-expect-blog"
+        message="A single blog post won't transform your rankings overnight. SEO-optimized content builds authority over weeks as search engines crawl and index it."
+        details={[
+          "Publish consistently — 2-4 posts per month builds topical authority faster.",
+          "Promote each post on social media and email to generate initial traffic signals.",
+          "Update and refresh older posts every few months to maintain rankings.",
+        ]}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* ---- Left: Input Panel ---- */}

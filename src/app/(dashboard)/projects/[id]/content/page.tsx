@@ -43,6 +43,7 @@ import {
 import { PageHeader } from "@/src/components/layout/page-header";
 
 import { useToast } from "@/src/components/ui/toast";
+import { ExpectationBanner } from "@/src/components/ui/expectation-banner";
 import { VariantPanel } from "@/src/components/content/variant-panel";
 import { BulkGenerateDialog } from "@/src/components/content/bulk-generate-dialog";
 import { SendToWebhook } from "@/src/components/content/send-to-webhook";
@@ -1365,6 +1366,15 @@ function ContentPageInner({
         }
       />
 
+      <ExpectationBanner
+        storageKey="conduikt-expect-content"
+        message="Great content builds momentum over time. A single post won't move the needle — but consistent, strategic output compounds into real traffic and conversions within weeks."
+        details={[
+          "SEO-focused blog posts typically take 4-12 weeks to rank and drive organic traffic.",
+          "Social content works best as a steady cadence — 3-5 posts per week builds audience trust.",
+          "Email sequences convert better after 2-3 touchpoints. One email rarely closes the deal.",
+        ]}
+      />
 
       {/* Project context banner */}
       {project && (

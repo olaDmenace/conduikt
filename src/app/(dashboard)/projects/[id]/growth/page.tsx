@@ -30,6 +30,7 @@ import {
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
+import { ExpectationBanner } from "@/src/components/ui/expectation-banner";
 
 import { useToast } from "@/src/components/ui/toast";
 import { PdfDownloadButton } from "@/src/components/ui/pdf-download-button";
@@ -347,6 +348,16 @@ function GrowthPageInner({
         description="AI-generated 90-day growth plan with prioritised actions across SEO, content, and conversion"
       />
 
+
+      <ExpectationBanner
+        storageKey="conduikt-expect-growth"
+        message="This is a 90-day plan for a reason — real growth compounds over time, not overnight. Treat this as a roadmap, not a quick fix."
+        details={[
+          "Start with Phase 1 actions. Don't skip ahead — each phase builds on the last.",
+          "Check off actions as you complete them to track your momentum.",
+          "Re-generate the playbook in a few weeks to get updated recommendations based on progress.",
+        ]}
+      />
 
       {/* Input form */}
       {!playbook && (

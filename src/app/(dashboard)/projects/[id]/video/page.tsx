@@ -30,6 +30,7 @@ import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
 
 import { useToast } from "@/src/components/ui/toast";
+import { ExpectationBanner } from "@/src/components/ui/expectation-banner";
 import {
   Dialog,
   DialogContent,
@@ -276,6 +277,16 @@ export default function VideoAgentPage({
       <PageHeader
         title="Video Ad Agent"
         description="Generate presenter-style video ads with AI"
+      />
+
+      <ExpectationBanner
+        storageKey="conduikt-expect-video"
+        message="AI-generated videos take a few minutes to render. The quality improves when you iterate — first drafts are starting points, not final cuts."
+        details={[
+          "Video generation typically takes 2-5 minutes depending on length and complexity.",
+          "Test different scripts and styles — small tweaks to tone or pacing can significantly improve engagement.",
+          "Video ads perform best when paired with a clear CTA and consistent posting schedule.",
+        ]}
       />
 
       {/* Plan gate overlay */}

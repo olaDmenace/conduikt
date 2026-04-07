@@ -28,6 +28,7 @@ import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { PageHeader } from "@/src/components/layout/page-header";
+import { ExpectationBanner } from "@/src/components/ui/expectation-banner";
 
 import { useToast } from "@/src/components/ui/toast";
 
@@ -277,6 +278,16 @@ export default function KeywordsPage({
         description="Discover high-value keywords and content clusters powered by AI"
       />
 
+
+      <ExpectationBanner
+        storageKey="conduikt-expect-keywords"
+        message="Keyword research is the starting point, not the finish line. Rankings come from publishing quality content around these keywords consistently over weeks and months."
+        details={[
+          "Target low-difficulty keywords first for quicker wins, then build up to competitive ones.",
+          "Use the 'Blog' button on any keyword to start writing content around it right away.",
+          "Revisit your keyword strategy monthly — search trends shift, and new opportunities emerge.",
+        ]}
+      />
 
       {/* Seed Input */}
       <form onSubmit={handleGenerate} className="mb-8">
