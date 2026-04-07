@@ -1,7 +1,7 @@
 # Conduikt — Work Plan
 
 ## Status: Phase 3 — Scale & Launch
-**Updated:** April 3, 2026
+**Updated:** April 4, 2026
 **Live at:** https://conduikt.com
 
 ---
@@ -149,16 +149,17 @@
 - [x] Admin actions: change plan, reset generation count, disable/re-enable account (`/api/admin/users/[id]`)
 
 ### Scheduled Publishing (remaining)
-- [ ] pg_cron extension enabled in Supabase
-- [ ] Cron job: poll `scheduled_posts` table every 5 min, call publish routes
+- [x] pg_cron extension enabled in Supabase (already installed: v1.6.4, pg_net v0.19.5)
+- [x] Cron job `publish-scheduled-posts` created — runs `*/5 * * * *`, calls `/api/cron/publish` via `net.http_get`
+- [ ] Set `app.cron_secret` in Supabase DB settings OR hardcode `CRON_SECRET` value in cron job SQL (required for the job to authenticate)
 
 ### GSC Deep Sync
-- [ ] `/api/integrations/gsc/sync` — fetch queries/impressions/clicks from GSC API
-- [ ] Store in `keyword_data` with real volume data
-- [ ] Surface GSC data on Analytics and Keyword Research pages
+- [x] `/api/integrations/gsc/sync` — fetches search analytics, refreshes tokens, upserts keyword data
+- [x] Stores in `keyword_data` with real volume data
+- [x] GSC data surfaced on Analytics and Keyword Research pages
 
 ### Campaign Visual Builder
-- [ ] Visual flow editor for campaign step design
+- [x] Visual flow editor (`src/components/campaigns/campaign-flow-editor.tsx`) — ReactFlow (@xyflow/react), nodes/edges, minimap, drag-drop
 
 ### PDF Exports
 - [x] Audit Report PDF (`@react-pdf/renderer`, agency branding)
@@ -170,15 +171,47 @@
 - [x] Export PDF button on Growth Playbook page, Blog page, Content Studio, and Library dialog
 
 ### Platform
-- [ ] Team member invites + RBAC (owner, admin, member, viewer)
-- [ ] Light mode theme toggle
-- [ ] Onboarding tour for new users (first-time flow)
+- [x] Team member invites + RBAC — invite form with role selector, `/api/team/invite`, pending badge, owner/admin/member/viewer roles
+- [x] Light mode theme toggle — `src/components/ui/theme-toggle.tsx`, sun/moon, persisted via `useUIStore`
+- [x] Onboarding tour for new users — `src/components/onboarding/onboarding-tour.tsx`, 5-step walkthrough + onboarding advisor agent
 
 ### Bug Fixes (April 3)
 - [x] Save Playbook 400 error — `growth_playbook` and `blog_post` added to API `validTypes` list (DB constraint already allowed them)
 - [x] Content Studio crash on `?skill=growth-playbook` URL param — unknown skill IDs now fall back to `"copywriting"`
 
+### Saved Asset Improvements (April 4)
+- [x] Dedicated asset view page (`/projects/[id]/assets/[assetId]`) — renders GrowthPlaybookView, BlogPostView, or GenericAssetView
+- [x] Source pages restore state via `?assetId=` param (Growth, Blog, Content Studio)
+- [x] Library dialog: structured content preview per asset type + action buttons
+- [x] "Open in Tool" navigation button uses `useTransition` for loading state
+- [x] `PdfDownloadButton` component — fetch+blob approach with Loader2 spinner
+- [x] PDF download loading state sitewide (Analytics, Library, Asset page, Growth, Blog, Content Studio)
+
+### Marketing Pages (April 4)
+- [x] `/compare` index page — cards for all 4 competitor comparisons with win counts
+- [x] `/guides` index page — cards for all 3 AI marketing guides with read time
+- [x] `/compare/[slug]` — individual comparison pages (jasper, copy-ai, writesonic, surfer-seo)
+- [x] `/guides/[slug]` — individual guide pages (social-media, seo-content, email-automation)
+
 ### Launch
-- [ ] Product Hunt launch prep (assets, description, positioning)
-- [ ] Programmatic SEO landing pages ("Conduikt vs X", "How to automate Y")
-- [ ] Analytics feedback loop (inject post performance into AI context)
+- [x] Product Hunt launch page (`/launch`) — hero, agent list, value props, launch badge
+
+### Analytics Feedback Loop
+- [x] `buildPerformanceContext()` in `src/lib/ai/performance-context.ts` — fetches published asset perf, publishing success rates, audit scores, GSC keywords, top social posts
+- [x] Injected into `/api/ai/generate`, `/api/video/generate`, campaign runner
+- [x] Consumed by: social-content, email-sequence, copywriting, blog-post, video-script agents
+
+### Dashboard & Auth (April 6)
+- [x] Social login (X + LinkedIn) enabled on login & signup pages — removed "Coming soon" disabled state
+- [x] Dashboard "All Tools" grid expanded from 9 → 14 tools (added CRO, Competitors, Campaigns, Calendar, A/B Tests)
+- [x] Email Sequence & Social Content tools now deep-link with `?skill=` param
+
+## 🔴 Remaining Items
+
+### Config / Ops (manual)
+- [x] `CRON_SECRET` hardcoded in pg_cron job SQL (workaround for Supabase permission issue)
+- [ ] Configure custom SMTP in Supabase dashboard (Resend credentials)
+- [ ] Apply branded email templates in Supabase dashboard
+- [ ] Verify `conduikt.com` domain in Resend (SPF, DKIM, DMARC)
+- [ ] Add test user email in Google Cloud Console → OAuth consent screen (GSC 403 fix)
+- [ ] n8n workflow deployed and posting live (deferred)
