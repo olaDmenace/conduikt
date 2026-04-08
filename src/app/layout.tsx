@@ -70,7 +70,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    site: "@conduiktHQ",
+    site: "@conduikt",
     title: "Conduikt: AI Marketing Automation for SaaS Founders",
     description:
       "Connect your site. Get a marketing team that never sleeps. AI-powered marketing automation for founders, marketers, and agencies.",

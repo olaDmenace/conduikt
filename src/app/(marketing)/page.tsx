@@ -48,7 +48,7 @@ const organizationJsonLd = {
   url: "https://conduikt.com/",
   logo: "https://conduikt.com/favicon.png",
   sameAs: [
-    "https://twitter.com/conduiktHQ",
+    "https://twitter.com/conduikt",
     "https://linkedin.com/company/conduikt",
   ],
 };
