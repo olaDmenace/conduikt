@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowRight,
-  Zap,
   BarChart3,
   Mail,
   Globe,
@@ -26,11 +25,31 @@ const softwareAppJsonLd = {
   description:
     "AI-powered marketing automation for founders, marketers, and agencies.",
   url: "https://conduikt.com/",
+  screenshot: "https://conduikt.com/images/conduikt-dashboard.png",
+  featureList:
+    "AI SEO Audit, Content Generation, Multi-Channel Publishing, Email Sequence Builder, Analytics Feedback Loop, Campaign Orchestration",
+  publisher: {
+    "@type": "Organization",
+    name: "Conduikt",
+    url: "https://conduikt.com/",
+  },
   offers: [
-    { "@type": "Offer", name: "Free", price: "0", priceCurrency: "USD" },
-    { "@type": "Offer", name: "Pro", price: "49", priceCurrency: "USD" },
-    { "@type": "Offer", name: "Growth", price: "99", priceCurrency: "USD" },
-    { "@type": "Offer", name: "Agency", price: "249", priceCurrency: "USD" },
+    { "@type": "Offer", name: "Free", price: "0", priceCurrency: "USD", url: "https://conduikt.com/signup/" },
+    { "@type": "Offer", name: "Pro", price: "49", priceCurrency: "USD", url: "https://conduikt.com/signup/" },
+    { "@type": "Offer", name: "Growth", price: "99", priceCurrency: "USD", url: "https://conduikt.com/signup/" },
+    { "@type": "Offer", name: "Agency", price: "249", priceCurrency: "USD", url: "https://conduikt.com/signup/" },
+  ],
+};
+
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Conduikt",
+  url: "https://conduikt.com/",
+  logo: "https://conduikt.com/favicon.png",
+  sameAs: [
+    "https://twitter.com/conduiktHQ",
+    "https://linkedin.com/company/conduikt",
   ],
 };
 
@@ -117,7 +136,7 @@ const tiers = [
       "5 AI generations/month",
       "Manual publishing",
     ],
-    cta: "Get Started",
+    cta: "Start Free Plan",
     popular: false,
   },
   {
@@ -162,7 +181,7 @@ const tiers = [
       "API access",
       "Dedicated support",
     ],
-    cta: "Contact Sales",
+    cta: "Contact Agency Sales",
     popular: false,
   },
 ];
@@ -192,6 +211,10 @@ export default function LandingPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+      />
 
       {/* Hero Section */}
       <section className="relative pt-16 pb-20 overflow-hidden">
@@ -199,11 +222,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="animate-in">
               <Badge className="mb-6">Now in Beta</Badge>
-              <h1 className="text-hero text-text-primary leading-[1.1]">
-                AI Marketing Automation —{" "}
-                <span className="text-accent">Connect Your Site,</span>{" "}
-                Get a Team That Never Sleeps.
-              </h1>
+              <h1 className="text-hero text-text-primary leading-[1.1]">AI Marketing Automation &mdash; <span className="text-accent">Connect Your Site,</span> Get a Team That Never Sleeps.</h1>
               <p className="mt-6 text-lg leading-relaxed text-text-secondary max-w-lg">
                 Conduikt turns AI marketing intelligence into a visual platform.
                 Audit, generate, orchestrate, and publish marketing assets across
@@ -212,7 +231,7 @@ export default function LandingPage() {
               <div className="mt-8 flex items-center gap-4">
                 <Button size="lg" asChild>
                   <Link href="/signup">
-                    Start Free
+                    Start Free AI Marketing Audit
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
@@ -233,38 +252,15 @@ export default function LandingPage() {
             </div>
 
             {/* Dashboard Preview */}
-            <div className="animate-in relative" style={{ animationDelay: "120ms" }} aria-label="Conduikt dashboard showing SEO score 87, CRO score 92, and 24 marketing assets" role="img">
-              <div className="rounded-xl border border-border-default bg-surface-1 p-4 shadow-[var(--shadow-elevated)] transform rotate-1 hover:rotate-0 transition-transform duration-500">
-                <div className="rounded-lg bg-surface-0 p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="h-3 w-3 rounded-full bg-error/60" />
-                      <div className="h-3 w-3 rounded-full bg-warning/60" />
-                      <div className="h-3 w-3 rounded-full bg-success/60" />
-                    </div>
-                    <div className="skeleton h-3 w-32" />
-                  </div>
-                  <div className="grid grid-cols-3 gap-3 mt-4">
-                    <div className="rounded-lg bg-surface-1 border border-border-default p-3 text-center">
-                      <p className="text-2xl font-mono font-bold text-accent">87</p>
-                      <p className="text-[0.6875rem] text-text-tertiary mt-1">SEO Score</p>
-                    </div>
-                    <div className="rounded-lg bg-surface-1 border border-border-default p-3 text-center">
-                      <p className="text-2xl font-mono font-bold text-success">92</p>
-                      <p className="text-[0.6875rem] text-text-tertiary mt-1">CRO Score</p>
-                    </div>
-                    <div className="rounded-lg bg-surface-1 border border-border-default p-3 text-center">
-                      <p className="text-2xl font-mono font-bold text-info">24</p>
-                      <p className="text-[0.6875rem] text-text-tertiary mt-1">Assets</p>
-                    </div>
-                  </div>
-                  <div className="space-y-2 mt-4">
-                    <div className="skeleton h-8 w-full" />
-                    <div className="skeleton h-8 w-4/5" />
-                    <div className="skeleton h-8 w-3/5" />
-                  </div>
-                </div>
-              </div>
+            <div className="animate-in relative" style={{ animationDelay: "120ms" }}>
+              <img
+                src="/images/conduikt-dashboard.png"
+                alt="Conduikt AI marketing dashboard showing SEO score 87, CRO score 92, and 24 generated marketing assets"
+                width={600}
+                height={450}
+                className="rounded-xl border border-border-default shadow-[var(--shadow-elevated)] transform rotate-1 hover:rotate-0 transition-transform duration-500 w-full h-auto"
+                fetchPriority="high"
+              />
               <div className="absolute -bottom-8 -right-8 h-40 w-40 rounded-full bg-accent/10 blur-3xl" />
               <div className="absolute -top-8 -left-8 h-32 w-32 rounded-full bg-accent-secondary/10 blur-3xl" />
             </div>
@@ -400,7 +396,7 @@ export default function LandingPage() {
           <div className="mt-8">
             <Button size="lg" asChild>
               <Link href="/signup">
-                Get Started Free
+                Try Conduikt Free
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>

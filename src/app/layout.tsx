@@ -37,7 +37,8 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://conduikt.com/",
     languages: {
-      en: "https://conduikt.com/",
+      "en-US": "https://conduikt.com/",
+      "x-default": "https://conduikt.com/",
     },
   },
   icons: {
@@ -69,7 +70,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    site: "@conduikiHQ",
+    site: "@conduiktHQ",
     title: "Conduikt: AI Marketing Automation for SaaS Founders",
     description:
       "Connect your site. Get a marketing team that never sleeps. AI-powered marketing automation for founders, marketers, and agencies.",
