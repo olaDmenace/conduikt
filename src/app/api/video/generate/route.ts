@@ -4,7 +4,7 @@ import { generateWithClaude } from "@/src/lib/ai/client";
 import { getAgent } from "@/src/lib/ai/agents";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
 import { buildPerformanceContext } from "@/src/lib/ai/performance-context";
-import { runVideoPipeline } from "@/src/lib/video/run-pipeline";
+import { inngest } from "@/src/lib/inngest/client";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -174,10 +174,11 @@ export async function POST(request: NextRequest) {
     .update({ generation_count: (profile?.generation_count ?? 0) + 1 })
     .eq("id", user.id);
 
-  // Fire-and-forget: run the video pipeline in the background
-  runVideoPipeline(job.id).catch((err) =>
-    console.error("[video/generate] Pipeline error:", err)
-  );
+  // Trigger durable background pipeline on Inngest
+  await inngest.send({
+    name: "video/job.created",
+    data: { jobId: job.id },
+  });
 
   return NextResponse.json({ jobId: job.id, scriptData });
 }
