@@ -44,7 +44,6 @@ export async function POST(request: NextRequest) {
     sourceAssetId,
     videoType,
     avatarMode,
-    selectedAvatarId,
     avatarGender,
   } = body;
   const resolvedVideoType = videoType || style || "presenter";
@@ -144,7 +143,7 @@ export async function POST(request: NextRequest) {
       source_asset_id: sourceAssetId || null,
       script_data: scriptData,
       avatar_mode: resolvedAvatarMode || null,
-      selected_avatar_id: selectedAvatarId || null,
+      selected_avatar_id: null,
       avatar_gender: avatarGender || null,
       status: "scripting",
       progress_message: "Script generated, starting video pipeline...",

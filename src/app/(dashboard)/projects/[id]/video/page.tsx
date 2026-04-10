@@ -11,8 +11,6 @@ import {
   Trash2,
   Play,
   CheckCircle2,
-  Clock,
-  XCircle,
   ChevronDown,
   ChevronUp,
   Lock,
@@ -20,7 +18,6 @@ import {
   Smartphone,
   Info,
   Shuffle,
-  User,
   Wand2,
 } from "lucide-react";
 import Link from "next/link";
@@ -31,20 +28,6 @@ import { PageHeader } from "@/src/components/layout/page-header";
 
 import { useToast } from "@/src/components/ui/toast";
 import { ExpectationBanner } from "@/src/components/ui/expectation-banner";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/src/components/ui/dialog";
-
-interface AvatarInfo {
-  avatar_id: string;
-  avatar_name: string;
-  gender: "male" | "female" | "unknown";
-  preview_image_url: string;
-  preview_video_url: string;
-}
 
 interface VideoJob {
   id: string;
@@ -109,13 +92,8 @@ export default function VideoAgentPage({
   const [historyLoading, setHistoryLoading] = useState(true);
   const [planGated, setPlanGated] = useState(false);
   const [scriptExpanded, setScriptExpanded] = useState(false);
-  const [avatarMode, setAvatarMode] = useState<"random" | "pick" | "brand-matched">("random");
+  const [avatarMode, setAvatarMode] = useState<"random" | "brand-matched">("random");
   const [avatarGender, setAvatarGender] = useState<"male" | "female" | undefined>(undefined);
-  const [selectedAvatarId, setSelectedAvatarId] = useState<string | null>(null);
-  const [selectedAvatarName, setSelectedAvatarName] = useState<string | null>(null);
-  const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
-  const [avatars, setAvatars] = useState<AvatarInfo[]>([]);
-  const [avatarsLoading, setAvatarsLoading] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { toast } = useToast();
 
@@ -161,27 +139,6 @@ export default function VideoAgentPage({
     };
   }, [activeJobId, phase, fetchHistory, toast]);
 
-  async function fetchAvatars(gender?: "male" | "female") {
-    setAvatarsLoading(true);
-    try {
-      const url = gender
-        ? `/api/video/avatars?gender=${gender}`
-        : "/api/video/avatars";
-      const res = await fetch(url);
-      if (res.ok) {
-        setAvatars(await res.json());
-      }
-    } catch {
-      // silent fail — picker will show empty state
-    }
-    setAvatarsLoading(false);
-  }
-
-  function openAvatarPicker() {
-    fetchAvatars(avatarGender);
-    setAvatarPickerOpen(true);
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (brief.length < 50) return;
@@ -198,7 +155,6 @@ export default function VideoAgentPage({
         videoType: style,
         ...(style === "ugc" && {
           avatarMode,
-          selectedAvatarId: avatarMode === "pick" ? selectedAvatarId : undefined,
           avatarGender,
         }),
       }),
@@ -267,8 +223,41 @@ export default function VideoAgentPage({
         error: null,
       });
       setPhase("done");
+    } else if (job.status === "failed") {
+      setJobStatus({
+        status: "failed",
+        progressMessage: job.progress_message,
+        videoUrl: null,
+        thumbnailUrl: job.thumbnail_url,
+        durationSeconds: null,
+        scriptData: null,
+        error: job.error_message,
+      });
+      toast(job.error_message || "Video generation failed", "error");
+      setPhase("style");
     } else {
-      setPhase("status");
+      // Re-fetch current status before resuming the tracker so we don't show
+      // stale "generating" state for a job that has since completed.
+      fetch(`/api/video/${job.id}/status`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data: StatusResponse | null) => {
+          if (!data) {
+            setPhase("status");
+            return;
+          }
+          if (data.status === "ready" && data.videoUrl) {
+            setJobStatus(data);
+            setPhase("done");
+          } else if (data.status === "failed") {
+            setJobStatus(data);
+            toast(data.error || "Video generation failed", "error");
+            setPhase("style");
+          } else {
+            setJobStatus(data);
+            setPhase("status");
+          }
+        })
+        .catch(() => setPhase("status"));
     }
   }
 
@@ -393,19 +382,13 @@ export default function VideoAgentPage({
                   <label className="text-caption text-text-tertiary mb-2 block">
                     Avatar selection
                   </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                     {([
                       {
                         value: "random" as const,
                         label: "Random",
                         desc: "System picks a matching avatar",
                         icon: Shuffle,
-                      },
-                      {
-                        value: "pick" as const,
-                        label: "Pick",
-                        desc: "Browse and choose your avatar",
-                        icon: User,
                       },
                       {
                         value: "brand-matched" as const,
@@ -417,11 +400,7 @@ export default function VideoAgentPage({
                       <button
                         key={opt.value}
                         type="button"
-                        onClick={() => {
-                          setAvatarMode(opt.value);
-                          setSelectedAvatarId(null);
-                          setSelectedAvatarName(null);
-                        }}
+                        onClick={() => setAvatarMode(opt.value)}
                         className={`text-left rounded-xl border-2 p-4 transition-all ${
                           avatarMode === opt.value
                             ? "border-accent bg-accent-muted/30"
@@ -437,8 +416,8 @@ export default function VideoAgentPage({
                     ))}
                   </div>
 
-                  {/* Gender filter — for random and pick modes */}
-                  {(avatarMode === "random" || avatarMode === "pick") && (
+                  {/* Gender filter — for random mode only */}
+                  {avatarMode === "random" && (
                     <div className="flex items-center gap-3 mb-3">
                       <span className="text-caption text-text-tertiary">Gender:</span>
                       {([
@@ -459,26 +438,6 @@ export default function VideoAgentPage({
                           {g.label}
                         </button>
                       ))}
-                    </div>
-                  )}
-
-                  {/* Pick mode — browse button + selected avatar */}
-                  {avatarMode === "pick" && (
-                    <div className="flex items-center gap-3">
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={openAvatarPicker}
-                      >
-                        <User className="h-4 w-4" />
-                        {selectedAvatarId ? "Change Avatar" : "Browse Avatars"}
-                      </Button>
-                      {selectedAvatarName && (
-                        <span className="text-small text-text-secondary">
-                          Selected: <strong className="text-text-primary">{selectedAvatarName}</strong>
-                        </span>
-                      )}
                     </div>
                   )}
 
@@ -702,89 +661,6 @@ export default function VideoAgentPage({
           </CardContent>
         </Card>
       )}
-
-      {/* Avatar Picker Dialog */}
-      <Dialog open={avatarPickerOpen} onOpenChange={setAvatarPickerOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Choose your avatar</DialogTitle>
-          </DialogHeader>
-
-          {/* Gender filter inside dialog */}
-          <div className="flex items-center gap-2 mb-4">
-            {([
-              { value: undefined, label: "All" },
-              { value: "male" as const, label: "Male" },
-              { value: "female" as const, label: "Female" },
-            ]).map((g) => (
-              <button
-                key={g.label}
-                onClick={() => {
-                  setAvatarGender(g.value);
-                  fetchAvatars(g.value);
-                }}
-                className={`rounded-lg border px-3 py-1.5 text-caption transition-colors ${
-                  avatarGender === g.value
-                    ? "border-accent bg-accent-muted text-text-primary"
-                    : "border-border-default bg-surface-0 text-text-secondary hover:bg-surface-2"
-                }`}
-              >
-                {g.label}
-              </button>
-            ))}
-          </div>
-
-          {avatarsLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 text-accent animate-spin" />
-            </div>
-          ) : avatars.length === 0 ? (
-            <p className="text-body text-text-secondary text-center py-8">
-              No avatars available. Check your HeyGen API key.
-            </p>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {avatars.map((avatar) => (
-                <button
-                  key={avatar.avatar_id}
-                  onClick={() => {
-                    setSelectedAvatarId(avatar.avatar_id);
-                    setSelectedAvatarName(avatar.avatar_name);
-                    setAvatarPickerOpen(false);
-                  }}
-                  className={`rounded-xl border-2 overflow-hidden transition-all ${
-                    selectedAvatarId === avatar.avatar_id
-                      ? "border-accent ring-2 ring-accent/30"
-                      : "border-border-default hover:border-border-strong"
-                  }`}
-                >
-                  <div className="aspect-square bg-surface-2">
-                    {avatar.preview_image_url ? (
-                      <img
-                        src={avatar.preview_image_url}
-                        alt={avatar.avatar_name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <User className="h-8 w-8 text-text-tertiary" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-2">
-                    <p className="text-caption font-medium text-text-primary truncate">
-                      {avatar.avatar_name}
-                    </p>
-                    <p className="text-caption text-text-tertiary capitalize">
-                      {avatar.gender}
-                    </p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
       {/* Section E: Video History */}
       <div className="mb-8">
