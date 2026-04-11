@@ -161,7 +161,7 @@ export default function SignupPage() {
         <Input
           label="Full name"
           type="text"
-          placeholder="Olayinka Doe"
+          placeholder="Michael Doe"
           autoComplete="name"
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}

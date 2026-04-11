@@ -112,7 +112,7 @@ export default function MarketingLayout({
             </a>
           </div>
           <p className="text-small text-text-tertiary">
-            Built with Claude Code in Lagos, Nigeria
+            Built with Claude Code
           </p>
         </div>
       </footer>
