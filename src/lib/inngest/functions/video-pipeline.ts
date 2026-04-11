@@ -10,7 +10,15 @@ async function updateJob(
   updates: Record<string, unknown>
 ) {
   const supabase = createServiceClient();
-  await supabase.from("video_jobs").update(updates).eq("id", jobId);
+  const { error } = await supabase
+    .from("video_jobs")
+    .update(updates)
+    .eq("id", jobId);
+  if (error) {
+    throw new Error(
+      `updateJob(${jobId}) failed: ${error.message} [${error.code ?? "unknown"}]`
+    );
+  }
 }
 
 /**
@@ -101,9 +109,12 @@ export const videoPipeline = inngest.createFunction(
           });
           avatarId = resolved.avatarId;
 
+          // Resolve voice based on avatar gender. Unknown-gender avatars are
+          // filtered upstream, but we still default to the female voice as a
+          // last resort rather than letting HeyGen's default pick silently.
           if (resolved.gender === "male") {
             resolvedVoiceId = process.env.HEYGEN_DEFAULT_VOICE_ID_MALE ?? process.env.HEYGEN_DEFAULT_VOICE_ID;
-          } else if (resolved.gender === "female") {
+          } else {
             resolvedVoiceId = process.env.HEYGEN_DEFAULT_VOICE_ID;
           }
 
@@ -195,8 +206,8 @@ export const videoPipeline = inngest.createFunction(
         throw new Error("HeyGen generation timed out after 10 minutes");
       }
 
-      // Step 6: Finalise
-      await step.run("finalise", async () => {
+      // Step 6: Finalise — mark job ready. This must succeed.
+      await step.run("mark-ready", async () => {
         await updateJob(jobId, {
           status: "ready",
           video_url: videoUrl,
@@ -204,17 +215,29 @@ export const videoPipeline = inngest.createFunction(
           progress_message: "Your video is ready!",
           completed_at: new Date().toISOString(),
         });
-
-        if (jobUserId) {
-          await createNotification(jobUserId, {
-            type: "video_complete",
-            title: "Your video is ready",
-            body: `Video ad "${(jobBrief ?? "").slice(0, 60)}" has finished generating.`,
-            projectId: jobProjectId ?? undefined,
-            actionUrl: `/projects/${jobProjectId}/video`,
-          });
-        }
       });
+
+      // Step 7: Notify — independent of status update. If this throws, the
+      // job is already marked ready; we just lose the notification.
+      if (jobUserId) {
+        await step.run("notify-user", async () => {
+          try {
+            await createNotification(jobUserId!, {
+              type: "video_complete",
+              title: "Your video is ready",
+              body: `Video ad "${(jobBrief ?? "").slice(0, 60)}" has finished generating.`,
+              projectId: jobProjectId ?? undefined,
+              actionUrl: `/projects/${jobProjectId}/video`,
+            });
+          } catch (notifyErr) {
+            console.warn(
+              `[video-pipeline] ${jobId}: notification failed:`,
+              notifyErr
+            );
+            // Swallow — don't fail the run for a notification issue.
+          }
+        });
+      }
 
       return { jobId, videoUrl };
     } catch (err) {

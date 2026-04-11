@@ -478,7 +478,7 @@ export default function LibraryPage({
                   Copy
                 </Button>
                 <Button size="sm" variant="ghost" asChild>
-                  <Link href={`/projects/${projectId}/agents/calendar`}>
+                  <Link href={`/projects/${projectId}/calendar`}>
                     <Calendar className="h-3.5 w-3.5 mr-1.5" />
                     Schedule
                   </Link>

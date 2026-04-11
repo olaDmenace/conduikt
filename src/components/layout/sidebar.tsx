@@ -29,13 +29,11 @@ import {
   GitBranch,
   Video,
   FolderOpen,
-  Megaphone,
   Swords,
   Webhook,
   Users,
   CreditCard,
   Link2,
-  AlertTriangle,
   Play,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils/cn";
@@ -243,7 +241,6 @@ export function Sidebar() {
             {projects.map((project) => {
               const isExpanded = expandedProjectIds.includes(project.id);
               const projectBase = `/projects/${project.id}`;
-              const agentsBase = `${projectBase}/agents`;
               const isInProject = pathname.startsWith(projectBase);
 
               return (
@@ -300,9 +297,22 @@ export function Sidebar() {
                   {/* Agent list — only visible when expanded + showLabel */}
                   {isExpanded && showLabel && (
                     <div className="ml-3 pl-3 border-l border-border-subtle mt-0.5 mb-1 space-y-0.5">
+                      {/* Project tools (non-agent utility pages) */}
+                      <ProjectSubLink href={`${projectBase}`} icon={BarChart3} label="Overview" pathname={pathname} exact onClick={handleNavClick} />
+                      <ProjectSubLink href={`${projectBase}/analytics`} icon={TrendingUp} label="Analytics" pathname={pathname} onClick={handleNavClick} />
+                      <ProjectSubLink href={`${projectBase}/competitors`} icon={Swords} label="Competitors" pathname={pathname} onClick={handleNavClick} />
+                      <ProjectSubLink href={`${projectBase}/emails`} icon={Mail} label="Email Sequences" pathname={pathname} onClick={handleNavClick} />
+
+                      {/* Divider between project tools and agents */}
+                      <div className="my-1.5 border-t border-border-subtle/60" />
+
+                      {/* Agents (driven by registry) */}
                       {SIDEBAR_AGENTS.map((agent) => {
-                        const href = `${agentsBase}/${agent.route}`;
-                        const isActive = pathname === href || pathname.startsWith(href);
+                        const path = agent.projectPath ?? agent.route;
+                        const href = `${projectBase}/${path}`;
+                        // Strip query string for active-state matching
+                        const hrefPath = href.split("?")[0];
+                        const isActive = pathname === hrefPath || pathname.startsWith(hrefPath + "/");
                         const IconComp = ICON_MAP[agent.icon] ?? FileText;
 
                         return (
@@ -324,14 +334,10 @@ export function Sidebar() {
                         );
                       })}
 
-                      {/* Non-agent project pages */}
-                      <ProjectSubLink href={`${projectBase}`} icon={BarChart3} label="Overview" pathname={pathname} exact onClick={handleNavClick} />
-                      <ProjectSubLink href={`${projectBase}/audit`} icon={AlertTriangle} label="Audit" pathname={pathname} onClick={handleNavClick} />
-                      <ProjectSubLink href={`${projectBase}/analytics`} icon={TrendingUp} label="Analytics" pathname={pathname} onClick={handleNavClick} />
-                      <ProjectSubLink href={`${projectBase}/calendar`} icon={Calendar} label="Calendar" pathname={pathname} onClick={handleNavClick} />
-                      <ProjectSubLink href={`${projectBase}/campaigns`} icon={Megaphone} label="Campaigns" pathname={pathname} onClick={handleNavClick} />
-                      <ProjectSubLink href={`${projectBase}/competitors`} icon={Swords} label="Competitors" pathname={pathname} onClick={handleNavClick} />
-                      <ProjectSubLink href={`${projectBase}/video`} icon={Video} label="Video" pathname={pathname} onClick={handleNavClick} />
+                      {/* Divider between agents and project settings */}
+                      <div className="my-1.5 border-t border-border-subtle/60" />
+
+                      {/* Library & Settings — pinned to the bottom */}
                       <ProjectSubLink href={`${projectBase}/library`} icon={FolderOpen} label="Library" pathname={pathname} onClick={handleNavClick} />
                       <ProjectSubLink href={`${projectBase}/settings`} icon={Settings} label="Settings" pathname={pathname} onClick={handleNavClick} />
                     </div>

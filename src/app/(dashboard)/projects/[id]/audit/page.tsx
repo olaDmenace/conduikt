@@ -22,6 +22,10 @@ import { PageHeader } from "@/src/components/layout/page-header";
 
 import { useToast } from "@/src/components/ui/toast";
 import { ExpectationBanner } from "@/src/components/ui/expectation-banner";
+import {
+  PageSpeedPanel,
+  type PageSpeedData,
+} from "@/src/components/audit/pagespeed-panel";
 
 interface Finding {
   severity: "critical" | "warning" | "info";
@@ -38,6 +42,7 @@ interface Audit {
   url: string;
   score: number | null;
   findings: Finding[];
+  metadata: { pageSpeed?: PageSpeedData } | null;
   created_at: string;
 }
 
@@ -212,6 +217,11 @@ export default function AuditPage({
           "Below 50 needs work, but every fix moves the needle. Start small, stay consistent.",
         ]}
       />
+
+      {/* PageSpeed Panel */}
+      {latestAudit.metadata?.pageSpeed && (
+        <PageSpeedPanel data={latestAudit.metadata.pageSpeed} />
+      )}
 
       {/* Score Gauge */}
       <Card className="mb-8 animate-in">

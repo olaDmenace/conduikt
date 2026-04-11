@@ -183,7 +183,7 @@ export default function DashboardPage() {
         { name: "Email Sequence",    href: `/projects/${pid}/content?skill=email-sequence`, icon: Mail, desc: "AI-written drip campaigns"  },
         { name: "Social Content",    href: `/projects/${pid}/content?skill=social-content`, icon: Twitter, desc: "X and LinkedIn post generation" },
         { name: "Video Ads",         href: `/projects/${pid}/video`,     icon: Video,      desc: "AI presenter video ads via HeyGen"       },
-        { name: "A/B Tests",         href: `/projects/${pid}/agents/ab-test`, icon: GitBranch, desc: "Compare content variants"            },
+        { name: "A/B Tests",         href: `/projects/${pid}/ab-test`,   icon: GitBranch,  desc: "Compare content variants"                },
       ]
     : [];
 

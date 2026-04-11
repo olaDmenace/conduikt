@@ -1358,11 +1358,11 @@ function ContentPageInner({
   return (
     <div>
       <PageHeader
-        title="Content Studio"
+        title={skill.name}
         description={
           project
-            ? `Generating for ${project.name}${project.website_url ? ` — ${project.website_url}` : ""}`
-            : "Generate and manage marketing content"
+            ? `${skill.description} — ${project.name}`
+            : skill.description
         }
       />
 

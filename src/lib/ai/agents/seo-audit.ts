@@ -47,14 +47,19 @@ Return valid JSON (and ONLY JSON — no markdown code fences, no explanation bef
 Focus on actionable, specific findings. Don't flag generic best practices — only issues actually present on this page.
   `.trim(),
 
-  buildUserPrompt: (input: Record<string, unknown>) => `
-Audit this page: ${input.url}
-
+  buildUserPrompt: (input: Record<string, unknown>) => {
+    const pageSpeed = input.pageSpeed as string | undefined;
+    const perfSection = pageSpeed
+      ? `\n\nReal Lighthouse/PageSpeed metrics for this URL (use these exact numbers when citing performance issues — do not invent values):\n${pageSpeed}\n`
+      : "";
+    return `
+Audit this page: ${input.url}${perfSection}
 Page HTML:
 \`\`\`html
 ${(input.html as string).substring(0, 30000)}
 \`\`\`
-  `.trim(),
+    `.trim();
+  },
 
   parseResponse: (response: string): SkillOutput => {
     const jsonMatch = response.match(/\{[\s\S]*\}/);

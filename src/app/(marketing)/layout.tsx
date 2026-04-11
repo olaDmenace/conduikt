@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/src/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Facebook, Twitter } from "lucide-react";
 
 export default function MarketingLayout({
   children,
@@ -91,8 +91,28 @@ export default function MarketingLayout({
               Launch
             </Link>
           </div>
+          <div className="flex items-center gap-3">
+            <a
+              href="https://x.com/conduikt"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Follow Conduikt on X"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-border-subtle text-text-tertiary hover:text-text-primary hover:border-border-strong transition-colors"
+            >
+              <Twitter className="h-4 w-4" />
+            </a>
+            <a
+              href="https://fb.com/conduikt"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Follow Conduikt on Facebook"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-border-subtle text-text-tertiary hover:text-text-primary hover:border-border-strong transition-colors"
+            >
+              <Facebook className="h-4 w-4" />
+            </a>
+          </div>
           <p className="text-small text-text-tertiary">
-            Built with Claude Code in Lagos, Nigeria
+            Built with Claude Code
           </p>
         </div>
       </footer>

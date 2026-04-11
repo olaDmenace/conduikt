@@ -186,7 +186,7 @@ export default function LaunchPage() {
                 </div>
                 <div>
                   <h3 className="text-h3 text-text-primary">
-                    Olayinka Adeyemi
+                    Olayinka Fagbenro
                   </h3>
                   <p className="text-small text-text-secondary">
                     Founder, Technicity Digital

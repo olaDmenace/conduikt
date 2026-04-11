@@ -190,7 +190,12 @@ export async function getUGCAvatars(
 ): Promise<AvatarInfo[]> {
   const all = await getAvatars();
 
-  let filtered = all.filter((a) =>
+  // Exclude unknown-gender avatars so voice resolution is always deterministic.
+  // Without this, a male-looking avatar tagged "unknown" in HeyGen's API falls
+  // through the gender branch and gets the default (female) voice.
+  const knownGender = all.filter((a) => a.gender !== "unknown");
+
+  let filtered = knownGender.filter((a) =>
     UGC_KEYWORDS.some((kw) => a.avatar_name.toLowerCase().includes(kw))
   );
 
@@ -198,10 +203,12 @@ export async function getUGCAvatars(
     filtered = filtered.filter((a) => a.gender === gender);
   }
 
-  // If nothing matched the UGC filter, fall back to the full list
-  // (optionally gender-filtered)
+  // If nothing matched the UGC filter, fall back to the known-gender pool
+  // (optionally gender-filtered).
   if (filtered.length === 0) {
-    return gender ? all.filter((a) => a.gender === gender) : all;
+    return gender
+      ? knownGender.filter((a) => a.gender === gender)
+      : knownGender;
   }
 
   return filtered;
@@ -218,14 +225,15 @@ export async function selectRandomAvatar(
   const pool = await getUGCAvatars(gender);
 
   if (pool.length === 0) {
-    // Fallback level 1: try unfiltered pool
-    const allAvatars = await getAvatars();
-    if (allAvatars.length > 0) {
-      return { avatarId: allAvatars[0].avatar_id, gender: allAvatars[0].gender };
+    // Fallback level 1: all known-gender avatars (unfiltered by UGC keywords)
+    const allKnown = (await getAvatars()).filter((a) => a.gender !== "unknown");
+    if (allKnown.length > 0) {
+      const idx = Math.floor(Math.random() * allKnown.length);
+      return { avatarId: allKnown[idx].avatar_id, gender: allKnown[idx].gender };
     }
-    // Fallback level 2: use DEFAULT_AVATAR_ID (already set for Presenter videos)
+    // Fallback level 2: use DEFAULT_AVATAR_ID (Abigail, female)
     if (DEFAULT_AVATAR_ID) {
-      return { avatarId: DEFAULT_AVATAR_ID, gender: "unknown" };
+      return { avatarId: DEFAULT_AVATAR_ID, gender: "female" };
     }
     // Fallback level 3: fail with a clear error
     throw new Error(
@@ -251,19 +259,8 @@ export async function selectBrandMatchedAvatar(
   const pool = await getUGCAvatars();
 
   if (pool.length === 0) {
-    // Fallback level 1: try unfiltered pool
-    const allAvatars = await getAvatars();
-    if (allAvatars.length > 0) {
-      return { avatarId: allAvatars[0].avatar_id, gender: allAvatars[0].gender };
-    }
-    // Fallback level 2: use DEFAULT_AVATAR_ID
-    if (DEFAULT_AVATAR_ID) {
-      return { avatarId: DEFAULT_AVATAR_ID, gender: "unknown" };
-    }
-    // Fallback level 3: fail with a clear error
-    throw new Error(
-      "No HeyGen avatar available. The avatar API returned empty and no default avatar is configured. Check your HeyGen API key and account status."
-    );
+    // Fall back to the same logic as random selection
+    return selectRandomAvatar();
   }
 
   if (!projectContext) {
@@ -354,20 +351,20 @@ export async function resolveUGCAvatar(
     return selectRandomAvatar(options.gender);
   } catch (err) {
     console.warn("[heygen] resolveUGCAvatar failed, falling back:", err);
-    // Fallback level 1: try unfiltered pool
+    // Fallback: known-gender avatars only
     try {
-      const allAvatars = await getAvatars();
-      if (allAvatars.length > 0) {
-        return { avatarId: allAvatars[0].avatar_id, gender: allAvatars[0].gender };
+      const allKnown = (await getAvatars()).filter((a) => a.gender !== "unknown");
+      if (allKnown.length > 0) {
+        const idx = Math.floor(Math.random() * allKnown.length);
+        return { avatarId: allKnown[idx].avatar_id, gender: allKnown[idx].gender };
       }
     } catch {
       // API completely unreachable
     }
-    // Fallback level 2: use DEFAULT_AVATAR_ID
+    // Final fallback: DEFAULT_AVATAR_ID (Abigail, female)
     if (DEFAULT_AVATAR_ID) {
-      return { avatarId: DEFAULT_AVATAR_ID, gender: "unknown" };
+      return { avatarId: DEFAULT_AVATAR_ID, gender: "female" };
     }
-    // Fallback level 3: fail with a clear error
     throw new Error(
       "No HeyGen avatar available. The avatar API returned empty and no default avatar is configured. Check your HeyGen API key and account status."
     );
