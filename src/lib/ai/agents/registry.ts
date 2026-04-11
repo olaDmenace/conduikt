@@ -8,7 +8,10 @@ export interface AgentDefinition {
   tier: "free" | "pro" | "growth" | "agency";
   category: "analysis" | "creation" | "strategy" | "distribution";
   ctaLabel: string;   // Button text: "Run Audit"
-  route: string;      // URL segment under /agents/: "seo-audit"
+  route: string;      // Global URL slug: /agents/{route}
+  // In-project path suffix, appended to /projects/{id}/. May include query strings
+  // (e.g. "content?skill=copywriting"). Defaults to `route` when omitted.
+  projectPath?: string;
 }
 
 export const AGENT_REGISTRY: AgentDefinition[] = [
@@ -23,6 +26,7 @@ export const AGENT_REGISTRY: AgentDefinition[] = [
     category: "analysis",
     ctaLabel: "Run Audit",
     route: "seo-audit",
+    projectPath: "audit",
   },
   {
     id: "page-cro",
@@ -35,6 +39,7 @@ export const AGENT_REGISTRY: AgentDefinition[] = [
     category: "analysis",
     ctaLabel: "Analyze Page",
     route: "cro",
+    projectPath: "content?skill=page-cro",
   },
   {
     id: "copywriting",
@@ -47,6 +52,7 @@ export const AGENT_REGISTRY: AgentDefinition[] = [
     category: "creation",
     ctaLabel: "Create Copy",
     route: "copywriting",
+    projectPath: "content?skill=copywriting",
   },
   {
     id: "social-content",
@@ -59,6 +65,7 @@ export const AGENT_REGISTRY: AgentDefinition[] = [
     category: "creation",
     ctaLabel: "Create Post",
     route: "social",
+    projectPath: "content?skill=social-content",
   },
   {
     id: "email-sequence",
@@ -71,6 +78,7 @@ export const AGENT_REGISTRY: AgentDefinition[] = [
     category: "creation",
     ctaLabel: "Build Sequence",
     route: "email",
+    projectPath: "content?skill=email-sequence",
   },
   {
     id: "content-strategy",
@@ -83,18 +91,20 @@ export const AGENT_REGISTRY: AgentDefinition[] = [
     category: "strategy",
     ctaLabel: "Plan Content",
     route: "strategy",
+    projectPath: "content?skill=content-strategy",
   },
   {
     id: "competitor-analysis",
-    name: "Competitor Agent",
-    shortName: "Competitor",
+    name: "Competitor Intel Agent",
+    shortName: "Competitor Intel",
     icon: "Flag",
-    description: "Analyze competitor positioning and gaps",
+    description: "One-shot AI analysis of competitor positioning and content gaps",
     status: "active",
     tier: "pro",
     category: "analysis",
     ctaLabel: "Analyze",
     route: "competitor",
+    projectPath: "content?skill=competitor-analysis",
   },
   {
     id: "blog-post",
@@ -179,6 +189,7 @@ export const AGENT_REGISTRY: AgentDefinition[] = [
     category: "analysis",
     ctaLabel: "Create Test",
     route: "ab-test",
+    projectPath: "agents/ab-test",
   },
 ];
 

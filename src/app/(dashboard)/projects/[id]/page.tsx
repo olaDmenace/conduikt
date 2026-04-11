@@ -69,7 +69,7 @@ function AgentCard({
   const isComingSoon = agent.status === "coming_soon";
   const href = isComingSoon
     ? "#"
-    : `/projects/${projectId}/agents/${agent.route}`;
+    : `/projects/${projectId}/${agent.projectPath ?? agent.route}`;
 
   const isUnused = !metrics?.lastUsedLabel && !isComingSoon;
 
