@@ -7,6 +7,11 @@ import {
   fetchPageSpeedBoth,
   formatPageSpeedForPrompt,
 } from "@/src/lib/integrations/pagespeed";
+import {
+  getGenerationLimit,
+  isUnlimited,
+  normalizePlan,
+} from "@/src/lib/plans";
 
 // Force Node.js runtime — Edge runtime can't fetch arbitrary external URLs
 export const runtime = "nodejs";
@@ -28,14 +33,9 @@ export async function POST(request: NextRequest) {
     .eq("id", user.id)
     .single();
 
-  const planLimits: Record<string, number> = {
-    free: 5,
-    pro: 100,
-    growth: 999999,
-    agency: 999999,
-  };
-  const limit = planLimits[profile?.plan ?? "free"] ?? 5;
-  if ((profile?.generation_count ?? 0) >= limit) {
+  const plan = normalizePlan(profile?.plan);
+  const limit = getGenerationLimit(plan);
+  if (!isUnlimited(limit) && (profile?.generation_count ?? 0) >= limit) {
     return NextResponse.json(
       { error: "Generation limit reached. Upgrade your plan." },
       { status: 429 }
@@ -136,6 +136,26 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: "Failed to parse audit results", raw: result.content },
       { status: 500 }
+    );
+  }
+
+  // Free-tier gating: blur critical findings (show title + severity only,
+  // strip detail/fix) so users can see the count/type without the fix.
+  if (plan === "free" && Array.isArray(auditData.findings)) {
+    auditData.findings = (auditData.findings as Array<Record<string, unknown>>).map(
+      (f) => {
+        if (f.severity === "critical") {
+          return {
+            ...f,
+            detail: "[GATED]",
+            fix: "[GATED]",
+            gated: true,
+            gateCTA:
+              "Upgrade to Pro to see this critical issue and how to fix it",
+          };
+        }
+        return f;
+      }
     );
   }
 

@@ -3,6 +3,11 @@ import { createClient } from "@/src/lib/supabase/server";
 import { getAnthropicClient } from "@/src/lib/ai/client";
 import { getAgent } from "@/src/lib/ai/agents";
 import type { ProjectContext } from "@/src/lib/ai/agents/types";
+import {
+  getGenerationLimit,
+  isUnlimited,
+  normalizePlan,
+} from "@/src/lib/plans";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -35,14 +40,9 @@ export async function POST(request: NextRequest) {
     .eq("id", user.id)
     .single();
 
-  const limits: Record<string, number> = {
-    free: 5,
-    pro: 100,
-    growth: 999999,
-    agency: 999999,
-  };
-  const limit = limits[profile?.plan ?? "free"] ?? 5;
-  if ((profile?.generation_count ?? 0) >= limit) {
+  const plan = normalizePlan(profile?.plan);
+  const limit = getGenerationLimit(plan);
+  if (!isUnlimited(limit) && (profile?.generation_count ?? 0) >= limit) {
     return new Response(
       JSON.stringify({ error: "Generation limit reached. Upgrade your plan." }),
       { status: 429, headers: { "Content-Type": "application/json" } }

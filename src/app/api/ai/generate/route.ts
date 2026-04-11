@@ -4,6 +4,11 @@ import { generateWithClaude } from "@/src/lib/ai/client";
 import { getAgent } from "@/src/lib/ai/agents";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
 import { buildPerformanceContext } from "@/src/lib/ai/performance-context";
+import {
+  getGenerationLimit,
+  isUnlimited,
+  normalizePlan,
+} from "@/src/lib/plans";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -43,15 +48,9 @@ export async function POST(request: NextRequest) {
     .eq("id", user.id)
     .single();
 
-  const limits: Record<string, number> = {
-    free: 5,
-    pro: 100,
-    growth: 999999,
-    agency: 999999,
-  };
-
-  const limit = limits[profile?.plan ?? "free"] ?? 5;
-  if ((profile?.generation_count ?? 0) >= limit) {
+  const plan = normalizePlan(profile?.plan);
+  const limit = getGenerationLimit(plan);
+  if (!isUnlimited(limit) && (profile?.generation_count ?? 0) >= limit) {
     return NextResponse.json(
       { error: "Generation limit reached. Upgrade your plan." },
       { status: 429 }
