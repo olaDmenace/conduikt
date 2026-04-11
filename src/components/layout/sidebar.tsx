@@ -302,8 +302,6 @@ export function Sidebar() {
                       <ProjectSubLink href={`${projectBase}/analytics`} icon={TrendingUp} label="Analytics" pathname={pathname} onClick={handleNavClick} />
                       <ProjectSubLink href={`${projectBase}/competitors`} icon={Swords} label="Competitors" pathname={pathname} onClick={handleNavClick} />
                       <ProjectSubLink href={`${projectBase}/emails`} icon={Mail} label="Email Sequences" pathname={pathname} onClick={handleNavClick} />
-                      <ProjectSubLink href={`${projectBase}/library`} icon={FolderOpen} label="Library" pathname={pathname} onClick={handleNavClick} />
-                      <ProjectSubLink href={`${projectBase}/settings`} icon={Settings} label="Settings" pathname={pathname} onClick={handleNavClick} />
 
                       {/* Divider between project tools and agents */}
                       <div className="my-1.5 border-t border-border-subtle/60" />
@@ -335,6 +333,13 @@ export function Sidebar() {
                           </Link>
                         );
                       })}
+
+                      {/* Divider between agents and project settings */}
+                      <div className="my-1.5 border-t border-border-subtle/60" />
+
+                      {/* Library & Settings — pinned to the bottom */}
+                      <ProjectSubLink href={`${projectBase}/library`} icon={FolderOpen} label="Library" pathname={pathname} onClick={handleNavClick} />
+                      <ProjectSubLink href={`${projectBase}/settings`} icon={Settings} label="Settings" pathname={pathname} onClick={handleNavClick} />
                     </div>
                   )}
                 </div>
