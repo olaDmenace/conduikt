@@ -3,6 +3,10 @@ import { createClient } from "@/src/lib/supabase/server";
 import { generateWithClaude } from "@/src/lib/ai/client";
 import { seoAuditSkill } from "@/src/lib/ai/agents/seo-audit";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
+import {
+  fetchPageSpeedBoth,
+  formatPageSpeedForPrompt,
+} from "@/src/lib/integrations/pagespeed";
 
 // Force Node.js runtime — Edge runtime can't fetch arbitrary external URLs
 export const runtime = "nodejs";
@@ -94,10 +98,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: message }, { status: 400 });
   }
 
+  // Fetch PageSpeed metrics in parallel — non-blocking, null on failure
+  const pageSpeed = await fetchPageSpeedBoth(url);
+  const pageSpeedPrompt = formatPageSpeedForPrompt(
+    pageSpeed.mobile,
+    pageSpeed.desktop
+  );
+
   // Build context and run audit
   const context = buildProjectContext(project);
   const systemPrompt = seoAuditSkill.buildSystemPrompt(context);
-  const userPrompt = seoAuditSkill.buildUserPrompt({ url, html });
+  const userPrompt = seoAuditSkill.buildUserPrompt({
+    url,
+    html,
+    pageSpeed: pageSpeedPrompt,
+  });
 
   let result;
   try {
@@ -133,6 +148,13 @@ export async function POST(request: NextRequest) {
       url,
       score: auditData.score,
       findings: auditData.findings,
+      metadata: {
+        pageSpeed: {
+          mobile: pageSpeed.mobile,
+          desktop: pageSpeed.desktop,
+          fetchedAt: new Date().toISOString(),
+        },
+      },
     })
     .select()
     .single();
