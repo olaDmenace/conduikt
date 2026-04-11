@@ -147,7 +147,7 @@ export default function EmailsPage({
       >
         <Button asChild>
           <Link
-            href={`/projects/${projectId}/agents/email-sequence`}
+            href={`/projects/${projectId}/content?skill=email-sequence`}
           >
             Create Sequence
           </Link>
@@ -219,7 +219,7 @@ export default function EmailsPage({
               then manage and send tests from here.
             </p>
             <Button className="mt-6" asChild>
-              <Link href={`/projects/${projectId}/agents/email-sequence`}>
+              <Link href={`/projects/${projectId}/content?skill=email-sequence`}>
                 Create Your First Sequence
               </Link>
             </Button>

@@ -26,17 +26,19 @@ interface Project {
   website_url: string | null;
 }
 
+// Project-scoped destinations. `path` is appended to /projects/{id}/ and may
+// include a query string (e.g. "content?skill=page-cro").
 const AGENT_ITEMS = [
-  { name: "SEO Audit", route: "seo-audit", icon: AlertTriangle },
-  { name: "Content Studio", route: "content", icon: Sparkles },
-  { name: "Blog Writer", route: "blog", icon: Globe },
-  { name: "Keywords", route: "keywords", icon: Search },
-  { name: "Growth Playbook", route: "growth", icon: Rocket },
-  { name: "CRO Agent", route: "cro", icon: Target },
-  { name: "Campaigns", route: "campaigns", icon: Megaphone },
-  { name: "Calendar", route: "calendar", icon: Calendar },
-  { name: "Emails", route: "emails", icon: Mail },
-  { name: "Analytics", route: "analytics", icon: BarChart3 },
+  { name: "SEO Audit", path: "audit", icon: AlertTriangle },
+  { name: "Content Studio", path: "content", icon: Sparkles },
+  { name: "Blog Writer", path: "blog", icon: Globe },
+  { name: "Keywords", path: "keywords", icon: Search },
+  { name: "Growth Playbook", path: "growth", icon: Rocket },
+  { name: "CRO Agent", path: "content?skill=page-cro", icon: Target },
+  { name: "Campaigns", path: "campaigns", icon: Megaphone },
+  { name: "Calendar", path: "calendar", icon: Calendar },
+  { name: "Emails", path: "emails", icon: Mail },
+  { name: "Analytics", path: "analytics", icon: BarChart3 },
 ];
 
 const PAGES = [
@@ -154,12 +156,12 @@ export function CommandPalette() {
             >
               {AGENT_ITEMS.map((agent) => (
                 <Command.Item
-                  key={agent.route}
+                  key={agent.path}
                   value={`agent ${agent.name}`}
                   onSelect={() =>
                     navigate(
                       firstProject
-                        ? `/projects/${firstProject.id}/agents/${agent.route}`
+                        ? `/projects/${firstProject.id}/${agent.path}`
                         : "/dashboard"
                     )
                   }

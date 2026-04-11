@@ -189,7 +189,6 @@ export const AGENT_REGISTRY: AgentDefinition[] = [
     category: "analysis",
     ctaLabel: "Create Test",
     route: "ab-test",
-    projectPath: "agents/ab-test",
   },
 ];
 

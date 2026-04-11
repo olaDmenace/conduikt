@@ -224,7 +224,7 @@ export default function CalendarPage({
             </Button>
           )}
           <Button asChild>
-            <Link href={`/projects/${projectId}/agents/content`}>
+            <Link href={`/projects/${projectId}/content?skill=social-content`}>
               Schedule More
             </Link>
           </Button>
@@ -274,7 +274,7 @@ export default function CalendarPage({
               button on any post card to queue it here.
             </p>
             <Button className="mt-6" asChild>
-              <Link href={`/projects/${projectId}/agents/content`}>
+              <Link href={`/projects/${projectId}/content?skill=social-content`}>
                 Generate Social Content
               </Link>
             </Button>
