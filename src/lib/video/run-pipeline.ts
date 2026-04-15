@@ -60,10 +60,7 @@ export async function runVideoPipeline(jobId: string) {
       // Thumbnail is optional — continue without it
     }
 
-    console.log(`[video-pipeline] ${jobId}: thumbnail=${thumbnailUrl ?? "none"}`);
-
     // Step 3: Submit to HeyGen (handles TTS + avatar internally)
-    console.log(`[video-pipeline] ${jobId}: submitting to HeyGen...`);
     await updateJob(jobId, {
       status: "generating_video",
       progress_message: "AI is recording your presenter...",
@@ -100,7 +97,6 @@ export async function runVideoPipeline(jobId: string) {
       }
       // "unknown" → let HeyGen use default
 
-      console.log(`[video-pipeline] ${jobId}: resolved UGC avatar=${avatarId} gender=${resolved.gender} (mode=${avatarMode})`);
     }
 
     const { jobId: hgJobId } = await createHeyGenVideo({
@@ -117,8 +113,6 @@ export async function runVideoPipeline(jobId: string) {
       provider_job_id: hgJobId,
     });
 
-    console.log(`[video-pipeline] ${jobId}: HeyGen submitted, hgJobId=${hgJobId}`);
-
     // Step 4: Poll HeyGen until done (up to 10 minutes)
     const MAX_POLLS = 60;
     const POLL_INTERVAL_MS = 10_000;
@@ -128,10 +122,8 @@ export async function runVideoPipeline(jobId: string) {
       await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
 
       const result = await pollHeyGenVideo(hgJobId);
-      console.log(`[video-pipeline] ${jobId}: poll ${i + 1}/${MAX_POLLS} — status=${result.status}`);
 
       if (result.status === "completed" && result.videoUrl) {
-        console.log(`[video-pipeline] ${jobId}: downloading video from HeyGen...`);
         const videoRes = await fetch(result.videoUrl);
         if (!videoRes.ok) throw new Error("Failed to download video from HeyGen");
         const videoBuffer = Buffer.from(await videoRes.arrayBuffer());
@@ -176,7 +168,6 @@ export async function runVideoPipeline(jobId: string) {
     }
 
     // Step 5: Finalise
-    console.log(`[video-pipeline] ${jobId}: done! videoUrl=${videoUrl}`);
     await updateJob(jobId, {
       status: "ready",
       video_url: videoUrl,

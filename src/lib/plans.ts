@@ -50,6 +50,10 @@ export function getGenerationLimit(plan: PlanTier): number {
   return GENERATION_LIMITS[plan];
 }
 
+export function getProjectLimit(plan: PlanTier): number {
+  return PROJECT_LIMITS[plan];
+}
+
 export function isUnlimited(limit: number): boolean {
   return !Number.isFinite(limit);
 }

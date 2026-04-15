@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/src/lib/supabase/service";
+import { PLAN_PRICING } from "@/src/lib/plans";
 
 // ─── Dashboard Stats ───────────────────────────────────────────────
 export async function getAdminStats() {
@@ -32,21 +33,31 @@ export async function getAdminStats() {
 export async function getDailyGenerations() {
   const supabase = createServiceClient();
 
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  // Build 30 UTC-day buckets ending today (UTC). Using Date.UTC keeps bucket
+  // keys aligned with how Postgres stores timestamptz rows — avoids off-by-one
+  // drops when the server's local TZ differs from UTC.
+  const now = new Date();
+  const todayUtcMs = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate()
+  );
+  const DAY_MS = 86_400_000;
+  const startUtcMs = todayUtcMs - 29 * DAY_MS;
 
   const { data } = await supabase
     .from("ai_generations")
     .select("created_at")
-    .gte("created_at", thirtyDaysAgo.toISOString())
-    .order("created_at", { ascending: true });
+    .gte("created_at", new Date(startUtcMs).toISOString());
 
-  // Group by date
   const counts: Record<string, number> = {};
+  const orderedKeys: string[] = [];
   for (let i = 0; i < 30; i++) {
-    const d = new Date();
-    d.setDate(d.getDate() - 29 + i);
-    counts[d.toISOString().split("T")[0]] = 0;
+    const key = new Date(startUtcMs + i * DAY_MS)
+      .toISOString()
+      .split("T")[0];
+    counts[key] = 0;
+    orderedKeys.push(key);
   }
 
   (data ?? []).forEach((row) => {
@@ -54,7 +65,7 @@ export async function getDailyGenerations() {
     if (counts[day] !== undefined) counts[day]++;
   });
 
-  return Object.entries(counts).map(([date, count]) => ({ date, count }));
+  return orderedKeys.map((date) => ({ date, count: counts[date] }));
 }
 
 // ─── Auth user lookup (email, last sign in) ───────────────────────
@@ -413,6 +424,152 @@ export async function getUsageData() {
     modelStats,
     projectUsage: Object.values(projectUsage).sort((a, b) => b.cost - a.cost),
     auditedSites,
+  };
+}
+
+// ─── Referrals ─────────────────────────────────────────────────────
+export async function getReferralLinks() {
+  const supabase = createServiceClient();
+  const { data } = await supabase
+    .from("referral_links")
+    .select("*")
+    .order("created_at", { ascending: false });
+  return data ?? [];
+}
+
+export async function getReferralStats() {
+  const supabase = createServiceClient();
+
+  const [linksRes, clicksRes, conversionsRes, earningsRes] = await Promise.all([
+    supabase.from("referral_links").select("id, code, label, partner_name, partner_email, active, commission_type, commission_rate, flat_amount_usd, created_at"),
+    supabase.from("referral_clicks").select("referral_link_id, visited_at"),
+    supabase.from("referral_conversions").select("referral_link_id, user_id, signed_up_at, first_paid_at, current_plan"),
+    supabase.from("referral_earnings").select("referral_link_id, commission_usd, paid_out, payment_amount_usd"),
+  ]);
+
+  const links = linksRes.data ?? [];
+  const clicks = clicksRes.data ?? [];
+  const conversions = conversionsRes.data ?? [];
+  const earnings = earningsRes.data ?? [];
+
+  const perLink = links.map((link) => {
+    const linkClicks = clicks.filter((c) => c.referral_link_id === link.id).length;
+    const linkConversions = conversions.filter((c) => c.referral_link_id === link.id);
+    const linkEarnings = earnings.filter((e) => e.referral_link_id === link.id);
+    const totalEarned = linkEarnings.reduce((s, e) => s + Number(e.commission_usd ?? 0), 0);
+    const unpaidEarned = linkEarnings
+      .filter((e) => !e.paid_out)
+      .reduce((s, e) => s + Number(e.commission_usd ?? 0), 0);
+    const revenueGenerated = linkEarnings.reduce(
+      (s, e) => s + Number(e.payment_amount_usd ?? 0),
+      0
+    );
+
+    return {
+      ...link,
+      clicks: linkClicks,
+      conversions: linkConversions.length,
+      paidConversions: linkConversions.filter((c) => c.first_paid_at).length,
+      totalEarnedUsd: totalEarned,
+      unpaidEarnedUsd: unpaidEarned,
+      revenueGeneratedUsd: revenueGenerated,
+    };
+  });
+
+  return {
+    links: perLink,
+    totals: {
+      linkCount: links.length,
+      clickCount: clicks.length,
+      conversionCount: conversions.length,
+      paidConversions: conversions.filter((c) => c.first_paid_at).length,
+      totalCommissionsUsd: earnings.reduce((s, e) => s + Number(e.commission_usd ?? 0), 0),
+      unpaidCommissionsUsd: earnings
+        .filter((e) => !e.paid_out)
+        .reduce((s, e) => s + Number(e.commission_usd ?? 0), 0),
+    },
+  };
+}
+
+export async function getReferralPayouts() {
+  const supabase = createServiceClient();
+  const { data } = await supabase
+    .from("referral_payouts")
+    .select("*")
+    .order("created_at", { ascending: false });
+  return data ?? [];
+}
+
+// ─── Finance ───────────────────────────────────────────────────────
+const PLAN_PRICING_USD: Record<string, number> = {
+  free: PLAN_PRICING.free.price,
+  pro: PLAN_PRICING.pro.price,
+  growth: PLAN_PRICING.growth.price,
+  agency: PLAN_PRICING.agency.price,
+};
+
+export async function getFinanceStats() {
+  const supabase = createServiceClient();
+
+  const [profilesRes, earningsRes, payoutsRes, conversionsRes] = await Promise.all([
+    supabase.from("profiles").select("plan, created_at"),
+    supabase.from("referral_earnings").select("commission_usd, paid_out, payment_amount_usd, created_at"),
+    supabase.from("referral_payouts").select("amount_usd, created_at"),
+    supabase.from("referral_conversions").select("referral_link_id"),
+  ]);
+
+  const profiles = profilesRes.data ?? [];
+  const earnings = earningsRes.data ?? [];
+  const payouts = payoutsRes.data ?? [];
+  const conversions = conversionsRes.data ?? [];
+
+  // Plan distribution + MRR
+  const planCounts: Record<string, number> = {};
+  let mrr = 0;
+  profiles.forEach((p) => {
+    const plan = p.plan ?? "free";
+    planCounts[plan] = (planCounts[plan] ?? 0) + 1;
+    mrr += PLAN_PRICING_USD[plan] ?? 0;
+  });
+  const arr = mrr * 12;
+
+  // Referral revenue share
+  const totalRevenue = earnings.reduce(
+    (s, e) => s + Number(e.payment_amount_usd ?? 0),
+    0
+  );
+  const totalCommissions = earnings.reduce(
+    (s, e) => s + Number(e.commission_usd ?? 0),
+    0
+  );
+  const unpaidCommissions = earnings
+    .filter((e) => !e.paid_out)
+    .reduce((s, e) => s + Number(e.commission_usd ?? 0), 0);
+  const totalPayouts = payouts.reduce(
+    (s, p) => s + Number(p.amount_usd ?? 0),
+    0
+  );
+
+  // New signups this month
+  const now = new Date();
+  const monthStart = new Date(now.getUTCFullYear(), now.getUTCMonth(), 1).getTime();
+  const newSignupsThisMonth = profiles.filter(
+    (p) => new Date(p.created_at).getTime() >= monthStart
+  ).length;
+
+  return {
+    mrr,
+    arr,
+    planCounts,
+    planPricing: PLAN_PRICING_USD,
+    newSignupsThisMonth,
+    referral: {
+      totalRevenue,
+      totalCommissions,
+      unpaidCommissions,
+      totalPayouts,
+      referredUsers: conversions.length,
+    },
   };
 }
 

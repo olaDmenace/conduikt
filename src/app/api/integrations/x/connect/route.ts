@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     response_type: "code",
     client_id: process.env.X_CLIENT_ID!,
     redirect_uri: callbackUrl,
-    scope: "tweet.read tweet.write users.read offline.access",
+    scope: "tweet.read tweet.write users.read offline.access media.write",
     state,
     code_challenge: codeChallenge,
     code_challenge_method: "S256",

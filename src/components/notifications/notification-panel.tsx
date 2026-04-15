@@ -11,6 +11,7 @@ import {
   Send,
   Search,
   X,
+  Unlink,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 
@@ -31,6 +32,7 @@ const typeIcons: Record<string, typeof Bell> = {
   post_failed: AlertTriangle,
   score_improved: TrendingUp,
   keyword_moved: Search,
+  integration_expired: Unlink,
 };
 
 function timeAgo(iso: string): string {
@@ -90,6 +92,8 @@ export function NotificationPanel() {
 
     if (n.action_url) {
       router.push(n.action_url);
+    } else if (n.type === "integration_expired") {
+      router.push("/settings/integrations");
     } else if (n.project_id) {
       if (n.type === "audit_complete" || n.type === "score_improved") {
         router.push(`/projects/${n.project_id}/audit`);

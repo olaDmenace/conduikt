@@ -27,7 +27,7 @@ const softwareAppJsonLd = {
   url: "https://conduikt.com/",
   screenshot: "https://conduikt.com/images/conduikt-dashboard.png",
   featureList:
-    "AI SEO Audit, Content Generation, Multi-Channel Publishing, Email Sequence Builder, Analytics Feedback Loop, Campaign Orchestration",
+    "AI SEO Audit, CRO Analysis, Keyword Research, Content Generation, Multi-Channel Publishing, Email Sequence Builder, Video Ad Creator, A/B Testing, Growth Playbook, Campaign Orchestration, Analytics Feedback Loop, Client Reports",
   publisher: {
     "@type": "Organization",
     name: "Conduikt",
@@ -78,7 +78,7 @@ const faqs = [
   {
     question: "What happens after the free plan?",
     answer:
-      "The free plan includes 1 project and 5 AI generations per month. When you're ready to scale, Pro starts at $49/month with 100 generations, multi-channel publishing, and email sequences.",
+      "The free plan includes 1 project and 5 AI generations per month. When you're ready to scale, Pro starts at $49/month with 250 generations, multi-channel publishing, and email sequences.",
   },
   {
     question: "Is my data secure?",
@@ -250,6 +250,22 @@ export default function LandingPage() {
                   <CheckCircle2 className="h-4 w-4 text-success" />
                   5 free AI generations
                 </span>
+              </div>
+              <div className="mt-6">
+                <a
+                  href="https://www.producthunt.com/products/conduikt?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-conduikt"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1119957&theme=dark"
+                    alt="Conduikt - Paste your website → get marketing content in 20 seconds | Product Hunt"
+                    width={250}
+                    height={54}
+                  />
+                </a>
               </div>
             </div>
 

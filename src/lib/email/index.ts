@@ -164,7 +164,9 @@ function planUpgradeHtml(name: string, plan: string): string {
 
 export async function sendWelcomeEmail(to: string, name?: string) {
   if (!process.env.RESEND_API_KEY) {
-    console.log("[email] RESEND_API_KEY not set — skipping welcome email");
+    console.warn(
+      `[email] WARN: RESEND_API_KEY missing — welcome email to ${to} was NOT sent. Set RESEND_API_KEY in Vercel env vars.`
+    );
     return;
   }
   try {
@@ -185,7 +187,9 @@ export async function sendPlanUpgradeEmail(
   name?: string
 ) {
   if (!process.env.RESEND_API_KEY) {
-    console.log("[email] RESEND_API_KEY not set — skipping plan upgrade email");
+    console.warn(
+      `[email] WARN: RESEND_API_KEY missing — plan upgrade email to ${to} (${plan}) was NOT sent. Set RESEND_API_KEY in Vercel env vars.`
+    );
     return;
   }
   try {

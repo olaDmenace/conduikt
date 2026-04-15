@@ -197,7 +197,7 @@ export const AGENT_REGISTRY: AgentDefinition[] = [
     icon: "FileBarChart",
     description:
       "Generate white-label PDF reports for clients with custom branding, performance metrics, and content analysis",
-    status: "coming_soon",
+    status: "active",
     tier: "agency",
     category: "analysis",
     ctaLabel: "Generate Report",

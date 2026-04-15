@@ -12,6 +12,7 @@ import {
   isUnlimited,
   normalizePlan,
 } from "@/src/lib/plans";
+import { dispatchWebhooks } from "@/src/lib/integrations/webhook-dispatch";
 
 // Force Node.js runtime — Edge runtime can't fetch arbitrary external URLs
 export const runtime = "nodejs";
@@ -203,6 +204,16 @@ export async function POST(request: NextRequest) {
       })
       .eq("id", user.id),
   ]);
+
+  dispatchWebhooks(user.id, projectId, {
+    event: "audit.completed",
+    title: `SEO audit completed for ${url}`,
+    content: JSON.stringify(
+      Array.isArray(auditData.findings) ? auditData.findings.slice(0, 5) : []
+    ),
+    contentType: "audit",
+    metadata: { auditId: audit.id, url, score: auditData.score },
+  }).catch(() => {});
 
   return NextResponse.json(audit);
 }

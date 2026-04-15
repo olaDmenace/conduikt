@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     response_type: "code",
     client_id: process.env.LINKEDIN_CLIENT_ID!,
     redirect_uri: callbackUrl,
-    scope: "w_member_social r_liteprofile",
+    scope: "openid profile email w_member_social",
     state,
   });
 

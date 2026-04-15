@@ -235,11 +235,20 @@ export default function LaunchPage() {
               </Link>
             </Button>
           </div>
-          {/* PH Badge Placeholder */}
           <div className="mt-8 flex items-center justify-center">
-            <div className="rounded-lg border border-border-default bg-surface-1 px-6 py-3 text-small text-text-secondary">
-              Product Hunt badge will go here
-            </div>
+            <a
+              href="https://www.producthunt.com/products/conduikt?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-conduikt"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1119957&theme=dark"
+                alt="Conduikt - Paste your website → get marketing content in 20 seconds | Product Hunt"
+                width={250}
+                height={54}
+              />
+            </a>
           </div>
         </div>
       </section>

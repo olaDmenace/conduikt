@@ -8,6 +8,7 @@ import {
   isUnlimited,
   normalizePlan,
 } from "@/src/lib/plans";
+import { dispatchWebhooks } from "@/src/lib/integrations/webhook-dispatch";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -94,8 +95,10 @@ export async function POST(request: NextRequest) {
     async start(controller) {
       let inputTokens = 0;
       let outputTokens = 0;
+      let fullText = "";
 
       stream.on("text", (text) => {
+        fullText += text;
         controller.enqueue(
           encoder.encode(`data: ${JSON.stringify({ type: "text", text })}\n\n`)
         );
@@ -129,11 +132,20 @@ export async function POST(request: NextRequest) {
           })
           .eq("id", user.id);
 
+        dispatchWebhooks(user.id, projectId ?? null, {
+          event: "content.generated",
+          title: `Content generated via ${skill.id}`,
+          content: fullText.slice(0, 2000),
+          contentType: skill.id,
+          metadata: { agent: skill.id, inputTokens, outputTokens, durationMs },
+        }).catch(() => {});
+
         controller.enqueue(
           encoder.encode(
             `data: ${JSON.stringify({
               type: "done",
               usage: { inputTokens, outputTokens, durationMs },
+              plan,
             })}\n\n`
           )
         );

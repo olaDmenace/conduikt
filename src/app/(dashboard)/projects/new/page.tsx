@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Globe,
   ArrowRight,
@@ -10,6 +11,7 @@ import {
   Loader2,
   CheckCircle2,
   ClipboardList,
+  ArrowUpRight,
 } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
@@ -120,6 +122,7 @@ export default function NewProjectPage() {
     saving: "pending",
   });
   const [error, setError] = useState("");
+  const [errorCode, setErrorCode] = useState("");
   const router = useRouter();
   const { toast } = useToast();
 
@@ -187,6 +190,7 @@ export default function NewProjectPage() {
 
     if (!res.ok) {
       setError(data.error || "Failed to create project");
+      setErrorCode(data.code ?? "");
       setLoading(false);
       return;
     }
@@ -479,7 +483,15 @@ export default function NewProjectPage() {
               </div>
               {error && (
                 <div className="rounded-lg border border-error/20 bg-error/10 px-4 py-3 text-small text-error">
-                  {error}
+                  <p>{error}</p>
+                  {errorCode === "PROJECT_LIMIT" && (
+                    <Button size="sm" className="mt-3" asChild>
+                      <Link href="/settings/billing">
+                        Upgrade Plan
+                        <ArrowUpRight className="h-3.5 w-3.5" />
+                      </Link>
+                    </Button>
+                  )}
                 </div>
               )}
 

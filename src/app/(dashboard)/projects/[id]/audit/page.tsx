@@ -23,6 +23,7 @@ import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
 
 import { useToast } from "@/src/components/ui/toast";
+import { useUsageLimitModal } from "@/src/components/usage/limit-modal";
 import { ExpectationBanner } from "@/src/components/ui/expectation-banner";
 import {
   PageSpeedPanel,
@@ -77,6 +78,7 @@ export default function AuditPage({
     "all" | "critical" | "warning" | "info"
   >("all");
   const { toast } = useToast();
+  const { showLimitModal } = useUsageLimitModal();
 
   useEffect(() => {
     fetchAudits();
@@ -113,7 +115,11 @@ export default function AuditPage({
       fetchAudits();
     } else {
       const err = await res.json();
-      toast(err.error || "Audit failed", "error");
+      if (res.status === 429) {
+        showLimitModal();
+      } else {
+        toast(err.error || "Audit failed", "error");
+      }
     }
     setRerunning(false);
   }

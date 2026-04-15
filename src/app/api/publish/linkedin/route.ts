@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 import { createServiceClient } from "@/src/lib/supabase/service";
+import { dispatchWebhooks } from "@/src/lib/integrations/webhook-dispatch";
+import { uploadMediaToLinkedIn } from "@/src/lib/integrations/media-upload";
+import { hasMedia, type PostMedia } from "@/src/lib/media/types";
 
 function getServiceClient() {
   return createServiceClient();
@@ -11,7 +14,12 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { text, assetId } = await request.json();
+  const { text, assetId, projectId, media } = (await request.json()) as {
+    text: string;
+    assetId?: string;
+    projectId?: string;
+    media?: PostMedia;
+  };
   if (!text?.trim()) return NextResponse.json({ error: "Text is required" }, { status: 400 });
 
   const db = getServiceClient();
@@ -36,7 +44,48 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // Upload media if present
+  let imageUrn: string | null = null;
+  if (hasMedia(media)) {
+    try {
+      imageUrn = await uploadMediaToLinkedIn(
+        account.access_token,
+        account.platform_user_id,
+        media
+      );
+    } catch (err) {
+      console.error("[publish/linkedin] media upload error:", err);
+    }
+    if (!imageUrn) {
+      return NextResponse.json(
+        { error: "Failed to upload media to LinkedIn." },
+        { status: 400 }
+      );
+    }
+  }
+
   // Post to LinkedIn using the REST Posts API
+  const postBody: Record<string, unknown> = {
+    author: `urn:li:person:${account.platform_user_id}`,
+    commentary: text,
+    visibility: "PUBLIC",
+    distribution: {
+      feedDistribution: "MAIN_FEED",
+      targetEntities: [],
+      thirdPartyDistributionChannels: [],
+    },
+    lifecycleState: "PUBLISHED",
+    isReshareDisableForOperator: false,
+  };
+  if (imageUrn) {
+    postBody.content = {
+      media: {
+        id: imageUrn,
+        altText: media?.overlay?.text?.slice(0, 120) ?? "",
+      },
+    };
+  }
+
   const postRes = await fetch("https://api.linkedin.com/rest/posts", {
     method: "POST",
     headers: {
@@ -45,18 +94,7 @@ export async function POST(request: NextRequest) {
       "LinkedIn-Version": "202401",
       "X-Restli-Protocol-Version": "2.0.0",
     },
-    body: JSON.stringify({
-      author: `urn:li:person:${account.platform_user_id}`,
-      commentary: text,
-      visibility: "PUBLIC",
-      distribution: {
-        feedDistribution: "MAIN_FEED",
-        targetEntities: [],
-        thirdPartyDistributionChannels: [],
-      },
-      lifecycleState: "PUBLISHED",
-      isReshareDisableForOperator: false,
-    }),
+    body: JSON.stringify(postBody),
   });
 
   if (!postRes.ok) {
@@ -79,6 +117,14 @@ export async function POST(request: NextRequest) {
       external_id: postId,
     }).eq("id", assetId);
   }
+
+  dispatchWebhooks(user.id, projectId ?? null, {
+    event: "post.published",
+    title: "Post published to LinkedIn",
+    content: text,
+    contentType: "social_post",
+    metadata: { platform: "linkedin", postId },
+  }).catch(() => {});
 
   return NextResponse.json({ success: true, postId });
 }

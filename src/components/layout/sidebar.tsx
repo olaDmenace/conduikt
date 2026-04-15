@@ -42,7 +42,7 @@ import { cn } from "@/src/lib/utils/cn";
 import { useUIStore } from "@/src/stores/ui-store";
 import { createClient } from "@/src/lib/supabase/client";
 import { useToast } from "@/src/components/ui/toast";
-import { AGENT_REGISTRY } from "@/src/lib/ai/agents/registry";
+import { AGENT_REGISTRY, type AgentDefinition } from "@/src/lib/ai/agents/registry";
 import {
   getGenerationLimit,
   isPlanAtLeast,
@@ -51,6 +51,7 @@ import {
   tierLabel,
   type PlanTier,
 } from "@/src/lib/plans";
+import { LockedAgentModal } from "@/src/components/agents/locked-agent-modal";
 
 // Map Lucide icon names to components
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -107,6 +108,7 @@ export function Sidebar() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [agentsMenuOpen, setAgentsMenuOpen] = useState(false);
+  const [lockedPreview, setLockedPreview] = useState<AgentDefinition | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -323,23 +325,19 @@ export function Sidebar() {
                         const unlocked = isPlanAtLeast(plan, agent.tier as PlanTier);
                         const comingSoon = agent.status === "coming_soon";
                         const locked = !unlocked || comingSoon;
-                        const lockHref = comingSoon ? "#" : "/settings/billing";
 
                         if (locked) {
                           return (
-                            <Link
+                            <button
                               key={agent.id}
-                              href={lockHref}
-                              onClick={(e) => {
-                                if (comingSoon) e.preventDefault();
-                                handleNavClick();
-                              }}
+                              type="button"
+                              onClick={() => setLockedPreview(agent)}
                               title={
                                 comingSoon
                                   ? `${agent.name} — coming soon`
                                   : `${agent.name} — upgrade to ${tierLabel(agent.tier as PlanTier)}`
                               }
-                              className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[0.8125rem] font-medium text-text-tertiary/60 hover:bg-surface-2 hover:text-text-tertiary transition-colors"
+                              className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-[0.8125rem] font-medium text-text-tertiary/60 hover:bg-surface-2 hover:text-text-tertiary transition-colors text-left"
                             >
                               <IconComp className="h-3.5 w-3.5 shrink-0" />
                               <span className="truncate flex-1">{agent.shortName}</span>
@@ -347,7 +345,7 @@ export function Sidebar() {
                                 <Lock className="h-2.5 w-2.5" />
                                 {comingSoon ? "Soon" : tierLabel(agent.tier as PlanTier)}
                               </span>
-                            </Link>
+                            </button>
                           );
                         }
 
@@ -432,19 +430,16 @@ export function Sidebar() {
 
                     if (locked) {
                       return (
-                        <Link
+                        <button
                           key={agent.id}
-                          href={comingSoon ? "#" : "/settings/billing"}
-                          onClick={(e) => {
-                            if (comingSoon) e.preventDefault();
-                            handleNavClick();
-                          }}
+                          type="button"
+                          onClick={() => setLockedPreview(agent)}
                           title={
                             comingSoon
                               ? `${agent.name} — coming soon`
                               : `${agent.name} — upgrade to ${tierLabel(agent.tier as PlanTier)}`
                           }
-                          className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[0.8125rem] font-medium text-text-tertiary/60 hover:bg-surface-2 hover:text-text-tertiary transition-colors"
+                          className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-[0.8125rem] font-medium text-text-tertiary/60 hover:bg-surface-2 hover:text-text-tertiary transition-colors text-left"
                         >
                           <IconComp className="h-3.5 w-3.5 shrink-0" />
                           <span className="truncate flex-1">{agent.shortName}</span>
@@ -452,7 +447,7 @@ export function Sidebar() {
                             <Lock className="h-2.5 w-2.5" />
                             {comingSoon ? "Soon" : tierLabel(agent.tier as PlanTier)}
                           </span>
-                        </Link>
+                        </button>
                       );
                     }
 
@@ -588,6 +583,34 @@ export function Sidebar() {
             {showLabel && <span>Sign out</span>}
           </button>
 
+          {showLabel && (
+            <div className="flex items-center justify-center gap-2 px-1 text-[0.6875rem] text-text-tertiary">
+              <Link
+                href="/privacy"
+                onClick={handleNavClick}
+                className="hover:text-text-secondary transition-colors"
+              >
+                Privacy
+              </Link>
+              <span aria-hidden className="text-text-tertiary/40">·</span>
+              <Link
+                href="/terms"
+                onClick={handleNavClick}
+                className="hover:text-text-secondary transition-colors"
+              >
+                Terms
+              </Link>
+              <span aria-hidden className="text-text-tertiary/40">·</span>
+              <Link
+                href="/data-deletion"
+                onClick={handleNavClick}
+                className="hover:text-text-secondary transition-colors"
+              >
+                Data
+              </Link>
+            </div>
+          )}
+
           {/* Desktop collapse toggle */}
           <button
             onClick={toggleSidebar}
@@ -601,6 +624,13 @@ export function Sidebar() {
           </button>
         </div>
       </aside>
+
+      <LockedAgentModal
+        agent={lockedPreview}
+        onOpenChange={(open) => {
+          if (!open) setLockedPreview(null);
+        }}
+      />
     </>
   );
 }

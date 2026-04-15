@@ -111,9 +111,17 @@ export default function MarketingLayout({
               <Facebook className="h-4 w-4" />
             </a>
           </div>
-          <p className="text-small text-text-tertiary">
-            Built with Claude Code
-          </p>
+          <div className="flex items-center gap-4 text-small text-text-tertiary">
+            <Link href="/privacy" className="hover:text-text-secondary transition-colors">
+              Privacy
+            </Link>
+            <Link href="/terms" className="hover:text-text-secondary transition-colors">
+              Terms
+            </Link>
+            <Link href="/data-deletion" className="hover:text-text-secondary transition-colors">
+              Data Deletion
+            </Link>
+          </div>
         </div>
       </footer>
     </div>

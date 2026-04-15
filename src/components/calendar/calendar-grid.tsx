@@ -31,7 +31,13 @@ export interface ScheduledPost {
   status: string;
   error_message?: string | null;
   created_at?: string;
-  assets?: { id: string; title: string | null; type: string; content?: string | null } | null;
+  assets?: {
+    id: string;
+    title: string | null;
+    type: string;
+    // Supabase returns the content JSON blob as-is
+    content?: Record<string, unknown> | string | null;
+  } | null;
 }
 
 interface CalendarGridProps {
@@ -82,7 +88,7 @@ function DraggablePostCard({
 
   const preview =
     post.assets?.title ||
-    post.assets?.content?.slice(0, 60) ||
+    contentPreview(post.assets?.content) ||
     "Untitled post";
 
   return (
@@ -119,11 +125,23 @@ function DraggablePostCard({
   );
 }
 
+function contentPreview(
+  content: Record<string, unknown> | string | null | undefined
+): string {
+  if (!content) return "";
+  if (typeof content === "string") return content.slice(0, 60);
+  const text =
+    (content.scheduled_text as string | undefined) ??
+    (content.raw as string | undefined) ??
+    "";
+  return text.slice(0, 60);
+}
+
 /* ---- Overlay card shown while dragging ---- */
 function DragOverlayCard({ post }: { post: ScheduledPost }) {
   const preview =
     post.assets?.title ||
-    post.assets?.content?.slice(0, 60) ||
+    contentPreview(post.assets?.content) ||
     "Untitled post";
 
   return (

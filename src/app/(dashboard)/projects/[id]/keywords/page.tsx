@@ -17,6 +17,8 @@ import {
   Save,
   X,
   PenLine,
+  Lock,
+  ArrowUpRight,
 } from "lucide-react";
 import {
   Card,
@@ -31,6 +33,7 @@ import { PageHeader } from "@/src/components/layout/page-header";
 import { ExpectationBanner } from "@/src/components/ui/expectation-banner";
 
 import { useToast } from "@/src/components/ui/toast";
+import { useUsageLimitModal } from "@/src/components/usage/limit-modal";
 
 // ---------- types ----------
 
@@ -118,6 +121,7 @@ export default function KeywordsPage({
 }) {
   const { id: projectId } = use(params);
   const { toast } = useToast();
+  const { showLimitModal } = useUsageLimitModal();
 
   // Seed input state
   const [seedInput, setSeedInput] = useState("");
@@ -137,6 +141,10 @@ export default function KeywordsPage({
   // Saved state
   const [saved, setSaved] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState<string | null>(null);
+
+  // Plan (filled from stream `done` event)
+  const [plan, setPlan] = useState<"free" | "pro" | "growth" | "agency">("free");
+  const FREE_PRIMARY_LIMIT = 5;
 
   // Fetch autocomplete suggestions with debounce
   useEffect(() => {
@@ -199,7 +207,11 @@ export default function KeywordsPage({
 
       if (!res.ok) {
         const err = await res.json();
-        toast(err.error || "Generation failed", "error");
+        if (res.status === 429) {
+          showLimitModal(plan);
+        } else {
+          toast(err.error || "Generation failed", "error");
+        }
         setGenerating(false);
         return;
       }
@@ -229,6 +241,8 @@ export default function KeywordsPage({
           if (data.type === "text") {
             fullText += data.text;
             setRawText(fullText);
+          } else if (data.type === "done" && data.plan) {
+            setPlan(data.plan);
           }
         }
       }
@@ -430,61 +444,93 @@ export default function KeywordsPage({
             {/* Primary keywords */}
             {activeTab === "primary" && (
               <div className="space-y-2">
-                {result.primary_keywords.map((kw, i) => (
-                  <div
-                    key={i}
-                    className="rounded-lg border border-border-default bg-surface-1 p-4 animate-in"
-                    style={{ animationDelay: `${i * 40}ms` }}
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                          <span className="text-body font-medium text-text-primary">{kw.term}</span>
-                          {kw.quick_win && (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-success/10 border border-success/20 px-1.5 py-0.5 text-caption text-success">
-                              <Zap className="h-3 w-3" /> Quick win
-                            </span>
-                          )}
+                {result.primary_keywords.map((kw, i) => {
+                  const gated = plan === "free" && i >= FREE_PRIMARY_LIMIT;
+                  return (
+                    <div
+                      key={i}
+                      className="rounded-lg border border-border-default bg-surface-1 p-4 animate-in"
+                      style={{ animationDelay: `${i * 40}ms` }}
+                    >
+                      {gated ? (
+                        <div className="relative">
+                          <div aria-hidden className="select-none pointer-events-none blur-sm space-y-1.5">
+                            <span className="text-body font-medium text-text-primary">Lorem ipsum keyword opportunity</span>
+                            <div className="flex items-center gap-3">
+                              <span className="rounded-md border px-1.5 py-0.5 text-caption text-text-tertiary">Info</span>
+                              <span className="text-caption text-text-tertiary">medium</span>
+                              <span className="text-caption text-text-tertiary">1,200/mo</span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <IntentBadge intent={kw.intent} />
-                          <DifficultyBadge level={kw.difficulty} />
-                          <span className="text-caption text-text-tertiary">{kw.estimated_volume}/mo</span>
-                          <span className="text-caption text-text-tertiary">→ {kw.suggested_format.replace(/_/g, " ")}</span>
+                      ) : (
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                              <span className="text-body font-medium text-text-primary">{kw.term}</span>
+                              {kw.quick_win && (
+                                <span className="inline-flex items-center gap-1 rounded-md bg-success/10 border border-success/20 px-1.5 py-0.5 text-caption text-success">
+                                  <Zap className="h-3 w-3" /> Quick win
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-3 flex-wrap">
+                              <IntentBadge intent={kw.intent} />
+                              <DifficultyBadge level={kw.difficulty} />
+                              <span className="text-caption text-text-tertiary">{kw.estimated_volume}/mo</span>
+                              <span className="text-caption text-text-tertiary">→ {kw.suggested_format.replace(/_/g, " ")}</span>
+                            </div>
+                            <p className="mt-2 text-small text-text-secondary">{kw.rationale}</p>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Link
+                              href={`/projects/${projectId}/blog?keyword=${encodeURIComponent(kw.term)}`}
+                              className="flex items-center gap-1 rounded-md border border-border-default bg-surface-0 px-2 py-1 text-caption text-text-secondary hover:border-accent/40 hover:text-accent transition-colors whitespace-nowrap"
+                              title="Write blog post targeting this keyword"
+                            >
+                              <PenLine className="h-3 w-3" />
+                              Blog
+                            </Link>
+                            <button
+                              onClick={() => copy(kw.term, `kw-${i}`)}
+                              className="p-1.5 rounded-md text-text-tertiary hover:text-text-primary hover:bg-surface-2 transition-colors"
+                              title="Copy keyword"
+                            >
+                              {copied === `kw-${i}` ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
+                            </button>
+                            <button
+                              onClick={() => toggleSave(kw.term)}
+                              className={`p-1.5 rounded-md transition-colors ${
+                                saved.has(kw.term)
+                                  ? "text-accent bg-accent-muted"
+                                  : "text-text-tertiary hover:text-accent hover:bg-accent-muted"
+                              }`}
+                              title={saved.has(kw.term) ? "Remove from saved" : "Save keyword"}
+                            >
+                              {saved.has(kw.term) ? <Check className="h-3.5 w-3.5" /> : <Save className="h-3.5 w-3.5" />}
+                            </button>
+                          </div>
                         </div>
-                        <p className="mt-2 text-small text-text-secondary">{kw.rationale}</p>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <Link
-                          href={`/projects/${projectId}/blog?keyword=${encodeURIComponent(kw.term)}`}
-                          className="flex items-center gap-1 rounded-md border border-border-default bg-surface-0 px-2 py-1 text-caption text-text-secondary hover:border-accent/40 hover:text-accent transition-colors whitespace-nowrap"
-                          title="Write blog post targeting this keyword"
-                        >
-                          <PenLine className="h-3 w-3" />
-                          Blog
-                        </Link>
-                        <button
-                          onClick={() => copy(kw.term, `kw-${i}`)}
-                          className="p-1.5 rounded-md text-text-tertiary hover:text-text-primary hover:bg-surface-2 transition-colors"
-                          title="Copy keyword"
-                        >
-                          {copied === `kw-${i}` ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
-                        </button>
-                        <button
-                          onClick={() => toggleSave(kw.term)}
-                          className={`p-1.5 rounded-md transition-colors ${
-                            saved.has(kw.term)
-                              ? "text-accent bg-accent-muted"
-                              : "text-text-tertiary hover:text-accent hover:bg-accent-muted"
-                          }`}
-                          title={saved.has(kw.term) ? "Remove from saved" : "Save keyword"}
-                        >
-                          {saved.has(kw.term) ? <Check className="h-3.5 w-3.5" /> : <Save className="h-3.5 w-3.5" />}
-                        </button>
-                      </div>
+                      )}
                     </div>
+                  );
+                })}
+                {plan === "free" && result.primary_keywords.length > FREE_PRIMARY_LIMIT && (
+                  <div className="rounded-lg border border-dashed border-accent/40 bg-accent-muted/20 p-5 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <Lock className="h-5 w-5 text-accent shrink-0" />
+                      <p className="text-small text-text-secondary">
+                        <strong>{result.primary_keywords.length - FREE_PRIMARY_LIMIT}</strong> more keywords hidden. Upgrade to Pro to see all results.
+                      </p>
+                    </div>
+                    <Button size="sm" asChild>
+                      <Link href="/settings/billing">
+                        Upgrade
+                        <ArrowUpRight className="h-3.5 w-3.5" />
+                      </Link>
+                    </Button>
                   </div>
-                ))}
+                )}
               </div>
             )}
 

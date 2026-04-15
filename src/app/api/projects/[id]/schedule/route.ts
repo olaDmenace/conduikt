@@ -31,11 +31,12 @@ export async function POST(
   }
 
   const body = await request.json();
-  const { assetId, channel, scheduledFor, postText } = body as {
+  const { assetId, channel, scheduledFor, postText, media } = body as {
     assetId: string;
     channel: "x" | "linkedin";
     scheduledFor: string;
     postText: string;
+    media?: unknown;
   };
 
   if (!assetId || !channel || !scheduledFor || !postText) {
@@ -53,7 +54,7 @@ export async function POST(
     );
   }
 
-  // Merge scheduled_text into the asset's content blob so the cron job can retrieve it
+  // Merge scheduled_text (and media, if provided) into the asset's content blob
   const { data: asset } = await supabase
     .from("assets")
     .select("content")
@@ -61,11 +62,15 @@ export async function POST(
     .single();
 
   if (asset) {
+    const prevContent = (asset.content as Record<string, unknown>) ?? {};
+    const nextContent: Record<string, unknown> = {
+      ...prevContent,
+      scheduled_text: postText,
+    };
+    if (media !== undefined) nextContent.media = media;
     await supabase
       .from("assets")
-      .update({
-        content: { ...(asset.content as object), scheduled_text: postText },
-      })
+      .update({ content: nextContent })
       .eq("id", assetId);
   }
 

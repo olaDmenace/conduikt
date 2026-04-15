@@ -19,6 +19,8 @@ import {
   TrendingUp,
   Download,
   ExternalLink,
+  Lock,
+  ArrowUpRight,
 } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
@@ -27,6 +29,7 @@ import { Input } from "@/src/components/ui/input";
 import { PageHeader } from "@/src/components/layout/page-header";
 
 import { useToast } from "@/src/components/ui/toast";
+import { createClient } from "@/src/lib/supabase/client";
 import { PdfDownloadButton } from "@/src/components/ui/pdf-download-button";
 import {
   Dialog,
@@ -159,6 +162,7 @@ export default function LibraryPage({
   const [navigating, startNavigation] = useTransition();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
+  const [plan, setPlan] = useState<string>("free");
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
@@ -170,6 +174,14 @@ export default function LibraryPage({
 
   useEffect(() => {
     fetchAssets();
+    async function fetchPlan() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase.from("profiles").select("plan").eq("id", user.id).single();
+      if (data?.plan) setPlan(data.plan);
+    }
+    fetchPlan();
   }, [projectId]);
 
   async function fetchAssets() {
@@ -236,6 +248,26 @@ export default function LibraryPage({
         description="Browse and manage all your generated assets"
       />
 
+
+      {plan === "free" && !loading && (
+        <Card className="mb-6 border-dashed border-accent/40 bg-accent-muted/20">
+          <CardContent className="flex items-center justify-between gap-4 py-4">
+            <div className="flex items-center gap-3">
+              <Lock className="h-5 w-5 text-accent shrink-0" />
+              <p className="text-small text-text-secondary">
+                The Content Library is a <span className="font-semibold text-text-primary">Pro</span> feature.
+                Upgrade to save, organise, and re-use your generated assets.
+              </p>
+            </div>
+            <Button size="sm" asChild>
+              <Link href="/settings/billing">
+                Upgrade
+                <ArrowUpRight className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {loading ? (
         <div className="flex justify-center py-20">
