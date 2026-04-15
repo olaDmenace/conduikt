@@ -64,7 +64,7 @@ export async function GET(
       .from("connected_accounts")
       .select("id, platform_username")
       .eq("user_id", user.id)
-      .eq("platform", "google_search_console")
+      .eq("platform", "gsc")
       .maybeSingle(),
     supabase
       .from("post_metrics")

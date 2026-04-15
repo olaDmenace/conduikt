@@ -35,12 +35,23 @@ import {
   CreditCard,
   Link2,
   Play,
+  Lock,
+  FileBarChart,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils/cn";
 import { useUIStore } from "@/src/stores/ui-store";
 import { createClient } from "@/src/lib/supabase/client";
 import { useToast } from "@/src/components/ui/toast";
-import { AGENT_REGISTRY } from "@/src/lib/ai/agents/registry";
+import { AGENT_REGISTRY, type AgentDefinition } from "@/src/lib/ai/agents/registry";
+import {
+  getGenerationLimit,
+  isPlanAtLeast,
+  isUnlimited,
+  normalizePlan,
+  tierLabel,
+  type PlanTier,
+} from "@/src/lib/plans";
+import { LockedAgentModal } from "@/src/components/agents/locked-agent-modal";
 
 // Map Lucide icon names to components
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -59,13 +70,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   GitBranch,
   BarChart3,
   Video,
-};
-
-const PLAN_LIMITS: Record<string, number> = {
-  free: 5,
-  pro: 100,
-  growth: 999999,
-  agency: 999999,
+  FileBarChart,
 };
 
 interface Project {
@@ -79,8 +84,10 @@ interface Profile {
   generation_count: number;
 }
 
-// Active agents (non-coming-soon) to show in sidebar
-const SIDEBAR_AGENTS = AGENT_REGISTRY.filter((a) => a.status === "active");
+// Show ALL agents in the sidebar (including agency-exclusive coming_soon
+// Client Reports). Locked agents render dimmed with a tier badge — every
+// login is a reminder of what the user could unlock.
+const SIDEBAR_AGENTS = AGENT_REGISTRY;
 
 // Icon for the global Agents menu
 const AgentsMenuIcon = Sparkles;
@@ -101,6 +108,7 @@ export function Sidebar() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [agentsMenuOpen, setAgentsMenuOpen] = useState(false);
+  const [lockedPreview, setLockedPreview] = useState<AgentDefinition | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -156,10 +164,11 @@ export function Sidebar() {
   }
 
   const showLabel = !sidebarCollapsed || mobileMenuOpen;
-  const plan = profile?.plan ?? "free";
+  const plan: PlanTier = normalizePlan(profile?.plan);
   const usageCount = profile?.generation_count ?? 0;
-  const usageLimit = PLAN_LIMITS[plan] ?? 5;
-  const usagePct = usageLimit >= 999999 ? 0 : Math.min((usageCount / usageLimit) * 100, 100);
+  const usageLimit = getGenerationLimit(plan);
+  const usageUnlimited = isUnlimited(usageLimit);
+  const usagePct = usageUnlimited ? 0 : Math.min((usageCount / usageLimit) * 100, 100);
 
   return (
     <>
@@ -310,10 +319,35 @@ export function Sidebar() {
                       {SIDEBAR_AGENTS.map((agent) => {
                         const path = agent.projectPath ?? agent.route;
                         const href = `${projectBase}/${path}`;
-                        // Strip query string for active-state matching
                         const hrefPath = href.split("?")[0];
                         const isActive = pathname === hrefPath || pathname.startsWith(hrefPath + "/");
                         const IconComp = ICON_MAP[agent.icon] ?? FileText;
+                        const unlocked = isPlanAtLeast(plan, agent.tier as PlanTier);
+                        const comingSoon = agent.status === "coming_soon";
+                        const locked = !unlocked || comingSoon;
+
+                        if (locked) {
+                          return (
+                            <button
+                              key={agent.id}
+                              type="button"
+                              onClick={() => setLockedPreview(agent)}
+                              title={
+                                comingSoon
+                                  ? `${agent.name} — coming soon`
+                                  : `${agent.name} — upgrade to ${tierLabel(agent.tier as PlanTier)}`
+                              }
+                              className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-[0.8125rem] font-medium text-text-tertiary/60 hover:bg-surface-2 hover:text-text-tertiary transition-colors text-left"
+                            >
+                              <IconComp className="h-3.5 w-3.5 shrink-0" />
+                              <span className="truncate flex-1">{agent.shortName}</span>
+                              <span className="inline-flex items-center gap-0.5 rounded bg-surface-2 px-1 py-0.5 text-[0.55rem] font-semibold uppercase tracking-wide text-accent">
+                                <Lock className="h-2.5 w-2.5" />
+                                {comingSoon ? "Soon" : tierLabel(agent.tier as PlanTier)}
+                              </span>
+                            </button>
+                          );
+                        }
 
                         return (
                           <Link
@@ -390,6 +424,33 @@ export function Sidebar() {
                     const href = `/agents/${agent.route}`;
                     const isActive = pathname.startsWith(`/agents/${agent.route}`);
                     const IconComp = ICON_MAP[agent.icon] ?? FileText;
+                    const unlocked = isPlanAtLeast(plan, agent.tier as PlanTier);
+                    const comingSoon = agent.status === "coming_soon";
+                    const locked = !unlocked || comingSoon;
+
+                    if (locked) {
+                      return (
+                        <button
+                          key={agent.id}
+                          type="button"
+                          onClick={() => setLockedPreview(agent)}
+                          title={
+                            comingSoon
+                              ? `${agent.name} — coming soon`
+                              : `${agent.name} — upgrade to ${tierLabel(agent.tier as PlanTier)}`
+                          }
+                          className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-[0.8125rem] font-medium text-text-tertiary/60 hover:bg-surface-2 hover:text-text-tertiary transition-colors text-left"
+                        >
+                          <IconComp className="h-3.5 w-3.5 shrink-0" />
+                          <span className="truncate flex-1">{agent.shortName}</span>
+                          <span className="inline-flex items-center gap-0.5 rounded bg-surface-2 px-1 py-0.5 text-[0.55rem] font-semibold uppercase tracking-wide text-accent">
+                            <Lock className="h-2.5 w-2.5" />
+                            {comingSoon ? "Soon" : tierLabel(agent.tier as PlanTier)}
+                          </span>
+                        </button>
+                      );
+                    }
+
                     return (
                       <Link
                         key={agent.id}
@@ -475,24 +536,31 @@ export function Sidebar() {
                 <span className="text-caption font-medium text-text-secondary capitalize">
                   {plan} Plan
                 </span>
-                {usageLimit < 999999 && (
+                {!usageUnlimited && (
                   <span className="text-caption text-text-tertiary font-mono">
                     {usageCount}/{usageLimit}
                   </span>
                 )}
               </div>
-              {usageLimit < 999999 && (
+              {!usageUnlimited && (
                 <div className="h-1 rounded-full bg-surface-3 overflow-hidden">
                   <div
                     className={cn(
                       "h-full rounded-full transition-all duration-500",
-                      usagePct >= 90 ? "bg-error" : usagePct >= 70 ? "bg-warning" : "bg-accent"
+                      usagePct >= 80 ? "bg-error" : usagePct >= 60 ? "bg-warning" : "bg-success"
                     )}
                     style={{ width: `${usagePct}%` }}
                   />
                 </div>
               )}
-              {plan === "free" && (
+              {!usageUnlimited && usagePct >= 80 && (
+                <p className="mt-2 text-[0.625rem] text-warning leading-tight">
+                  {usagePct >= 100
+                    ? "Out of generations this month."
+                    : "You're running low on generations."}
+                </p>
+              )}
+              {plan !== "agency" && (
                 <Link
                   href="/settings/billing"
                   className="mt-2 block text-center text-caption text-accent hover:text-accent-hover transition-colors"
@@ -515,6 +583,34 @@ export function Sidebar() {
             {showLabel && <span>Sign out</span>}
           </button>
 
+          {showLabel && (
+            <div className="flex items-center justify-center gap-2 px-1 text-[0.6875rem] text-text-tertiary">
+              <Link
+                href="/privacy"
+                onClick={handleNavClick}
+                className="hover:text-text-secondary transition-colors"
+              >
+                Privacy
+              </Link>
+              <span aria-hidden className="text-text-tertiary/40">·</span>
+              <Link
+                href="/terms"
+                onClick={handleNavClick}
+                className="hover:text-text-secondary transition-colors"
+              >
+                Terms
+              </Link>
+              <span aria-hidden className="text-text-tertiary/40">·</span>
+              <Link
+                href="/data-deletion"
+                onClick={handleNavClick}
+                className="hover:text-text-secondary transition-colors"
+              >
+                Data
+              </Link>
+            </div>
+          )}
+
           {/* Desktop collapse toggle */}
           <button
             onClick={toggleSidebar}
@@ -528,6 +624,13 @@ export function Sidebar() {
           </button>
         </div>
       </aside>
+
+      <LockedAgentModal
+        agent={lockedPreview}
+        onOpenChange={(open) => {
+          if (!open) setLockedPreview(null);
+        }}
+      />
     </>
   );
 }

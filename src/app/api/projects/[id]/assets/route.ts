@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
+import { normalizePlan } from "@/src/lib/plans";
+import { dispatchWebhooks } from "@/src/lib/integrations/webhook-dispatch";
 
 export async function GET(
   _request: NextRequest,
@@ -40,6 +42,20 @@ export async function POST(
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Block free-tier users from saving assets
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("plan")
+    .eq("id", user.id)
+    .single();
+
+  if (normalizePlan(profile?.plan) === "free") {
+    return NextResponse.json(
+      { error: "Saving assets requires a Pro plan or higher.", code: "PLAN_GATED" },
+      { status: 403 }
+    );
   }
 
   const body = await request.json();
@@ -92,6 +108,14 @@ export async function POST(
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  dispatchWebhooks(user.id, id, {
+    event: "content.saved",
+    title: title || `${type} asset saved`,
+    content: typeof content === "string" ? content : JSON.stringify(content).slice(0, 2000),
+    contentType: type,
+    metadata: { assetId: asset.id, channel },
+  }).catch(() => {});
 
   return NextResponse.json(asset, { status: 201 });
 }

@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/src/lib/supabase/service";
+import { ensureValidXToken } from "@/src/lib/integrations/x-token";
+import {
+  uploadMediaToX,
+  uploadMediaToLinkedIn,
+} from "@/src/lib/integrations/media-upload";
+import { hasMedia, type PostMedia } from "@/src/lib/media/types";
 
 // This route is called every 5 minutes by Supabase pg_cron + pg_net.
 // It picks up pending scheduled_posts whose scheduled_for time has passed
@@ -12,11 +18,38 @@ function getServiceClient() {
 }
 
 export async function GET(request: NextRequest) {
-  // Auth — only Vercel cron (or internal calls with the secret) may trigger this
-  const authHeader = request.headers.get("authorization");
+  // Auth — only Supabase pg_cron (or internal calls with the secret) may
+  // trigger this. Fail closed: in production the secret must exist AND
+  // must match the caller's credential, otherwise we refuse.
+  //
+  // Supabase pg_cron can pass the credential two ways depending on how
+  // the SQL job was written:
+  //   1) Authorization header:  net.http_get(url, headers := '{"Authorization":"Bearer xxx"}')
+  //   2) Query string:          net.http_get(url || '?secret=xxx')
+  // We accept either so operators aren't locked into one form.
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!cronSecret) {
+    if (process.env.NODE_ENV === "production") {
+      console.error(
+        "[cron/publish] CRON_SECRET is not set — refusing to run. Add it in Vercel env vars."
+      );
+      return NextResponse.json(
+        { error: "Cron secret not configured" },
+        { status: 500 }
+      );
+    }
+    // Local dev: allow unauthenticated calls but log a warning.
+    console.warn(
+      "[cron/publish] CRON_SECRET is not set — allowing unauthenticated call (dev only)"
+    );
+  } else {
+    const authHeader = request.headers.get("authorization");
+    const queryParamSecret = new URL(request.url).searchParams.get("secret");
+    const headerMatches = authHeader === `Bearer ${cronSecret}`;
+    const queryMatches = queryParamSecret === cronSecret;
+    if (!headerMatches && !queryMatches) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
   }
 
   const supabase = getServiceClient();
@@ -36,9 +69,14 @@ export async function GET(request: NextRequest) {
         title
       ),
       connected_accounts!inner (
+        id,
+        user_id,
         access_token,
         refresh_token,
-        platform
+        token_expires_at,
+        platform,
+        platform_user_id,
+        platform_username
       )
     `)
     .eq("status", "pending")
@@ -63,6 +101,7 @@ export async function GET(request: NextRequest) {
       : post.connected_accounts;
 
     const text: string = asset?.content?.scheduled_text ?? asset?.content?.raw ?? "";
+    const media: PostMedia | undefined = asset?.content?.media;
 
     if (!text || !account?.access_token) {
       await supabase
@@ -76,13 +115,35 @@ export async function GET(request: NextRequest) {
       continue;
     }
 
+    // Refresh X tokens before publishing
+    let token = account.access_token;
+    if (post.channel === "x") {
+      const freshToken = await ensureValidXToken(account as Parameters<typeof ensureValidXToken>[0]);
+      if (!freshToken) {
+        await supabase
+          .from("scheduled_posts")
+          .update({ status: "failed", error_message: "X token expired — user must reconnect" })
+          .eq("id", post.id);
+        results.push({ id: post.id, status: "failed", error: "X token expired" });
+        continue;
+      }
+      token = freshToken;
+    }
+
     try {
       let publishResult: { ok: boolean; error?: string };
 
       if (post.channel === "x") {
-        publishResult = await publishToX(text, account.access_token, post.asset_id);
+        publishResult = await publishToX(text, token, media);
       } else if (post.channel === "linkedin") {
-        publishResult = await publishToLinkedIn(text, account.access_token, post.asset_id);
+        publishResult = await publishToLinkedIn(text, token, media);
+      } else if (post.channel === "facebook") {
+        publishResult = await publishToFacebook(
+          text,
+          account.platform_user_id ?? "",
+          token,
+          media
+        );
       } else {
         publishResult = { ok: false, error: "Unknown channel" };
       }
@@ -133,20 +194,35 @@ export async function GET(request: NextRequest) {
 async function publishToX(
   text: string,
   accessToken: string,
-  assetId: string | null
+  media?: PostMedia
 ): Promise<{ ok: boolean; error?: string }> {
+  let mediaId: string | null = null;
+  if (hasMedia(media)) {
+    try {
+      mediaId = await uploadMediaToX(accessToken, media);
+    } catch (err) {
+      return { ok: false, error: `X media upload error: ${err instanceof Error ? err.message : "unknown"}` };
+    }
+    if (!mediaId) {
+      return { ok: false, error: "X media upload failed — scope may be missing" };
+    }
+  }
+
+  const body: Record<string, unknown> = { text };
+  if (mediaId) body.media = { media_ids: [mediaId] };
+
   const res = await fetch("https://api.twitter.com/2/tweets", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify(body),
   });
 
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    return { ok: false, error: body.detail ?? `X API error ${res.status}` };
+    const b = await res.json().catch(() => ({}));
+    return { ok: false, error: b.detail ?? `X API error ${res.status}` };
   }
   return { ok: true };
 }
@@ -154,7 +230,7 @@ async function publishToX(
 async function publishToLinkedIn(
   text: string,
   accessToken: string,
-  assetId: string | null
+  media?: PostMedia
 ): Promise<{ ok: boolean; error?: string }> {
   // Get author URN — requires a /me call first
   const meRes = await fetch("https://api.linkedin.com/v2/userinfo", {
@@ -166,7 +242,33 @@ async function publishToLinkedIn(
   }
 
   const me = await meRes.json();
-  const authorUrn = `urn:li:person:${me.sub}`;
+  const authorId: string = me.sub;
+  const authorUrn = `urn:li:person:${authorId}`;
+
+  let imageUrn: string | null = null;
+  if (hasMedia(media)) {
+    try {
+      imageUrn = await uploadMediaToLinkedIn(accessToken, authorId, media);
+    } catch (err) {
+      return { ok: false, error: `LinkedIn media upload error: ${err instanceof Error ? err.message : "unknown"}` };
+    }
+    if (!imageUrn) {
+      return { ok: false, error: "LinkedIn media upload failed" };
+    }
+  }
+
+  const specificContent: Record<string, unknown> = {
+    shareCommentary: { text },
+    shareMediaCategory: imageUrn ? "IMAGE" : "NONE",
+  };
+  if (imageUrn) {
+    specificContent.media = [
+      {
+        status: "READY",
+        media: imageUrn,
+      },
+    ];
+  }
 
   const postRes = await fetch("https://api.linkedin.com/v2/ugcPosts", {
     method: "POST",
@@ -179,10 +281,7 @@ async function publishToLinkedIn(
       author: authorUrn,
       lifecycleState: "PUBLISHED",
       specificContent: {
-        "com.linkedin.ugc.ShareContent": {
-          shareCommentary: { text },
-          shareMediaCategory: "NONE",
-        },
+        "com.linkedin.ugc.ShareContent": specificContent,
       },
       visibility: { "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC" },
     }),
@@ -191,6 +290,42 @@ async function publishToLinkedIn(
   if (!postRes.ok) {
     const body = await postRes.json().catch(() => ({}));
     return { ok: false, error: body.message ?? `LinkedIn API error ${postRes.status}` };
+  }
+  return { ok: true };
+}
+
+async function publishToFacebook(
+  text: string,
+  pageId: string,
+  pageAccessToken: string,
+  media?: PostMedia
+): Promise<{ ok: boolean; error?: string }> {
+  if (!pageId) {
+    return { ok: false, error: "Facebook Page ID missing — reconnect the Page" };
+  }
+
+  const endpoint =
+    hasMedia(media) && media.url
+      ? `https://graph.facebook.com/v21.0/${pageId}/photos`
+      : `https://graph.facebook.com/v21.0/${pageId}/feed`;
+
+  const body =
+    hasMedia(media) && media.url
+      ? { url: media.url, caption: text, access_token: pageAccessToken }
+      : { message: text, access_token: pageAccessToken };
+
+  const res = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const b = await res.json().catch(() => ({}));
+    return {
+      ok: false,
+      error: b?.error?.message ?? `Facebook API error ${res.status}`,
+    };
   }
   return { ok: true };
 }

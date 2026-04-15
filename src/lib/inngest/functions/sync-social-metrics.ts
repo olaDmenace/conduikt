@@ -1,5 +1,6 @@
 import { inngest } from "../client";
 import { createServiceClient } from "@/src/lib/supabase/service";
+import { ensureValidXToken } from "@/src/lib/integrations/x-token";
 
 /**
  * Scheduled Inngest function that syncs social engagement metrics
@@ -38,17 +39,22 @@ export const syncSocialMetrics = inngest.createFunction(
     const accounts = await step.run("fetch-connected-accounts", async () => {
       const { data } = await supabase
         .from("connected_accounts")
-        .select("user_id, platform, access_token")
+        .select("id, user_id, platform, access_token, refresh_token, token_expires_at, platform_username")
         .in("user_id", userIds)
         .in("platform", ["x", "linkedin"]);
 
       return data ?? [];
     });
 
-    // Build a lookup: userId+platform → access_token
+    // Refresh X tokens that are expiring and build lookup
     const tokenMap = new Map<string, string>();
     for (const acc of accounts) {
-      tokenMap.set(`${acc.user_id}:${acc.platform}`, acc.access_token);
+      if (acc.platform === "x") {
+        const freshToken = await ensureValidXToken(acc);
+        if (freshToken) tokenMap.set(`${acc.user_id}:${acc.platform}`, freshToken);
+      } else {
+        tokenMap.set(`${acc.user_id}:${acc.platform}`, acc.access_token);
+      }
     }
 
     // Step 3: Sync metrics for each post

@@ -26,7 +26,7 @@ export async function POST() {
     .from("connected_accounts")
     .select("*")
     .eq("user_id", user.id)
-    .eq("platform", "google_search_console")
+    .eq("platform", "gsc")
     .single();
 
   if (!account) {

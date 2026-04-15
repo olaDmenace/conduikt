@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
+import {
+  getProjectLimit,
+  isUnlimited,
+  normalizePlan,
+} from "@/src/lib/plans";
 
 export async function GET() {
   const supabase = await createClient();
@@ -77,6 +82,32 @@ export async function POST(request: NextRequest) {
       { error: "Project name is required" },
       { status: 400 }
     );
+  }
+
+  // Enforce project-count limit
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("plan")
+    .eq("id", user.id)
+    .single();
+
+  const plan = normalizePlan(profile?.plan);
+  const limit = getProjectLimit(plan);
+  if (!isUnlimited(limit)) {
+    const { count } = await supabase
+      .from("projects")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id);
+
+    if ((count ?? 0) >= limit) {
+      return NextResponse.json(
+        {
+          error: `Project limit reached (${limit}). Upgrade your plan to create more projects.`,
+          code: "PROJECT_LIMIT",
+        },
+        { status: 403 }
+      );
+    }
   }
 
   const { data: project, error } = await supabase

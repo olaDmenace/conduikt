@@ -118,7 +118,6 @@ export const videoPipeline = inngest.createFunction(
             resolvedVoiceId = process.env.HEYGEN_DEFAULT_VOICE_ID;
           }
 
-          console.log(`[video-pipeline] ${jobId}: resolved UGC avatar=${avatarId} gender=${resolved.gender} (mode=${avatarMode})`);
         }
 
         const { jobId: hgJobId } = await createHeyGenVideo({
@@ -135,7 +134,6 @@ export const videoPipeline = inngest.createFunction(
           provider_job_id: hgJobId,
         });
 
-        console.log(`[video-pipeline] ${jobId}: HeyGen submitted, hgJobId=${hgJobId}`);
         return hgJobId;
       });
 
@@ -150,7 +148,6 @@ export const videoPipeline = inngest.createFunction(
 
         const pollResult = await step.run(`poll-heygen-${i}`, async () => {
           const result = await pollHeyGenVideo(heygenJobId);
-          console.log(`[video-pipeline] ${jobId}: poll ${i + 1}/${MAX_POLLS} — status=${result.status}`);
 
           if (result.status !== "completed" && result.status !== "failed") {
             const elapsed = (i + 1) * 10;

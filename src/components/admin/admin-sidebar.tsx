@@ -12,6 +12,8 @@ import {
   ArrowLeft,
   Shield,
   DollarSign,
+  Share2,
+  Wallet,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils/cn";
 
@@ -22,6 +24,8 @@ const NAV_ITEMS = [
   { href: "/admin/generations", icon: Zap, label: "Generations" },
   { href: "/admin/usage", icon: DollarSign, label: "Usage & Costs" },
   { href: "/admin/subscriptions", icon: CreditCard, label: "Subscriptions" },
+  { href: "/admin/finance", icon: Wallet, label: "Finance" },
+  { href: "/admin/referrals", icon: Share2, label: "Referrals" },
   { href: "/admin/settings", icon: Settings, label: "Settings" },
 ];
 

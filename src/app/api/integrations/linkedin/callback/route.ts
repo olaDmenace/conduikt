@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
       : null,
     platform_user_id: profile?.sub ?? null,
     platform_username: profile?.name ?? profile?.email ?? null,
-    scope: "w_member_social r_liteprofile",
+    scope: "openid profile email w_member_social",
     updated_at: new Date().toISOString(),
   }, { onConflict: "user_id,platform" });
 

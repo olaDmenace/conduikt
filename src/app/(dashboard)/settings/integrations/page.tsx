@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Twitter, Linkedin, CheckCircle2, AlertCircle, Loader2, Link2, Unlink, Search } from "lucide-react";
+import { Twitter, Linkedin, Facebook, CheckCircle2, AlertCircle, Loader2, Link2, Unlink, Search } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
@@ -31,6 +31,7 @@ function IntegrationsContent() {
     const error = searchParams.get("error");
     if (connected === "x") toast("X account connected successfully!", "success");
     if (connected === "linkedin") toast("LinkedIn account connected successfully!", "success");
+    if (connected === "facebook") toast("Facebook Page connected successfully!", "success");
     if (connected === "gsc") toast("Google Search Console connected!", "success");
     if (error) toast(decodeURIComponent(error), "error");
     // Clean URL
@@ -59,7 +60,7 @@ function IntegrationsContent() {
     if (error) {
       toast("Failed to disconnect account", "error");
     } else {
-      const names: Record<string, string> = { x: "X", linkedin: "LinkedIn", gsc: "Google Search Console" };
+      const names: Record<string, string> = { x: "X", linkedin: "LinkedIn", facebook: "Facebook", gsc: "Google Search Console" };
       toast(`${names[platform] ?? platform} disconnected`, "info");
       setAccounts((prev) => prev.filter((a) => a.platform !== platform));
     }
@@ -68,6 +69,7 @@ function IntegrationsContent() {
 
   const xAccount = accounts.find((a) => a.platform === "x");
   const liAccount = accounts.find((a) => a.platform === "linkedin");
+  const fbAccount = accounts.find((a) => a.platform === "facebook");
   const gscAccount = accounts.find((a) => a.platform === "gsc");
 
   function isExpired(account: ConnectedAccount) {
@@ -91,6 +93,14 @@ function IntegrationsContent() {
       description: "Publish posts to your LinkedIn profile from the Content Studio.",
       connectHref: "/api/integrations/linkedin/connect",
       account: liAccount,
+    },
+    {
+      key: "facebook",
+      name: "Facebook Page",
+      icon: Facebook,
+      description: "Publish text and image posts to your Facebook Page from the Content Studio.",
+      connectHref: "/api/integrations/facebook/connect",
+      account: fbAccount,
     },
     {
       key: "gsc",

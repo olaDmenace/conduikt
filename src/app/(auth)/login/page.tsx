@@ -110,13 +110,22 @@ export default function LoginPage() {
         </button>
         <button
           type="button"
-          disabled
-          title="LinkedIn login coming soon"
-          className="flex w-full items-center justify-center gap-3 rounded-lg border border-surface-3 bg-surface-1 px-4 py-2.5 text-small font-medium text-text-tertiary opacity-50 cursor-not-allowed"
+          onClick={async () => {
+            try {
+              const siteUrl = window.location.origin;
+              const { error } = await supabase.auth.signInWithOAuth({
+                provider: "linkedin_oidc",
+                options: { redirectTo: `${siteUrl}/auth/confirm?next=/dashboard` },
+              });
+              if (error) toast(error.message === "Unsupported provider: provider is not enabled" ? "LinkedIn login is not available right now. Please use email and password." : error.message, "error");
+            } catch {
+              toast("Something went wrong. Please try again.", "error");
+            }
+          }}
+          className="flex w-full items-center justify-center gap-3 rounded-lg border border-surface-3 bg-surface-1 px-4 py-2.5 text-small font-medium text-text-primary hover:bg-surface-2 transition-colors"
         >
           <Linkedin className="h-4 w-4" />
           Continue with LinkedIn
-          <span className="ml-auto rounded bg-surface-2 px-1.5 py-0.5 text-[0.6875rem] text-text-tertiary">Soon</span>
         </button>
       </div>
 

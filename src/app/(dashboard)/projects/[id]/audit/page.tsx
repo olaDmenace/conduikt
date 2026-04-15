@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
+import Link from "next/link";
 import {
   AlertTriangle,
   Info,
@@ -9,6 +10,7 @@ import {
   ArrowUpRight,
   Loader2,
   Sparkles,
+  Lock,
 } from "lucide-react";
 import {
   Card,
@@ -21,6 +23,7 @@ import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
 
 import { useToast } from "@/src/components/ui/toast";
+import { useUsageLimitModal } from "@/src/components/usage/limit-modal";
 import { ExpectationBanner } from "@/src/components/ui/expectation-banner";
 import {
   PageSpeedPanel,
@@ -34,6 +37,8 @@ interface Finding {
   detail: string;
   fix: string;
   impact: "high" | "medium" | "low";
+  gated?: boolean;
+  gateCTA?: string;
 }
 
 interface Audit {
@@ -73,6 +78,7 @@ export default function AuditPage({
     "all" | "critical" | "warning" | "info"
   >("all");
   const { toast } = useToast();
+  const { showLimitModal } = useUsageLimitModal();
 
   useEffect(() => {
     fetchAudits();
@@ -109,7 +115,11 @@ export default function AuditPage({
       fetchAudits();
     } else {
       const err = await res.json();
-      toast(err.error || "Audit failed", "error");
+      if (res.status === 429) {
+        showLimitModal();
+      } else {
+        toast(err.error || "Audit failed", "error");
+      }
     }
     setRerunning(false);
   }
@@ -306,12 +316,12 @@ export default function AuditPage({
               style={{ animationDelay: `${i * 60}ms` }}
             >
               <CardContent className="flex items-start justify-between">
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-3 w-full">
                   <Icon
                     className={`mt-0.5 h-5 w-5 shrink-0 ${config.color}`}
                   />
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <h3 className="text-body font-medium text-text-primary">
                         {finding.title}
                       </h3>
@@ -319,19 +329,57 @@ export default function AuditPage({
                       {finding.category && (
                         <Badge variant="secondary">{finding.category}</Badge>
                       )}
+                      {finding.gated && (
+                        <Badge variant="secondary">
+                          <Lock className="h-3 w-3" />
+                          Pro
+                        </Badge>
+                      )}
                     </div>
-                    <p className="text-small text-text-secondary">
-                      {finding.detail}
-                    </p>
-                    {finding.fix && (
-                      <div className="mt-3 rounded-lg bg-surface-0 border border-border-default p-3">
-                        <p className="text-caption text-text-tertiary mb-1">
-                          Suggested Fix
-                        </p>
-                        <code className="text-data text-accent-secondary break-all">
-                          {finding.fix}
-                        </code>
+                    {finding.gated ? (
+                      <div className="relative mt-2 rounded-lg border border-dashed border-accent/40 bg-accent-muted/20 p-4">
+                        <div
+                          aria-hidden
+                          className="select-none pointer-events-none blur-sm text-small text-text-tertiary space-y-2"
+                        >
+                          <p>
+                            Lorem ipsum dolor sit amet, consectetur adipiscing
+                            elit. Suspendisse ac risus nec libero lacinia.
+                          </p>
+                          <p>
+                            Pellentesque habitant morbi tristique senectus et
+                            netus et malesuada fames ac turpis egestas.
+                          </p>
+                        </div>
+                        <div className="mt-3 flex items-center justify-between gap-3">
+                          <p className="text-small text-text-secondary">
+                            {finding.gateCTA ??
+                              "Upgrade to Pro to see this critical issue and how to fix it"}
+                          </p>
+                          <Button size="sm" asChild>
+                            <Link href="/settings/billing">
+                              Upgrade
+                              <ArrowUpRight className="h-3.5 w-3.5" />
+                            </Link>
+                          </Button>
+                        </div>
                       </div>
+                    ) : (
+                      <>
+                        <p className="text-small text-text-secondary">
+                          {finding.detail}
+                        </p>
+                        {finding.fix && (
+                          <div className="mt-3 rounded-lg bg-surface-0 border border-border-default p-3">
+                            <p className="text-caption text-text-tertiary mb-1">
+                              Suggested Fix
+                            </p>
+                            <code className="text-data text-accent-secondary break-all">
+                              {finding.fix}
+                            </code>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>

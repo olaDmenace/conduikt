@@ -10,29 +10,7 @@ export default function TermsPage() {
   const lastUpdated = "February 18, 2026";
 
   return (
-    <div className="min-h-screen bg-surface-0">
-      {/* Nav */}
-      <header className="border-b border-surface-2">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-text-primary font-semibold"
-          >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-accent to-[#C88550]">
-              <span className="text-sm font-bold text-surface-0">C</span>
-            </div>
-            Conduikt
-          </Link>
-          <Link
-            href="/login"
-            className="text-small text-text-secondary hover:text-text-primary transition-colors"
-          >
-            Sign in
-          </Link>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-4xl px-6 py-16">
+    <div className="mx-auto max-w-4xl px-6 py-16">
         {/* Header */}
         <div className="mb-12">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10">
@@ -176,13 +154,12 @@ export default function TermsPage() {
           </section>
         </div>
 
-        <div className="mt-16 border-t border-surface-2 pt-8 flex items-center justify-between text-small text-text-tertiary">
-          <span>© {new Date().getFullYear()} Conduikt · Technicity Digital</span>
-          <Link href="/privacy" className="hover:text-text-secondary transition-colors">
-            Privacy Policy
-          </Link>
-        </div>
-      </main>
+      <div className="mt-16 border-t border-border-subtle pt-8 flex items-center justify-between text-small text-text-tertiary">
+        <span>© {new Date().getFullYear()} Conduikt · Technicity Digital</span>
+        <Link href="/privacy" className="hover:text-text-secondary transition-colors">
+          Privacy Policy
+        </Link>
+      </div>
     </div>
   );
 }

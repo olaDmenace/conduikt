@@ -3,6 +3,7 @@
 import { Sidebar } from "@/src/components/layout/sidebar";
 import { Header } from "@/src/components/layout/header";
 import { CommandPalette } from "@/src/components/search/command-palette";
+import { UsageLimitProvider } from "@/src/components/usage/limit-modal";
 import { useUIStore } from "@/src/stores/ui-store";
 import { cn } from "@/src/lib/utils/cn";
 
@@ -14,6 +15,7 @@ export default function DashboardLayout({
   const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
 
   return (
+    <UsageLimitProvider>
     <div className="min-h-screen bg-surface-0">
       <Sidebar />
       <Header />
@@ -29,5 +31,6 @@ export default function DashboardLayout({
         <div className="mx-auto max-w-[1200px]">{children}</div>
       </main>
     </div>
+    </UsageLimitProvider>
   );
 }

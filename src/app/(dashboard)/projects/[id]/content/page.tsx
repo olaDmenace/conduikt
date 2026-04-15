@@ -43,10 +43,14 @@ import {
 import { PageHeader } from "@/src/components/layout/page-header";
 
 import { useToast } from "@/src/components/ui/toast";
+import { useUsageLimitModal } from "@/src/components/usage/limit-modal";
 import { ExpectationBanner } from "@/src/components/ui/expectation-banner";
 import { VariantPanel } from "@/src/components/content/variant-panel";
 import { BulkGenerateDialog } from "@/src/components/content/bulk-generate-dialog";
 import { SendToWebhook } from "@/src/components/content/send-to-webhook";
+import { MediaPicker } from "@/src/components/media/media-picker";
+import type { PostMedia } from "@/src/lib/media/types";
+import { EMPTY_MEDIA, hasMedia } from "@/src/lib/media/types";
 
 // ---------- types ----------
 
@@ -239,6 +243,7 @@ function ContentPageInner({
 }) {
   const { id: projectId } = use(params);
   const { toast } = useToast();
+  const { showLimitModal } = useUsageLimitModal();
   const searchParams = useSearchParams();
   const outputRef = useRef<HTMLDivElement>(null);
 
@@ -278,6 +283,9 @@ function ContentPageInner({
   const [schedulingKey, setSchedulingKey] = useState<string | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [scheduleDateTime, setScheduleDateTime] = useState("");
+
+  // Media per post card, keyed by publishKey ("x-0", "linkedin-1", ...)
+  const [postMedia, setPostMedia] = useState<Record<string, PostMedia>>({});
 
   const skill = contentSkills.find((s) => s.id === selectedSkill) ?? contentSkills[0];
 
@@ -348,6 +356,8 @@ function ContentPageInner({
   async function handlePublish(platform: "x" | "linkedin", postText: string, publishKey: string) {
     if (!postText.trim()) return;
 
+    const media = postMedia[publishKey];
+
     // Ensure asset is saved first
     let assetId = savedAssetId;
     if (!assetId) {
@@ -359,7 +369,7 @@ function ContentPageInner({
           type: skill.assetType,
           channel: platform,
           title: prompt.slice(0, 100),
-          content: { raw: result, skill: selectedSkill, prompt },
+          content: { raw: result, skill: selectedSkill, prompt, media },
         }),
       });
       if (res.ok) {
@@ -375,7 +385,7 @@ function ContentPageInner({
     const res = await fetch(`/api/publish/${platform}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: postText, assetId }),
+      body: JSON.stringify({ text: postText, assetId, media }),
     });
 
     const data = await res.json();
@@ -401,6 +411,8 @@ function ContentPageInner({
   async function handleSchedule(platform: "x" | "linkedin", postText: string, publishKey: string) {
     if (!scheduleDateTime) return;
 
+    const media = postMedia[publishKey];
+
     // Ensure asset is saved first
     let assetId = savedAssetId;
     if (!assetId) {
@@ -412,7 +424,7 @@ function ContentPageInner({
           type: skill.assetType,
           channel: platform,
           title: prompt.slice(0, 100),
-          content: { raw: result, skill: selectedSkill, prompt },
+          content: { raw: result, skill: selectedSkill, prompt, media },
         }),
       });
       if (res.ok) {
@@ -437,6 +449,7 @@ function ContentPageInner({
         channel: platform,
         scheduledFor: new Date(scheduleDateTime).toISOString(),
         postText,
+        media,
       }),
     });
 
@@ -489,7 +502,11 @@ function ContentPageInner({
 
       if (!res.ok) {
         const err = await res.json();
-        toast(err.error || "Generation failed", "error");
+        if (res.status === 429) {
+          showLimitModal();
+        } else {
+          toast(err.error || "Generation failed", "error");
+        }
         setGenerating(false);
         return;
       }
@@ -1327,6 +1344,15 @@ function ContentPageInner({
           {post.text}
         </p>
 
+        {/* Media picker */}
+        <MediaPicker
+          value={postMedia[publishKey] ?? EMPTY_MEDIA}
+          onChange={(m) =>
+            setPostMedia((prev) => ({ ...prev, [publishKey]: m }))
+          }
+          defaultOverlayText={post.hook || post.text.slice(0, 120)}
+        />
+
         {/* Metadata row */}
         <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border-default">
           <Badge variant={charCount <= charLimit ? "success" : "error"}>
@@ -1341,10 +1367,13 @@ function ContentPageInner({
               {post.best_time}
             </span>
           )}
+          {hasMedia(postMedia[publishKey]) && (
+            <Badge variant="secondary">With image</Badge>
+          )}
         </div>
 
         {/* Image suggestion */}
-        {post.image_suggestion && (
+        {post.image_suggestion && !hasMedia(postMedia[publishKey]) && (
           <p className="text-small text-text-tertiary italic border-l-2 border-accent/30 pl-3">
             {post.image_suggestion}
           </p>

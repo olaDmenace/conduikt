@@ -25,6 +25,9 @@ import { PageHeader } from "@/src/components/layout/page-header";
 import { useToast } from "@/src/components/ui/toast";
 import { createClient } from "@/src/lib/supabase/client";
 import { CalendarGrid, type ScheduledPost } from "@/src/components/calendar/calendar-grid";
+import { MediaPicker } from "@/src/components/media/media-picker";
+import type { PostMedia } from "@/src/lib/media/types";
+import { EMPTY_MEDIA, hasMedia } from "@/src/lib/media/types";
 import Link from "next/link";
 
 function statusVariant(
@@ -87,7 +90,16 @@ function exportPostsCsv(posts: ScheduledPost[], projectId: string) {
   const rows = posts.map((p) => {
     const date = new Date(p.scheduled_for).toISOString();
     const channel = p.channel === "x" ? "X (Twitter)" : p.channel === "linkedin" ? "LinkedIn" : "Email";
-    const content = (p.assets?.content || "").slice(0, 200).replace(/"/g, '""').replace(/[\r\n]+/g, " ");
+    const rawContent = p.assets?.content;
+    const contentText =
+      typeof rawContent === "string"
+        ? rawContent
+        : (rawContent && typeof rawContent === "object"
+            ? ((rawContent as Record<string, unknown>).scheduled_text as string | undefined) ??
+              ((rawContent as Record<string, unknown>).raw as string | undefined) ??
+              ""
+            : "");
+    const content = contentText.slice(0, 200).replace(/"/g, '""').replace(/[\r\n]+/g, " ");
     return `"${date}","${channel}","${p.status}","${content}"`;
   });
   const csv = [header, ...rows].join("\n");
@@ -466,14 +478,79 @@ export default function CalendarPage({
                 </div>
               )}
 
-              {selectedPost.assets?.content && (
-                <div>
-                  <p className="text-caption text-text-tertiary mb-1">Content</p>
-                  <div className="rounded-lg bg-surface-1 p-3 text-body text-text-secondary whitespace-pre-wrap">
-                    {selectedPost.assets.content}
-                  </div>
-                </div>
-              )}
+              {selectedPost.assets?.content && (() => {
+                const raw = selectedPost.assets.content;
+                const contentObj =
+                  typeof raw === "object" && raw !== null
+                    ? (raw as Record<string, unknown>)
+                    : {};
+                const text =
+                  typeof raw === "string"
+                    ? raw
+                    : ((contentObj.scheduled_text as string | undefined) ??
+                      (contentObj.raw as string | undefined) ??
+                      "");
+                const media = (contentObj.media as PostMedia | undefined) ?? EMPTY_MEDIA;
+                return (
+                  <>
+                    {text && (
+                      <div>
+                        <p className="text-caption text-text-tertiary mb-1">Content</p>
+                        <div className="rounded-lg bg-surface-1 p-3 text-body text-text-secondary whitespace-pre-wrap">
+                          {text}
+                        </div>
+                      </div>
+                    )}
+                    {selectedPost.status === "pending" && (
+                      <div>
+                        <p className="text-caption text-text-tertiary mb-1">Media</p>
+                        <MediaPicker
+                          value={media}
+                          onChange={async (m) => {
+                            const res = await fetch(
+                              `/api/scheduled-posts/${selectedPost.id}`,
+                              {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ media: m }),
+                              }
+                            );
+                            if (res.ok) {
+                              toast("Media updated", "success");
+                              fetchPosts();
+                              setSelectedPost({
+                                ...selectedPost,
+                                assets: selectedPost.assets
+                                  ? {
+                                      ...selectedPost.assets,
+                                      content: { ...contentObj, media: m },
+                                    }
+                                  : null,
+                              });
+                            } else {
+                              toast("Failed to update media", "error");
+                            }
+                          }}
+                          defaultOverlayText={text.slice(0, 120)}
+                        />
+                      </div>
+                    )}
+                    {selectedPost.status !== "pending" && hasMedia(media) && (
+                      <div>
+                        <p className="text-caption text-text-tertiary mb-1">Media</p>
+                        <div className="rounded-lg overflow-hidden border border-border-default">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={media.url ?? ""}
+                            alt=""
+                            className="w-full h-auto"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
 
               {selectedPost.error_message && (
                 <div>

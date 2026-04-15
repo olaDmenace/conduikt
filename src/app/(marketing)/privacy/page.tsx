@@ -10,29 +10,7 @@ export default function PrivacyPage() {
   const lastUpdated = "February 18, 2026";
 
   return (
-    <div className="min-h-screen bg-surface-0">
-      {/* Nav */}
-      <header className="border-b border-surface-2">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-text-primary font-semibold"
-          >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-accent to-[#C88550]">
-              <span className="text-sm font-bold text-surface-0">C</span>
-            </div>
-            Conduikt
-          </Link>
-          <Link
-            href="/login"
-            className="text-small text-text-secondary hover:text-text-primary transition-colors"
-          >
-            Sign in
-          </Link>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-4xl px-6 py-16">
+    <div className="mx-auto max-w-4xl px-6 py-16">
         {/* Header */}
         <div className="mb-12">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10">
@@ -121,11 +99,15 @@ export default function PrivacyPage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-h2 text-text-primary">6. Data retention</h2>
+            <h2 className="text-h2 text-text-primary">6. Data retention & deletion</h2>
             <p className="text-body leading-relaxed">
               We retain your data for as long as your account is active or as needed
-              to provide our services. You can request deletion of your account and
-              associated data at any time by emailing us.
+              to provide our services. You can request full deletion of your account
+              and associated data at any time — see our{" "}
+              <Link href="/data-deletion" className="text-accent hover:underline">
+                User Data Deletion page
+              </Link>{" "}
+              for the process and timeline.
             </p>
           </section>
 
@@ -197,13 +179,12 @@ export default function PrivacyPage() {
           </section>
         </div>
 
-        <div className="mt-16 border-t border-surface-2 pt-8 flex items-center justify-between text-small text-text-tertiary">
-          <span>© {new Date().getFullYear()} Conduikt · Technicity Digital</span>
-          <Link href="/terms" className="hover:text-text-secondary transition-colors">
-            Terms of Service
-          </Link>
-        </div>
-      </main>
+      <div className="mt-16 border-t border-border-subtle pt-8 flex items-center justify-between text-small text-text-tertiary">
+        <span>© {new Date().getFullYear()} Conduikt · Technicity Digital</span>
+        <Link href="/terms" className="hover:text-text-secondary transition-colors">
+          Terms of Service
+        </Link>
+      </div>
     </div>
   );
 }

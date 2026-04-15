@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
+import { ensureValidXToken } from "@/src/lib/integrations/x-token";
 
 export async function POST() {
   const supabase = await createClient();
@@ -12,7 +13,7 @@ export async function POST() {
   // Get X connected account
   const { data: account } = await supabase
     .from("connected_accounts")
-    .select("access_token")
+    .select("id, user_id, access_token, refresh_token, token_expires_at, platform_username")
     .eq("user_id", user.id)
     .eq("platform", "x")
     .maybeSingle();
@@ -21,6 +22,15 @@ export async function POST() {
     return NextResponse.json(
       { error: "X account not connected" },
       { status: 400 }
+    );
+  }
+
+  // Ensure token is fresh
+  const validToken = await ensureValidXToken(account);
+  if (!validToken) {
+    return NextResponse.json(
+      { error: "X token expired. Please reconnect your account." },
+      { status: 401 }
     );
   }
 
@@ -44,7 +54,7 @@ export async function POST() {
       const res = await fetch(
         `https://api.x.com/2/tweets/${post.external_post_id}?tweet.fields=public_metrics`,
         {
-          headers: { Authorization: `Bearer ${account.access_token}` },
+          headers: { Authorization: `Bearer ${validToken}` },
         }
       );
 
