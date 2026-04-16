@@ -35,10 +35,11 @@ export async function POST(request: NextRequest) {
     .from("projects")
     .select("*")
     .eq("id", projectId)
+    .eq("user_id", user.id)
     .single();
 
   if (projectError || !project) {
-    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   // Check generation limits
@@ -103,11 +104,8 @@ export async function POST(request: NextRequest) {
     duration_ms: result.durationMs,
   });
 
-  // Increment generation count
-  await supabase
-    .from("profiles")
-    .update({ generation_count: (profile?.generation_count ?? 0) + 1 })
-    .eq("id", user.id);
+  // Increment generation count (atomic to prevent race conditions)
+  await supabase.rpc("increment_generation_count", { user_id_param: user.id });
 
   return NextResponse.json(parsed);
 }

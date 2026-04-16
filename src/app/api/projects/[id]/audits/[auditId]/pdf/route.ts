@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
+import { verifyProjectOwnership } from "@/src/lib/auth/verify-ownership";
 import { renderToBuffer } from "@react-pdf/renderer";
 import React from "react";
 import { AuditReportDocument } from "@/src/lib/pdf/audit-report";
@@ -16,6 +17,11 @@ export async function GET(
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const ownedProject = await verifyProjectOwnership(supabase, id, user.id);
+  if (!ownedProject) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   // Fetch audit

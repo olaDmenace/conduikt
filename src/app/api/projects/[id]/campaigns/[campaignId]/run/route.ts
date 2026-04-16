@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
+import { verifyProjectOwnership } from "@/src/lib/auth/verify-ownership";
 import { generateWithClaude } from "@/src/lib/ai/client";
 import { getAgent } from "@/src/lib/ai/agents";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
@@ -17,6 +18,11 @@ export async function POST(
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const ownedProject = await verifyProjectOwnership(supabase, id, user.id);
+  if (!ownedProject) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   // Fetch campaign + steps

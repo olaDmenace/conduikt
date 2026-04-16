@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
+import { verifyProjectOwnership } from "@/src/lib/auth/verify-ownership";
 import { generateWithClaude } from "@/src/lib/ai/client";
 
 export async function POST(
@@ -13,6 +14,11 @@ export async function POST(
   } = await supabase.auth.getUser();
   if (!user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const ownedProject = await verifyProjectOwnership(supabase, id, user.id);
+  if (!ownedProject) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
 
   const { data: tracker } = await supabase
     .from("competitor_trackers")
@@ -113,13 +119,18 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string; trackerId: string }> }
 ) {
-  const { trackerId } = await params;
+  const { id, trackerId } = await params;
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const ownedProject = await verifyProjectOwnership(supabase, id, user.id);
+  if (!ownedProject) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
 
   await supabase.from("competitor_trackers").delete().eq("id", trackerId);
   return NextResponse.json({ success: true });

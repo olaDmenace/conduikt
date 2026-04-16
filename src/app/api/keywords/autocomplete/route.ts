@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@/src/lib/supabase/server";
 
-// Google Suggest API — no auth needed, public endpoint
+// Google Suggest API — proxied through our API to require auth
 const GOOGLE_SUGGEST_URL = "https://suggestqueries.google.com/complete/search";
 
 export async function GET(request: Request) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { searchParams } = new URL(request.url);
   const q = searchParams.get("q");
 

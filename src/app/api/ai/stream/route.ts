@@ -57,6 +57,7 @@ export async function POST(request: NextRequest) {
       .from("projects")
       .select("*")
       .eq("id", projectId)
+      .eq("user_id", user.id)
       .single();
     if (project) {
       context = {
@@ -124,13 +125,8 @@ export async function POST(request: NextRequest) {
           });
         }
 
-        // Increment generation count
-        await supabase
-          .from("profiles")
-          .update({
-            generation_count: (profile?.generation_count ?? 0) + 1,
-          })
-          .eq("id", user.id);
+        // Increment generation count (atomic to prevent race conditions)
+        await supabase.rpc("increment_generation_count", { user_id_param: user.id });
 
         dispatchWebhooks(user.id, projectId ?? null, {
           event: "content.generated",
@@ -153,9 +149,10 @@ export async function POST(request: NextRequest) {
       });
 
       stream.on("error", (err) => {
+        const message = process.env.NODE_ENV === "development" ? err.message : "An unexpected error occurred";
         controller.enqueue(
           encoder.encode(
-            `data: ${JSON.stringify({ type: "error", error: err.message })}\n\n`
+            `data: ${JSON.stringify({ type: "error", error: message })}\n\n`
           )
         );
         controller.close();

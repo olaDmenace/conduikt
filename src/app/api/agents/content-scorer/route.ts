@@ -35,10 +35,11 @@ export async function POST(request: NextRequest) {
     .from("projects")
     .select("*")
     .eq("id", projectId)
+    .eq("user_id", user.id)
     .single();
 
   if (projectError || !project) {
-    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   const agent = getAgent("content-scorer");
@@ -101,8 +102,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(scoreData);
   } catch (e) {
+    const details = process.env.NODE_ENV === "development" ? String(e) : undefined;
     return NextResponse.json(
-      { error: "Failed to score content", details: String(e) },
+      { error: "Failed to score content", ...(details ? { details } : {}) },
       { status: 500 }
     );
   }

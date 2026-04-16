@@ -26,10 +26,11 @@ export async function GET(
     `
     )
     .eq("id", id)
+    .eq("user_id", user.id)
     .single();
 
   if (error || !project) {
-    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   return NextResponse.json(project);
@@ -90,6 +91,7 @@ export async function PATCH(
     .from("projects")
     .update(updates)
     .eq("id", id)
+    .eq("user_id", user.id)
     .select()
     .single();
 

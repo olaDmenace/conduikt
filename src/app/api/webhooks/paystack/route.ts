@@ -7,12 +7,15 @@ import crypto from "crypto";
 
 function verifySignature(rawBody: string, signature: string): boolean {
   const secret = process.env.PAYSTACK_SECRET_KEY;
-  if (!secret) return false;
+  if (!secret || !signature) return false;
   const hash = crypto
     .createHmac("sha512", secret)
     .update(rawBody)
     .digest("hex");
-  return hash === signature;
+  const hashBuffer = Buffer.from(hash, "hex");
+  const sigBuffer = Buffer.from(signature, "hex");
+  if (hashBuffer.length !== sigBuffer.length) return false;
+  return crypto.timingSafeEqual(hashBuffer, sigBuffer);
 }
 
 export async function POST(request: NextRequest) {

@@ -10,7 +10,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { to, subject, html } = await request.json();
+  // Verify user is on a paid plan
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("plan")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile || profile.plan === "free") {
+    return NextResponse.json(
+      { error: "Email sending requires a paid plan" },
+      { status: 403 }
+    );
+  }
+
+  const { to, subject, html, projectId } = await request.json();
 
   if (!to || !subject || !html) {
     return NextResponse.json(
@@ -18,6 +32,26 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
+
+  // Verify the user owns the project (if provided)
+  if (projectId) {
+    const { data: project } = await supabase
+      .from("projects")
+      .select("id")
+      .eq("id", projectId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (!project) {
+      return NextResponse.json(
+        { error: "Project not found or not owned by you" },
+        { status: 403 }
+      );
+    }
+  }
+
+  // TODO: Add daily send limit check (e.g., max 50 emails/day per user)
+  // This should be implemented with a send_log table or Redis counter
 
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {

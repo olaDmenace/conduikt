@@ -26,6 +26,8 @@ import {
   GitBranch,
   Download,
 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   Card,
   CardContent,
@@ -1092,20 +1094,9 @@ function ContentPageInner({
         {/* Blog content rendered from markdown */}
         <div className="rounded-xl border border-border-default bg-surface-0 p-6">
           <div className="prose prose-invert max-w-none text-text-primary">
-            <div
-              className="whitespace-pre-wrap text-body font-sans leading-relaxed"
-              dangerouslySetInnerHTML={{
-                __html: markdown
-                  .replace(/^### (.+)$/gm, '<h3 class="text-body font-medium text-text-primary mt-6 mb-2">$1</h3>')
-                  .replace(/^## (.+)$/gm, '<h2 class="text-h3 font-medium text-text-primary mt-8 mb-3">$1</h2>')
-                  .replace(/^# (.+)$/gm, '<h1 class="text-h2 font-medium text-text-primary mt-8 mb-4">$1</h1>')
-                  .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-text-primary">$1</strong>')
-                  .replace(/\*(.+?)\*/g, '<em>$1</em>')
-                  .replace(/^- (.+)$/gm, '<li class="ml-4 text-text-secondary">$1</li>')
-                  .replace(/^(\d+)\. (.+)$/gm, '<li class="ml-4 text-text-secondary">$1. $2</li>')
-                  .replace(/\n\n/g, '<br/><br/>')
-              }}
-            />
+            <div className="whitespace-pre-wrap text-body font-sans leading-relaxed">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
+            </div>
           </div>
         </div>
 

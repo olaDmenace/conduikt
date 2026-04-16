@@ -67,6 +67,10 @@ export async function searchUnsplash(
 export async function triggerUnsplashDownload(downloadLocation: string): Promise<void> {
   const key = process.env.UNSPLASH_ACCESS_KEY;
   if (!key) return;
+
+  // Validate the download URL points to Unsplash API to prevent SSRF
+  if (!downloadLocation.startsWith("https://api.unsplash.com/")) return;
+
   try {
     await fetch(downloadLocation, {
       headers: { Authorization: `Client-ID ${key}` },
