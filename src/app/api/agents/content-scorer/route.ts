@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
       userPrompt,
       model: agent.model,
       maxTokens: agent.maxTokens,
+      temperature: 0,
     });
 
     const parsed = agent.parseResponse(result.content);

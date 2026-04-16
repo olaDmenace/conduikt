@@ -26,11 +26,13 @@ export async function generateWithClaude({
   userPrompt,
   model = "claude-sonnet-4-6",
   maxTokens = 4000,
+  temperature,
 }: {
   systemPrompt: string;
   userPrompt: string;
   model?: AIModel;
   maxTokens?: number;
+  temperature?: number;
 }): Promise<GenerationResult> {
   const anthropic = getAnthropicClient();
   const start = Date.now();
@@ -38,6 +40,7 @@ export async function generateWithClaude({
   const response = await anthropic.messages.create({
     model,
     max_tokens: maxTokens,
+    temperature: temperature ?? 1,
     system: systemPrompt,
     messages: [{ role: "user", content: userPrompt }],
   });
