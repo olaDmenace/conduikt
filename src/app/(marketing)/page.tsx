@@ -22,36 +22,42 @@ const features = [
   {
     icon: BarChart3,
     title: "AI-Powered SEO Audits",
+    href: "/features#seo-audit",
     description:
       "Get a comprehensive technical and on-page SEO analysis with specific, actionable fixes — not generic best practices.",
   },
   {
     icon: Sparkles,
-    title: "Smart Content Generation",
+    title: "AI Content Generator for Social and Email",
+    href: "/features#content",
     description:
       "Generate conversion-focused copy, social posts, and email sequences that actually sound like your brand.",
   },
   {
     icon: Globe,
-    title: "Multi-Channel Publishing",
+    title: "Multi-Channel Publishing for LinkedIn, X, and Email",
+    href: "/features#publishing",
     description:
       "Publish directly to X, LinkedIn, and email platforms. One dashboard for all your marketing channels.",
   },
   {
     icon: TrendingUp,
-    title: "Analytics Feedback Loop",
+    title: "Marketing Analytics That Improve Over Time",
+    href: "/features#analytics",
     description:
       "Performance data feeds back into AI to improve future generations. Your marketing gets smarter over time.",
   },
   {
     icon: Mail,
-    title: "Email Sequence Builder",
+    title: "AI Email Sequence Builder for SaaS",
+    href: "/features#email",
     description:
       "Create automated welcome, nurture, and launch email flows. AI writes the copy, you set the triggers.",
   },
   {
     icon: Shield,
-    title: "Campaign Orchestration",
+    title: "Automated Marketing Campaign Builder",
+    href: "/features#campaigns",
     description:
       "Chain audits, strategy, content, and publishing into automated campaigns. Set it up once, let it run.",
   },
@@ -130,8 +136,10 @@ export default function LandingPage() {
               <Badge className="mb-6">Now in Beta</Badge>
               <h1 className="text-hero text-text-primary leading-[1.1]">AI Marketing Automation for <span className="text-accent">SaaS Founders</span></h1>
               <p className="mt-6 text-lg leading-relaxed text-text-secondary max-w-lg">
-                Connect your site and get a marketing team that never sleeps &mdash;
-                audit, generate, and publish across every channel automatically.
+                Built for SaaS founders, solo-preneurs, and small business owners
+                who need to market smarter without a full team. Connect your
+                site and get AI that audits, generates, and publishes across
+                every channel automatically.
               </p>
               <div className="mt-8 flex items-center gap-4">
                 <Button size="lg" asChild>
@@ -167,6 +175,7 @@ export default function LandingPage() {
                     alt="Conduikt - Paste your website → get marketing content in 20 seconds | Product Hunt"
                     width={250}
                     height={54}
+                    loading="lazy"
                     decoding="async"
                   />
                 </a>
@@ -232,11 +241,23 @@ export default function LandingPage() {
                   <div className="mb-4 rounded-lg bg-accent-muted p-3 w-fit">
                     <feature.icon className="h-6 w-6 text-accent" />
                   </div>
-                  <h3 className="text-h3 text-text-primary">{feature.title}</h3>
+                  <h3 className="text-h3 text-text-primary">
+                    <Link href={feature.href} className="hover:text-accent transition-colors">
+                      {feature.title}
+                    </Link>
+                  </h3>
                   <p className="mt-2 text-body text-text-secondary">{feature.description}</p>
                 </CardContent>
               </Card>
             ))}
+          </div>
+          <div className="mt-10 text-center">
+            <Link
+              href="/compare"
+              className="text-small text-text-tertiary hover:text-accent transition-colors underline underline-offset-4"
+            >
+              See how Conduikt compares to Jasper, Copy.ai, and other AI marketing tools
+            </Link>
           </div>
         </div>
       </section>
