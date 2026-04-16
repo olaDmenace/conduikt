@@ -102,19 +102,6 @@ const softwareAppJsonLd = {
   ],
 };
 
-const organizationJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  name: "Conduikt",
-  url: "https://conduikt.com/",
-  logo: "https://conduikt.com/favicon.png",
-  sameAs: [
-    "https://x.com/conduikt",
-    "https://fb.com/conduikt",
-    "https://www.linkedin.com/company/conduikt-ai/",
-  ],
-};
-
 const faqs = [
   {
     question: "What is Conduikt?",
@@ -273,10 +260,6 @@ export default function LandingPage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
       />
 
       {/* Hero Section */}

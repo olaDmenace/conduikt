@@ -29,6 +29,45 @@ export const viewport: Viewport = {
   colorScheme: "dark",
 };
 
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": "https://conduikt.com/#organization",
+  name: "Conduikt",
+  alternateName: ["Conduikt AI", "Conduikt Marketing"],
+  legalName: "Conduikt",
+  url: "https://conduikt.com/",
+  description:
+    "Conduikt is an AI marketing automation platform for SaaS founders. It audits websites, generates SEO content, and publishes across LinkedIn, X, and email from one dashboard.",
+  foundingDate: "2025",
+  slogan: "AI Marketing Automation for SaaS Founders",
+  logo: {
+    "@type": "ImageObject",
+    url: "https://conduikt.com/favicon.png",
+    width: 256,
+    height: 256,
+  },
+  image: "https://conduikt.com/og-image.png",
+  founder: {
+    "@type": "Person",
+    name: "Olayinka Fagbenro",
+  },
+  parentOrganization: {
+    "@type": "Organization",
+    name: "Technicity Digital",
+  },
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: "Lagos",
+    addressCountry: "NG",
+  },
+  sameAs: [
+    "https://x.com/conduikt",
+    "https://fb.com/conduikt",
+    "https://www.linkedin.com/company/conduikt-ai/",
+  ],
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://conduikt.com"),
   title: {
@@ -100,6 +139,12 @@ export default function RootLayout({
             __html: `(function(){try{var t=JSON.parse(localStorage.getItem('conduikt-ui')||'{}');var theme=(t.state&&t.state.theme)||'dark';document.documentElement.className=theme;document.documentElement.setAttribute('data-theme',theme)}catch(e){}})()`,
           }}
         />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
+        <meta name="application-name" content="Conduikt" />
+        <meta name="apple-mobile-web-app-title" content="Conduikt" />
       </head>
       <body
         className={`${dmSerif.variable} ${outfit.variable} ${jetbrainsMono.variable} font-sans antialiased grain`}
