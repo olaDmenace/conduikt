@@ -102,7 +102,7 @@ export default function MarketingLayout({
               <Twitter className="h-4 w-4" />
             </a>
             <a
-              href="https://fb.com/conduikt"
+              href="https://www.facebook.com/conduikt"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Follow Conduikt on Facebook"
