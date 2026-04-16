@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/src/lib/supabase/service";
 import { ensureValidXToken } from "@/src/lib/integrations/x-token";
+import { ensureValidLinkedInToken } from "@/src/lib/integrations/linkedin-token";
 import {
   uploadMediaToX,
   uploadMediaToLinkedIn,
@@ -115,7 +116,7 @@ export async function GET(request: NextRequest) {
       continue;
     }
 
-    // Refresh X tokens before publishing
+    // Refresh tokens before publishing
     let token = account.access_token;
     if (post.channel === "x") {
       const freshToken = await ensureValidXToken(account as Parameters<typeof ensureValidXToken>[0]);
@@ -125,6 +126,17 @@ export async function GET(request: NextRequest) {
           .update({ status: "failed", error_message: "X token expired — user must reconnect" })
           .eq("id", post.id);
         results.push({ id: post.id, status: "failed", error: "X token expired" });
+        continue;
+      }
+      token = freshToken;
+    } else if (post.channel === "linkedin") {
+      const freshToken = await ensureValidLinkedInToken(account as Parameters<typeof ensureValidLinkedInToken>[0]);
+      if (!freshToken) {
+        await supabase
+          .from("scheduled_posts")
+          .update({ status: "failed", error_message: "LinkedIn token expired — user must reconnect" })
+          .eq("id", post.id);
+        results.push({ id: post.id, status: "failed", error: "LinkedIn token expired" });
         continue;
       }
       token = freshToken;

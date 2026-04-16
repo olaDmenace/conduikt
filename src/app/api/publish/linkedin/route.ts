@@ -4,6 +4,7 @@ import { createServiceClient } from "@/src/lib/supabase/service";
 import { dispatchWebhooks } from "@/src/lib/integrations/webhook-dispatch";
 import { uploadMediaToLinkedIn } from "@/src/lib/integrations/media-upload";
 import { hasMedia, type PostMedia } from "@/src/lib/media/types";
+import { ensureValidLinkedInToken } from "@/src/lib/integrations/linkedin-token";
 
 function getServiceClient() {
   return createServiceClient();
@@ -35,13 +36,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "LinkedIn account not connected. Connect it in Settings → Integrations." }, { status: 400 });
   }
 
-  // Check token expiry
-  if (account.token_expires_at) {
-    const expiresAt = new Date(account.token_expires_at).getTime();
-    if (Date.now() > expiresAt) {
-      await db.from("connected_accounts").delete().eq("id", account.id);
-      return NextResponse.json({ error: "LinkedIn token expired. Please reconnect your account.", reconnect: true }, { status: 401 });
-    }
+  // Ensure token is fresh — attempt refresh if expiring soon
+  const freshToken = await ensureValidLinkedInToken(account);
+  if (!freshToken) {
+    return NextResponse.json({ error: "LinkedIn token expired. Please reconnect your account.", reconnect: true }, { status: 401 });
   }
 
   // Upload media if present
@@ -49,7 +47,7 @@ export async function POST(request: NextRequest) {
   if (hasMedia(media)) {
     try {
       imageUrn = await uploadMediaToLinkedIn(
-        account.access_token,
+        freshToken,
         account.platform_user_id,
         media
       );
@@ -89,7 +87,7 @@ export async function POST(request: NextRequest) {
   const postRes = await fetch("https://api.linkedin.com/rest/posts", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${account.access_token}`,
+      Authorization: `Bearer ${freshToken}`,
       "Content-Type": "application/json",
       "LinkedIn-Version": "202401",
       "X-Restli-Protocol-Version": "2.0.0",
@@ -100,10 +98,6 @@ export async function POST(request: NextRequest) {
   if (!postRes.ok) {
     const err = await postRes.text();
     console.error("LinkedIn post failed:", err);
-    if (postRes.status === 401) {
-      await db.from("connected_accounts").delete().eq("id", account.id);
-      return NextResponse.json({ error: "LinkedIn token expired. Please reconnect your account.", reconnect: true }, { status: 401 });
-    }
     return NextResponse.json({ error: "Failed to post to LinkedIn" }, { status: 400 });
   }
 

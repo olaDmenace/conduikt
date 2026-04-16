@@ -1,6 +1,7 @@
 import { inngest } from "../client";
 import { createServiceClient } from "@/src/lib/supabase/service";
 import { ensureValidXToken } from "@/src/lib/integrations/x-token";
+import { ensureValidLinkedInToken } from "@/src/lib/integrations/linkedin-token";
 
 /**
  * Scheduled Inngest function that syncs social engagement metrics
@@ -51,6 +52,9 @@ export const syncSocialMetrics = inngest.createFunction(
     for (const acc of accounts) {
       if (acc.platform === "x") {
         const freshToken = await ensureValidXToken(acc);
+        if (freshToken) tokenMap.set(`${acc.user_id}:${acc.platform}`, freshToken);
+      } else if (acc.platform === "linkedin") {
+        const freshToken = await ensureValidLinkedInToken(acc);
         if (freshToken) tokenMap.set(`${acc.user_id}:${acc.platform}`, freshToken);
       } else {
         tokenMap.set(`${acc.user_id}:${acc.platform}`, acc.access_token);
