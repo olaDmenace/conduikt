@@ -25,7 +25,12 @@ const softwareAppJsonLd = {
   description:
     "AI-powered marketing automation for founders, marketers, and agencies.",
   url: "https://conduikt.com/",
-  screenshot: "https://conduikt.com/images/conduikt-dashboard.png",
+  screenshot: {
+    "@type": "ImageObject",
+    url: "https://conduikt.com/images/conduikt-dashboard.png",
+    width: 600,
+    height: 450,
+  },
   featureList:
     "AI SEO Audit, CRO Analysis, Keyword Research, Content Generation, Multi-Channel Publishing, Email Sequence Builder, Video Ad Creator, A/B Testing, Growth Playbook, Campaign Orchestration, Analytics Feedback Loop, Client Reports",
   publisher: {
@@ -34,10 +39,38 @@ const softwareAppJsonLd = {
     url: "https://conduikt.com/",
   },
   offers: [
-    { "@type": "Offer", name: "Free", price: "0", priceCurrency: "USD", url: "https://conduikt.com/signup/" },
-    { "@type": "Offer", name: "Pro", price: "49", priceCurrency: "USD", url: "https://conduikt.com/signup/" },
-    { "@type": "Offer", name: "Growth", price: "99", priceCurrency: "USD", url: "https://conduikt.com/signup/" },
-    { "@type": "Offer", name: "Agency", price: "249", priceCurrency: "USD", url: "https://conduikt.com/signup/" },
+    {
+      "@type": "Offer",
+      name: "Free",
+      price: "0",
+      priceCurrency: "USD",
+      availability: "https://schema.org/InStock",
+      url: "https://conduikt.com/signup/",
+    },
+    {
+      "@type": "Offer",
+      name: "Pro",
+      price: "49",
+      priceCurrency: "USD",
+      availability: "https://schema.org/InStock",
+      url: "https://conduikt.com/signup/",
+    },
+    {
+      "@type": "Offer",
+      name: "Growth",
+      price: "99",
+      priceCurrency: "USD",
+      availability: "https://schema.org/InStock",
+      url: "https://conduikt.com/signup/",
+    },
+    {
+      "@type": "Offer",
+      name: "Agency",
+      price: "249",
+      priceCurrency: "USD",
+      availability: "https://schema.org/InStock",
+      url: "https://conduikt.com/signup/",
+    },
   ],
 };
 
@@ -224,11 +257,10 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="animate-in">
               <Badge className="mb-6">Now in Beta</Badge>
-              <h1 className="text-hero text-text-primary leading-[1.1]">AI Marketing Automation &mdash; <span className="text-accent">Connect Your Site,</span> Get a Team That Never Sleeps.</h1>
+              <h1 className="text-hero text-text-primary leading-[1.1]">AI Marketing Automation for <span className="text-accent">SaaS Founders</span></h1>
               <p className="mt-6 text-lg leading-relaxed text-text-secondary max-w-lg">
-                Conduikt turns AI marketing intelligence into a visual platform.
-                Audit, generate, orchestrate, and publish marketing assets across
-                every channel — automatically.
+                Connect your site and get a marketing team that never sleeps &mdash;
+                audit, generate, and publish across every channel automatically.
               </p>
               <div className="mt-8 flex items-center gap-4">
                 <Button size="lg" asChild>
@@ -264,6 +296,8 @@ export default function LandingPage() {
                     alt="Conduikt - Paste your website → get marketing content in 20 seconds | Product Hunt"
                     width={250}
                     height={54}
+                    loading="lazy"
+                    decoding="async"
                   />
                 </a>
               </div>
@@ -342,6 +376,7 @@ export default function LandingPage() {
           <div className="text-center mb-16">
             <h2 className="text-h1 text-text-primary">Simple, transparent pricing</h2>
             <p className="mt-4 text-lg text-text-secondary">Start free. Scale as you grow.</p>
+            <p className="mt-2 text-small text-text-tertiary">Annual plans coming soon &mdash; save up to 20%.</p>
           </div>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
             {tiers.map((tier, i) => (
