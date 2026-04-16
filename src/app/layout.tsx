@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { DM_Serif_Display, Outfit, JetBrains_Mono } from "next/font/google";
 import "@/src/styles/globals.css";
+import { softwareAppJsonLd, faqJsonLd } from "@/src/lib/seo/homepage-schema";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
@@ -51,7 +52,21 @@ const organizationJsonLd = {
   founder: {
     "@type": "Person",
     name: "Olayinka Fagbenro",
+    url: "https://www.linkedin.com/in/olayinkafagbenro/",
+    sameAs: [
+      "https://www.linkedin.com/in/olayinkafagbenro/",
+      "https://x.com/olayinkafag",
+    ],
   },
+  contactPoint: [
+    {
+      "@type": "ContactPoint",
+      contactType: "customer support",
+      email: "hello@conduikt.com",
+      availableLanguage: ["en"],
+      areaServed: "Worldwide",
+    },
+  ],
   parentOrganization: {
     "@type": "Organization",
     name: "Technicity Digital",
@@ -87,7 +102,6 @@ export const metadata: Metadata = {
     icon: [
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
       { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-      { url: "/favicon.png", sizes: "256x256", type: "image/png" },
     ],
     apple: [
       { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
@@ -114,6 +128,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     site: "@conduikt",
+    creator: "@olayinkafag",
     title: "Conduikt: AI Marketing Automation for SaaS Founders",
     description:
       "Conduikt audits your site, generates SEO content, and publishes across LinkedIn, X, and email — AI marketing automation built for SaaS founders.",
@@ -143,6 +158,16 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
         />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        />
+        <link rel="preconnect" href="https://api.producthunt.com" crossOrigin="" />
+        <link rel="dns-prefetch" href="https://api.producthunt.com" />
         <meta name="application-name" content="Conduikt" />
         <meta name="apple-mobile-web-app-title" content="Conduikt" />
       </head>
