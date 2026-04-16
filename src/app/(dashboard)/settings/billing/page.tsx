@@ -2,66 +2,77 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { CheckCircle2, Zap, ExternalLink, Loader2, Sparkles } from "lucide-react";
+import {
+  CheckCircle2,
+  Zap,
+  Loader2,
+  Sparkles,
+  CreditCard,
+} from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
+import {
+  PLAN_PRICING,
+  GENERATION_LIMITS,
+  isUnlimited,
+  type PlanTier,
+} from "@/src/lib/plans";
 
 interface Profile {
   id: string;
+  email: string;
   plan: string;
   generation_count: number;
-  lemon_squeezy_customer_id: string | null;
-  lemon_squeezy_subscription_id: string | null;
+  payment_provider: string | null;
+  payment_customer_id: string | null;
+  payment_subscription_id: string | null;
 }
 
-const plans = [
+const plans: {
+  key: PlanTier;
+  name: string;
+  features: string[];
+}[] = [
   {
     key: "free",
     name: "Free",
-    price: "$0",
     features: ["1 project", "5 AI generations/month", "Basic audit"],
-    checkoutParam: null,
   },
   {
     key: "pro",
     name: "Pro",
-    price: "$49",
-    features: ["3 projects", "100 generations/month", "Multi-channel publishing"],
-    checkoutParam: process.env.NEXT_PUBLIC_LEMONSQUEEZY_CHECKOUT_PRO,
+    features: [
+      "5 projects",
+      "250 generations/month",
+      "10 AI agents",
+      "Multi-channel publishing",
+    ],
   },
   {
     key: "growth",
     name: "Growth",
-    price: "$99",
-    features: ["10 projects", "Unlimited generations", "Analytics feedback loop"],
-    checkoutParam: process.env.NEXT_PUBLIC_LEMONSQUEEZY_CHECKOUT_GROWTH,
+    features: [
+      "15 projects",
+      "500 generations/month",
+      "14 AI agents",
+      "Analytics feedback loop",
+    ],
   },
   {
     key: "agency",
     name: "Agency",
-    price: "$249",
-    features: ["Unlimited projects", "Team seats", "White-label reports", "API access"],
-    checkoutParam: process.env.NEXT_PUBLIC_LEMONSQUEEZY_CHECKOUT_AGENCY,
+    features: [
+      "Unlimited projects",
+      "Unlimited generations",
+      "15 AI agents",
+      "White-label reports",
+      "API access",
+    ],
   },
 ];
 
-const limits: Record<string, number> = {
-  free: 5,
-  pro: 100,
-  growth: 999999,
-  agency: 999999,
-};
-
-const planLabels: Record<string, string> = {
-  free: "Free",
-  pro: "Pro",
-  growth: "Growth",
-  agency: "Agency",
-};
-
-// How long to poll after returning from checkout (ms)
 const POLL_TIMEOUT = 30_000;
 const POLL_INTERVAL = 2_000;
 
@@ -73,6 +84,8 @@ function BillingContent() {
   const [loading, setLoading] = useState(true);
   const [verifying, setVerifying] = useState(justPaid);
   const [upgraded, setUpgraded] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -91,6 +104,34 @@ function BillingContent() {
     timeoutRef.current = null;
   }
 
+  function startPolling() {
+    setVerifying(true);
+
+    pollRef.current = setInterval(async () => {
+      const data = await fetchProfile();
+      if (!data) return;
+      if (
+        prevPlanRef.current !== null &&
+        data.plan !== prevPlanRef.current
+      ) {
+        setProfile(data);
+        setVerifying(false);
+        setUpgraded(true);
+        stopPolling();
+        window.history.replaceState({}, "", "/settings/billing");
+      }
+    }, POLL_INTERVAL);
+
+    timeoutRef.current = setTimeout(() => {
+      stopPolling();
+      setVerifying(false);
+      fetchProfile().then((data) => {
+        if (data) setProfile(data);
+      });
+      window.history.replaceState({}, "", "/settings/billing");
+    }, POLL_TIMEOUT);
+  }
+
   useEffect(() => {
     fetchProfile().then((data) => {
       if (data) {
@@ -101,62 +142,74 @@ function BillingContent() {
     });
   }, []);
 
-  // Start polling once we have the pre-payment plan and justPaid is true
   useEffect(() => {
     if (!justPaid || loading) return;
-
-    pollRef.current = setInterval(async () => {
-      const data = await fetchProfile();
-      if (!data) return;
-      // Plan changed — upgrade confirmed
-      if (prevPlanRef.current !== null && data.plan !== prevPlanRef.current) {
-        setProfile(data);
-        setVerifying(false);
-        setUpgraded(true);
-        stopPolling();
-        // Clean the URL without reloading
-        window.history.replaceState({}, "", "/settings/billing");
-      }
-    }, POLL_INTERVAL);
-
-    // Give up after POLL_TIMEOUT
-    timeoutRef.current = setTimeout(() => {
-      stopPolling();
-      setVerifying(false);
-      // Fetch latest state even if plan didn't change
-      fetchProfile().then((data) => { if (data) setProfile(data); });
-      window.history.replaceState({}, "", "/settings/billing");
-    }, POLL_TIMEOUT);
-
+    startPolling();
     return () => stopPolling();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [justPaid, loading]);
 
-  const currentPlan = profile?.plan ?? "free";
-  const genCount = profile?.generation_count ?? 0;
-  const genLimit = limits[currentPlan] ?? 5;
-  const remaining = Math.max(0, genLimit - genCount);
+  async function handleUpgrade(planKey: PlanTier) {
+    if (!profile) return;
+    setCheckoutLoading(planKey);
+    setError(null);
 
-  function getCheckoutUrl(plan: (typeof plans)[number]) {
-    if (!plan.checkoutParam || !profile?.id) return null;
-    const successUrl = encodeURIComponent(
-      `${window.location.origin}/settings/billing?payment=success`
-    );
-    return `${plan.checkoutParam}?checkout[custom][user_id]=${profile.id}&checkout[success_url]=${successUrl}`;
+    try {
+      const res = await fetch("/api/billing/initialize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planKey }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to initialize payment");
+      }
+
+      const { access_code } = await res.json();
+
+      // Dynamically import Paystack SDK (only when needed)
+      const PaystackPop = (await import("@paystack/inline-js")).default;
+      const paystack = new PaystackPop();
+
+      prevPlanRef.current = profile.plan;
+
+      paystack.checkout({
+        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY!,
+        email: profile.email,
+        accessCode: access_code,
+        onSuccess: () => {
+          startPolling();
+        },
+        onCancel: () => {
+          setCheckoutLoading(null);
+        },
+      });
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Something went wrong"
+      );
+    } finally {
+      setCheckoutLoading(null);
+    }
   }
 
-  const portalUrl = process.env.NEXT_PUBLIC_LEMONSQUEEZY_PORTAL_URL;
+  const currentPlan = (profile?.plan ?? "free") as PlanTier;
+  const genCount = profile?.generation_count ?? 0;
+  const genLimit = GENERATION_LIMITS[currentPlan];
+  const unlimited = isUnlimited(genLimit);
+  const remaining = unlimited ? Infinity : Math.max(0, genLimit - genCount);
 
   return (
     <div>
       <PageHeader title="Billing" description="Manage your subscription" />
 
-      {/* Success banner */}
       {upgraded && (
         <div className="mb-6 flex items-center gap-3 rounded-xl border border-success/20 bg-success/10 px-5 py-4 animate-in">
           <Sparkles className="h-5 w-5 text-success shrink-0" />
           <div>
             <p className="text-small font-medium text-success">
-              Welcome to {planLabels[currentPlan]}!
+              Welcome to {currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1)}!
             </p>
             <p className="text-small text-text-secondary">
               Your plan has been upgraded. Enjoy your new limits.
@@ -165,18 +218,24 @@ function BillingContent() {
         </div>
       )}
 
-      {/* Verifying payment banner */}
       {verifying && !upgraded && (
         <div className="mb-6 flex items-center gap-3 rounded-xl border border-accent/20 bg-accent/10 px-5 py-4 animate-in">
           <Loader2 className="h-5 w-5 text-accent shrink-0 animate-spin" />
           <div>
             <p className="text-small font-medium text-text-primary">
-              Verifying your payment…
+              Verifying your payment...
             </p>
             <p className="text-small text-text-secondary">
-              This usually takes a few seconds. Your plan will update automatically.
+              This usually takes a few seconds. Your plan will update
+              automatically.
             </p>
           </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="mb-6 rounded-xl border border-red-500/20 bg-red-500/10 px-5 py-4">
+          <p className="text-small text-red-400">{error}</p>
         </div>
       )}
 
@@ -193,14 +252,21 @@ function BillingContent() {
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="text-h3 text-text-primary">
-                      {planLabels[currentPlan]} Plan
+                      {currentPlan.charAt(0).toUpperCase() +
+                        currentPlan.slice(1)}{" "}
+                      Plan
                     </h3>
-                    <Badge variant={currentPlan === "free" ? "secondary" : "success"}>
+                    <Badge
+                      variant={
+                        currentPlan === "free" ? "secondary" : "success"
+                      }
+                    >
                       Current
                     </Badge>
                   </div>
                   <p className="mt-1 text-small text-text-secondary">
-                    {genCount} of {genLimit === 999999 ? "unlimited" : genLimit} AI
+                    {genCount} of{" "}
+                    {unlimited ? "unlimited" : genLimit} AI
                     generations used this period
                   </p>
                 </div>
@@ -209,30 +275,29 @@ function BillingContent() {
                     <div className="flex items-center gap-2">
                       <Zap className="h-5 w-5 text-accent" />
                       <span className="text-data text-accent">
-                        {genLimit === 999999 ? "Unlimited" : remaining} remaining
+                        {unlimited
+                          ? "Unlimited"
+                          : `${remaining} remaining`}
                       </span>
                     </div>
                   </div>
-                  {profile?.lemon_squeezy_customer_id && portalUrl && (
-                    <Button variant="secondary" size="sm" asChild>
-                      <a href={portalUrl} target="_blank" rel="noopener noreferrer">
-                        Manage Subscription
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </a>
-                    </Button>
-                  )}
                 </div>
               </CardContent>
             </Card>
           </div>
 
           {/* Usage Bar */}
-          {genLimit !== 999999 && (
+          {!unlimited && (
             <div className="mb-8">
-              <Card className="animate-in" style={{ animationDelay: "60ms" }}>
+              <Card
+                className="animate-in"
+                style={{ animationDelay: "60ms" }}
+              >
                 <CardContent className="py-5">
                   <div className="flex items-center justify-between text-small mb-2">
-                    <span className="text-text-secondary">Generation Usage</span>
+                    <span className="text-text-secondary">
+                      Generation Usage
+                    </span>
                     <span className="text-text-tertiary">
                       {genCount}/{genLimit}
                     </span>
@@ -254,10 +319,16 @@ function BillingContent() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {plans.map((plan, i) => {
               const isCurrent = plan.key === currentPlan;
-              const isDowngrade =
-                plans.findIndex((p) => p.key === currentPlan) >
-                plans.findIndex((p) => p.key === plan.key);
-              const checkoutUrl = getCheckoutUrl(plan);
+              const currentIdx = plans.findIndex(
+                (p) => p.key === currentPlan
+              );
+              const planIdx = plans.findIndex(
+                (p) => p.key === plan.key
+              );
+              const isDowngrade = currentIdx > planIdx;
+              const isUpgrade = planIdx > currentIdx;
+              const price = PLAN_PRICING[plan.key];
+              const isLoading = checkoutLoading === plan.key;
 
               return (
                 <Card
@@ -267,14 +338,20 @@ function BillingContent() {
                 >
                   <CardContent className="pt-6">
                     <div className="flex items-center gap-2 mb-2">
-                      <h3 className="text-h3 text-text-primary">{plan.name}</h3>
-                      {isCurrent && <Badge variant="success">Current</Badge>}
+                      <h3 className="text-h3 text-text-primary">
+                        {plan.name}
+                      </h3>
+                      {isCurrent && (
+                        <Badge variant="success">Current</Badge>
+                      )}
                     </div>
                     <div className="mb-4">
                       <span className="text-2xl font-bold font-mono text-text-primary">
-                        {plan.price}
+                        {price.label}
                       </span>
-                      <span className="text-text-tertiary text-small">/mo</span>
+                      <span className="text-text-tertiary text-small">
+                        /mo
+                      </span>
                     </div>
                     <ul className="space-y-2 mb-6">
                       {plan.features.map((f) => (
@@ -288,26 +365,45 @@ function BillingContent() {
                       ))}
                     </ul>
                     {isCurrent ? (
-                      <Button variant="secondary" className="w-full" disabled>
+                      <Button
+                        variant="secondary"
+                        className="w-full"
+                        disabled
+                      >
                         Current Plan
                       </Button>
                     ) : plan.key === "free" ? (
                       <Button
                         variant="secondary"
                         className="w-full"
-                        disabled={isDowngrade}
+                        disabled
                       >
-                        {isDowngrade ? "Downgrade via Portal" : "Free Tier"}
+                        {isDowngrade
+                          ? "Contact Support"
+                          : "Free Tier"}
                       </Button>
-                    ) : checkoutUrl ? (
-                      <Button className="w-full" asChild>
-                        <a href={checkoutUrl} target="_blank" rel="noopener noreferrer">
-                          {isDowngrade ? "Change Plan" : "Upgrade"}
-                        </a>
+                    ) : isUpgrade ? (
+                      <Button
+                        className="w-full"
+                        disabled={isLoading || verifying}
+                        onClick={() => handleUpgrade(plan.key)}
+                      >
+                        {isLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <CreditCard className="h-4 w-4" />
+                            Upgrade
+                          </>
+                        )}
                       </Button>
                     ) : (
-                      <Button className="w-full" disabled>
-                        Coming Soon
+                      <Button
+                        variant="secondary"
+                        className="w-full"
+                        disabled
+                      >
+                        Contact Support
                       </Button>
                     )}
                   </CardContent>
@@ -318,12 +414,22 @@ function BillingContent() {
 
           {/* Info */}
           <div className="mt-8">
-            <Card className="animate-in" style={{ animationDelay: "360ms" }}>
+            <Card
+              className="animate-in"
+              style={{ animationDelay: "360ms" }}
+            >
               <CardContent className="py-5">
                 <p className="text-small text-text-secondary">
-                  Subscriptions are managed through Lemon Squeezy. You can upgrade,
-                  downgrade, or cancel your plan at any time through the customer portal.
-                  Generation limits reset on each billing cycle.
+                  Payments are processed securely by Paystack. You can
+                  upgrade your plan at any time. To downgrade or cancel,
+                  contact us at{" "}
+                  <a
+                    href="mailto:hello@conduikt.com"
+                    className="text-accent hover:underline"
+                  >
+                    hello@conduikt.com
+                  </a>
+                  . Generation limits reset on each billing cycle.
                 </p>
               </CardContent>
             </Card>
@@ -336,7 +442,13 @@ function BillingContent() {
 
 export default function BillingPage() {
   return (
-    <Suspense fallback={<div className="flex justify-center py-12"><div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" /></div>}>
+    <Suspense
+      fallback={
+        <div className="flex justify-center py-12">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+        </div>
+      }
+    >
       <BillingContent />
     </Suspense>
   );

@@ -1,4 +1,5 @@
 import type { SkillConfig, ProjectContext, SkillOutput } from "./types";
+import { parseJsonResponse } from "../parse-json";
 
 export const emailSequenceSkill: SkillConfig = {
   id: "email-sequence",
@@ -61,8 +62,7 @@ Additional context: ${input.context || "None"}
   `.trim(),
 
   parseResponse: (response: string): SkillOutput => {
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
-    const parsed = JSON.parse(jsonMatch?.[0] ?? response);
+    const parsed = parseJsonResponse(response);
     return {
       type: "email_sequence",
       data: parsed,

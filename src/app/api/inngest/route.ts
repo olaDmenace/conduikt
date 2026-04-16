@@ -4,9 +4,10 @@ import {
   videoPipeline,
   syncSocialMetrics,
   refreshXTokens,
+  refreshLinkedInTokens,
 } from "@/src/lib/inngest";
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
-  functions: [videoPipeline, syncSocialMetrics, refreshXTokens],
+  functions: [videoPipeline, syncSocialMetrics, refreshXTokens, refreshLinkedInTokens],
 });

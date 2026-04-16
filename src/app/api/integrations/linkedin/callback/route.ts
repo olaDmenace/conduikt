@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
   }
 
   const tokens = await tokenRes.json();
-  const { access_token, expires_in } = tokens;
+  const { access_token, expires_in, refresh_token, refresh_token_expires_in } = tokens;
 
   // Fetch LinkedIn profile via OpenID userinfo endpoint
   const profileRes = await fetch("https://api.linkedin.com/v2/userinfo", {
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     user_id: user.id,
     platform: "linkedin",
     access_token,
-    refresh_token: null, // LinkedIn doesn't issue refresh tokens for basic OAuth
+    refresh_token: refresh_token ?? null,
     token_expires_at: expires_in
       ? new Date(Date.now() + expires_in * 1000).toISOString()
       : null,

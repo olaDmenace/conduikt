@@ -1,4 +1,5 @@
 import type { SkillConfig, ProjectContext, SkillOutput } from "./types";
+import { parseJsonResponse } from "../parse-json";
 
 export const growthPlaybookSkill: SkillConfig = {
   id: "growth-playbook",
@@ -85,8 +86,7 @@ Generate a comprehensive, actionable 90-day playbook with 5-7 actions per phase.
   `.trim(),
 
   parseResponse: (response: string): SkillOutput => {
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
-    const parsed = JSON.parse(jsonMatch?.[0] ?? response);
+    const parsed = parseJsonResponse(response);
     return {
       type: "growth_playbook",
       data: parsed,

@@ -1,4 +1,5 @@
 import type { SkillConfig, ProjectContext, SkillOutput } from "./types";
+import { parseJsonResponse } from "../parse-json";
 
 export const keywordResearchSkill: SkillConfig = {
   id: "keyword-research",
@@ -82,8 +83,7 @@ Generate at least ${input.count || 20} keyword ideas total across all categories
   `.trim(),
 
   parseResponse: (response: string): SkillOutput => {
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
-    const parsed = JSON.parse(jsonMatch?.[0] ?? response);
+    const parsed = parseJsonResponse(response);
     return {
       type: "keyword_research",
       data: parsed,

@@ -1,4 +1,5 @@
 import type { SkillConfig, ProjectContext, SkillOutput } from "./types";
+import { parseJsonResponse } from "../parse-json";
 
 export const blogPostSkill: SkillConfig = {
   id: "blog-post",
@@ -64,8 +65,7 @@ ${input.additionalContext ? `Additional context: ${input.additionalContext}` : "
   `.trim(),
 
   parseResponse: (response: string): SkillOutput => {
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
-    const parsed = JSON.parse(jsonMatch?.[0] ?? response);
+    const parsed = parseJsonResponse(response);
     return {
       type: "blog_post",
       data: parsed,

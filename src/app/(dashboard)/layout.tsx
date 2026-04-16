@@ -4,6 +4,7 @@ import { Sidebar } from "@/src/components/layout/sidebar";
 import { Header } from "@/src/components/layout/header";
 import { CommandPalette } from "@/src/components/search/command-palette";
 import { UsageLimitProvider } from "@/src/components/usage/limit-modal";
+import { SessionGuard } from "@/src/components/auth/session-guard";
 import { useUIStore } from "@/src/stores/ui-store";
 import { cn } from "@/src/lib/utils/cn";
 
@@ -16,6 +17,7 @@ export default function DashboardLayout({
 
   return (
     <UsageLimitProvider>
+    <SessionGuard />
     <div className="min-h-screen bg-surface-0">
       <Sidebar />
       <Header />
