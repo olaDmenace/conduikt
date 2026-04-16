@@ -2,55 +2,49 @@ import type { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://conduikt.com";
+  const lastModified = new Date();
+
+  const staticRoutes: Array<{
+    path: string;
+    changeFrequency: MetadataRoute.Sitemap[number]["changeFrequency"];
+    priority: number;
+  }> = [
+    { path: "/", changeFrequency: "weekly", priority: 1 },
+    { path: "/features/", changeFrequency: "monthly", priority: 0.9 },
+    { path: "/pricing/", changeFrequency: "monthly", priority: 0.9 },
+    { path: "/compare/", changeFrequency: "monthly", priority: 0.8 },
+    { path: "/guides/", changeFrequency: "weekly", priority: 0.7 },
+    { path: "/launch/", changeFrequency: "monthly", priority: 0.6 },
+    { path: "/privacy/", changeFrequency: "yearly", priority: 0.3 },
+    { path: "/terms/", changeFrequency: "yearly", priority: 0.3 },
+    { path: "/data-deletion/", changeFrequency: "yearly", priority: 0.3 },
+  ];
+
+  const compareSlugs = ["jasper", "copy-ai", "writesonic", "surfer-seo"];
+  const guideSlugs = [
+    "social-media-marketing",
+    "seo-content-strategy",
+    "email-marketing-automation",
+  ];
 
   return [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 1,
-    },
-    {
-      url: `${baseUrl}/features`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/pricing`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/compare`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/guides`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
+    ...staticRoutes.map((r) => ({
+      url: `${baseUrl}${r.path}`,
+      lastModified,
+      changeFrequency: r.changeFrequency,
+      priority: r.priority,
+    })),
+    ...compareSlugs.map((slug) => ({
+      url: `${baseUrl}/compare/${slug}/`,
+      lastModified,
+      changeFrequency: "monthly" as const,
       priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/launch`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
+    })),
+    ...guideSlugs.map((slug) => ({
+      url: `${baseUrl}/guides/${slug}/`,
+      lastModified,
+      changeFrequency: "monthly" as const,
       priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/privacy`,
-      lastModified: new Date(),
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
-    {
-      url: `${baseUrl}/terms`,
-      lastModified: new Date(),
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
+    })),
   ];
 }

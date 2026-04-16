@@ -149,9 +149,15 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const guide = GUIDES.find((g) => g.slug === slug);
+  const url = `https://conduikt.com/guides/${slug}/`;
+  const title = guide?.title || "Marketing Guide";
+  const description =
+    guide?.intro?.slice(0, 160) || "AI marketing automation guide by Conduikt";
   return {
-    title: guide?.title || "Marketing Guide",
-    description: guide?.intro?.slice(0, 160) || "AI marketing automation guide by Conduikt",
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: { title, description, url, type: "article" },
   };
 }
 
@@ -176,8 +182,45 @@ export default async function GuidePage({
     );
   }
 
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://conduikt.com/" },
+      { "@type": "ListItem", position: 2, name: "Guides", item: "https://conduikt.com/guides/" },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: guide.title,
+        item: `https://conduikt.com/guides/${guide.slug}/`,
+      },
+    ],
+  };
+
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: guide.title,
+    description: guide.intro?.slice(0, 200),
+    author: { "@type": "Organization", name: "Conduikt" },
+    publisher: {
+      "@type": "Organization",
+      name: "Conduikt",
+      logo: { "@type": "ImageObject", url: "https://conduikt.com/favicon.png" },
+    },
+    mainEntityOfPage: `https://conduikt.com/guides/${guide.slug}/`,
+  };
+
   return (
     <div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
       {/* Hero */}
       <section className="pt-8 pb-20">
         <div className="mx-auto max-w-3xl px-6">

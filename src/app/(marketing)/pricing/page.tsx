@@ -1,10 +1,32 @@
-"use client";
-
+import type { Metadata } from "next";
 import Link from "next/link";
 import { CheckCircle2, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
+
+export const metadata: Metadata = {
+  title: "Pricing — Free, Pro $49, Growth $99, Agency $249",
+  description:
+    "Simple Conduikt pricing. Start free with 3 AI marketing agents. Upgrade to Pro for the full 10-agent suite, Growth for analytics, or Agency for white-label client reports.",
+  alternates: { canonical: "https://conduikt.com/pricing/" },
+  openGraph: {
+    title: "Pricing — Free, Pro $49, Growth $99, Agency $249",
+    description:
+      "Simple Conduikt pricing. Start free with 3 AI marketing agents. Upgrade to Pro for the full 10-agent suite, Growth for analytics, or Agency for white-label client reports.",
+    url: "https://conduikt.com/pricing/",
+    type: "website",
+  },
+};
+
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: "https://conduikt.com/" },
+    { "@type": "ListItem", position: 2, name: "Pricing", item: "https://conduikt.com/pricing/" },
+  ],
+};
 
 const tiers = [
   {
@@ -79,6 +101,10 @@ const tiers = [
 export default function PricingPage() {
   return (
     <div className="pt-8 pb-20">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <div className="mx-auto max-w-6xl px-6">
         <div className="text-center mb-16">
           <h1 className="text-hero text-text-primary">Simple pricing</h1>

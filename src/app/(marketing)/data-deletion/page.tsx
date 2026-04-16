@@ -5,6 +5,7 @@ export const metadata = {
   title: "User Data Deletion — Conduikt",
   description:
     "How to request deletion of your Conduikt account and any data we hold about you, including data collected via connected third-party platforms.",
+  alternates: { canonical: "https://conduikt.com/data-deletion/" },
 };
 
 export default function DataDeletionPage() {

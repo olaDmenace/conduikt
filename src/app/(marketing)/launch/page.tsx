@@ -27,6 +27,23 @@ export const metadata: Metadata = {
   title: "Conduikt Launch — 10 AI Marketing Agents",
   description:
     "Conduikt connects to your website, runs SEO audits, and deploys 10 AI agents to generate, publish, and optimize your marketing. Built for founders who'd rather build than write copy.",
+  alternates: { canonical: "https://conduikt.com/launch/" },
+  openGraph: {
+    title: "Conduikt Launch — 10 AI Marketing Agents",
+    description:
+      "Conduikt connects to your website, runs SEO audits, and deploys 10 AI agents to generate, publish, and optimize your marketing. Built for founders who'd rather build than write copy.",
+    url: "https://conduikt.com/launch/",
+    type: "website",
+  },
+};
+
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: "https://conduikt.com/" },
+    { "@type": "ListItem", position: 2, name: "Launch", item: "https://conduikt.com/launch/" },
+  ],
 };
 
 const iconMap: Record<string, typeof Search> = {
@@ -69,6 +86,10 @@ export default function LaunchPage() {
 
   return (
     <div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       {/* Hero */}
       <section className="pt-8 pb-24 relative overflow-hidden">
         <div className="mx-auto max-w-4xl px-6 text-center">
