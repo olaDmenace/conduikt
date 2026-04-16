@@ -63,7 +63,7 @@ const organizationJsonLd = {
   },
   sameAs: [
     "https://x.com/conduikt",
-    "https://fb.com/conduikt",
+    "https://www.facebook.com/conduikt",
     "https://www.linkedin.com/company/conduikt-ai/",
   ],
 };
@@ -107,7 +107,7 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Conduikt: AI Marketing Automation for SaaS Founders",
+        alt: "Conduikt AI marketing dashboard showing SEO audit, content generation, and multi-channel publishing",
       },
     ],
   },
@@ -154,9 +154,9 @@ export default function RootLayout({
           <>
             <Script
               src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
-              strategy="afterInteractive"
+              strategy="lazyOnload"
             />
-            <Script id="gtag-init" strategy="afterInteractive">
+            <Script id="gtag-init" strategy="lazyOnload">
               {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_ID}');`}
             </Script>
           </>
