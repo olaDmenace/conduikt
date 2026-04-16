@@ -36,17 +36,13 @@ export const metadata: Metadata = {
     template: "%s | Conduikt",
   },
   description:
-    "Connect your site. Get a marketing team that never sleeps. AI-powered marketing automation for founders, marketers, and agencies.",
+    "Conduikt audits your site, generates SEO content, and publishes across LinkedIn, X, and email — AI marketing automation built for SaaS founders. Start free.",
   robots: {
     index: true,
     follow: true,
   },
   alternates: {
     canonical: "https://conduikt.com/",
-    languages: {
-      "en-US": "https://conduikt.com/",
-      "x-default": "https://conduikt.com/",
-    },
   },
   icons: {
     icon: [
@@ -64,7 +60,7 @@ export const metadata: Metadata = {
     locale: "en_US",
     title: "Conduikt: AI Marketing Automation for SaaS Founders",
     description:
-      "Connect your site. Get a marketing team that never sleeps. AI-powered marketing automation for founders, marketers, and agencies.",
+      "Conduikt audits your site, generates SEO content, and publishes across LinkedIn, X, and email — AI marketing automation built for SaaS founders. Start free.",
     url: "https://conduikt.com/",
     siteName: "Conduikt",
     images: [
@@ -81,7 +77,7 @@ export const metadata: Metadata = {
     site: "@conduikt",
     title: "Conduikt: AI Marketing Automation for SaaS Founders",
     description:
-      "Connect your site. Get a marketing team that never sleeps. AI-powered marketing automation for founders, marketers, and agencies.",
+      "Conduikt audits your site, generates SEO content, and publishes across LinkedIn, X, and email — AI marketing automation built for SaaS founders.",
     images: [
       {
         url: "/og-image.png",
@@ -102,17 +98,6 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=JSON.parse(localStorage.getItem('conduikt-ui')||'{}');var theme=(t.state&&t.state.theme)||'dark';document.documentElement.className=theme;document.documentElement.setAttribute('data-theme',theme)}catch(e){}})()`,
-          }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "WebSite",
-              name: "Conduikt",
-              url: "https://conduikt.com/",
-            }),
           }}
         />
       </head>

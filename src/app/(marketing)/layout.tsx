@@ -28,7 +28,7 @@ export default function MarketingLayout({
               Features
             </Link>
             <Link
-              href="/#pricing"
+              href="/pricing"
               className="text-small text-text-secondary hover:text-text-primary transition-colors"
             >
               Pricing
