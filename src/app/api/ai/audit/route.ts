@@ -128,6 +128,7 @@ export async function POST(request: NextRequest) {
       userPrompt,
       model: seoAuditSkill.model,
       maxTokens: seoAuditSkill.maxTokens,
+      temperature: 0,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "AI generation failed";
