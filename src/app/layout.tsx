@@ -44,9 +44,9 @@ const organizationJsonLd = {
   slogan: "AI Marketing Automation for SaaS Founders",
   logo: {
     "@type": "ImageObject",
-    url: "https://conduikt.com/favicon.png",
-    width: 256,
-    height: 256,
+    url: "https://conduikt.com/icon-512.png",
+    width: 512,
+    height: 512,
   },
   image: "https://conduikt.com/og-image.png",
   founder: {
@@ -100,9 +100,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
+      { url: "/favicon.ico", sizes: "any", type: "image/x-icon" },
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
       { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
     ],
+    shortcut: [{ url: "/favicon.ico" }],
     apple: [
       { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],

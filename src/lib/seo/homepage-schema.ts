@@ -61,7 +61,7 @@ export const softwareAppJsonLd = {
       price: "0",
       priceCurrency: "USD",
       availability: "https://schema.org/InStock",
-      url: "https://conduikt.com/signup/",
+      url: "https://conduikt.com/signup/?plan=free",
       priceSpecification: {
         "@type": "UnitPriceSpecification",
         price: "0",
@@ -76,7 +76,7 @@ export const softwareAppJsonLd = {
       price: "49",
       priceCurrency: "USD",
       availability: "https://schema.org/InStock",
-      url: "https://conduikt.com/signup/",
+      url: "https://conduikt.com/signup/?plan=pro",
       priceSpecification: {
         "@type": "UnitPriceSpecification",
         price: "49",
@@ -91,7 +91,7 @@ export const softwareAppJsonLd = {
       price: "99",
       priceCurrency: "USD",
       availability: "https://schema.org/InStock",
-      url: "https://conduikt.com/signup/",
+      url: "https://conduikt.com/signup/?plan=growth",
       priceSpecification: {
         "@type": "UnitPriceSpecification",
         price: "99",
@@ -106,7 +106,7 @@ export const softwareAppJsonLd = {
       price: "249",
       priceCurrency: "USD",
       availability: "https://schema.org/InStock",
-      url: "https://conduikt.com/signup/",
+      url: "https://conduikt.com/signup/?plan=agency",
       priceSpecification: {
         "@type": "UnitPriceSpecification",
         price: "249",
