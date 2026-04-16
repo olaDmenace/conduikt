@@ -46,6 +46,13 @@ const softwareAppJsonLd = {
       priceCurrency: "USD",
       availability: "https://schema.org/InStock",
       url: "https://conduikt.com/signup/",
+      priceSpecification: {
+        "@type": "UnitPriceSpecification",
+        price: "0",
+        priceCurrency: "USD",
+        unitCode: "MON",
+        billingIncrement: 1,
+      },
     },
     {
       "@type": "Offer",
@@ -54,6 +61,13 @@ const softwareAppJsonLd = {
       priceCurrency: "USD",
       availability: "https://schema.org/InStock",
       url: "https://conduikt.com/signup/",
+      priceSpecification: {
+        "@type": "UnitPriceSpecification",
+        price: "49",
+        priceCurrency: "USD",
+        unitCode: "MON",
+        billingIncrement: 1,
+      },
     },
     {
       "@type": "Offer",
@@ -62,6 +76,13 @@ const softwareAppJsonLd = {
       priceCurrency: "USD",
       availability: "https://schema.org/InStock",
       url: "https://conduikt.com/signup/",
+      priceSpecification: {
+        "@type": "UnitPriceSpecification",
+        price: "99",
+        priceCurrency: "USD",
+        unitCode: "MON",
+        billingIncrement: 1,
+      },
     },
     {
       "@type": "Offer",
@@ -70,6 +91,13 @@ const softwareAppJsonLd = {
       priceCurrency: "USD",
       availability: "https://schema.org/InStock",
       url: "https://conduikt.com/signup/",
+      priceSpecification: {
+        "@type": "UnitPriceSpecification",
+        price: "249",
+        priceCurrency: "USD",
+        unitCode: "MON",
+        billingIncrement: 1,
+      },
     },
   ],
 };
@@ -347,7 +375,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-6">
           <div className="text-center mb-16">
             <h2 className="text-h1 text-text-primary">
-              Everything you need to automate marketing
+              Automated SEO Audits, Content Generation, and Social Publishing &mdash; in One Dashboard
             </h2>
             <p className="mt-4 text-lg text-text-secondary max-w-2xl mx-auto">
               From SEO audits to social publishing, Conduikt handles the entire
@@ -374,7 +402,7 @@ export default function LandingPage() {
       <section id="pricing" className="py-20 border-t border-border-subtle">
         <div className="mx-auto max-w-6xl px-6">
           <div className="text-center mb-16">
-            <h2 className="text-h1 text-text-primary">Simple, transparent pricing</h2>
+            <h2 className="text-h1 text-text-primary">Conduikt Pricing: Free to Agency Plans for AI Marketing Automation</h2>
             <p className="mt-4 text-lg text-text-secondary">Start free. Scale as you grow.</p>
             <p className="mt-2 text-small text-text-tertiary">Annual plans coming soon &mdash; save up to 20%.</p>
           </div>
