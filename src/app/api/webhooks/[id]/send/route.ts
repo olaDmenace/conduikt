@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
+import { isUrlSafeToFetch } from "@/src/lib/security/validate-url";
 
 export async function POST(
   request: NextRequest,
@@ -22,6 +23,10 @@ export async function POST(
 
   if (!webhook)
     return NextResponse.json({ error: "Webhook not found" }, { status: 404 });
+
+  if (!isUrlSafeToFetch(webhook.endpoint_url)) {
+    return NextResponse.json({ error: "Invalid or blocked webhook URL" }, { status: 400 });
+  }
 
   const body = await request.json();
   const { title, content, type } = body;
@@ -86,8 +91,9 @@ export async function POST(
 
     return NextResponse.json({ success: true });
   } catch (e) {
+    const detail = process.env.NODE_ENV === "development" ? `: ${String(e)}` : "";
     return NextResponse.json(
-      { error: `Failed to send: ${String(e)}` },
+      { error: `Failed to send webhook${detail}` },
       { status: 500 }
     );
   }

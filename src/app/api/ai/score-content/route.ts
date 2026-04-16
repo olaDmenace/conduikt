@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
       .from("projects")
       .select("*")
       .eq("id", projectId)
+      .eq("user_id", user.id)
       .single();
 
     if (project) {

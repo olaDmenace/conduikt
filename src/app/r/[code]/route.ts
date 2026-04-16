@@ -19,7 +19,12 @@ export async function GET(
 
   // Unknown or inactive → send to landing without attribution
   const origin = new URL(request.url).origin;
-  const redirectTo = new URL(request.nextUrl.searchParams.get("to") ?? "/", origin);
+  const raw = request.nextUrl.searchParams.get("to") ?? "/";
+  const redirectTo = new URL(raw, origin);
+  // Block open redirects
+  if (redirectTo.origin !== new URL(origin).origin) {
+    return NextResponse.redirect(new URL("/", origin));
+  }
   const response = NextResponse.redirect(redirectTo);
 
   if (!link || !link.active) {

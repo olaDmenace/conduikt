@@ -13,6 +13,7 @@ import {
   normalizePlan,
 } from "@/src/lib/plans";
 import { dispatchWebhooks } from "@/src/lib/integrations/webhook-dispatch";
+import { isUrlSafeToFetch } from "@/src/lib/security/validate-url";
 
 // Force Node.js runtime — Edge runtime can't fetch arbitrary external URLs
 export const runtime = "nodejs";
@@ -45,15 +46,20 @@ export async function POST(request: NextRequest) {
 
   const { projectId, url } = await request.json();
 
+  if (!isUrlSafeToFetch(url)) {
+    return NextResponse.json({ error: "Invalid or blocked URL" }, { status: 400 });
+  }
+
   // Fetch project
   const { data: project, error: projectError } = await supabase
     .from("projects")
     .select("*")
     .eq("id", projectId)
+    .eq("user_id", user.id)
     .single();
 
   if (projectError || !project) {
-    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   // Fetch the page HTML
@@ -135,7 +141,7 @@ export async function POST(request: NextRequest) {
     auditData = parsed.data as { score: number; findings: unknown };
   } catch {
     return NextResponse.json(
-      { error: "Failed to parse audit results", raw: result.content },
+      { error: "Failed to parse audit results" },
       { status: 500 }
     );
   }
@@ -197,12 +203,7 @@ export async function POST(request: NextRequest) {
       model: result.model,
       duration_ms: result.durationMs,
     }),
-    supabase
-      .from("profiles")
-      .update({
-        generation_count: (profile?.generation_count ?? 0) + 1,
-      })
-      .eq("id", user.id),
+    supabase.rpc("increment_generation_count", { user_id_param: user.id }),
   ]);
 
   dispatchWebhooks(user.id, projectId, {

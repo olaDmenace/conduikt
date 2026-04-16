@@ -10,10 +10,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const ALLOWED_BUCKETS = ["logos", "post-media", "brand-assets"];
+
   const formData = await request.formData();
   const file = formData.get("file") as File | null;
   const bucket = (formData.get("bucket") as string) || "logos";
-  const path = (formData.get("path") as string) || `uploads/${user.id}/${Date.now()}`;
+
+  if (!ALLOWED_BUCKETS.includes(bucket)) {
+    return NextResponse.json({ error: "Invalid bucket" }, { status: 400 });
+  }
+
+  const path = (formData.get("path") as string) || `uploads/${Date.now()}`;
+  const userPath = `${user.id}/${path}`;
 
   if (!file) {
     return NextResponse.json({ error: "No file provided" }, { status: 400 });
@@ -31,7 +39,7 @@ export async function POST(request: NextRequest) {
   }
 
   const ext = file.name.split(".").pop() || "png";
-  const filePath = `${path}.${ext}`;
+  const filePath = `${userPath}.${ext}`;
 
   const arrayBuffer = await file.arrayBuffer();
   const { error: uploadError } = await supabase.storage

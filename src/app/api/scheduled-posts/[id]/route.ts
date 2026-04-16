@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
+import { verifyProjectOwnership } from "@/src/lib/auth/verify-ownership";
 
 export async function PATCH(
   request: NextRequest,
@@ -12,6 +13,22 @@ export async function PATCH(
   } = await supabase.auth.getUser();
   if (!user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Verify the user owns the project associated with this scheduled post
+  const { data: scheduledPost } = await supabase
+    .from("scheduled_posts")
+    .select("project_id")
+    .eq("id", id)
+    .single();
+
+  if (!scheduledPost) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const ownedProject = await verifyProjectOwnership(supabase, scheduledPost.project_id, user.id);
+  if (!ownedProject) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
 
   const body = await request.json();
   const updates: Record<string, unknown> = {};

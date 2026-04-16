@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
+import { isUrlSafeToFetch } from "@/src/lib/security/validate-url";
 
 export async function POST(
   _request: NextRequest,
@@ -24,6 +25,10 @@ export async function POST(
 
   if (!webhook) {
     return NextResponse.json({ error: "Webhook not found" }, { status: 404 });
+  }
+
+  if (!isUrlSafeToFetch(webhook.endpoint_url)) {
+    return NextResponse.json({ error: "Invalid or blocked webhook URL" }, { status: 400 });
   }
 
   const testPayload = {

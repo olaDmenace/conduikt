@@ -47,7 +47,8 @@ export async function GET(request: NextRequest) {
       })),
     });
   } catch (err) {
-    return NextResponse.json({ error: String(err), photos: [] }, { status: 500 });
+    const message = process.env.NODE_ENV === "development" ? String(err) : "Failed to search photos";
+    return NextResponse.json({ error: message, photos: [] }, { status: 500 });
   }
 }
 
