@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowRight,
   BarChart3,
@@ -21,6 +22,7 @@ const softwareAppJsonLd = {
   "@type": "SoftwareApplication",
   name: "Conduikt",
   applicationCategory: "BusinessApplication",
+  applicationSubCategory: "MarketingApplication",
   operatingSystem: "Web",
   description:
     "AI-powered marketing automation for founders, marketers, and agencies.",
@@ -307,7 +309,6 @@ export default function LandingPage() {
                     alt="Conduikt - Paste your website → get marketing content in 20 seconds | Product Hunt"
                     width={250}
                     height={54}
-                    loading="lazy"
                     decoding="async"
                   />
                 </a>
@@ -316,13 +317,14 @@ export default function LandingPage() {
 
             {/* Dashboard Preview */}
             <div className="animate-in relative" style={{ animationDelay: "120ms" }}>
-              <img
+              <Image
                 src="/images/conduikt-dashboard.png"
                 alt="Conduikt AI marketing dashboard showing SEO score 87, CRO score 92, and 24 generated marketing assets"
                 width={600}
                 height={450}
+                priority
+                sizes="(max-width: 1024px) 100vw, 600px"
                 className="rounded-xl border border-border-default shadow-[var(--shadow-elevated)] transform rotate-1 hover:rotate-0 transition-transform duration-500 w-full h-auto"
-                fetchPriority="high"
               />
               <div className="absolute -bottom-8 -right-8 h-40 w-40 rounded-full bg-accent/10 blur-3xl" />
               <div className="absolute -top-8 -left-8 h-32 w-32 rounded-full bg-accent-secondary/10 blur-3xl" />
@@ -358,7 +360,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-6">
           <div className="text-center mb-16">
             <h2 className="text-h1 text-text-primary">
-              Automated SEO Audits, Content Generation, and Social Publishing &mdash; in One Dashboard
+              Everything You Need to Market Your SaaS &mdash; in One Place
             </h2>
             <p className="mt-4 text-lg text-text-secondary max-w-2xl mx-auto">
               From SEO audits to social publishing, Conduikt handles the entire
@@ -385,7 +387,7 @@ export default function LandingPage() {
       <section id="pricing" className="py-20 border-t border-border-subtle">
         <div className="mx-auto max-w-6xl px-6">
           <div className="text-center mb-16">
-            <h2 className="text-h1 text-text-primary">Conduikt Pricing: Free to Agency Plans for AI Marketing Automation</h2>
+            <h2 className="text-h1 text-text-primary">Simple Pricing That Scales With Your Business</h2>
             <p className="mt-4 text-lg text-text-secondary">Start free. Scale as you grow.</p>
             <p className="mt-2 text-small text-text-tertiary">Annual plans coming soon &mdash; save up to 20%.</p>
           </div>
