@@ -1,4 +1,5 @@
 import type { SkillConfig, ProjectContext, SkillOutput } from "./types";
+import { parseJsonResponse } from "../parse-json";
 
 export const seoAuditSkill: SkillConfig = {
   id: "seo-audit",
@@ -62,8 +63,7 @@ ${(input.html as string).substring(0, 30000)}
   },
 
   parseResponse: (response: string): SkillOutput => {
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
-    const parsed = JSON.parse(jsonMatch?.[0] ?? response);
+    const parsed = parseJsonResponse(response);
     return {
       type: "audit_report",
       data: parsed,
