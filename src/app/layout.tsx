@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { DM_Serif_Display, Outfit, JetBrains_Mono } from "next/font/google";
 import { ToastProvider } from "@/src/components/ui/toast";
 import "@/src/styles/globals.css";
+
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
 const dmSerif = DM_Serif_Display({
   weight: "400",
@@ -98,6 +101,17 @@ export default function RootLayout({
         <ToastProvider>
           {children}
         </ToastProvider>
+        {GA_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="gtag-init" strategy="afterInteractive">
+              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_ID}');`}
+            </Script>
+          </>
+        )}
       </body>
     </html>
   );
