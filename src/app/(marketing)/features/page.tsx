@@ -1,9 +1,31 @@
-"use client";
-
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, BarChart3, Sparkles, Globe, TrendingUp, Mail, Shield, Zap, Calendar, FileText, Users, Code } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
+
+export const metadata: Metadata = {
+  title: "Features — 10 AI Marketing Agents for SEO, Content & Publishing",
+  description:
+    "Explore Conduikt's AI marketing features: SEO audits, CRO analysis, AI copywriting, social content, email sequences, campaign orchestration, and multi-channel publishing.",
+  alternates: { canonical: "https://conduikt.com/features/" },
+  openGraph: {
+    title: "Features — 10 AI Marketing Agents for SEO, Content & Publishing",
+    description:
+      "Explore Conduikt's AI marketing features: SEO audits, CRO analysis, AI copywriting, social content, email sequences, campaign orchestration, and multi-channel publishing.",
+    url: "https://conduikt.com/features/",
+    type: "website",
+  },
+};
+
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: "https://conduikt.com/" },
+    { "@type": "ListItem", position: 2, name: "Features", item: "https://conduikt.com/features/" },
+  ],
+};
 
 const featureGroups = [
   {
@@ -47,6 +69,10 @@ const featureGroups = [
 export default function FeaturesPage() {
   return (
     <div className="pt-8 pb-20">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <div className="mx-auto max-w-6xl px-6">
         <div className="text-center mb-20">
           <h1 className="text-hero text-text-primary">AI marketing, built for humans</h1>

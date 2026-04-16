@@ -4,6 +4,7 @@ import { Shield } from "lucide-react";
 export const metadata = {
   title: "Privacy Policy — Conduikt",
   description: "How Conduikt collects, uses, and protects your data.",
+  alternates: { canonical: "https://conduikt.com/privacy/" },
 };
 
 export default function PrivacyPage() {

@@ -9,6 +9,23 @@ export const metadata: Metadata = {
   title: "AI Marketing Guides — Conduikt",
   description:
     "Practical guides to automating your marketing with AI. Learn how to build SEO content strategies, automate social media, and scale email marketing.",
+  alternates: { canonical: "https://conduikt.com/guides/" },
+  openGraph: {
+    title: "AI Marketing Guides — Conduikt",
+    description:
+      "Practical guides to automating your marketing with AI. Learn how to build SEO content strategies, automate social media, and scale email marketing.",
+    url: "https://conduikt.com/guides/",
+    type: "website",
+  },
+};
+
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: "https://conduikt.com/" },
+    { "@type": "ListItem", position: 2, name: "Guides", item: "https://conduikt.com/guides/" },
+  ],
 };
 
 const guides = [
@@ -47,6 +64,10 @@ const guides = [
 export default function GuidesIndexPage() {
   return (
     <div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       {/* Hero */}
       <section className="pt-8 pb-20">
         <div className="mx-auto max-w-4xl px-6 text-center">

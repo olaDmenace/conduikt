@@ -132,9 +132,14 @@ export async function generateMetadata({
   const { slug } = await params;
   const comparison = COMPARISONS.find((c) => c.slug === slug);
   const competitor = comparison?.competitor || slug;
+  const url = `https://conduikt.com/compare/${slug}/`;
+  const title = `Conduikt vs ${competitor} — AI Marketing Comparison`;
+  const description = `Compare Conduikt and ${competitor}. See how Conduikt's 10 AI marketing agents stack up for SEO audits, content generation, and multi-channel publishing.`;
   return {
-    title: `Conduikt vs ${competitor} — AI Marketing Comparison`,
-    description: `Compare Conduikt and ${competitor}. See how Conduikt's 10 AI marketing agents stack up for SEO audits, content generation, and multi-channel publishing.`,
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: { title, description, url, type: "article" },
   };
 }
 
@@ -159,8 +164,27 @@ export default async function ComparePage({
     );
   }
 
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://conduikt.com/" },
+      { "@type": "ListItem", position: 2, name: "Compare", item: "https://conduikt.com/compare/" },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: `Conduikt vs ${comparison.competitor}`,
+        item: `https://conduikt.com/compare/${comparison.slug}/`,
+      },
+    ],
+  };
+
   return (
     <div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       {/* Hero */}
       <section className="pt-8 pb-20">
         <div className="mx-auto max-w-4xl px-6 text-center">

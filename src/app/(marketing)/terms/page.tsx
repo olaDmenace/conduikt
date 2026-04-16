@@ -4,6 +4,7 @@ import { FileText } from "lucide-react";
 export const metadata = {
   title: "Terms of Service — Conduikt",
   description: "The terms governing your use of the Conduikt platform.",
+  alternates: { canonical: "https://conduikt.com/terms/" },
 };
 
 export default function TermsPage() {

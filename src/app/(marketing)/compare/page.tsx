@@ -9,6 +9,23 @@ export const metadata: Metadata = {
   title: "Conduikt vs Competitors — AI Marketing Tool Comparisons",
   description:
     "See how Conduikt's 10 AI marketing agents compare to Jasper, Copy.ai, Writesonic, and Surfer SEO. Full feature breakdowns and honest analysis.",
+  alternates: { canonical: "https://conduikt.com/compare/" },
+  openGraph: {
+    title: "Conduikt vs Competitors — AI Marketing Tool Comparisons",
+    description:
+      "See how Conduikt's 10 AI marketing agents compare to Jasper, Copy.ai, Writesonic, and Surfer SEO. Full feature breakdowns and honest analysis.",
+    url: "https://conduikt.com/compare/",
+    type: "website",
+  },
+};
+
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: "https://conduikt.com/" },
+    { "@type": "ListItem", position: 2, name: "Compare", item: "https://conduikt.com/compare/" },
+  ],
 };
 
 const comparisons = [
@@ -65,6 +82,10 @@ const comparisons = [
 export default function CompareIndexPage() {
   return (
     <div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       {/* Hero */}
       <section className="pt-8 pb-20">
         <div className="mx-auto max-w-4xl px-6 text-center">
