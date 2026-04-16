@@ -112,7 +112,10 @@ export default function PricingPage() {
                   ))}
                 </ul>
                 <Button variant={tier.popular ? "primary" : "secondary"} className="w-full" asChild>
-                  <Link href="/signup">{tier.cta}<ArrowRight className="h-4 w-4" /></Link>
+                  <Link href={tier.name === "Free" ? "/signup" : "/signup?plan=" + tier.name.toLowerCase()}>
+                    {tier.cta}
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
                 </Button>
               </CardContent>
             </Card>
