@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { DM_Serif_Display, Outfit, JetBrains_Mono } from "next/font/google";
-import { ToastProvider } from "@/src/components/ui/toast";
 import "@/src/styles/globals.css";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
@@ -83,7 +82,12 @@ export const metadata: Metadata = {
     title: "Conduikt: AI Marketing Automation for SaaS Founders",
     description:
       "Connect your site. Get a marketing team that never sleeps. AI-powered marketing automation for founders, marketers, and agencies.",
-    images: ["/og-image.png"],
+    images: [
+      {
+        url: "/og-image.png",
+        alt: "Conduikt AI marketing dashboard showing SEO audit, content generation, and multi-channel publishing",
+      },
+    ],
   },
 };
 
@@ -108,15 +112,6 @@ export default function RootLayout({
               "@type": "WebSite",
               name: "Conduikt",
               url: "https://conduikt.com/",
-              potentialAction: {
-                "@type": "SearchAction",
-                target: {
-                  "@type": "EntryPoint",
-                  urlTemplate:
-                    "https://conduikt.com/guides/?q={search_term_string}",
-                },
-                "query-input": "required name=search_term_string",
-              },
             }),
           }}
         />
@@ -124,9 +119,7 @@ export default function RootLayout({
       <body
         className={`${dmSerif.variable} ${outfit.variable} ${jetbrainsMono.variable} font-sans antialiased grain`}
       >
-        <ToastProvider>
-          {children}
-        </ToastProvider>
+        {children}
         {GA_ID && (
           <>
             <Script

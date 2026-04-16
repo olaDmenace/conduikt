@@ -111,6 +111,7 @@ export default function PricingPage() {
           <p className="mt-4 text-lg text-text-secondary max-w-xl mx-auto">
             Start free. Upgrade when you need more power. Cancel anytime.
           </p>
+          <p className="mt-2 text-small text-text-tertiary">Annual plans coming soon &mdash; save up to 20%.</p>
         </div>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
           {tiers.map((tier, i) => (

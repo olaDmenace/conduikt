@@ -268,6 +268,8 @@ export default function LaunchPage() {
                 alt="Conduikt - Paste your website → get marketing content in 20 seconds | Product Hunt"
                 width={250}
                 height={54}
+                loading="lazy"
+                decoding="async"
               />
             </a>
           </div>
