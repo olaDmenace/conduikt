@@ -75,3 +75,31 @@ export function nextTierFor(requiredTier: PlanTier): PlanTier {
 export function tierLabel(tier: PlanTier): string {
   return tier.charAt(0).toUpperCase() + tier.slice(1);
 }
+
+// ---------------------------------------------------------------------------
+// Paystack plan code mapping
+// ---------------------------------------------------------------------------
+
+/**
+ * Maps tier keys to Paystack plan codes from env vars.
+ * Plan codes are created in the Paystack dashboard (Settings > Plans).
+ */
+export function getPaystackPlanCode(tier: PlanTier): string | null {
+  const map: Record<string, string | undefined> = {
+    pro: process.env.PAYSTACK_PLAN_PRO,
+    growth: process.env.PAYSTACK_PLAN_GROWTH,
+    agency: process.env.PAYSTACK_PLAN_AGENCY,
+  };
+  return map[tier] ?? null;
+}
+
+/**
+ * Reverse lookup: given a Paystack plan code, return the tier.
+ * Used in webhook handlers to determine which plan the user subscribed to.
+ */
+export function paystackPlanToTier(planCode: string): PlanTier {
+  if (planCode === process.env.PAYSTACK_PLAN_PRO) return "pro";
+  if (planCode === process.env.PAYSTACK_PLAN_GROWTH) return "growth";
+  if (planCode === process.env.PAYSTACK_PLAN_AGENCY) return "agency";
+  return "free";
+}
