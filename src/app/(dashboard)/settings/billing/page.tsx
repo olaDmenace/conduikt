@@ -166,30 +166,19 @@ function BillingContent() {
         throw new Error(data.error || "Failed to initialize payment");
       }
 
-      const { access_code } = await res.json();
-
-      // Dynamically import Paystack SDK (only when needed)
-      const PaystackPop = (await import("@paystack/inline-js")).default;
-      const paystack = new PaystackPop();
+      const { checkout_url } = (await res.json()) as { checkout_url?: string };
+      if (!checkout_url) throw new Error("No checkout URL returned");
 
       prevPlanRef.current = profile.plan;
 
-      paystack.checkout({
-        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY!,
-        email: profile.email,
-        accessCode: access_code,
-        onSuccess: () => {
-          startPolling();
-        },
-        onCancel: () => {
-          setCheckoutLoading(null);
-        },
-      });
+      // Flutterwave uses a hosted checkout redirect. User returns to
+      // /settings/billing?payment=success which triggers polling to confirm
+      // the webhook has landed and the plan has been updated.
+      window.location.href = checkout_url;
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Something went wrong"
       );
-    } finally {
       setCheckoutLoading(null);
     }
   }
@@ -420,8 +409,8 @@ function BillingContent() {
             >
               <CardContent className="py-5">
                 <p className="text-small text-text-secondary">
-                  Payments are processed securely by Paystack. You can
-                  upgrade your plan at any time. To downgrade or cancel,
+                  Payments are processed securely by Flutterwave in USD. You
+                  can upgrade your plan at any time. To downgrade or cancel,
                   contact us at{" "}
                   <a
                     href="mailto:hello@conduikt.com"

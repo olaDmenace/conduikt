@@ -103,3 +103,33 @@ export function paystackPlanToTier(planCode: string): PlanTier {
   if (planCode === process.env.PAYSTACK_PLAN_AGENCY) return "agency";
   return "free";
 }
+
+// ---------------------------------------------------------------------------
+// Flutterwave plan ID mapping
+// ---------------------------------------------------------------------------
+
+/**
+ * Maps tier keys to Flutterwave payment plan IDs from env vars.
+ * Plan IDs are created in the Flutterwave dashboard (Payments > Payment Plans).
+ * Use numeric IDs (e.g. 12345), not the plan name.
+ */
+export function getFlutterwavePlanId(tier: PlanTier): string | null {
+  const map: Record<string, string | undefined> = {
+    pro: process.env.FLUTTERWAVE_PLAN_PRO,
+    growth: process.env.FLUTTERWAVE_PLAN_GROWTH,
+    agency: process.env.FLUTTERWAVE_PLAN_AGENCY,
+  };
+  return map[tier] ?? null;
+}
+
+/**
+ * Reverse lookup: given a Flutterwave payment plan ID, return the tier.
+ * Used in webhook handlers to determine which plan the user subscribed to.
+ */
+export function flutterwavePlanToTier(planId: string | number): PlanTier {
+  const id = String(planId);
+  if (id === process.env.FLUTTERWAVE_PLAN_PRO) return "pro";
+  if (id === process.env.FLUTTERWAVE_PLAN_GROWTH) return "growth";
+  if (id === process.env.FLUTTERWAVE_PLAN_AGENCY) return "agency";
+  return "free";
+}

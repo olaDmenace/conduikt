@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import { createClient } from "@/src/lib/supabase/server";
-import { getPaystackPlanCode, type PlanTier } from "@/src/lib/plans";
-
-const PAYSTACK_API = "https://api.paystack.co";
+import { getFlutterwavePlanId, PLAN_PRICING, type PlanTier } from "@/src/lib/plans";
+import { initPayment } from "@/src/lib/payments/flutterwave";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -18,62 +18,47 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
   }
 
-  const planCode = getPaystackPlanCode(planKey as PlanTier);
-  if (!planCode) {
+  const tier = planKey as PlanTier;
+  const planId = getFlutterwavePlanId(tier);
+  if (!planId) {
     return NextResponse.json(
       { error: "Plan not configured. Contact support." },
       { status: 500 }
     );
   }
 
-  const secretKey = process.env.PAYSTACK_SECRET_KEY;
-  if (!secretKey) {
-    return NextResponse.json(
-      { error: "Payment provider not configured" },
-      { status: 500 }
-    );
+  const amount = PLAN_PRICING[tier].price;
+  if (!amount) {
+    return NextResponse.json({ error: "Invalid plan price" }, { status: 500 });
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const txRef = `conduikt-${tier}-${user.id}-${randomUUID()}`;
 
-  const res = await fetch(`${PAYSTACK_API}/transaction/initialize`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${secretKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      email: user.email,
-      plan: planCode,
-      metadata: {
+  try {
+    const { link } = await initPayment({
+      txRef,
+      amount,
+      currency: "USD",
+      customerEmail: user.email ?? "",
+      paymentPlanId: planId,
+      redirectUrl: `${appUrl}/settings/billing?payment=success`,
+      meta: {
         user_id: user.id,
-        plan_key: planKey,
+        plan_key: tier,
       },
-      callback_url: `${appUrl}/settings/billing?payment=success`,
-    }),
-  });
+    });
 
-  if (!res.ok) {
-    const err = await res.text();
-    console.error("[billing/initialize] Paystack error:", err);
+    return NextResponse.json({
+      provider: "flutterwave",
+      checkout_url: link,
+      tx_ref: txRef,
+    });
+  } catch (err) {
+    console.error("[billing/initialize] Flutterwave error:", err);
     return NextResponse.json(
       { error: "Failed to initialize payment" },
       { status: 502 }
     );
   }
-
-  const data = await res.json();
-
-  if (!data.status || !data.data) {
-    return NextResponse.json(
-      { error: "Unexpected response from payment provider" },
-      { status: 502 }
-    );
-  }
-
-  return NextResponse.json({
-    access_code: data.data.access_code,
-    authorization_url: data.data.authorization_url,
-    reference: data.data.reference,
-  });
 }
