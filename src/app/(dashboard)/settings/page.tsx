@@ -9,6 +9,8 @@ import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { PageHeader } from "@/src/components/layout/page-header";
 import { useToast } from "@/src/components/ui/toast";
+import { GENERATION_LIMITS, normalizePlan, isUnlimited } from "@/src/lib/plans";
+import type { PlanTier } from "@/src/lib/plans";
 
 interface Profile {
   id: string;
@@ -16,6 +18,7 @@ interface Profile {
   email: string;
   plan: string;
   generation_count: number;
+  generation_reset_at: string | null;
   onboarding_completed: boolean;
   created_at: string;
 }
@@ -101,12 +104,9 @@ export default function SettingsPage() {
     agency: "Agency",
   };
 
-  const limits: Record<string, number> = {
-    free: 5,
-    pro: 100,
-    growth: 999999,
-    agency: 999999,
-  };
+  const tier = normalizePlan(profile?.plan);
+  const limit = GENERATION_LIMITS[tier];
+  const unlimited = isUnlimited(limit);
 
   return (
     <div>
@@ -206,45 +206,41 @@ export default function SettingsPage() {
                         AI Generations
                       </p>
                       <p className="text-small text-text-secondary mt-0.5">
-                        {profile?.generation_count ?? 0} of{" "}
-                        {limits[profile?.plan || "free"]} used this period
+                        {unlimited
+                          ? `${profile?.generation_count ?? 0} used this period`
+                          : `${profile?.generation_count ?? 0} of ${limit} used this period`}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-h3 font-mono text-text-primary">
-                        {Math.max(
-                          0,
-                          (limits[profile?.plan || "free"] ?? 5) -
-                            (profile?.generation_count ?? 0)
-                        )}
+                        {unlimited ? "∞" : Math.max(0, limit - (profile?.generation_count ?? 0))}
                       </p>
                       <p className="text-small text-text-tertiary">remaining</p>
                     </div>
                   </div>
 
                   {/* Usage bar */}
-                  <div>
-                    <div className="flex items-center justify-between text-small mb-1.5">
-                      <span className="text-text-secondary">Usage</span>
-                      <span className="text-text-tertiary">
-                        {profile?.generation_count ?? 0}/
-                        {limits[profile?.plan || "free"]}
-                      </span>
+                  {!unlimited && (
+                    <div>
+                      <div className="flex items-center justify-between text-small mb-1.5">
+                        <span className="text-text-secondary">Usage</span>
+                        <span className="text-text-tertiary">
+                          {profile?.generation_count ?? 0}/{limit}
+                        </span>
+                      </div>
+                      <div className="h-2 rounded-full bg-surface-2 overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-accent transition-all duration-500"
+                          style={{
+                            width: `${Math.min(
+                              100,
+                              ((profile?.generation_count ?? 0) / limit) * 100
+                            )}%`,
+                          }}
+                        />
+                      </div>
                     </div>
-                    <div className="h-2 rounded-full bg-surface-2 overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-accent transition-all duration-500"
-                        style={{
-                          width: `${Math.min(
-                            100,
-                            ((profile?.generation_count ?? 0) /
-                              (limits[profile?.plan || "free"] ?? 5)) *
-                              100
-                          )}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
+                  )}
 
                   {profile?.plan === "free" && (
                     <div className="flex justify-end">

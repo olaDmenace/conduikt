@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
+import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
 
 const ALLOWED = ["image/png", "image/jpeg", "image/webp", "image/gif"];
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB — platform upload limits are ~5-10MB
@@ -10,6 +11,10 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  // Rate limit: 5 media uploads per minute per user
+  const rl = rateLimit(`media-upload:${user.id}`, { limit: 5, windowSeconds: 60 });
+  if (!rl.allowed) return rateLimitResponse(rl);
 
   const formData = await request.formData();
   const file = formData.get("file") as File | null;

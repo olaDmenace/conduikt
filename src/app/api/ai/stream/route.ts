@@ -9,6 +9,7 @@ import {
   normalizePlan,
 } from "@/src/lib/plans";
 import { dispatchWebhooks } from "@/src/lib/integrations/webhook-dispatch";
+import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -22,6 +23,10 @@ export async function POST(request: NextRequest) {
       headers: { "Content-Type": "application/json" },
     });
   }
+
+  // Rate limit: 10 AI streams per minute per user
+  const rl = rateLimit(`ai-stream:${user.id}`, { limit: 10, windowSeconds: 60 });
+  if (!rl.allowed) return rateLimitResponse(rl);
 
   const body = await request.json();
   const { skillId, agentId, input, projectId } = body;

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
+import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -9,6 +10,10 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  // Rate limit: 5 uploads per minute per user
+  const rl = rateLimit(`upload:${user.id}`, { limit: 5, windowSeconds: 60 });
+  if (!rl.allowed) return rateLimitResponse(rl);
 
   const ALLOWED_BUCKETS = ["logos", "post-media", "brand-assets"];
 
@@ -33,7 +38,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Validate file type
-  const allowedTypes = ["image/png", "image/jpeg", "image/svg+xml", "image/webp"];
+  const allowedTypes = ["image/png", "image/jpeg", "image/webp"];
   if (!allowedTypes.includes(file.type)) {
     return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
   }

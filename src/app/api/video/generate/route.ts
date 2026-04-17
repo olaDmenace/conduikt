@@ -5,6 +5,7 @@ import { getAgent } from "@/src/lib/ai/agents";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
 import { buildPerformanceContext } from "@/src/lib/ai/performance-context";
 import { inngest } from "@/src/lib/inngest/client";
+import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -15,6 +16,10 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  // Rate limit: 3 video generations per minute per user
+  const rl = rateLimit(`video-gen:${user.id}`, { limit: 3, windowSeconds: 60 });
+  if (!rl.allowed) return rateLimitResponse(rl);
 
   // Plan gate — Growth/Agency only
   const { data: profile } = await supabase
