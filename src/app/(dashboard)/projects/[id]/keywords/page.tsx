@@ -34,6 +34,7 @@ import { ExpectationBanner } from "@/src/components/ui/expectation-banner";
 
 import { useToast } from "@/src/components/ui/toast";
 import { useUsageLimitModal } from "@/src/components/usage/limit-modal";
+import { parseJsonResponse } from "@/src/lib/ai/parse-json";
 
 // ---------- types ----------
 
@@ -250,13 +251,13 @@ export default function KeywordsPage({
       // Parse JSON result
       if (fullText) {
         try {
-          const jsonMatch = fullText.match(/\{[\s\S]*\}/);
-          const parsed = JSON.parse(jsonMatch?.[0] ?? fullText);
+          const parsed = parseJsonResponse(fullText) as KeywordResult;
           setResult(parsed);
           setActiveTab("primary");
           toast("Keyword research complete!", "success");
-        } catch {
-          toast("Could not parse results. Check raw output.", "warning");
+        } catch (parseErr) {
+          console.warn("[keywords] parse failed:", parseErr, "raw head:", fullText.slice(0, 300));
+          toast("Results came through but formatting looked off. Check raw output.", "warning");
         }
       }
     } catch (err) {

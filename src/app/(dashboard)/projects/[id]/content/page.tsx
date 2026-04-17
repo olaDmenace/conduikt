@@ -46,6 +46,7 @@ import {
 import { PageHeader } from "@/src/components/layout/page-header";
 
 import { useToast } from "@/src/components/ui/toast";
+import { parseJsonResponse } from "@/src/lib/ai/parse-json";
 import { useUsageLimitModal } from "@/src/components/usage/limit-modal";
 import { ExpectationBanner } from "@/src/components/ui/expectation-banner";
 import { VariantPanel } from "@/src/components/content/variant-panel";
@@ -170,14 +171,10 @@ const contentSkills = [
 
 /** Strip markdown code fences and extract JSON */
 function extractJson(text: string): Record<string, unknown> | null {
-  // Remove ```json ... ``` or ``` ... ``` wrappers
-  let cleaned = text.replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/i, "");
-  // Try to extract the outermost JSON object
-  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) return null;
   try {
-    return JSON.parse(jsonMatch[0]);
-  } catch {
+    return parseJsonResponse(text) as Record<string, unknown>;
+  } catch (err) {
+    console.warn("[content] parse failed:", err, "raw head:", text.slice(0, 300));
     return null;
   }
 }
@@ -326,8 +323,7 @@ function ContentPageInner({
         setSavedAssetId(assetId);
         if (assetSkill === "social-content" && raw) {
           try {
-            const jsonMatch = raw.match(/\{[\s\S]*\}/);
-            const parsed = JSON.parse(jsonMatch?.[0] ?? raw);
+            const parsed = parseJsonResponse(raw) as { posts?: unknown };
             if (Array.isArray(parsed?.posts)) setParsedPosts(parsed.posts);
           } catch { /* not JSON */ }
         }
@@ -560,10 +556,10 @@ function ContentPageInner({
       // Parse JSON for social posts after streaming completes
       if (selectedSkill === "social-content" && fullText) {
         try {
-          const jsonMatch = fullText.match(/\{[\s\S]*\}/);
-          const parsed = JSON.parse(jsonMatch?.[0] ?? fullText);
+          const parsed = parseJsonResponse(fullText) as { posts?: unknown };
           if (Array.isArray(parsed?.posts)) setParsedPosts(parsed.posts);
-        } catch {
+        } catch (parseErr) {
+          console.warn("[social-content] parse failed:", parseErr, "raw head:", fullText.slice(0, 300));
           // Not valid JSON — leave parsedPosts null, raw text will display
         }
       }
@@ -1601,8 +1597,7 @@ function ContentPageInner({
                           setParsedContent(null);
                           if (assetSkill === "social-content" && raw) {
                             try {
-                              const jsonMatch = raw.match(/\{[\s\S]*\}/);
-                              const parsed = JSON.parse(jsonMatch?.[0] ?? raw);
+                              const parsed = parseJsonResponse(raw) as { posts?: unknown };
                               if (Array.isArray(parsed?.posts)) setParsedPosts(parsed.posts);
                             } catch { /* not JSON */ }
                           }

@@ -34,6 +34,7 @@ import { ExpectationBanner } from "@/src/components/ui/expectation-banner";
 
 import { useToast } from "@/src/components/ui/toast";
 import { PdfDownloadButton } from "@/src/components/ui/pdf-download-button";
+import { parseJsonResponse } from "@/src/lib/ai/parse-json";
 
 // ---------- types ----------
 
@@ -309,13 +310,13 @@ function GrowthPageInner({
       }
 
       try {
-        const jsonMatch = fullText.match(/\{[\s\S]*\}/);
-        const parsed = JSON.parse(jsonMatch?.[0] ?? fullText) as GrowthPlaybook;
+        const parsed = parseJsonResponse(fullText) as GrowthPlaybook;
         setPlaybook(parsed);
         setExpandedPhase(1);
         toast("Growth playbook ready!", "success");
-      } catch {
-        toast("Could not parse playbook output", "warning");
+      } catch (parseErr) {
+        console.warn("[playbook] parse failed:", parseErr, "raw head:", fullText.slice(0, 300));
+        toast("Playbook generated but formatting looked off. Try regenerating.", "warning");
       }
     } catch (err) {
       toast(String(err), "error");
@@ -415,6 +416,20 @@ function GrowthPageInner({
             {generating && rawText && (
               <div className="mt-4 rounded-lg bg-surface-0 border border-border-default p-3 max-h-24 overflow-hidden">
                 <p className="text-small font-mono text-text-tertiary line-clamp-3">{rawText}</p>
+              </div>
+            )}
+
+            {!generating && !playbook && rawText && (
+              <div className="mt-4 rounded-lg bg-surface-0 border border-warning/30 p-4 space-y-2">
+                <p className="text-small text-text-primary font-medium">
+                  We got a response but couldn&apos;t format it into a playbook. You can retry below.
+                </p>
+                <details className="text-small">
+                  <summary className="cursor-pointer text-text-tertiary hover:text-text-secondary">
+                    Show raw output
+                  </summary>
+                  <pre className="mt-2 font-mono text-xs text-text-tertiary whitespace-pre-wrap max-h-48 overflow-auto">{rawText}</pre>
+                </details>
               </div>
             )}
           </CardContent>
