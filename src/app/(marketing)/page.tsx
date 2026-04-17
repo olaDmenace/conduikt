@@ -12,6 +12,7 @@ import {
   TrendingUp,
   Shield,
   CheckCircle2,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
@@ -358,16 +359,27 @@ export default function LandingPage() {
               Everything you need to know about Conduikt.
             </p>
           </div>
-          <div className="space-y-6">
+          <div className="space-y-4">
             {faqs.map((faq, i) => (
-              <div
+              <details
                 key={i}
-                className="animate-in rounded-xl border border-border-default bg-surface-1 p-6"
+                open={i === 0}
+                className="group animate-in rounded-xl border border-border-default bg-surface-1 open:border-accent/30 open:shadow-[0_0_0_1px_var(--accent-glow)] transition-colors"
                 style={{ animationDelay: `${i * 60}ms` }}
               >
-                <h3 className="text-h3 text-text-primary">{faq.question}</h3>
-                <p className="mt-2 text-body text-text-secondary">{faq.answer}</p>
-              </div>
+                <summary className="flex cursor-pointer items-center justify-between gap-4 px-6 py-5 list-none [&::-webkit-details-marker]:hidden">
+                  <h3 className="text-h3 text-text-primary">{faq.question}</h3>
+                  <ChevronDown
+                    className="h-5 w-5 shrink-0 text-text-tertiary transition-transform duration-200 group-open:rotate-180 group-open:text-accent"
+                    aria-hidden="true"
+                  />
+                </summary>
+                <div className="px-6 pb-6">
+                  <p className="text-body text-text-secondary leading-relaxed">
+                    {faq.answer}
+                  </p>
+                </div>
+              </details>
             ))}
           </div>
         </div>
