@@ -9,6 +9,7 @@ import {
   isUnlimited,
   normalizePlan,
 } from "@/src/lib/plans";
+import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -20,6 +21,10 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  // Rate limit: 10 AI generations per minute per user
+  const rl = rateLimit(`ai-gen:${user.id}`, { limit: 10, windowSeconds: 60 });
+  if (!rl.allowed) return rateLimitResponse(rl);
 
   const body = await request.json();
   const { projectId, skillId, agentId, input } = body;

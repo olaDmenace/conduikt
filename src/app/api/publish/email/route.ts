@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
+import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -9,6 +10,10 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  // Rate limit: 10 emails per hour per user
+  const rl = rateLimit(`email:${user.id}`, { limit: 10, windowSeconds: 3600 });
+  if (!rl.allowed) return rateLimitResponse(rl);
 
   // Verify user is on a paid plan
   const { data: profile } = await supabase
@@ -49,9 +54,6 @@ export async function POST(request: NextRequest) {
       );
     }
   }
-
-  // TODO: Add daily send limit check (e.g., max 50 emails/day per user)
-  // This should be implemented with a send_log table or Redis counter
 
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {

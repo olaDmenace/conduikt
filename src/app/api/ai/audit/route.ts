@@ -14,6 +14,7 @@ import {
 } from "@/src/lib/plans";
 import { dispatchWebhooks } from "@/src/lib/integrations/webhook-dispatch";
 import { isUrlSafeToFetch } from "@/src/lib/security/validate-url";
+import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
 
 // Force Node.js runtime — Edge runtime can't fetch arbitrary external URLs
 export const runtime = "nodejs";
@@ -27,6 +28,10 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  // Rate limit: 5 audits per minute per user
+  const rl = rateLimit(`ai-audit:${user.id}`, { limit: 5, windowSeconds: 60 });
+  if (!rl.allowed) return rateLimitResponse(rl);
 
   // Check generation limits
   const { data: profile } = await supabase

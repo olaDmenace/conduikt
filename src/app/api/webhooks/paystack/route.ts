@@ -4,6 +4,7 @@ import { paystackPlanToTier } from "@/src/lib/plans";
 import { sendPlanUpgradeEmail } from "@/src/lib/email";
 import { createNotification } from "@/src/lib/notifications";
 import crypto from "crypto";
+import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
 
 function verifySignature(rawBody: string, signature: string): boolean {
   const secret = process.env.PAYSTACK_SECRET_KEY;
@@ -19,6 +20,10 @@ function verifySignature(rawBody: string, signature: string): boolean {
 }
 
 export async function POST(request: NextRequest) {
+  // Rate limit by IP: 30 requests per minute
+  const rl = rateLimit(`paystack-wh:${request.headers.get("x-forwarded-for") || "unknown"}`, { limit: 30, windowSeconds: 60 });
+  if (!rl.allowed) return rateLimitResponse(rl);
+
   const rawBody = await request.text();
   const signature = request.headers.get("x-paystack-signature") ?? "";
 
