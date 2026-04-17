@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Twitter, Linkedin, Facebook, CheckCircle2, AlertCircle, Loader2, Link2, Unlink, Search } from "lucide-react";
+import { Twitter, Linkedin, Facebook, CheckCircle2, AlertCircle, Loader2, Link2, Unlink, Search, Clock } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
@@ -85,6 +85,7 @@ function IntegrationsContent() {
       description: "Post content directly to X from the Content Studio.",
       connectHref: "/api/integrations/x/connect",
       account: xAccount,
+      comingSoon: false,
     },
     {
       key: "linkedin",
@@ -93,6 +94,7 @@ function IntegrationsContent() {
       description: "Publish posts to your LinkedIn profile from the Content Studio.",
       connectHref: "/api/integrations/linkedin/connect",
       account: liAccount,
+      comingSoon: false,
     },
     {
       key: "facebook",
@@ -101,6 +103,7 @@ function IntegrationsContent() {
       description: "Publish text and image posts to your Facebook Page from the Content Studio.",
       connectHref: "/api/integrations/facebook/connect",
       account: fbAccount,
+      comingSoon: true,
     },
     {
       key: "gsc",
@@ -109,6 +112,7 @@ function IntegrationsContent() {
       description: "Import real keyword rankings and click data into your Growth Playbook.",
       connectHref: "/api/integrations/gsc/connect",
       account: gscAccount,
+      comingSoon: false,
     },
   ];
 
@@ -144,33 +148,38 @@ function IntegrationsContent() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="text-h3 text-text-primary">{integration.name}</h3>
-                        {connected && !expired && (
+                        {connected && !expired ? (
                           <Badge variant="success">
                             <CheckCircle2 className="h-3 w-3 mr-1" />
                             Connected
                           </Badge>
-                        )}
-                        {connected && expired && (
+                        ) : connected && expired ? (
                           <Badge variant="warning">
                             <AlertCircle className="h-3 w-3 mr-1" />
                             Token expired
                           </Badge>
-                        )}
-                        {!connected && (
+                        ) : integration.comingSoon ? (
+                          <Badge variant="secondary">
+                            <Clock className="h-3 w-3 mr-1" />
+                            Coming soon
+                          </Badge>
+                        ) : (
                           <Badge variant="secondary">Not connected</Badge>
                         )}
                       </div>
                       <p className="mt-0.5 text-small text-text-secondary">
                         {connected && integration.account?.platform_username
                           ? `@${integration.account.platform_username}`
-                          : integration.description}
+                          : integration.comingSoon
+                            ? "Awaiting Meta business verification. We'll email you when this is live."
+                            : integration.description}
                       </p>
                     </div>
                   </div>
 
                   {/* Action */}
                   <div className="flex items-center gap-2 shrink-0">
-                    {connected && !expired ? (
+                    {connected ? (
                       <Button
                         variant="secondary"
                         size="sm"
@@ -183,6 +192,11 @@ function IntegrationsContent() {
                           <Unlink className="h-4 w-4" />
                         )}
                         Disconnect
+                      </Button>
+                    ) : integration.comingSoon ? (
+                      <Button variant="secondary" size="sm" disabled>
+                        <Clock className="h-4 w-4" />
+                        Coming soon
                       </Button>
                     ) : (
                       <Button size="sm" asChild>
