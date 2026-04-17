@@ -18,6 +18,7 @@ type FlutterwaveEventType =
 interface FlutterwaveWebhookPayload {
   event?: FlutterwaveEventType;
   "event.type"?: FlutterwaveEventType;
+  type?: FlutterwaveEventType;
   data?: {
     id?: number;
     status?: string;
@@ -28,6 +29,27 @@ interface FlutterwaveWebhookPayload {
     payment_plan?: number | string;
     meta?: Record<string, unknown>;
   };
+  meta?: Record<string, unknown>;
+}
+
+// GET returns a health check + masked env status so you can verify deployment
+// from a browser without needing Flutterwave to actually fire a webhook.
+export async function GET() {
+  const mask = (v: string | undefined) =>
+    !v ? null : v.length > 8 ? `${v.slice(0, 4)}…${v.slice(-4)}` : "set";
+  return NextResponse.json({
+    ok: true,
+    route: "/api/webhooks/flutterwave",
+    env: {
+      FLUTTERWAVE_SECRET_KEY: mask(process.env.FLUTTERWAVE_SECRET_KEY),
+      FLUTTERWAVE_WEBHOOK_SECRET_HASH: mask(
+        process.env.FLUTTERWAVE_WEBHOOK_SECRET_HASH
+      ),
+      FLUTTERWAVE_PLAN_PRO: process.env.FLUTTERWAVE_PLAN_PRO ?? null,
+      FLUTTERWAVE_PLAN_GROWTH: process.env.FLUTTERWAVE_PLAN_GROWTH ?? null,
+      FLUTTERWAVE_PLAN_AGENCY: process.env.FLUTTERWAVE_PLAN_AGENCY ?? null,
+    },
+  });
 }
 
 export async function POST(request: NextRequest) {
@@ -44,38 +66,59 @@ export async function POST(request: NextRequest) {
   }
 
   const payload = (await request.json()) as FlutterwaveWebhookPayload;
-  const event = payload.event ?? payload["event.type"] ?? "";
+  const event = payload.event ?? payload["event.type"] ?? payload.type ?? "";
   const data = payload.data ?? {};
+  const trace: Record<string, unknown> = { event, received: true };
 
   const supabase = createServiceClient();
 
   switch (event) {
     case "charge.completed": {
-      // Always verify with Flutterwave's API before trusting webhook payload
-      if (!data.id) break;
+      if (!data.id) {
+        trace.stop = "no data.id";
+        break;
+      }
+      trace.txId = data.id;
+
       const verified = await verifyTransaction(data.id);
-      if (!verified || verified.status !== "successful") {
-        console.warn("[flutterwave] charge.completed verification failed", {
-          txRef: data.tx_ref,
-          id: data.id,
-        });
+      if (!verified) {
+        trace.stop = "verifyTransaction returned null";
+        break;
+      }
+      trace.verifyStatus = verified.status;
+      if (verified.status !== "successful") {
+        trace.stop = `verify status not successful: ${verified.status}`;
         break;
       }
 
-      const userId = (verified.meta?.user_id as string | undefined) ?? undefined;
+      // Flutterwave's verify response sometimes nests meta; fall back to webhook payload
+      const metaFromVerify = (verified.meta ?? {}) as Record<string, unknown>;
+      const metaFromPayload = (data.meta ?? payload.meta ?? {}) as Record<string, unknown>;
+      const userId =
+        (metaFromVerify.user_id as string | undefined) ??
+        (metaFromPayload.user_id as string | undefined);
+      trace.userId = userId ?? null;
+      trace.metaFromVerifyKeys = Object.keys(metaFromVerify);
+      trace.metaFromPayloadKeys = Object.keys(metaFromPayload);
       if (!userId) {
-        console.warn("[flutterwave] charge.completed missing user_id in meta");
+        trace.stop = "missing user_id in meta (neither verify nor webhook payload had it)";
         break;
       }
 
-      const plan = verified.payment_plan
-        ? flutterwavePlanToTier(verified.payment_plan)
+      const rawPaymentPlan = verified.payment_plan ?? data.payment_plan;
+      trace.paymentPlan = rawPaymentPlan ?? null;
+      trace.envPlanIds = {
+        pro: process.env.FLUTTERWAVE_PLAN_PRO ?? null,
+        growth: process.env.FLUTTERWAVE_PLAN_GROWTH ?? null,
+        agency: process.env.FLUTTERWAVE_PLAN_AGENCY ?? null,
+      };
+      const plan = rawPaymentPlan
+        ? flutterwavePlanToTier(rawPaymentPlan)
         : "free";
+      trace.mappedTier = plan;
 
       if (plan === "free") {
-        console.warn("[flutterwave] charge.completed: unknown payment_plan", {
-          paymentPlan: verified.payment_plan,
-        });
+        trace.stop = `payment_plan ${rawPaymentPlan} did not match any FLUTTERWAVE_PLAN_* env var`;
         break;
       }
 
@@ -84,7 +127,6 @@ export async function POST(request: NextRequest) {
         : null;
       const email = verified.customer?.email ?? "";
 
-      // Fetch current profile to decide upgrade vs recurring charge
       const { data: existing } = await supabase
         .from("profiles")
         .select("plan, payment_subscription_id")
@@ -93,23 +135,26 @@ export async function POST(request: NextRequest) {
 
       const isUpgrade = existing?.plan !== plan;
 
-      await supabase
+      const { error: updateError } = await supabase
         .from("profiles")
         .update({
           plan,
           payment_provider: "flutterwave",
           payment_customer_id: customerId,
-          // Flutterwave doesn't return a subscription ID on charge.completed;
-          // the subscription is tied to customer + payment_plan.
-          payment_subscription_id: `${customerId}:${verified.payment_plan}`,
-          payment_plan_code: String(verified.payment_plan ?? ""),
+          payment_subscription_id: `${customerId}:${rawPaymentPlan}`,
+          payment_plan_code: String(rawPaymentPlan ?? ""),
           generation_count: 0,
           generation_reset_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
         .eq("id", userId);
 
-      // Only send upgrade email on first-time plan change, not recurring renewals
+      if (updateError) {
+        trace.stop = `profile update failed: ${updateError.message}`;
+        break;
+      }
+      trace.updated = true;
+
       if (isUpgrade && email) {
         const { data: userData } = await supabase.auth.admin.getUserById(userId);
         const name =
@@ -162,8 +207,9 @@ export async function POST(request: NextRequest) {
     }
 
     default:
+      trace.stop = `unhandled event: ${event || "(empty)"}`;
       break;
   }
 
-  return NextResponse.json({ received: true });
+  return NextResponse.json(trace);
 }
