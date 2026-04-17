@@ -38,7 +38,7 @@ export default async function AdminDashboardPage() {
         <h2 className="text-h3 text-text-primary mb-4">
           Daily Generations (last 30 days)
         </h2>
-        <div className="flex items-end gap-[3px] h-40">
+        <div className="flex gap-[3px] h-40">
           {dailyGens.map((d) => {
             const height = maxGen > 0 ? (d.count / maxGen) * 100 : 0;
             return (
