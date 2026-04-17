@@ -42,6 +42,7 @@ import { PageHeader } from "@/src/components/layout/page-header";
 import { ExpectationBanner } from "@/src/components/ui/expectation-banner";
 
 import { useToast } from "@/src/components/ui/toast";
+import { parseJsonResponse } from "@/src/lib/ai/parse-json";
 import { PdfDownloadButton } from "@/src/components/ui/pdf-download-button";
 import type { UnsplashPhoto } from "@/src/lib/integrations/unsplash";
 
@@ -249,11 +250,11 @@ function BlogPageInner({
 
       // Parse JSON after stream completes
       try {
-        const jsonMatch = fullText.match(/\{[\s\S]*\}/);
-        const post = JSON.parse(jsonMatch?.[0] ?? fullText) as BlogPost;
+        const post = parseJsonResponse(fullText) as BlogPost;
         setParsed(post);
-      } catch {
-        toast("Could not parse blog post output — check Raw tab", "warning");
+      } catch (parseErr) {
+        console.warn("[blog] parse failed:", parseErr, "raw head:", fullText.slice(0, 300));
+        toast("Blog post generated but formatting looked off — check Raw tab", "warning");
       }
     } catch {
       toast("Failed to connect to AI service", "error");

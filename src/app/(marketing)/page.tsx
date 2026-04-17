@@ -12,11 +12,36 @@ import {
   TrendingUp,
   Shield,
   CheckCircle2,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { homepageFaqs as faqs } from "@/src/lib/seo/homepage-schema";
+import { TestimonialMarquee } from "@/src/components/marketing/testimonial-marquee";
+
+const testimonials = [
+  {
+    name: "Dara Sobayo",
+    quote:
+      "Thank you for granting me access to the tool. It provided valuable suggestions for improving the landing page copy.",
+  },
+  {
+    name: "Oluwatobiloba Olajide",
+    quote:
+      "The Conduikt platform has simplified my work as a brand strategist, making it even more than 10 times easier. Its website audit and SEO strategy makes marketing a lot simpler. Now I can do my keyword research, create social media posts and emails, and generate an AI growth strategy all in the same place.",
+  },
+  {
+    name: "Adeola Owoade",
+    quote:
+      "Conduikt is a well thought out solution for problems most business owners encounter. It is clearly structured, gives accurate analysis and spot-on suggestions for improved performance. Linking socials is my favorite part, that's the area I struggled with. Kudos really.",
+  },
+  {
+    name: "Olatunbosun Olalekan",
+    quote:
+      "I used Conduikt and found it to be a clear, reliable, and insightful AI-powered website performance tool. It delivers a well-structured analysis of key metrics such as performance, SEO, and Core Web Vitals, with a useful distinction between mobile and desktop results. The actionable recommendations make it a practical resource for improving website performance and user experience.",
+  },
+];
 
 const features = [
   {
@@ -262,6 +287,24 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Testimonials */}
+      <section
+        id="testimonials"
+        className="py-20 border-t border-border-subtle"
+      >
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-h1 text-text-primary">
+              Founders and Marketers Are Already Building With Conduikt
+            </h2>
+            <p className="mt-4 text-lg text-text-secondary max-w-2xl mx-auto">
+              Real feedback from real users. Hover or click a card to pause.
+            </p>
+          </div>
+        </div>
+        <TestimonialMarquee testimonials={testimonials} />
+      </section>
+
       {/* Pricing */}
       <section id="pricing" className="py-20 border-t border-border-subtle">
         <div className="mx-auto max-w-6xl px-6">
@@ -316,16 +359,28 @@ export default function LandingPage() {
               Everything you need to know about Conduikt.
             </p>
           </div>
-          <div className="space-y-6">
+          <div className="space-y-4">
             {faqs.map((faq, i) => (
-              <div
+              <details
                 key={i}
-                className="animate-in rounded-xl border border-border-default bg-surface-1 p-6"
+                name="homepage-faq"
+                open={i === 0}
+                className="group animate-in rounded-xl border border-border-default bg-surface-1 open:border-accent/30 open:shadow-[0_0_0_1px_var(--accent-glow)] transition-colors"
                 style={{ animationDelay: `${i * 60}ms` }}
               >
-                <h3 className="text-h3 text-text-primary">{faq.question}</h3>
-                <p className="mt-2 text-body text-text-secondary">{faq.answer}</p>
-              </div>
+                <summary className="flex cursor-pointer items-center justify-between gap-4 px-6 py-5 list-none [&::-webkit-details-marker]:hidden">
+                  <h3 className="text-h3 text-text-primary">{faq.question}</h3>
+                  <ChevronDown
+                    className="h-5 w-5 shrink-0 text-text-tertiary transition-transform duration-200 group-open:rotate-180 group-open:text-accent"
+                    aria-hidden="true"
+                  />
+                </summary>
+                <div className="px-6 pb-6">
+                  <p className="text-body text-text-secondary leading-relaxed">
+                    {faq.answer}
+                  </p>
+                </div>
+              </details>
             ))}
           </div>
         </div>

@@ -36,8 +36,8 @@ export default function DataDeletionPage() {
               piece of data we hold about you at any time. This includes your
               profile, projects, generated content, scheduled posts, uploaded
               media, connected social account tokens, and any data we collected
-              from connected third-party platforms (Facebook Pages, X, LinkedIn,
-              Google Search Console).
+              from connected third-party platforms (X, LinkedIn, Google Search
+              Console).
             </p>
           </section>
 
@@ -113,8 +113,8 @@ export default function DataDeletionPage() {
                 published assets, and uploaded media
               </li>
               <li>
-                All connected-account records, including OAuth tokens for
-                Facebook Pages, X, LinkedIn, and Google Search Console
+                All connected-account records, including OAuth tokens for X,
+                LinkedIn, and Google Search Console
               </li>
               <li>AI generation logs and usage history tied to your user ID</li>
               <li>Notifications, webhook configs, and API activity logs</li>
@@ -142,18 +142,6 @@ export default function DataDeletionPage() {
               from the platforms themselves, independent of any request to us:
             </p>
             <ul className="list-disc list-inside space-y-2 text-body">
-              <li>
-                <strong className="text-text-primary">Facebook</strong> —{" "}
-                <a
-                  href="https://www.facebook.com/settings?tab=business_tools"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-accent hover:underline"
-                >
-                  Settings → Business Integrations
-                </a>{" "}
-                → find Conduikt → Remove
-              </li>
               <li>
                 <strong className="text-text-primary">X (Twitter)</strong> —
                 Settings → Security → Apps and sessions → Connected apps →

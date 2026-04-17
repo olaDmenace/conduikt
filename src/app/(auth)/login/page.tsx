@@ -8,41 +8,49 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { useToast } from "@/src/components/ui/toast";
 import { Twitter, Linkedin, Eye, EyeOff } from "lucide-react";
+import {
+  mapSupabaseAuthError,
+  isEmailNotConfirmedError,
+  validateLoginFields,
+  hasErrors,
+  type LoginFieldErrors,
+} from "@/src/lib/auth/error-map";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<LoginFieldErrors>({});
+  const [formError, setFormError] = useState(() => {
+    if (typeof window === "undefined") return "";
+    const urlError = new URLSearchParams(window.location.search).get("error");
+    return urlError ? mapSupabaseAuthError(urlError) : "";
+  });
+  const [formErrorIsUnconfirmed, setFormErrorIsUnconfirmed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const router = useRouter();
   const supabase = createClient();
   const { toast } = useToast();
 
-  const isEmailNotConfirmed = error.toLowerCase().includes("email not confirmed");
-
-  // Surface errors passed back from /auth/confirm redirect
-  useState(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const urlError = params.get("error");
-      if (urlError) setError(urlError);
-    }
-  });
-
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
-    setLoading(true);
+    setFormError("");
+    setFormErrorIsUnconfirmed(false);
 
+    const errors = validateLoginFields({ email, password });
+    setFieldErrors(errors);
+    if (hasErrors(errors)) return;
+
+    setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({
-      email,
+      email: email.trim(),
       password,
     });
 
     if (error) {
-      setError(error.message);
+      setFormError(mapSupabaseAuthError(error.message));
+      setFormErrorIsUnconfirmed(isEmailNotConfirmedError(error.message));
       setLoading(false);
       return;
     }
@@ -53,22 +61,22 @@ export default function LoginPage() {
   }
 
   async function handleResendConfirmation() {
-    if (!email) {
-      setError("Please enter your email address above, then click resend.");
+    if (!email.trim()) {
+      setFieldErrors({ email: "Please enter your email above first." });
       return;
     }
     setResending(true);
     const siteUrl = window.location.origin;
     const { error: resendError } = await supabase.auth.resend({
       type: "signup",
-      email,
+      email: email.trim(),
       options: {
         emailRedirectTo: `${siteUrl}/auth/confirm?next=/dashboard`,
       },
     });
     setResending(false);
     if (resendError) {
-      toast(resendError.message, "error");
+      toast(mapSupabaseAuthError(resendError.message), "error");
     } else {
       toast("Confirmation email sent! Check your inbox.", "success");
     }
@@ -140,15 +148,19 @@ export default function LoginPage() {
       </div>
 
       {/* Email / password form */}
-      <form onSubmit={handleLogin} className="space-y-4">
+      <form onSubmit={handleLogin} className="space-y-4" noValidate>
         <Input
           label="Email"
           type="email"
           placeholder="you@example.com"
           autoComplete="email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (fieldErrors.email) setFieldErrors((p) => ({ ...p, email: undefined }));
+          }}
+          error={fieldErrors.email}
+          aria-invalid={!!fieldErrors.email}
         />
         <div className="relative">
           <Input
@@ -157,13 +169,18 @@ export default function LoginPage() {
             placeholder="Enter your password"
             autoComplete="current-password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
+            onChange={(e) => {
+              setPassword(e.target.value);
+              if (fieldErrors.password) setFieldErrors((p) => ({ ...p, password: undefined }));
+            }}
+            error={fieldErrors.password}
+            aria-invalid={!!fieldErrors.password}
           />
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
             className="absolute right-3 top-10 text-text-tertiary hover:text-text-primary transition-colors"
+            aria-label={showPassword ? "Hide password" : "Show password"}
           >
             {showPassword ? (
               <EyeOff className="h-4 w-4" />
@@ -173,10 +190,10 @@ export default function LoginPage() {
           </button>
         </div>
 
-        {error && (
+        {formError && (
           <div className="rounded-lg border border-error/20 bg-error/10 px-4 py-3 text-small text-error">
-            <p>{error}</p>
-            {isEmailNotConfirmed && (
+            <p>{formError}</p>
+            {formErrorIsUnconfirmed && (
               <button
                 type="button"
                 onClick={handleResendConfirmation}
