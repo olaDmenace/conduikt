@@ -210,10 +210,19 @@ function GrowthPageInner({
 
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
+  const [userPlan, setUserPlan] = useState<string>("free");
 
   // Track checked actions
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [expandedPhase, setExpandedPhase] = useState<number | null>(1);
+
+  // Fetch user plan for save gating
+  useEffect(() => {
+    fetch("/api/profile")
+      .then((r) => r.json())
+      .then((p) => setUserPlan(p?.plan ?? "free"))
+      .catch(() => {});
+  }, []);
 
   // Load saved playbook from ?assetId= param
   useEffect(() => {
@@ -431,19 +440,30 @@ function GrowthPageInner({
               >
                 Regenerate
               </Button>
-              <Button
-                size="sm"
-                onClick={handleSave}
-                disabled={saving || !!savedId}
-              >
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : savedId ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
-                {savedId ? "Saved" : "Save Playbook"}
-              </Button>
-              {savedId && (
-                <PdfDownloadButton
-                  href={`/api/projects/${projectId}/assets/${savedId}/pdf`}
-                  filename="growth-playbook.pdf"
-                />
+              {userPlan === "free" ? (
+                <Link href="/settings/billing">
+                  <Button size="sm" variant="secondary">
+                    <TrendingUp className="h-4 w-4" />
+                    Upgrade to Save
+                  </Button>
+                </Link>
+              ) : (
+                <>
+                  <Button
+                    size="sm"
+                    onClick={handleSave}
+                    disabled={saving || !!savedId}
+                  >
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : savedId ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
+                    {savedId ? "Saved" : "Save Playbook"}
+                  </Button>
+                  {savedId && (
+                    <PdfDownloadButton
+                      href={`/api/projects/${projectId}/assets/${savedId}/pdf`}
+                      filename="growth-playbook.pdf"
+                    />
+                  )}
+                </>
               )}
             </div>
           </div>
