@@ -21,6 +21,7 @@ import {
   X as CloseIcon,
   ChevronRight,
   Download,
+  Lock,
 } from "lucide-react";
 import {
   Card,
@@ -91,6 +92,15 @@ function BlogPageInner({
   const [usage, setUsage] = useState<UsageInfo | null>(null);
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
+  const [userPlan, setUserPlan] = useState<string>("free");
+
+  // Fetch user plan for save gating
+  useEffect(() => {
+    fetch("/api/profile")
+      .then((r) => r.json())
+      .then((p) => setUserPlan(p?.plan ?? "free"))
+      .catch(() => {});
+  }, []);
 
   // Image picker state
   const [imagePhotos, setImagePhotos] = useState<UnsplashPhoto[]>([]);
@@ -411,26 +421,37 @@ function BlogPageInner({
                         Generate Social Posts
                       </Link>
                     )}
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={handleSave}
-                      disabled={saving || !!savedId}
-                    >
-                      {saving ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : savedId ? (
-                        <Check className="h-4 w-4 text-success" />
-                      ) : (
-                        <Save className="h-4 w-4" />
-                      )}
-                      {saving ? "Saving..." : savedId ? "Saved" : "Save Draft"}
-                    </Button>
-                    {savedId && (
-                      <PdfDownloadButton
-                        href={`/api/projects/${projectId}/assets/${savedId}/pdf`}
-                        filename="blog-post.pdf"
-                      />
+                    {userPlan === "free" ? (
+                      <Link href="/settings/billing">
+                        <Button size="sm" variant="secondary">
+                          <Lock className="h-4 w-4" />
+                          Upgrade to Save
+                        </Button>
+                      </Link>
+                    ) : (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={handleSave}
+                          disabled={saving || !!savedId}
+                        >
+                          {saving ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : savedId ? (
+                            <Check className="h-4 w-4 text-success" />
+                          ) : (
+                            <Save className="h-4 w-4" />
+                          )}
+                          {saving ? "Saving..." : savedId ? "Saved" : "Save Draft"}
+                        </Button>
+                        {savedId && (
+                          <PdfDownloadButton
+                            href={`/api/projects/${projectId}/assets/${savedId}/pdf`}
+                            filename="blog-post.pdf"
+                          />
+                        )}
+                      </>
                     )}
                   </div>
                 )}

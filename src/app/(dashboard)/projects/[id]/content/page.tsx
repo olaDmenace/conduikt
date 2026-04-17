@@ -25,6 +25,7 @@ import {
   ChevronDown,
   GitBranch,
   Download,
+  Lock,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -264,6 +265,15 @@ function ContentPageInner({
   const [usage, setUsage] = useState<UsageInfo | null>(null);
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [userPlan, setUserPlan] = useState<string>("free");
+
+  // Fetch user plan for save gating
+  useEffect(() => {
+    fetch("/api/profile")
+      .then((r) => r.json())
+      .then((p) => setUserPlan(p?.plan ?? "free"))
+      .catch(() => {});
+  }, []);
 
   // Assets list
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -1631,24 +1641,35 @@ function ContentPageInner({
                         {copied ? "Copied" : "Copy"}
                       </Button>
                     )}
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={handleSave}
-                      disabled={saving}
-                    >
-                      {saving ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Save className="h-4 w-4" />
-                      )}
-                      {saving ? "Saving..." : "Save Draft"}
-                    </Button>
-                    {savedAssetId && (
-                      <PdfDownloadButton
-                        href={`/api/projects/${projectId}/assets/${savedAssetId}/pdf`}
-                        filename="content-export.pdf"
-                      />
+                    {userPlan === "free" ? (
+                      <Link href="/settings/billing">
+                        <Button size="sm" variant="secondary">
+                          <Lock className="h-4 w-4" />
+                          Upgrade to Save
+                        </Button>
+                      </Link>
+                    ) : (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={handleSave}
+                          disabled={saving}
+                        >
+                          {saving ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Save className="h-4 w-4" />
+                          )}
+                          {saving ? "Saving..." : "Save Draft"}
+                        </Button>
+                        {savedAssetId && (
+                          <PdfDownloadButton
+                            href={`/api/projects/${projectId}/assets/${savedAssetId}/pdf`}
+                            filename="content-export.pdf"
+                          />
+                        )}
+                      </>
                     )}
                     <SendToWebhook
                       title={skill.name}
