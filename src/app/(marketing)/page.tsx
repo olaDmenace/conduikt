@@ -17,6 +17,30 @@ import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { homepageFaqs as faqs } from "@/src/lib/seo/homepage-schema";
+import { TestimonialMarquee } from "@/src/components/marketing/testimonial-marquee";
+
+const testimonials = [
+  {
+    name: "Dara Sobayo",
+    quote:
+      "Thank you for granting me access to the tool. It provided valuable suggestions for improving the landing page copy.",
+  },
+  {
+    name: "Oluwatobiloba Olajide",
+    quote:
+      "The Conduikt platform has simplified my work as a brand strategist, making it even more than 10 times easier. Its website audit and SEO strategy makes marketing a lot simpler. Now I can do my keyword research, create social media posts and emails, and generate an AI growth strategy all in the same place.",
+  },
+  {
+    name: "Adeola Owoade",
+    quote:
+      "Conduikt is a well thought out solution for problems most business owners encounter. It is clearly structured, gives accurate analysis and spot-on suggestions for improved performance. Linking socials is my favorite part, that's the area I struggled with. Kudos really.",
+  },
+  {
+    name: "Olatunbosun Olalekan",
+    quote:
+      "I used Conduikt and found it to be a clear, reliable, and insightful AI-powered website performance tool. It delivers a well-structured analysis of key metrics such as performance, SEO, and Core Web Vitals, with a useful distinction between mobile and desktop results. The actionable recommendations make it a practical resource for improving website performance and user experience.",
+  },
+];
 
 const features = [
   {
@@ -260,6 +284,24 @@ export default function LandingPage() {
             </Link>
           </div>
         </div>
+      </section>
+
+      {/* Testimonials */}
+      <section
+        id="testimonials"
+        className="py-20 border-t border-border-subtle"
+      >
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-h1 text-text-primary">
+              Founders and Marketers Are Already Building With Conduikt
+            </h2>
+            <p className="mt-4 text-lg text-text-secondary max-w-2xl mx-auto">
+              Real feedback from real users. Hover or click a card to pause.
+            </p>
+          </div>
+        </div>
+        <TestimonialMarquee testimonials={testimonials} />
       </section>
 
       {/* Pricing */}
