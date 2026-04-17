@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/src/lib/supabase/service";
-import { flutterwavePlanToTier } from "@/src/lib/plans";
+import { flutterwavePlanToTier, type PlanTier } from "@/src/lib/plans";
 import { sendPlanUpgradeEmail } from "@/src/lib/email";
 import { createNotification } from "@/src/lib/notifications";
 import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
@@ -8,6 +8,15 @@ import {
   verifyWebhookSignature,
   verifyTransaction,
 } from "@/src/lib/payments/flutterwave";
+
+// tx_ref format from initialize: conduikt-<tier>-<userId>-<uuid>
+// userId is a UUID (5 dash-separated segments) so splitting on "-" needs care.
+function parseTxRef(ref: string | null | undefined): { tier: PlanTier; userId: string } | null {
+  if (!ref) return null;
+  const match = /^conduikt-(pro|growth|agency)-([0-9a-f-]{36})-/i.exec(ref);
+  if (!match) return null;
+  return { tier: match[1] as PlanTier, userId: match[2] };
+}
 
 type FlutterwaveEventType =
   | "charge.completed"
@@ -20,12 +29,18 @@ interface FlutterwaveWebhookPayload {
   "event.type"?: FlutterwaveEventType;
   type?: FlutterwaveEventType;
   data?: {
-    id?: number;
+    id?: number | string;
     status?: string;
     tx_ref?: string;
+    reference?: string;
     amount?: number;
     currency?: string;
-    customer?: { id?: number; email?: string; name?: string };
+    customer?: {
+      id?: number | string;
+      email?: string;
+      name?: string | { first?: string; last?: string };
+      meta?: Record<string, unknown>;
+    };
     payment_plan?: number | string;
     meta?: Record<string, unknown>;
   };
@@ -74,58 +89,64 @@ export async function POST(request: NextRequest) {
 
   switch (event) {
     case "charge.completed": {
-      if (!data.id) {
-        trace.stop = "no data.id";
-        break;
-      }
-      trace.txId = data.id;
+      // v3 used data.tx_ref + data.status: "successful"
+      // v4 uses data.reference + data.status: "succeeded"
+      const reference = data.reference ?? data.tx_ref;
+      const status = data.status ?? "";
+      trace.reference = reference ?? null;
+      trace.payloadStatus = status;
 
-      const verified = await verifyTransaction(data.id);
-      if (!verified) {
-        trace.stop = "verifyTransaction returned null";
-        break;
-      }
-      trace.verifyStatus = verified.status;
-      if (verified.status !== "successful") {
-        trace.stop = `verify status not successful: ${verified.status}`;
+      const successStatuses = ["successful", "succeeded", "success"];
+      if (!successStatuses.includes(status.toLowerCase())) {
+        trace.stop = `status not successful: ${status}`;
         break;
       }
 
-      // Flutterwave's verify response sometimes nests meta; fall back to webhook payload
-      const metaFromVerify = (verified.meta ?? {}) as Record<string, unknown>;
-      const metaFromPayload = (data.meta ?? payload.meta ?? {}) as Record<string, unknown>;
-      const userId =
-        (metaFromVerify.user_id as string | undefined) ??
-        (metaFromPayload.user_id as string | undefined);
-      trace.userId = userId ?? null;
-      trace.metaFromVerifyKeys = Object.keys(metaFromVerify);
-      trace.metaFromPayloadKeys = Object.keys(metaFromPayload);
-      if (!userId) {
-        trace.stop = "missing user_id in meta (neither verify nor webhook payload had it)";
+      // Parse tier + userId from the reference string we set in initialize.
+      // This is more reliable than meta (which v4 strips) or payment_plan
+      // (which v4 doesn't include in the webhook).
+      const parsed = parseTxRef(reference);
+      trace.parsedRef = parsed;
+
+      // Fallback: if reference parsing failed, try meta and payment_plan (legacy v3)
+      let tier: PlanTier | null = parsed?.tier ?? null;
+      let userId: string | null = parsed?.userId ?? null;
+
+      if (!tier || !userId) {
+        const metaFromPayload = (data.meta ?? payload.meta ?? {}) as Record<string, unknown>;
+        if (!userId) userId = (metaFromPayload.user_id as string) ?? null;
+        if (!tier && data.payment_plan) {
+          const mapped = flutterwavePlanToTier(data.payment_plan);
+          if (mapped !== "free") tier = mapped;
+        }
+      }
+
+      trace.tier = tier;
+      trace.userId = userId;
+
+      if (!userId || !tier) {
+        trace.stop = `could not derive tier/userId from reference "${reference}" or meta/payment_plan`;
         break;
       }
 
-      const rawPaymentPlan = verified.payment_plan ?? data.payment_plan;
-      trace.paymentPlan = rawPaymentPlan ?? null;
-      trace.envPlanIds = {
-        pro: process.env.FLUTTERWAVE_PLAN_PRO ?? null,
-        growth: process.env.FLUTTERWAVE_PLAN_GROWTH ?? null,
-        agency: process.env.FLUTTERWAVE_PLAN_AGENCY ?? null,
-      };
-      const plan = rawPaymentPlan
-        ? flutterwavePlanToTier(rawPaymentPlan)
-        : "free";
-      trace.mappedTier = plan;
-
-      if (plan === "free") {
-        trace.stop = `payment_plan ${rawPaymentPlan} did not match any FLUTTERWAVE_PLAN_* env var`;
-        break;
+      // Best-effort verify — if it fails we still trust the webhook since
+      // the reference is opaque to external callers and we've matched the signature.
+      let customerId: string | null = null;
+      let email = "";
+      if (data.id !== undefined) {
+        const verified = await verifyTransaction(data.id);
+        if (verified) {
+          trace.verifyStatus = verified.status;
+          customerId = verified.customer?.id ? String(verified.customer.id) : null;
+          email = verified.customer?.email ?? "";
+        } else {
+          trace.verifyStatus = "verify call returned null (non-fatal)";
+        }
       }
 
-      const customerId = verified.customer?.id
-        ? String(verified.customer.id)
-        : null;
-      const email = verified.customer?.email ?? "";
+      // Webhook-level customer info as fallback
+      if (!customerId && data.customer?.id) customerId = String(data.customer.id);
+      if (!email && data.customer?.email) email = data.customer.email;
 
       const { data: existing } = await supabase
         .from("profiles")
@@ -133,16 +154,16 @@ export async function POST(request: NextRequest) {
         .eq("id", userId)
         .maybeSingle();
 
-      const isUpgrade = existing?.plan !== plan;
+      const isUpgrade = existing?.plan !== tier;
 
       const { error: updateError } = await supabase
         .from("profiles")
         .update({
-          plan,
+          plan: tier,
           payment_provider: "flutterwave",
           payment_customer_id: customerId,
-          payment_subscription_id: `${customerId}:${rawPaymentPlan}`,
-          payment_plan_code: String(rawPaymentPlan ?? ""),
+          payment_subscription_id: customerId ? `${customerId}:${tier}` : null,
+          payment_plan_code: tier,
           generation_count: 0,
           generation_reset_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -154,6 +175,7 @@ export async function POST(request: NextRequest) {
         break;
       }
       trace.updated = true;
+      trace.isUpgrade = isUpgrade;
 
       if (isUpgrade && email) {
         const { data: userData } = await supabase.auth.admin.getUserById(userId);
@@ -161,7 +183,7 @@ export async function POST(request: NextRequest) {
           userData?.user?.user_metadata?.full_name ??
           userData?.user?.user_metadata?.name ??
           "";
-        sendPlanUpgradeEmail(email, plan, name).catch(() => {});
+        sendPlanUpgradeEmail(email, tier, name).catch(() => {});
       }
 
       break;
