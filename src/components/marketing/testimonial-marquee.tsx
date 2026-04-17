@@ -37,7 +37,7 @@ export function TestimonialMarquee({
       <div className="pointer-events-none absolute inset-y-0 right-0 w-16 z-10 bg-gradient-to-l from-surface-0 to-transparent" />
 
       <div
-        className="flex w-max gap-6"
+        className="flex w-max gap-6 items-stretch"
         style={{
           animation: `testimonial-marquee ${durationSeconds}s linear infinite`,
           animationPlayState: paused ? "paused" : "running",
@@ -46,16 +46,16 @@ export function TestimonialMarquee({
         {track.map((t, i) => (
           <figure
             key={`${t.name}-${i}`}
-            className="w-[22rem] sm:w-[26rem] shrink-0 rounded-2xl border border-border-default bg-surface-1 p-6 shadow-[0_1px_0_0_rgba(255,255,255,0.02)_inset]"
+            className="flex w-[22rem] sm:w-[26rem] shrink-0 flex-col rounded-2xl border border-border-default bg-surface-1 p-6 shadow-[0_1px_0_0_rgba(255,255,255,0.02)_inset]"
           >
             <Quote
               className="h-5 w-5 text-accent/60 mb-3"
               aria-hidden="true"
             />
-            <blockquote className="text-body text-text-secondary leading-relaxed">
+            <blockquote className="flex-1 text-body text-text-secondary leading-relaxed tracking-wide">
               &ldquo;{t.quote}&rdquo;
             </blockquote>
-            <figcaption className="mt-4 text-small font-medium text-text-primary">
+            <figcaption className="mt-6 pt-4 border-t border-border-subtle text-small font-medium text-text-primary tracking-wide">
               {t.name}
             </figcaption>
           </figure>

@@ -363,6 +363,7 @@ export default function LandingPage() {
             {faqs.map((faq, i) => (
               <details
                 key={i}
+                name="homepage-faq"
                 open={i === 0}
                 className="group animate-in rounded-xl border border-border-default bg-surface-1 open:border-accent/30 open:shadow-[0_0_0_1px_var(--accent-glow)] transition-colors"
                 style={{ animationDelay: `${i * 60}ms` }}
