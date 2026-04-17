@@ -7,6 +7,12 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { useToast } from "@/src/components/ui/toast";
 import { KeyRound, Eye, EyeOff, CheckCircle2, Loader2 } from "lucide-react";
+import { mapSupabaseAuthError } from "@/src/lib/auth/error-map";
+
+interface ResetFieldErrors {
+  password?: string;
+  confirmPassword?: string;
+}
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
@@ -16,6 +22,7 @@ export default function ResetPasswordPage() {
   const [verifying, setVerifying] = useState(true);
   const [sessionReady, setSessionReady] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<ResetFieldErrors>({});
   const [done, setDone] = useState(false);
   const router = useRouter();
   const supabase = createClient();
@@ -80,20 +87,25 @@ export default function ResetPasswordPage() {
     e.preventDefault();
     setError("");
 
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
-      return;
+    const next: ResetFieldErrors = {};
+    if (!password) {
+      next.password = "Please enter a password.";
+    } else if (password.length < 8) {
+      next.password = "Password must be at least 8 characters.";
     }
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
+    if (!confirmPassword) {
+      next.confirmPassword = "Please confirm your password.";
+    } else if (password && password !== confirmPassword) {
+      next.confirmPassword = "Passwords do not match.";
     }
+    setFieldErrors(next);
+    if (next.password || next.confirmPassword) return;
 
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password });
 
     if (error) {
-      setError(error.message);
+      setError(mapSupabaseAuthError(error.message));
       setLoading(false);
       return;
     }
@@ -154,20 +166,26 @@ export default function ResetPasswordPage() {
 
       {/* Password form */}
       {!verifying && sessionReady && !done && (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div className="relative">
             <Input
               label="New password"
               type={showPassword ? "text" : "password"}
               placeholder="At least 8 characters"
+              autoComplete="new-password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (fieldErrors.password) setFieldErrors((p) => ({ ...p, password: undefined }));
+              }}
+              error={fieldErrors.password}
+              aria-invalid={!!fieldErrors.password}
             />
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
               className="absolute right-3 top-9 text-text-tertiary hover:text-text-primary transition-colors"
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? (
                 <EyeOff className="h-4 w-4" />
@@ -181,9 +199,15 @@ export default function ResetPasswordPage() {
             label="Confirm new password"
             type={showPassword ? "text" : "password"}
             placeholder="Repeat your new password"
+            autoComplete="new-password"
             value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
+            onChange={(e) => {
+              setConfirmPassword(e.target.value);
+              if (fieldErrors.confirmPassword)
+                setFieldErrors((p) => ({ ...p, confirmPassword: undefined }));
+            }}
+            error={fieldErrors.confirmPassword}
+            aria-invalid={!!fieldErrors.confirmPassword}
           />
 
           {/* Strength hints */}

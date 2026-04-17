@@ -7,10 +7,14 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { useToast } from "@/src/components/ui/toast";
 import { ArrowLeft, Mail } from "lucide-react";
+import { mapSupabaseAuthError } from "@/src/lib/auth/error-map";
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
-  const [error, setError] = useState("");
+  const [fieldError, setFieldError] = useState<string | undefined>();
+  const [formError, setFormError] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const supabase = createClient();
@@ -18,16 +22,27 @@ export default function ForgotPasswordPage() {
 
   async function handleReset(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
+    setFormError("");
+
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setFieldError("Please enter your email.");
+      return;
+    }
+    if (!EMAIL_REGEX.test(trimmed)) {
+      setFieldError("Please enter a valid email address.");
+      return;
+    }
+    setFieldError(undefined);
     setLoading(true);
 
     const siteUrl = window.location.origin;
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
       redirectTo: `${siteUrl}/auth/confirm?type=recovery`,
     });
 
     if (error) {
-      setError(error.message);
+      setFormError(mapSupabaseAuthError(error.message));
       setLoading(false);
       return;
     }
@@ -73,19 +88,24 @@ export default function ForgotPasswordPage() {
           </Button>
         </div>
       ) : (
-        <form onSubmit={handleReset} className="space-y-4">
+        <form onSubmit={handleReset} className="space-y-4" noValidate>
           <Input
             label="Email"
             type="email"
             placeholder="you@example.com"
+            autoComplete="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (fieldError) setFieldError(undefined);
+            }}
+            error={fieldError}
+            aria-invalid={!!fieldError}
           />
 
-          {error && (
+          {formError && (
             <div className="rounded-lg border border-error/20 bg-error/10 px-4 py-3 text-small text-error">
-              {error}
+              {formError}
             </div>
           )}
 

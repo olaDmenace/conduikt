@@ -7,13 +7,20 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { useToast } from "@/src/components/ui/toast";
 import { Twitter, Linkedin, Mail, Eye, EyeOff } from "lucide-react";
+import {
+  mapSupabaseAuthError,
+  validateSignupFields,
+  hasErrors,
+  type SignupFieldErrors,
+} from "@/src/lib/auth/error-map";
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<SignupFieldErrors>({});
+  const [formError, setFormError] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [resending, setResending] = useState(false);
@@ -22,23 +29,27 @@ export default function SignupPage() {
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
-    setLoading(true);
+    setFormError("");
 
+    const errors = validateSignupFields({ fullName, email, password });
+    setFieldErrors(errors);
+    if (hasErrors(errors)) return;
+
+    setLoading(true);
     const siteUrl = window.location.origin;
     const { error } = await supabase.auth.signUp({
-      email,
+      email: email.trim(),
       password,
       options: {
         data: {
-          full_name: fullName,
+          full_name: fullName.trim(),
         },
         emailRedirectTo: `${siteUrl}/auth/confirm?next=/dashboard`,
       },
     });
 
     if (error) {
-      setError(error.message);
+      setFormError(mapSupabaseAuthError(error.message));
       setLoading(false);
       return;
     }
@@ -69,14 +80,14 @@ export default function SignupPage() {
               const siteUrl = window.location.origin;
               const { error } = await supabase.auth.resend({
                 type: "signup",
-                email,
+                email: email.trim(),
                 options: {
                   emailRedirectTo: `${siteUrl}/auth/confirm?next=/dashboard`,
                 },
               });
               setResending(false);
               if (error) {
-                toast(error.message, "error");
+                toast(mapSupabaseAuthError(error.message), "error");
               } else {
                 toast("Verification email resent! Check your inbox.", "success");
               }
@@ -166,15 +177,19 @@ export default function SignupPage() {
       </div>
 
       {/* Email / password form */}
-      <form onSubmit={handleSignup} className="space-y-4">
+      <form onSubmit={handleSignup} className="space-y-4" noValidate>
         <Input
           label="Full name"
           type="text"
           placeholder="Michael Doe"
           autoComplete="name"
           value={fullName}
-          onChange={(e) => setFullName(e.target.value)}
-          required
+          onChange={(e) => {
+            setFullName(e.target.value);
+            if (fieldErrors.fullName) setFieldErrors((p) => ({ ...p, fullName: undefined }));
+          }}
+          error={fieldErrors.fullName}
+          aria-invalid={!!fieldErrors.fullName}
         />
         <Input
           label="Email"
@@ -182,8 +197,12 @@ export default function SignupPage() {
           placeholder="you@example.com"
           autoComplete="email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (fieldErrors.email) setFieldErrors((p) => ({ ...p, email: undefined }));
+          }}
+          error={fieldErrors.email}
+          aria-invalid={!!fieldErrors.email}
         />
         <div className="relative">
           <Input
@@ -192,14 +211,18 @@ export default function SignupPage() {
             placeholder="Min 8 characters"
             autoComplete="new-password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={8}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              if (fieldErrors.password) setFieldErrors((p) => ({ ...p, password: undefined }));
+            }}
+            error={fieldErrors.password}
+            aria-invalid={!!fieldErrors.password}
           />
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
             className="absolute right-3 top-10 text-text-tertiary hover:text-text-primary transition-colors"
+            aria-label={showPassword ? "Hide password" : "Show password"}
           >
             {showPassword ? (
               <EyeOff className="h-4 w-4" />
@@ -209,9 +232,9 @@ export default function SignupPage() {
           </button>
         </div>
 
-        {error && (
+        {formError && (
           <div className="rounded-lg border border-error/20 bg-error/10 px-4 py-3 text-small text-error">
-            {error}
+            {formError}
           </div>
         )}
 
