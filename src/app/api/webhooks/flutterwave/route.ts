@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/src/lib/supabase/service";
-import { flutterwavePlanToTier, type PlanTier } from "@/src/lib/plans";
+import { flutterwavePlanToTier, PLAN_PRICING, type PlanTier } from "@/src/lib/plans";
 import { sendPlanUpgradeEmail } from "@/src/lib/email";
 import { createNotification } from "@/src/lib/notifications";
 import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
@@ -45,6 +45,7 @@ interface FlutterwaveWebhookPayload {
     meta?: Record<string, unknown>;
   };
   meta?: Record<string, unknown>;
+  meta_data?: Record<string, unknown>;
 }
 
 // GET returns a health check + masked env status so you can verify deployment
@@ -114,8 +115,17 @@ export async function POST(request: NextRequest) {
       let userId: string | null = parsed?.userId ?? null;
 
       if (!tier || !userId) {
-        const metaFromPayload = (data.meta ?? payload.meta ?? {}) as Record<string, unknown>;
+        const metaFromPayload = (data.meta ??
+          payload.meta ??
+          payload.meta_data ??
+          {}) as Record<string, unknown>;
         if (!userId) userId = (metaFromPayload.user_id as string) ?? null;
+        if (!tier) {
+          const planKey = metaFromPayload.plan_key as string | undefined;
+          if (planKey === "pro" || planKey === "growth" || planKey === "agency") {
+            tier = planKey;
+          }
+        }
         if (!tier && data.payment_plan) {
           const mapped = flutterwavePlanToTier(data.payment_plan);
           if (mapped !== "free") tier = mapped;
@@ -127,6 +137,22 @@ export async function POST(request: NextRequest) {
 
       if (!userId || !tier) {
         trace.stop = `could not derive tier/userId from reference "${reference}" or meta/payment_plan`;
+        break;
+      }
+
+      // Amount/currency sanity check (Flutterwave best practice).
+      const expectedAmount = PLAN_PRICING[tier].price;
+      const actualAmount = typeof data.amount === "number" ? data.amount : 0;
+      const currency = data.currency ?? "";
+      trace.amountExpected = expectedAmount;
+      trace.amountActual = actualAmount;
+      trace.currency = currency;
+      if (actualAmount < expectedAmount) {
+        trace.stop = `amount mismatch: charged ${actualAmount}, expected ${expectedAmount}`;
+        break;
+      }
+      if (currency && currency !== "USD") {
+        trace.stop = `currency mismatch: got ${currency}, expected USD`;
         break;
       }
 
