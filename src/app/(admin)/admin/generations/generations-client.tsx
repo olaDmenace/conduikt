@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Search, Filter } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+
+const PAGE_SIZE = 50;
 
 type Generation = {
   id: string;
@@ -23,6 +25,7 @@ export function AdminGenerationsClient({
   const [search, setSearch] = useState("");
   const [agentFilter, setAgentFilter] = useState("");
   const [projectFilter, setProjectFilter] = useState("");
+  const [page, setPage] = useState(1);
 
   // Unique agents and projects for filter dropdowns
   const agents = useMemo(
@@ -52,6 +55,16 @@ export function AdminGenerationsClient({
       return true;
     });
   }, [generations, search, agentFilter, projectFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * PAGE_SIZE;
+  const pageEnd = Math.min(pageStart + PAGE_SIZE, filtered.length);
+  const pageRows = filtered.slice(pageStart, pageEnd);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, agentFilter, projectFilter]);
 
   // Aggregated stats
   const totalTokens = filtered.reduce(
@@ -155,7 +168,7 @@ export function AdminGenerationsClient({
               </tr>
             </thead>
             <tbody>
-              {filtered.slice(0, 100).map((g) => (
+              {pageRows.map((g) => (
                 <tr
                   key={g.id}
                   className="border-b border-border-subtle last:border-0 hover:bg-surface-2/50 transition-colors"
@@ -190,9 +203,34 @@ export function AdminGenerationsClient({
             </tbody>
           </table>
         </div>
-        {filtered.length > 100 && (
-          <div className="border-t border-border-subtle px-4 py-3 text-small text-text-tertiary text-center">
-            Showing 100 of {filtered.length} results
+        {filtered.length > 0 && (
+          <div className="border-t border-border-subtle px-4 py-3 flex items-center justify-between gap-3">
+            <p className="text-small text-text-tertiary">
+              Showing {pageStart + 1}–{pageEnd} of {filtered.length}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage <= 1}
+                className="inline-flex items-center gap-1 rounded-lg border border-border-default bg-surface-2 px-3 py-1.5 text-small text-text-primary hover:bg-surface-3 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Prev
+              </button>
+              <span className="text-small text-text-tertiary font-mono">
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage >= totalPages}
+                className="inline-flex items-center gap-1 rounded-lg border border-border-default bg-surface-2 px-3 py-1.5 text-small text-text-primary hover:bg-surface-3 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         )}
       </div>
