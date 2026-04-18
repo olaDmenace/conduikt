@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
 
       const { data: existing } = await supabase
         .from("profiles")
-        .select("plan, payment_subscription_id")
+        .select("plan, payment_subscription_id, referred_via")
         .eq("id", userId)
         .maybeSingle();
 
@@ -203,6 +203,59 @@ export async function POST(request: NextRequest) {
       }
       trace.updated = true;
       trace.isUpgrade = isUpgrade;
+
+      // Referral commission — first paid upgrade only. Non-fatal on failure.
+      if (existing?.referred_via) {
+        try {
+          const { data: conversion } = await supabase
+            .from("referral_conversions")
+            .select("id, first_paid_at")
+            .eq("user_id", userId)
+            .maybeSingle();
+
+          if (conversion && !conversion.first_paid_at) {
+            const { data: link } = await supabase
+              .from("referral_links")
+              .select("id, active, commission_type, commission_rate, flat_amount_usd")
+              .eq("id", existing.referred_via)
+              .maybeSingle();
+
+            if (link?.active) {
+              const commission =
+                link.commission_type === "flat"
+                  ? Number(link.flat_amount_usd ?? 0)
+                  : actualAmount * Number(link.commission_rate ?? 0);
+
+              const { error: earningError } = await supabase
+                .from("referral_earnings")
+                .insert({
+                  referral_link_id: link.id,
+                  conversion_id: conversion.id,
+                  user_id: userId,
+                  payment_source: "flutterwave",
+                  payment_reference: reference ?? null,
+                  payment_amount_usd: actualAmount,
+                  commission_usd: commission,
+                });
+
+              if (!earningError) {
+                await supabase
+                  .from("referral_conversions")
+                  .update({
+                    first_paid_at: new Date().toISOString(),
+                    current_plan: tier,
+                  })
+                  .eq("id", conversion.id);
+                trace.referralCredited = { commission, linkId: link.id };
+              } else {
+                trace.referralError = earningError.message;
+              }
+            }
+          }
+        } catch (err) {
+          trace.referralError = err instanceof Error ? err.message : "unknown";
+        }
+      }
 
       if (isUpgrade && email) {
         const { data: userData } = await supabase.auth.admin.getUserById(userId);
