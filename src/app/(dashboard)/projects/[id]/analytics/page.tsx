@@ -41,6 +41,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/ca
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
+import { useToast } from "@/src/components/ui/toast";
 
 
 // ---------- types ----------
@@ -151,6 +152,7 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
 
 export default function AnalyticsPage() {
   const { id } = useParams<{ id: string }>();
+  const { toast } = useToast();
   const [generations, setGenerations] = useState<Generation[]>([]);
   const [audits, setAudits] = useState<AuditRecord[]>([]);
   const [assets, setAssets] = useState<AssetRecord[]>([]);
@@ -182,27 +184,62 @@ export default function AnalyticsPage() {
 
   async function handleGscSync() {
     setGscSyncing(true);
-    const res = await fetch("/api/integrations/gsc/sync", { method: "POST" });
-    if (res.ok) {
-      const data = await res.json();
+    try {
+      const res = await fetch("/api/integrations/gsc/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: id }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast(data.error || "Failed to sync Google Search Console", "error");
+        return;
+      }
       setGscKeywords(data.topQueries ?? []);
+      toast(
+        data.synced > 0
+          ? `Synced ${data.synced} queries from GSC`
+          : "No query data returned from GSC yet",
+        data.synced > 0 ? "success" : "info"
+      );
+    } finally {
+      setGscSyncing(false);
     }
-    setGscSyncing(false);
   }
 
   async function handleSyncMetrics() {
     setMetricsSyncing(true);
-    await Promise.all([
-      fetch("/api/integrations/x/sync-metrics", { method: "POST" }),
-      fetch("/api/integrations/linkedin/sync-metrics", { method: "POST" }),
-    ]);
-    // Refresh analytics data
-    const res = await fetch(`/api/projects/${id}/analytics`);
-    if (res.ok) {
-      const data = await res.json();
-      setPostMetrics(data.postMetrics ?? []);
+    try {
+      const [xRes, liRes] = await Promise.all([
+        fetch("/api/integrations/x/sync-metrics", { method: "POST" }),
+        fetch("/api/integrations/linkedin/sync-metrics", { method: "POST" }),
+      ]);
+
+      const xData = await xRes.json().catch(() => ({}));
+      const liData = await liRes.json().catch(() => ({}));
+
+      const problems: string[] = [];
+      if (!xRes.ok && xData.error) problems.push(`X: ${xData.error}`);
+      if (!liRes.ok && liData.error) problems.push(`LinkedIn: ${liData.error}`);
+
+      const totalSynced = (xData.synced ?? 0) + (liData.synced ?? 0);
+
+      const res = await fetch(`/api/projects/${id}/analytics`);
+      if (res.ok) {
+        const data = await res.json();
+        setPostMetrics(data.postMetrics ?? []);
+      }
+
+      if (problems.length > 0) {
+        toast(problems.join(" · "), "error");
+      } else if (totalSynced > 0) {
+        toast(`Synced metrics for ${totalSynced} posts`, "success");
+      } else {
+        toast("No new metrics to sync yet", "info");
+      }
+    } finally {
+      setMetricsSyncing(false);
     }
-    setMetricsSyncing(false);
   }
 
   // ---------- computed stats ----------

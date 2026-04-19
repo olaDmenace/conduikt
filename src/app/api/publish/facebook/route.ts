@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
     : null;
 
   if (assetId) {
-    await db
+    await supabase
       .from("assets")
       .update({
         status: "published",

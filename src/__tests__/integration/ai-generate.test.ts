@@ -13,10 +13,24 @@ const mockAIResult = {
   inputTokens: 100,
   outputTokens: 50,
   durationMs: 500,
+  stopReason: 'end_turn',
+}
+
+class MockTruncatedResponseError extends Error {
+  constructor(
+    public partialContent: string,
+    public outputTokens: number,
+    public attempts: number,
+  ) {
+    super('Claude response was truncated')
+    this.name = 'TruncatedResponseError'
+  }
 }
 
 vi.mock('@/src/lib/ai/client', () => ({
   generateWithClaude: vi.fn().mockResolvedValue(mockAIResult),
+  generateWithClaudeCompletion: vi.fn().mockResolvedValue(mockAIResult),
+  TruncatedResponseError: MockTruncatedResponseError,
   getAnthropicClient: vi.fn(),
 }))
 

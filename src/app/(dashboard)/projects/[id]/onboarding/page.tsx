@@ -16,6 +16,7 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
+import { useToast } from "@/src/components/ui/toast";
 
 // ── Constants ──────────────────────────────────────────────
 
@@ -121,6 +122,7 @@ export default function OnboardingPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -247,7 +249,7 @@ export default function OnboardingPage({
         (c) => c.trim().length > 0
       );
 
-      await fetch(`/api/projects/${id}`, {
+      const res = await fetch(`/api/projects/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -266,8 +268,16 @@ export default function OnboardingPage({
         }),
       });
 
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        toast(err.error || "Couldn't save onboarding. Try again.", "error");
+        setSaving(false);
+        return;
+      }
+
       router.push(`/projects/${id}`);
     } catch {
+      toast("Network error — your onboarding wasn't saved.", "error");
       setSaving(false);
     }
   }

@@ -82,7 +82,6 @@ export async function POST(request: NextRequest) {
   }
 
   const payload = (await request.json()) as FlutterwaveWebhookPayload;
-  console.log("[flutterwave-webhook] payload:", JSON.stringify(payload));
   const event = payload.event ?? payload["event.type"] ?? payload.type ?? "";
   const data = payload.data ?? {};
   const trace: Record<string, unknown> = { event, received: true };

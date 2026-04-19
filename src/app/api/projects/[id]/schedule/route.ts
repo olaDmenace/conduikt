@@ -47,6 +47,16 @@ export async function POST(
     );
   }
 
+  if (channel !== "x" && channel !== "linkedin") {
+    return NextResponse.json(
+      {
+        error:
+          "Only X and LinkedIn are supported for scheduled publishing. Email sequences must be copied into your own ESP.",
+      },
+      { status: 400 }
+    );
+  }
+
   const scheduledDate = new Date(scheduledFor);
   if (isNaN(scheduledDate.getTime()) || scheduledDate <= new Date()) {
     return NextResponse.json(

@@ -25,6 +25,7 @@ import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { useToast } from "@/src/components/ui/toast";
+import { buildPlaybookActionHref } from "@/src/lib/playbook-action-route";
 
 // ── types ────────────────────────────────────────────────────────────────────
 
@@ -209,7 +210,7 @@ function GrowthPlaybookView({ data, projectId, assetId }: { data: GrowthPlaybook
                           <span className="text-caption text-text-tertiary">Impact: {action.impact}</span>
                           {action.conduikt_tool && (
                             <Link
-                              href={`/projects/${projectId}/${action.conduikt_route ?? ""}`}
+                              href={buildPlaybookActionHref(projectId, action)}
                               className="text-caption text-accent hover:underline flex items-center gap-1"
                             >
                               <Zap className="h-3 w-3" /> {action.conduikt_tool}

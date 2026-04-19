@@ -5,7 +5,7 @@ import { normalizePlan } from "@/src/lib/plans";
 import { dispatchWebhooks } from "@/src/lib/integrations/webhook-dispatch";
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
@@ -23,11 +23,26 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const { data: assets, error } = await supabase
+  // Optional filters: ?type=growth_playbook&limit=5
+  const { searchParams } = new URL(request.url);
+  const typeFilter = searchParams.get("type");
+  const limitParam = searchParams.get("limit");
+  const limit = limitParam ? Math.min(Math.max(parseInt(limitParam, 10) || 0, 1), 100) : null;
+
+  let query = supabase
     .from("assets")
     .select("*")
     .eq("project_id", id)
     .order("created_at", { ascending: false });
+
+  if (typeFilter) {
+    // Callers filtering by type are in the "pick a saved one" flow
+    // and should never see soft-deleted assets.
+    query = query.eq("type", typeFilter).neq("status", "archived");
+  }
+  if (limit) query = query.limit(limit);
+
+  const { data: assets, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

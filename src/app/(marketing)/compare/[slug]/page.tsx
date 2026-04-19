@@ -39,7 +39,7 @@ const COMPARISONS: Comparison[] = [
     whyConduikt: [
       "Conduikt audits your site BEFORE generating content, so every piece is data-driven.",
       "10 specialized AI agents vs. one general-purpose writer.",
-      "Built-in publishing to X, LinkedIn, and email — no separate tools needed.",
+      "Built-in publishing to X and LinkedIn. Email sequences export to your ESP, no separate copywriter needed.",
       "Campaign orchestrator chains agents together for end-to-end automation.",
     ],
   },

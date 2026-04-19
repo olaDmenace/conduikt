@@ -99,9 +99,14 @@ export default function CompetitorsPage() {
   }
 
   async function handleDelete(trackerId: string) {
-    await fetch(`/api/projects/${id}/competitors/${trackerId}`, {
+    const res = await fetch(`/api/projects/${id}/competitors/${trackerId}`, {
       method: "DELETE",
     });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      toast(err.error || "Failed to remove competitor", "error");
+      return;
+    }
     setTrackers((prev) => prev.filter((t) => t.id !== trackerId));
     toast("Competitor removed", "success");
   }

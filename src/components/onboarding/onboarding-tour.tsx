@@ -48,7 +48,7 @@ const steps = [
     icon: Calendar,
     title: "Schedule & Publish",
     description:
-      "Manage your content calendar, schedule posts, and publish directly to X, LinkedIn, and email. Track performance and let the AI learn from results.",
+      "Manage your content calendar, schedule posts, and publish directly to X and LinkedIn. Email sequences export to your ESP. Track performance and let the AI learn from results.",
     hint: "Project > Calendar",
   },
 ];

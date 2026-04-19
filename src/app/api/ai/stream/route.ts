@@ -88,12 +88,10 @@ export async function POST(request: NextRequest) {
   const anthropic = getAnthropicClient();
   const start = Date.now();
 
-  const stream = anthropic.messages.stream({
-    model: skill.model,
-    max_tokens: skill.maxTokens,
-    system: systemPrompt,
-    messages: [{ role: "user", content: userPrompt }],
-  });
+  // How many times we'll try to continue from a prefill if Claude keeps
+  // hitting max_tokens. Each round reuses the accumulated text as an
+  // assistant prefill, so no tokens are regenerated.
+  const MAX_CONTINUATIONS = 2;
 
   const encoder = new TextEncoder();
 
@@ -102,21 +100,73 @@ export async function POST(request: NextRequest) {
       let inputTokens = 0;
       let outputTokens = 0;
       let fullText = "";
+      let truncated = false;
 
-      stream.on("text", (text) => {
-        fullText += text;
+      const sendEvent = (payload: Record<string, unknown>) => {
         controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify({ type: "text", text })}\n\n`)
+          encoder.encode(`data: ${JSON.stringify(payload)}\n\n`),
         );
-      });
+      };
 
-      stream.on("message", (msg) => {
-        inputTokens = msg.usage.input_tokens;
-        outputTokens = msg.usage.output_tokens;
-      });
+      try {
+        for (let attempt = 0; attempt <= MAX_CONTINUATIONS; attempt++) {
+          const messages: Array<{
+            role: "user" | "assistant";
+            content: string;
+          }> = [{ role: "user", content: userPrompt }];
+          if (fullText) {
+            messages.push({ role: "assistant", content: fullText });
+          }
 
-      stream.on("end", async () => {
+          const stream = anthropic.messages.stream({
+            model: skill.model,
+            max_tokens: skill.maxTokens,
+            system: systemPrompt,
+            messages,
+          });
+
+          stream.on("text", (text) => {
+            fullText += text;
+            sendEvent({ type: "text", text });
+          });
+
+          const finalMsg = await stream.finalMessage();
+          inputTokens += finalMsg.usage.input_tokens;
+          outputTokens += finalMsg.usage.output_tokens;
+
+          if (finalMsg.stop_reason !== "max_tokens") {
+            truncated = false;
+            break;
+          }
+
+          // Hit max_tokens. If we have budget for another round, loop with
+          // prefill. Otherwise flag truncated and bail.
+          if (attempt === MAX_CONTINUATIONS) {
+            truncated = true;
+            console.error(
+              `[ai-stream] ${skill.id} still truncated after ${MAX_CONTINUATIONS + 1} attempts (${outputTokens} output tokens)`,
+            );
+            break;
+          }
+
+          console.warn(
+            `[ai-stream] ${skill.id} truncated on attempt ${attempt + 1}, continuing from ${fullText.length} chars`,
+          );
+        }
+
         const durationMs = Date.now() - start;
+
+        if (truncated) {
+          sendEvent({
+            type: "error",
+            error:
+              "Generation was cut short even after retrying. Please try again.",
+            code: "generation_truncated",
+            partialLength: fullText.length,
+          });
+          controller.close();
+          return;
+        }
 
         // Log generation if project context exists
         if (projectId) {
@@ -131,7 +181,9 @@ export async function POST(request: NextRequest) {
         }
 
         // Increment generation count (atomic to prevent race conditions)
-        await supabase.rpc("increment_generation_count", { user_id_param: user.id });
+        await supabase.rpc("increment_generation_count", {
+          user_id_param: user.id,
+        });
 
         dispatchWebhooks(user.id, projectId ?? null, {
           event: "content.generated",
@@ -141,27 +193,22 @@ export async function POST(request: NextRequest) {
           metadata: { agent: skill.id, inputTokens, outputTokens, durationMs },
         }).catch(() => {});
 
-        controller.enqueue(
-          encoder.encode(
-            `data: ${JSON.stringify({
-              type: "done",
-              usage: { inputTokens, outputTokens, durationMs },
-              plan,
-            })}\n\n`
-          )
-        );
+        sendEvent({
+          type: "done",
+          usage: { inputTokens, outputTokens, durationMs },
+          plan,
+        });
         controller.close();
-      });
-
-      stream.on("error", (err) => {
-        const message = process.env.NODE_ENV === "development" ? err.message : "An unexpected error occurred";
-        controller.enqueue(
-          encoder.encode(
-            `data: ${JSON.stringify({ type: "error", error: message })}\n\n`
-          )
-        );
+      } catch (err) {
+        const message =
+          process.env.NODE_ENV === "development"
+            ? err instanceof Error
+              ? err.message
+              : String(err)
+            : "An unexpected error occurred";
+        sendEvent({ type: "error", error: message });
         controller.close();
-      });
+      }
     },
   });
 

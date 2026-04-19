@@ -77,7 +77,7 @@ const valueProps = [
     icon: Rocket,
     title: "Publish",
     description:
-      "Schedule and publish directly to X, LinkedIn, and email. One dashboard for all channels.",
+      "Schedule and publish directly to X and LinkedIn. Email sequences export to your ESP.",
   },
 ];
 
