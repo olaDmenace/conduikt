@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Settings,
@@ -41,7 +41,8 @@ import {
 import { cn } from "@/src/lib/utils/cn";
 import { useUIStore } from "@/src/stores/ui-store";
 import { createClient } from "@/src/lib/supabase/client";
-import { useToast } from "@/src/components/ui/toast";
+import { signOutAction } from "@/src/app/(auth)/logout/action";
+import { markSigningOut } from "@/src/lib/auth/signing-out";
 import { AGENT_REGISTRY, type AgentDefinition } from "@/src/lib/ai/agents/registry";
 import {
   getGenerationLimit,
@@ -94,7 +95,6 @@ const AgentsMenuIcon = Sparkles;
 
 export function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
   const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const mobileMenuOpen = useUIStore((s) => s.mobileMenuOpen);
@@ -103,7 +103,6 @@ export function Sidebar() {
   const toggleProjectExpanded = useUIStore((s) => s.toggleProjectExpanded);
 
   const supabase = createClient();
-  const { toast } = useToast();
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -152,11 +151,15 @@ export function Sidebar() {
   }, [pathname]);
 
   async function handleLogout() {
-    await supabase.auth.signOut();
-    toast("Signed out successfully.", "info");
+    markSigningOut();
     setMobileMenuOpen(false);
-    router.push("/login");
-    router.refresh();
+    try {
+      await signOutAction();
+    } catch {
+      // Non-fatal — the hard redirect below still runs and middleware
+      // will bounce us to /login if the session somehow survived.
+    }
+    window.location.assign("/login");
   }
 
   function handleNavClick() {

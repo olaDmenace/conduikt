@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/src/lib/supabase/client";
+import { isSigningOut } from "@/src/lib/auth/signing-out";
 import { useToast } from "@/src/components/ui/toast";
 
 const HEARTBEAT_MS = 4 * 60 * 1000; // Check every 4 minutes
@@ -45,7 +46,10 @@ export function SessionGuard() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_OUT") {
+      // Skip when the user intentionally signed out — handleLogout owns
+      // the redirect and toast in that case, and we don't want to race it
+      // or show the "session expired" warning.
+      if (event === "SIGNED_OUT" && !isSigningOut()) {
         handleExpired();
       }
     });
