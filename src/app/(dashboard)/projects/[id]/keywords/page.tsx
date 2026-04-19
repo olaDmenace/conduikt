@@ -124,8 +124,14 @@ export default function KeywordsPage({
   const { toast } = useToast();
   const { showLimitModal } = useUsageLimitModal();
 
-  // Seed input state
+  // Seed input state — pre-fill from ?seed= when linked from a playbook action.
   const [seedInput, setSeedInput] = useState("");
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const seed = new URL(window.location.href).searchParams.get("seed");
+    if (seed) setSeedInput(seed);
+  }, []);
+
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const suggestTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

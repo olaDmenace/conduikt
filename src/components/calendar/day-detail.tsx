@@ -3,7 +3,6 @@
 import {
   Twitter,
   Linkedin,
-  Mail,
   CheckCircle2,
   XCircle,
   Clock,
@@ -22,7 +21,7 @@ import {
 
 interface ScheduledPost {
   id: string;
-  channel: "x" | "linkedin" | "email";
+  channel: "x" | "linkedin";
   scheduled_for: string;
   posted_at: string | null;
   status: "pending" | "posted" | "failed" | "cancelled";
@@ -39,10 +38,9 @@ interface DayDetailProps {
 }
 
 function channelIcon(channel: string) {
-  if (channel === "x") return <Twitter className="h-4 w-4 text-text-primary" />;
   if (channel === "linkedin")
     return <Linkedin className="h-4 w-4 text-[#0A66C2]" />;
-  return <Mail className="h-4 w-4 text-success" />;
+  return <Twitter className="h-4 w-4 text-text-primary" />;
 }
 
 function statusVariant(

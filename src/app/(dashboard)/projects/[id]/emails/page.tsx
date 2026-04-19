@@ -9,6 +9,7 @@ import {
   Clock,
   CheckCircle2,
   Inbox,
+  Copy,
 } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
@@ -116,23 +117,48 @@ export default function EmailsPage({
 
   async function handleSendTest(step: SequenceStep) {
     if (!step.assets?.content) return;
+    const to = window.prompt(
+      "Send a test of this email to which address?",
+      ""
+    );
+    if (!to) return;
+    const trimmed = to.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      toast("That doesn't look like a valid email address", "error");
+      return;
+    }
     setSendingStep(step.id);
     const res = await fetch("/api/publish/email", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        to: "test@example.com",
+        to: trimmed,
         subject: step.subject,
         html: step.assets.content.html || `<p>${step.subject}</p>`,
+        projectId,
       }),
     });
     if (res.ok) {
-      toast("Test email sent", "success");
+      toast(`Test sent to ${trimmed}`, "success");
     } else {
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       toast(data.error || "Failed to send", "error");
     }
     setSendingStep(null);
+  }
+
+  function handleCopyStep(step: SequenceStep) {
+    const c = step.assets?.content;
+    if (!c) return;
+    const parts: string[] = [];
+    if (step.subject) parts.push(`Subject: ${step.subject}`);
+    if (c.preview_text) parts.push(`Preview: ${c.preview_text}`);
+    if (c.html) parts.push("", c.html);
+    if (c.cta_text || c.cta_url) {
+      parts.push("", `CTA: ${c.cta_text ?? ""}${c.cta_url ? ` (${c.cta_url})` : ""}`);
+    }
+    navigator.clipboard.writeText(parts.join("\n").trim());
+    toast("Email copied — paste into your ESP", "success");
   }
 
   const totalSteps = sequences.reduce((s, seq) => s + seq.step_count, 0);
@@ -143,7 +169,7 @@ export default function EmailsPage({
     <div>
       <PageHeader
         title="Email Sequences"
-        description="Manage your automated email sequences"
+        description="Preview each step, send test emails to yourself, and copy content into your ESP for scheduled sends."
       >
         <Button asChild>
           <Link
@@ -215,8 +241,9 @@ export default function EmailsPage({
               No email sequences yet
             </h3>
             <p className="mt-2 text-body text-text-secondary max-w-md">
-              Use the Email agent to generate a nurture or onboarding sequence,
-              then manage and send tests from here.
+              Use the Email agent to generate a nurture or onboarding sequence.
+              Once saved, you can preview each step, send yourself a test, and
+              copy the email into your own ESP to broadcast to your list.
             </p>
             <Button className="mt-6" asChild>
               <Link href={`/projects/${projectId}/content?skill=email-sequence`}>
@@ -306,22 +333,35 @@ export default function EmailsPage({
                           {step.subject}
                         </h4>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSendTest(step);
-                        }}
-                        disabled={sendingStep === step.id}
-                      >
-                        {sendingStep === step.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
-                        ) : (
-                          <Send className="h-3.5 w-3.5 mr-1" />
-                        )}
-                        Send Test
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCopyStep(step);
+                          }}
+                        >
+                          <Copy className="h-3.5 w-3.5 mr-1" />
+                          Copy
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSendTest(step);
+                          }}
+                          disabled={sendingStep === step.id}
+                        >
+                          {sendingStep === step.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                          ) : (
+                            <Send className="h-3.5 w-3.5 mr-1" />
+                          )}
+                          Send Test
+                        </Button>
+                      </div>
                     </div>
 
                     {step.assets?.content?.preview_text && (

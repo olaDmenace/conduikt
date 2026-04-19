@@ -93,9 +93,10 @@ export async function POST(request: NextRequest) {
     ? `https://x.com/${account.platform_username}/status/${tweetId}`
     : null;
 
-  // Update asset status if assetId provided
+  // Update asset status if assetId provided. Use the RLS client so
+  // the update silently no-ops if the caller doesn't own the asset.
   if (assetId) {
-    await db.from("assets").update({
+    await supabase.from("assets").update({
       status: "published",
       published_at: new Date().toISOString(),
       external_id: tweetId ?? null,

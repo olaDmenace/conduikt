@@ -6,7 +6,7 @@ export const growthPlaybookSkill: SkillConfig = {
   name: "Growth Playbook",
   description: "90-day AI-generated growth plan with prioritised actions across SEO, content, social, and conversion",
   model: "claude-sonnet-4-6",
-  maxTokens: 6000,
+  maxTokens: 24000,
 
   buildSystemPrompt: (context: ProjectContext) => `
 You are a senior growth strategist creating a 90-day growth playbook for a specific product.

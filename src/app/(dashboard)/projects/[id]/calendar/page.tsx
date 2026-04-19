@@ -4,7 +4,6 @@ import { useEffect, useState, use, useCallback } from "react";
 import {
   Twitter,
   Linkedin,
-  Mail,
   CalendarClock,
   CheckCircle2,
   XCircle,
@@ -49,16 +48,14 @@ function statusIcon(status: string) {
 }
 
 function channelIcon(channel: string) {
-  if (channel === "x") return <Twitter className="h-4 w-4 text-text-primary" />;
   if (channel === "linkedin")
     return <Linkedin className="h-4 w-4 text-[#0A66C2]" />;
-  return <Mail className="h-4 w-4 text-success" />;
+  return <Twitter className="h-4 w-4 text-text-primary" />;
 }
 
 function channelLabel(channel: string) {
-  if (channel === "x") return "X (Twitter)";
   if (channel === "linkedin") return "LinkedIn";
-  return "Email";
+  return "X (Twitter)";
 }
 
 function formatDateTime(iso: string) {
@@ -89,7 +86,7 @@ function exportPostsCsv(posts: ScheduledPost[], projectId: string) {
   const header = "Date,Channel,Status,Content";
   const rows = posts.map((p) => {
     const date = new Date(p.scheduled_for).toISOString();
-    const channel = p.channel === "x" ? "X (Twitter)" : p.channel === "linkedin" ? "LinkedIn" : "Email";
+    const channel = p.channel === "linkedin" ? "LinkedIn" : "X (Twitter)";
     const rawContent = p.assets?.content;
     const contentText =
       typeof rawContent === "string"
@@ -223,7 +220,7 @@ export default function CalendarPage({
     <div>
       <PageHeader
         title="Content Calendar"
-        description="Your scheduled posts across X, LinkedIn, and Email"
+        description="Your scheduled posts across X and LinkedIn"
       >
         <div className="flex items-center gap-2">
           {posts.length > 0 && (

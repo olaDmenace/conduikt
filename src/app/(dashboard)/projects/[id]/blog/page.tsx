@@ -40,6 +40,7 @@ import {
 } from "@/src/components/ui/tabs";
 import { PageHeader } from "@/src/components/layout/page-header";
 import { ExpectationBanner } from "@/src/components/ui/expectation-banner";
+import { SavedAssetsPanel } from "@/src/components/agents/saved-assets-panel";
 
 import { useToast } from "@/src/components/ui/toast";
 import { parseJsonResponse } from "@/src/lib/ai/parse-json";
@@ -81,7 +82,7 @@ function BlogPageInner({
   const searchParams = useSearchParams();
 
   // Inputs
-  const [topic, setTopic] = useState("");
+  const [topic, setTopic] = useState(() => searchParams.get("topic") ?? "");
   const [targetKeyword, setTargetKeyword] = useState(() => searchParams.get("keyword") ?? "");
   const [wordCount, setWordCount] = useState(1500);
   const [tone, setTone] = useState("");
@@ -321,6 +322,18 @@ function BlogPageInner({
           "Update and refresh older posts every few months to maintain rankings.",
         ]}
       />
+
+      <div className="mb-6">
+        <SavedAssetsPanel
+          projectId={projectId}
+          assetType="blog_post"
+          title="Your Saved Blog Posts"
+          linkBuilder={(assetId) => `/projects/${projectId}/blog?assetId=${assetId}`}
+          libraryHref={`/projects/${projectId}/library`}
+          currentAssetId={savedId ?? undefined}
+          emptyHint="Saved blog posts will appear here. Click Save on any generated post to keep it for later."
+        />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* ---- Left: Input Panel ---- */}

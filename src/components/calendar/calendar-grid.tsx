@@ -17,7 +17,6 @@ import {
   ChevronRight,
   Twitter,
   Linkedin,
-  Mail,
   GripVertical,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
@@ -25,7 +24,7 @@ import { Badge } from "@/src/components/ui/badge";
 
 export interface ScheduledPost {
   id: string;
-  channel: "x" | "linkedin" | "email";
+  channel: "x" | "linkedin";
   scheduled_for: string;
   posted_at?: string | null;
   status: string;
@@ -59,10 +58,9 @@ function isSameDay(a: Date, b: Date) {
 }
 
 function channelIcon(channel: string) {
-  if (channel === "x") return <Twitter className="h-3 w-3 text-accent" />;
   if (channel === "linkedin")
     return <Linkedin className="h-3 w-3 text-[#0A66C2]" />;
-  return <Mail className="h-3 w-3 text-success" />;
+  return <Twitter className="h-3 w-3 text-accent" />;
 }
 
 function statusColor(status: string) {

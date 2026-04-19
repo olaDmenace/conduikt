@@ -21,6 +21,7 @@ import {
   ExternalLink,
   Lock,
   ArrowUpRight,
+  CalendarClock,
 } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
@@ -138,6 +139,24 @@ function statusVariant(
   return "secondary";
 }
 
+function isSchedulable(asset: Asset): boolean {
+  return asset.channel === "x" || asset.channel === "linkedin";
+}
+
+/** datetime-local default: now + 15 minutes, formatted as YYYY-MM-DDTHH:mm in local time. */
+function defaultScheduleValue(): string {
+  const d = new Date(Date.now() + 15 * 60 * 1000);
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/** datetime-local min: now + 1 minute. Prevents the API's "must be future" rejection. */
+function minScheduleValue(): string {
+  const d = new Date(Date.now() + 60 * 1000);
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 function getTextContent(asset: Asset): string {
   const c = asset.content;
   if (typeof c === "string") return c;
@@ -149,6 +168,28 @@ function getTextContent(asset: Asset): string {
   if (c?.text && typeof c.text === "string") return c.text;
   if (c?.subject && typeof c.subject === "string") return c.subject;
   return JSON.stringify(c, null, 2);
+}
+
+/**
+ * Formats an email asset as structured plain text for paste into an ESP.
+ * Includes subject, preview text, body, and CTA so nothing is lost on export.
+ */
+function formatEmailForExport(asset: Asset): string {
+  const c = asset.content ?? {};
+  const subject = typeof c.subject === "string" ? c.subject : "";
+  const preview = typeof c.preview_text === "string" ? c.preview_text : "";
+  const html = typeof c.html === "string" ? c.html : "";
+  const ctaText = typeof c.cta_text === "string" ? c.cta_text : "";
+  const ctaUrl = typeof c.cta_url === "string" ? c.cta_url : "";
+  const parts: string[] = [];
+  if (subject) parts.push(`Subject: ${subject}`);
+  if (preview) parts.push(`Preview: ${preview}`);
+  if (html) parts.push("", html);
+  if (ctaText || ctaUrl) {
+    parts.push("", `CTA: ${ctaText}${ctaUrl ? ` (${ctaUrl})` : ""}`);
+  }
+  const out = parts.join("\n").trim();
+  return out || getTextContent(asset);
 }
 
 export default function LibraryPage({
@@ -165,6 +206,13 @@ export default function LibraryPage({
   const [plan, setPlan] = useState<string>("free");
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
+  // Schedule dialog state — distinct from selectedAsset so the preview dialog
+  // can close while the schedule flow stays open.
+  const [schedulingAsset, setSchedulingAsset] = useState<Asset | null>(null);
+  const [scheduleDateTime, setScheduleDateTime] = useState("");
+  const [schedulePostText, setSchedulePostText] = useState("");
+  const [scheduleSubmitting, setScheduleSubmitting] = useState(false);
 
   // Filters
   const [typeFilter, setTypeFilter] = useState("all");
@@ -210,9 +258,68 @@ export default function LibraryPage({
   }
 
   function handleCopy(asset: Asset) {
-    const text = getTextContent(asset);
+    const text =
+      asset.type === "email" ? formatEmailForExport(asset) : getTextContent(asset);
     navigator.clipboard.writeText(text);
-    toast("Content copied", "success");
+    toast(
+      asset.type === "email"
+        ? "Email copied — paste into your ESP"
+        : "Content copied",
+      "success"
+    );
+  }
+
+  function openScheduleDialog(asset: Asset) {
+    setSchedulingAsset(asset);
+    setScheduleDateTime(defaultScheduleValue());
+    setSchedulePostText(getTextContent(asset));
+    setSelectedAsset(null); // close the preview dialog first
+  }
+
+  function closeScheduleDialog() {
+    setSchedulingAsset(null);
+    setScheduleDateTime("");
+    setSchedulePostText("");
+    setScheduleSubmitting(false);
+  }
+
+  async function handleSchedule() {
+    if (!schedulingAsset || !scheduleDateTime || !schedulePostText.trim()) return;
+    if (!isSchedulable(schedulingAsset)) {
+      toast("This asset type can't be scheduled", "error");
+      return;
+    }
+
+    setScheduleSubmitting(true);
+    try {
+      const res = await fetch(`/api/projects/${projectId}/schedule`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          assetId: schedulingAsset.id,
+          channel: schedulingAsset.channel as "x" | "linkedin",
+          scheduledFor: new Date(scheduleDateTime).toISOString(),
+          postText: schedulePostText,
+        }),
+      });
+
+      if (res.ok) {
+        toast(
+          `Scheduled for ${new Date(scheduleDateTime).toLocaleString()}`,
+          "success",
+        );
+        closeScheduleDialog();
+        // Nudge to calendar so user sees their scheduled post
+        startNavigation(() => router.push(`/projects/${projectId}/calendar`));
+      } else {
+        const err = await res.json().catch(() => ({}));
+        toast(err.error || "Failed to schedule post", "error");
+        setScheduleSubmitting(false);
+      }
+    } catch {
+      toast("Failed to schedule post", "error");
+      setScheduleSubmitting(false);
+    }
   }
 
   // Compute unique types/channels for filter dropdowns
@@ -509,12 +616,16 @@ export default function LibraryPage({
                   <Copy className="h-3.5 w-3.5 mr-1.5" />
                   Copy
                 </Button>
-                <Button size="sm" variant="ghost" asChild>
-                  <Link href={`/projects/${projectId}/calendar`}>
+                {isSchedulable(selectedAsset) && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => openScheduleDialog(selectedAsset)}
+                  >
                     <Calendar className="h-3.5 w-3.5 mr-1.5" />
                     Schedule
-                  </Link>
-                </Button>
+                  </Button>
+                )}
                 {selectedAsset.status !== "archived" && (
                   <Button
                     size="sm"
@@ -526,6 +637,100 @@ export default function LibraryPage({
                     Archive
                   </Button>
                 )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Schedule dialog */}
+      <Dialog
+        open={!!schedulingAsset}
+        onOpenChange={(open) => {
+          if (!open) closeScheduleDialog();
+        }}
+      >
+        <DialogContent>
+          {schedulingAsset && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <CalendarClock className="h-5 w-5 text-accent" />
+                  Schedule {schedulingAsset.channel === "x" ? "X" : "LinkedIn"} post
+                </DialogTitle>
+                <DialogDescription>
+                  {schedulingAsset.title || "Untitled"} ·{" "}
+                  {CHANNEL_LABELS[schedulingAsset.channel ?? ""] ?? schedulingAsset.channel}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="mt-2 space-y-4">
+                <div>
+                  <label className="text-small text-text-secondary block mb-1.5">
+                    When to post
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={scheduleDateTime}
+                    min={minScheduleValue()}
+                    onChange={(e) => setScheduleDateTime(e.target.value)}
+                    className="w-full rounded-lg border border-border-strong bg-surface-0 px-4 py-2.5 text-text-primary text-small transition-all duration-150 focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-glow)]"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-small text-text-secondary block mb-1.5">
+                    Post text
+                  </label>
+                  <textarea
+                    value={schedulePostText}
+                    onChange={(e) => setSchedulePostText(e.target.value)}
+                    rows={8}
+                    className="w-full rounded-lg border border-border-strong bg-surface-0 px-4 py-3 text-text-primary placeholder:text-text-tertiary font-sans text-[0.9375rem] transition-all duration-150 focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-glow)] resize-y"
+                  />
+                  {schedulingAsset.channel === "x" && (
+                    <p className="mt-1 text-caption text-text-tertiary">
+                      {schedulePostText.length} / 280 characters
+                      {schedulePostText.length > 280 && (
+                        <span className="text-error ml-2">
+                          Too long — X will reject this
+                        </span>
+                      )}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 mt-6">
+                <Button
+                  onClick={handleSchedule}
+                  disabled={
+                    scheduleSubmitting ||
+                    !scheduleDateTime ||
+                    !schedulePostText.trim() ||
+                    (schedulingAsset.channel === "x" &&
+                      schedulePostText.length > 280)
+                  }
+                >
+                  {scheduleSubmitting ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                      Scheduling...
+                    </>
+                  ) : (
+                    <>
+                      <CalendarClock className="h-3.5 w-3.5 mr-1.5" />
+                      Schedule post
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={closeScheduleDialog}
+                  disabled={scheduleSubmitting}
+                >
+                  Cancel
+                </Button>
               </div>
             </>
           )}

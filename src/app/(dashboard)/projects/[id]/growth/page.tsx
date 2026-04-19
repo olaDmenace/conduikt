@@ -34,7 +34,9 @@ import { ExpectationBanner } from "@/src/components/ui/expectation-banner";
 
 import { useToast } from "@/src/components/ui/toast";
 import { PdfDownloadButton } from "@/src/components/ui/pdf-download-button";
+import { SavedAssetsPanel } from "@/src/components/agents/saved-assets-panel";
 import { parseJsonResponse } from "@/src/lib/ai/parse-json";
+import { buildPlaybookActionHref } from "@/src/lib/playbook-action-route";
 
 // ---------- types ----------
 
@@ -158,7 +160,7 @@ function ActionCard({
 
             <div className="flex items-center gap-1 shrink-0">
               <Link
-                href={`/projects/${projectId}/${action.conduikt_route}`}
+                href={buildPlaybookActionHref(projectId, action)}
                 className="flex items-center gap-1 rounded-md border border-border-default bg-surface-0 px-2.5 py-1 text-caption text-text-secondary hover:border-accent/40 hover:text-accent transition-colors whitespace-nowrap"
               >
                 {action.conduikt_tool}
@@ -292,6 +294,7 @@ function GrowthPageInner({
       const decoder = new TextDecoder();
       let buffer = "";
       let fullText = "";
+      let streamError: string | null = null;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -305,8 +308,15 @@ function GrowthPageInner({
           if (data.type === "text") {
             fullText += data.text;
             setRawText(fullText);
+          } else if (data.type === "error") {
+            streamError = data.error || "Generation failed";
           }
         }
+      }
+
+      if (streamError) {
+        toast(streamError, "error");
+        return;
       }
 
       try {
@@ -368,6 +378,18 @@ function GrowthPageInner({
           "Re-generate the playbook in a few weeks to get updated recommendations based on progress.",
         ]}
       />
+
+      <div className="mb-6">
+        <SavedAssetsPanel
+          projectId={projectId}
+          assetType="growth_playbook"
+          title="Your Saved Playbooks"
+          linkBuilder={(assetId) => `/projects/${projectId}/growth?assetId=${assetId}`}
+          libraryHref={`/projects/${projectId}/library`}
+          currentAssetId={savedId ?? undefined}
+          emptyHint="Saved playbooks will appear here. Click Save on any playbook below to keep it for later."
+        />
+      </div>
 
       {/* Input form */}
       {!playbook && (

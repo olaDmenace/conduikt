@@ -83,18 +83,28 @@ export default function WebhooksPage() {
   }
 
   async function handleToggle(id: string, active: boolean) {
-    await fetch(`/api/webhooks/${id}`, {
+    const res = await fetch(`/api/webhooks/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ active: !active }),
     });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      toast(err.error || "Failed to update webhook", "error");
+      return;
+    }
     setWebhooks((prev) =>
       prev.map((w) => (w.id === id ? { ...w, active: !active } : w))
     );
   }
 
   async function handleDelete(id: string) {
-    await fetch(`/api/webhooks/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/webhooks/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      toast(err.error || "Failed to delete webhook", "error");
+      return;
+    }
     setWebhooks((prev) => prev.filter((w) => w.id !== id));
     toast("Webhook deleted", "info");
   }

@@ -2,7 +2,7 @@ export const homepageFaqs = [
   {
     question: "What is Conduikt?",
     answer:
-      "Conduikt is an AI-powered marketing automation platform that audits your site, generates content, and publishes across social, email, and web channels — all from a single dashboard.",
+      "Conduikt is an AI-powered marketing automation platform that audits your site, generates content, publishes directly to X and LinkedIn, and produces email sequences you can export to your own ESP — all from a single dashboard.",
   },
   {
     question: "How does the AI SEO audit work?",

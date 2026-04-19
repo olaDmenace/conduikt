@@ -60,10 +60,10 @@ const features = [
   },
   {
     icon: Globe,
-    title: "Multi-Channel Publishing for LinkedIn, X, and Email",
+    title: "Multi-Channel Publishing for LinkedIn and X",
     href: "/features#publishing",
     description:
-      "Publish directly to X, LinkedIn, and email platforms. One dashboard for all your marketing channels.",
+      "Schedule and publish directly to X and LinkedIn from one dashboard. Email sequences export to your ESP.",
   },
   {
     icon: TrendingUp,

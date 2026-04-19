@@ -2,11 +2,18 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Twitter, Linkedin, Facebook, CheckCircle2, AlertCircle, Loader2, Link2, Unlink, Search, Clock } from "lucide-react";
+import { Twitter, Linkedin, Facebook, CheckCircle2, AlertCircle, Loader2, Link2, Unlink, Search, Clock, Pencil } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/src/components/ui/dialog";
 import { useToast } from "@/src/components/ui/toast";
 import { createClient } from "@/src/lib/supabase/client";
 
@@ -25,6 +32,16 @@ function IntegrationsContent() {
   const [accounts, setAccounts] = useState<ConnectedAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
+
+  // GSC site picker state
+  const [gscPickerOpen, setGscPickerOpen] = useState(false);
+  const [gscSites, setGscSites] = useState<
+    { siteUrl: string; permissionLevel: string }[]
+  >([]);
+  const [gscCurrent, setGscCurrent] = useState<string | null>(null);
+  const [gscSitesLoading, setGscSitesLoading] = useState(false);
+  const [gscSitesError, setGscSitesError] = useState<string | null>(null);
+  const [gscSwitching, setGscSwitching] = useState<string | null>(null);
 
   useEffect(() => {
     const connected = searchParams.get("connected");
@@ -48,6 +65,50 @@ function IntegrationsContent() {
       .select("platform, platform_username, token_expires_at, created_at");
     setAccounts(data ?? []);
     setLoading(false);
+  }
+
+  async function openGscPicker() {
+    setGscPickerOpen(true);
+    setGscSitesLoading(true);
+    setGscSitesError(null);
+    try {
+      const res = await fetch("/api/integrations/gsc/sites");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setGscSitesError(data.error || "Failed to load GSC sites");
+        return;
+      }
+      setGscSites(data.sites ?? []);
+      setGscCurrent(data.current ?? null);
+    } finally {
+      setGscSitesLoading(false);
+    }
+  }
+
+  async function selectGscSite(siteUrl: string) {
+    setGscSwitching(siteUrl);
+    try {
+      const res = await fetch("/api/integrations/gsc/sites", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ siteUrl }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast(data.error || "Failed to switch site", "error");
+        return;
+      }
+      setGscCurrent(siteUrl);
+      setAccounts((prev) =>
+        prev.map((a) =>
+          a.platform === "gsc" ? { ...a, platform_username: siteUrl } : a
+        )
+      );
+      toast(`GSC site set to ${siteUrl}`, "success");
+      setGscPickerOpen(false);
+    } finally {
+      setGscSwitching(null);
+    }
   }
 
   async function disconnect(platform: string) {
@@ -180,19 +241,31 @@ function IntegrationsContent() {
                   {/* Action */}
                   <div className="flex items-center gap-2 shrink-0">
                     {connected ? (
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => disconnect(integration.key)}
-                        disabled={disconnecting === integration.key}
-                      >
-                        {disconnecting === integration.key ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Unlink className="h-4 w-4" />
+                      <>
+                        {integration.key === "gsc" && !expired && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={openGscPicker}
+                          >
+                            <Pencil className="h-4 w-4" />
+                            Change site
+                          </Button>
                         )}
-                        Disconnect
-                      </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => disconnect(integration.key)}
+                          disabled={disconnecting === integration.key}
+                        >
+                          {disconnecting === integration.key ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Unlink className="h-4 w-4" />
+                          )}
+                          Disconnect
+                        </Button>
+                      </>
                     ) : integration.comingSoon ? (
                       <Button variant="secondary" size="sm" disabled>
                         <Clock className="h-4 w-4" />
@@ -224,6 +297,67 @@ function IntegrationsContent() {
           </Card>
         </div>
       )}
+
+      <Dialog open={gscPickerOpen} onOpenChange={setGscPickerOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Choose a Search Console site</DialogTitle>
+            <DialogDescription>
+              Pick which verified property to pull keyword data from. You can switch any time.
+            </DialogDescription>
+          </DialogHeader>
+
+          {gscSitesLoading ? (
+            <div className="flex justify-center py-10">
+              <Loader2 className="h-5 w-5 text-accent animate-spin" />
+            </div>
+          ) : gscSitesError ? (
+            <div className="rounded-lg border border-border-default bg-surface-2 p-4">
+              <p className="text-small text-text-secondary">{gscSitesError}</p>
+            </div>
+          ) : gscSites.length === 0 ? (
+            <div className="rounded-lg border border-border-default bg-surface-2 p-4">
+              <p className="text-small text-text-secondary">
+                No verified properties found in this Google account. Verify a site in
+                Google Search Console, then reopen this dialog.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-80 overflow-y-auto">
+              {gscSites.map((site) => {
+                const isCurrent = site.siteUrl === gscCurrent;
+                const isSwitching = gscSwitching === site.siteUrl;
+                return (
+                  <button
+                    key={site.siteUrl}
+                    onClick={() => selectGscSite(site.siteUrl)}
+                    disabled={gscSwitching !== null}
+                    className={`w-full flex items-center justify-between gap-3 rounded-lg border p-3 text-left transition-colors ${
+                      isCurrent
+                        ? "border-accent bg-accent/5"
+                        : "border-border-default bg-surface-2 hover:bg-surface-3"
+                    } disabled:opacity-60 disabled:cursor-not-allowed`}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-small font-medium text-text-primary truncate">
+                        {site.siteUrl}
+                      </p>
+                      <p className="text-xs text-text-secondary mt-0.5">
+                        {site.permissionLevel}
+                      </p>
+                    </div>
+                    {isSwitching ? (
+                      <Loader2 className="h-4 w-4 text-accent animate-spin shrink-0" />
+                    ) : isCurrent ? (
+                      <CheckCircle2 className="h-4 w-4 text-accent shrink-0" />
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

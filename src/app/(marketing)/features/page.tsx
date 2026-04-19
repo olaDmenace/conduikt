@@ -51,7 +51,7 @@ const featureGroups = [
     description: "Chain actions into automated campaigns",
     features: [
       { icon: Shield, title: "Campaign Builder", detail: "Visual flow builder that chains audit, strategy, content, and publish into automated workflows." },
-      { icon: Calendar, title: "Content Calendar", detail: "Schedule posts across X, LinkedIn, and email. Visual calendar with drag-and-drop rescheduling." },
+      { icon: Calendar, title: "Content Calendar", detail: "Schedule posts across X and LinkedIn. Visual calendar with drag-and-drop rescheduling." },
       { icon: Globe, title: "Multi-Channel Publishing", detail: "One dashboard for all channels. Preview how content looks on each platform before publishing." },
     ],
   },

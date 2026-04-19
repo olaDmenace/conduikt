@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
-import { generateWithClaude } from "@/src/lib/ai/client";
+import {
+  generateWithClaudeCompletion,
+  TruncatedResponseError,
+} from "@/src/lib/ai/client";
 import { getAgent } from "@/src/lib/ai/agents";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
 import { buildPerformanceContext } from "@/src/lib/ai/performance-context";
@@ -72,15 +75,38 @@ export async function POST(request: NextRequest) {
   const systemPrompt = skill.buildSystemPrompt(context);
   const userPrompt = skill.buildUserPrompt(input);
 
-  // Generate
-  const result = await generateWithClaude({
-    systemPrompt,
-    userPrompt,
-    model: skill.model,
-    maxTokens: skill.maxTokens,
-  });
+  // Generate (with automatic continuation on truncation — reuses any partial
+  // output as an assistant prefill so Claude resumes from the exact character
+  // it stopped at, no tokens regenerated).
+  let result;
+  try {
+    result = await generateWithClaudeCompletion({
+      systemPrompt,
+      userPrompt,
+      model: skill.model,
+      maxTokens: skill.maxTokens,
+    });
+  } catch (err) {
+    if (err instanceof TruncatedResponseError) {
+      console.error(
+        `[ai-generate] ${skill.id} truncated after ${err.attempts} attempts (${err.outputTokens} output tokens accumulated)`,
+      );
+      return NextResponse.json(
+        {
+          error:
+            "Generation was cut short even after retrying. Please try again, or contact support if this keeps happening.",
+          code: "generation_truncated",
+          agent: skill.id,
+        },
+        { status: 502 },
+      );
+    }
+    throw err;
+  }
 
-  // Parse response
+  // Parse response — if this fails on a complete response (stopReason !== max_tokens),
+  // something is wrong with the model output itself. Surface it instead of
+  // silently returning raw content as if it were valid data.
   let parsed;
   try {
     parsed = skill.parseResponse(result.content);
@@ -88,15 +114,20 @@ export async function POST(request: NextRequest) {
       inputTokens: result.inputTokens,
       outputTokens: result.outputTokens,
     };
-  } catch {
-    parsed = {
-      type: skill.id,
-      data: { raw: result.content },
-      usage: {
-        inputTokens: result.inputTokens,
-        outputTokens: result.outputTokens,
+  } catch (parseErr) {
+    console.error(
+      `[ai-generate] ${skill.id} parse failure despite clean stop (${result.stopReason}):`,
+      parseErr,
+    );
+    return NextResponse.json(
+      {
+        error:
+          "We got a response but couldn't read it. Please try again — this usually works on retry.",
+        code: "generation_parse_failed",
+        agent: skill.id,
       },
-    };
+      { status: 502 },
+    );
   }
 
   // Log generation

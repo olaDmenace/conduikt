@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 import { createServiceClient } from "@/src/lib/supabase/service";
 import {
@@ -10,13 +10,37 @@ function getServiceClient() {
   return createServiceClient();
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = await request.json().catch(() => ({}));
+  const projectId: string | undefined = body?.projectId;
+  if (!projectId || typeof projectId !== "string") {
+    return NextResponse.json(
+      { error: "projectId is required" },
+      { status: 400 }
+    );
+  }
+
+  // Verify the user owns the project before writing keyword data to it
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("id", projectId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!project) {
+    return NextResponse.json(
+      { error: "Project not found" },
+      { status: 404 }
+    );
   }
 
   const db = getServiceClient();
@@ -53,27 +77,19 @@ export async function POST() {
       { status: 400 }
     );
   }
-
-  // Get user's projects to upsert keyword data
-  const { data: projects } = await supabase
-    .from("projects")
-    .select("id")
-    .eq("user_id", user.id);
-
-  if (!projects?.length) {
-    return NextResponse.json(
-      { error: "No projects found" },
-      { status: 400 }
-    );
-  }
-
-  const projectId = projects[0].id;
   const days = 28;
   const endDate = new Date();
   const startDate = new Date();
   startDate.setDate(endDate.getDate() - days);
 
-  const queries = await fetchSearchAnalytics(siteUrl, accessToken, days);
+  let queries;
+  try {
+    queries = await fetchSearchAnalytics(siteUrl, accessToken, days);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Failed to fetch GSC data";
+    console.error("[gsc/sync] GSC API error:", msg);
+    return NextResponse.json({ error: msg }, { status: 502 });
+  }
 
   // Upsert into keyword_data
   if (queries.length > 0) {

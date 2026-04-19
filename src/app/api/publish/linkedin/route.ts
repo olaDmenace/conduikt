@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
   const postId = postRes.headers.get("x-restli-id") ?? null;
 
   if (assetId) {
-    await db.from("assets").update({
+    await supabase.from("assets").update({
       status: "published",
       published_at: new Date().toISOString(),
       external_id: postId,
