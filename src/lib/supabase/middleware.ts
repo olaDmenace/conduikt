@@ -1,7 +1,36 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+// Public marketing + webhook paths. These never need a Supabase auth
+// round-trip, so we skip middleware entirely and let the CDN serve them.
+// Before this, every landing-page hit did an us-east-1 round-trip on the
+// render path, which timed out for visitors on slower routes to us-east
+// (Nigerian consumer ISPs, parts of APAC) while testing from Starlink
+// hid the problem.
+const PUBLIC_PREFIXES = [
+  "/features",
+  "/pricing",
+  "/compare",
+  "/guides",
+  "/launch",
+  "/privacy",
+  "/terms",
+  "/data-deletion",
+  "/api/webhooks",
+];
+
+function isPublicPath(pathname: string): boolean {
+  if (pathname === "/") return true;
+  return PUBLIC_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(p + "/")
+  );
+}
+
 export async function updateSession(request: NextRequest) {
+  if (isPublicPath(request.nextUrl.pathname)) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -39,10 +68,18 @@ export async function updateSession(request: NextRequest) {
   // dead, the next request still lands on /login via the protected-path
   // check below; if it was just a race, the winning worker has already
   // written fresh cookies and the next request picks them up.
+  //
+  // Also race against a 2.5s timeout: if Supabase is slow or the Vercel
+  // edge has a bad path to us-east-1, we'd rather treat the request as
+  // anonymous and let the page render than hang until the browser gives
+  // up with ERR_CONNECTION_TIMED_OUT.
   let user: Awaited<ReturnType<typeof supabase.auth.getUser>>["data"]["user"] =
     null;
   try {
-    const res = await supabase.auth.getUser();
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("supabase-getuser-timeout")), 2500)
+    );
+    const res = await Promise.race([supabase.auth.getUser(), timeout]);
     if (!res.error) {
       user = res.data.user;
     }
