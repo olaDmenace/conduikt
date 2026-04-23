@@ -13,8 +13,8 @@ export default function MarketingLayout({
       <nav className="fixed top-0 z-50 w-full border-b border-border-subtle bg-surface-0/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-accent to-[#C88550]">
-              <span className="text-sm font-bold text-surface-0">C</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#D4945A] to-[#C88550]">
+              <span className="text-sm font-bold text-on-accent">C</span>
             </div>
             <span className="font-display text-lg text-text-primary">
               Conduikt
@@ -73,8 +73,8 @@ export default function MarketingLayout({
       <footer className="border-t border-border-subtle py-12">
         <div className="mx-auto max-w-6xl px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded bg-gradient-to-br from-accent to-[#C88550]">
-              <span className="text-[0.625rem] font-bold text-surface-0">C</span>
+            <div className="flex h-6 w-6 items-center justify-center rounded bg-gradient-to-br from-[#D4945A] to-[#C88550]">
+              <span className="text-[0.625rem] font-bold text-on-accent">C</span>
             </div>
             <span className="text-small text-text-secondary">
               Conduikt by Technicity Digital

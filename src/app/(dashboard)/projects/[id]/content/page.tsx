@@ -628,8 +628,8 @@ function ContentPageInner({
     return (
       <div className="rounded-xl border border-border-default bg-surface-0 p-4">
         <div className="flex items-start gap-3">
-          <div className="h-10 w-10 shrink-0 rounded-full bg-gradient-to-br from-accent to-[#C88550] flex items-center justify-center">
-            <span className="text-xs font-bold text-surface-0">C</span>
+          <div className="h-10 w-10 shrink-0 rounded-full bg-gradient-to-br from-[#D4945A] to-[#C88550] flex items-center justify-center">
+            <span className="text-xs font-bold text-on-accent">C</span>
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
@@ -667,8 +667,8 @@ function ContentPageInner({
     return (
       <div className="rounded-xl border border-border-default bg-surface-0 p-4">
         <div className="flex items-start gap-3 mb-3">
-          <div className="h-12 w-12 shrink-0 rounded-full bg-gradient-to-br from-accent to-[#C88550] flex items-center justify-center">
-            <span className="text-sm font-bold text-surface-0">C</span>
+          <div className="h-12 w-12 shrink-0 rounded-full bg-gradient-to-br from-[#D4945A] to-[#C88550] flex items-center justify-center">
+            <span className="text-sm font-bold text-on-accent">C</span>
           </div>
           <div>
             <p className="text-body font-medium text-text-primary">
@@ -737,7 +737,7 @@ function ContentPageInner({
               onClick={() => setActiveEmail(i)}
               className={`px-3 py-1.5 rounded-lg text-small font-medium transition-colors ${
                 i === activeEmail
-                  ? "bg-accent text-surface-0"
+                  ? "bg-accent text-on-accent"
                   : "bg-surface-2 text-text-secondary hover:bg-surface-3"
               }`}
             >

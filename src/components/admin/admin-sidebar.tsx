@@ -36,8 +36,8 @@ export function AdminSidebar() {
     <aside className="fixed left-0 top-0 z-50 flex h-screen w-[260px] flex-col border-r border-border-default bg-surface-0">
       {/* Logo */}
       <div className="flex h-16 items-center gap-2 border-b border-border-subtle px-4 shrink-0">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-accent to-[#C88550]">
-          <Shield className="h-4 w-4 text-surface-0" />
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#D4945A] to-[#C88550]">
+          <Shield className="h-4 w-4 text-on-accent" />
         </div>
         <div>
           <span className="font-display text-lg text-text-primary">Admin</span>

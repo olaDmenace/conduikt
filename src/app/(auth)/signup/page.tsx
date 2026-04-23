@@ -115,8 +115,8 @@ export default function SignupPage() {
     <div className="animate-in">
       {/* Logo */}
       <div className="mb-8 text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-accent to-[#C88550]">
-          <span className="text-xl font-bold text-surface-0">C</span>
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#D4945A] to-[#C88550]">
+          <span className="text-xl font-bold text-on-accent">C</span>
         </div>
         <h1 className="text-h1">Create your account</h1>
         <p className="mt-2 text-body text-text-secondary">

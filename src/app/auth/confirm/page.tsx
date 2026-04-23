@@ -121,7 +121,7 @@ function ConfirmInner() {
           </p>
           <a
             href="/login"
-            className="inline-block mt-2 rounded-lg bg-accent px-6 py-2.5 text-small font-medium text-surface-0 hover:bg-accent/90 transition-colors"
+            className="inline-block mt-2 rounded-lg bg-gradient-to-br from-[#D4945A] to-[#C88550] px-6 py-2.5 text-small font-medium text-on-accent hover:brightness-110 transition-all"
           >
             Sign in
           </a>

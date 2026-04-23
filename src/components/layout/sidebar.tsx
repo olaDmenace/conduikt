@@ -200,8 +200,8 @@ export function Sidebar() {
               className="flex items-center gap-2"
               onClick={handleNavClick}
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-accent to-[#C88550]">
-                <span className="text-sm font-bold text-surface-0">C</span>
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#D4945A] to-[#C88550]">
+                <span className="text-sm font-bold text-on-accent">C</span>
               </div>
               <span className="font-display text-lg text-text-primary">
                 Conduikt
@@ -211,9 +211,9 @@ export function Sidebar() {
           {!showLabel && (
             <Link
               href="/dashboard"
-              className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-accent to-[#C88550]"
+              className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#D4945A] to-[#C88550]"
             >
-              <span className="text-sm font-bold text-surface-0">C</span>
+              <span className="text-sm font-bold text-on-accent">C</span>
             </Link>
           )}
           {mobileMenuOpen && (

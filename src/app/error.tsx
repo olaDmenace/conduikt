@@ -24,8 +24,8 @@ export default function GlobalError({
           className="mx-auto mb-10 inline-flex items-center gap-2"
           aria-label="Conduikt home"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-accent to-[#C88550]">
-            <span className="text-sm font-bold text-surface-0">C</span>
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#D4945A] to-[#C88550]">
+            <span className="text-sm font-bold text-on-accent">C</span>
           </div>
           <span className="font-display text-lg text-text-primary">
             Conduikt
@@ -66,7 +66,7 @@ export default function GlobalError({
         <div className="flex items-center justify-center gap-3">
           <button
             onClick={reset}
-            className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-[0.875rem] font-medium text-surface-0 transition-all hover:brightness-110"
+            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-br from-[#D4945A] to-[#C88550] px-5 py-2.5 text-[0.875rem] font-medium text-on-accent transition-all hover:brightness-110"
           >
             <RotateCcw className="h-4 w-4" />
             Try again

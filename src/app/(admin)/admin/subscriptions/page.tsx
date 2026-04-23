@@ -81,7 +81,7 @@ export default async function AdminSubscriptionsPage() {
                     style={{ width: `${Math.max(pct, 2)}%` }}
                   >
                     {pct > 10 && (
-                      <span className="text-[0.75rem] font-medium text-surface-0">
+                      <span className="text-[0.75rem] font-medium text-on-accent">
                         {count}
                       </span>
                     )}

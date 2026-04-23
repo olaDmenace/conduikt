@@ -22,6 +22,9 @@
   --accent-hover: #E0A76B;
   --accent-muted: #D4945A1A;
   --accent-glow: #D4945A33;
+  /* Text color that sits on the accent gradient. Stays dark in both themes
+     because the gradient is always warm orange. */
+  --on-accent: #1A0F08;
 
   /* --- Secondary Accent: Slate Blue --- */
   --accent-secondary: #6B8FAD;
@@ -59,8 +62,19 @@
   --surface-2: #F0EDE7;
   --surface-3: #E8E4DE;
   --text-primary: #1A1917;
-  --text-secondary: #6B665E;
-  --text-tertiary: #9B958C;
+  --text-secondary: #4A453E;
+  --text-tertiary: #6B665E;
+  /* Deeper copper for AA contrast on cream (4.6:1 vs #F5F2ED, 5.1:1 vs #FFFFFF) */
+  --accent-primary: #A0612C;
+  --accent-hover: #8E5325;
+  --accent-muted: #A0612C14;
+  --accent-glow: #A0612C26;
+  --accent-secondary: #4F7090;
+  --accent-secondary-hover: #3D5F80;
+  --success: #3F7A4F;
+  --warning: #8A7530;
+  --error: #9B3F3F;
+  --info: #4F7090;
   --border-subtle: #0000000A;
   --border-default: #00000012;
   --border-strong: #00000020;
@@ -84,6 +98,7 @@
   --color-accent-hover: var(--accent-hover);
   --color-accent-muted: var(--accent-muted);
   --color-accent-glow: var(--accent-glow);
+  --color-on-accent: var(--on-accent);
   --color-accent-secondary: var(--accent-secondary);
   --color-accent-secondary-hover: var(--accent-secondary-hover);
   --color-success: var(--success);

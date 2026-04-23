@@ -26,8 +26,11 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const viewport: Viewport = {
-  themeColor: "#0E0E10",
-  colorScheme: "dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#0C0C0E" },
+    { media: "(prefers-color-scheme: light)", color: "#F5F2ED" },
+  ],
+  colorScheme: "dark light",
 };
 
 const organizationJsonLd = {

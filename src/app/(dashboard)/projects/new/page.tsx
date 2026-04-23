@@ -260,7 +260,7 @@ export default function NewProjectPage() {
             <div
               className={`flex h-8 w-8 items-center justify-center rounded-full text-[0.8125rem] font-medium transition-colors ${
                 step === s
-                  ? "bg-accent text-surface-0"
+                  ? "bg-gradient-to-br from-[#D4945A] to-[#C88550] text-on-accent"
                   : i < stepIndex
                   ? "bg-success/20 text-success"
                   : "bg-surface-2 text-text-tertiary"
@@ -394,7 +394,7 @@ export default function NewProjectPage() {
                           }`}
                         >
                           {selected && (
-                            <CheckCircle2 className="h-3 w-3 text-surface-0" />
+                            <CheckCircle2 className="h-3 w-3 text-on-accent" />
                           )}
                         </div>
                         {option}
