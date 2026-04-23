@@ -10,83 +10,80 @@ import {
   Lock,
   ArrowUpRight,
   Sparkles,
+  Target,
+  AlertTriangle,
+  ShieldCheck,
+  Calculator,
+  FileCheck2,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { PageHeader } from "@/src/components/layout/page-header";
-
+import { ExpectationBanner } from "@/src/components/ui/expectation-banner";
 import { useToast } from "@/src/components/ui/toast";
+import { parseJsonResponse } from "@/src/lib/ai/parse-json";
 import Link from "next/link";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-type ContentType =
-  | "social-post"
-  | "email-subject"
-  | "ad-copy"
-  | "blog-headline"
-  | "cta-button";
-
-interface ScoreResult {
-  total_score: number;
-  clarity: number;
-  relevance: number;
-  engagement_potential: number;
-  brand_alignment: number;
-  summary: string;
+interface VariantDef {
+  label: string;
+  description: string;
+  rationale: string;
 }
 
-interface VariantData {
+interface GuardrailMetric {
+  name: string;
+  why_it_matters: string;
+  stop_threshold: string;
+}
+
+interface TestPlan {
+  hypothesis: {
+    statement: string;
+    mechanism: string;
+    kill_criteria: string;
+  };
+  surface: {
+    page_or_flow: string;
+    audience_segment: string;
+    exclusions: string[];
+  };
+  variants: VariantDef[];
+  metrics: {
+    primary: {
+      name: string;
+      definition: string;
+      baseline_rate: string;
+      minimum_detectable_effect: string;
+    };
+    guardrails: GuardrailMetric[];
+    secondary: string[];
+  };
+  sample_size: {
+    per_variant: string;
+    total_required: string;
+    math_shown: string;
+    traffic_estimate_used: string;
+    estimated_duration_days: number;
+    viability: "ok" | "borderline" | "insufficient_traffic";
+    viability_note: string;
+  };
+  decision_rules: {
+    success: string;
+    failure: string;
+    inconclusive: string;
+  };
+  risks: { risk: string; mitigation: string }[];
+  shipping_checklist: string[];
+}
+
+interface GeneratedCopy {
+  label: string;
   content: string;
-  score: ScoreResult | null;
-  scoring: boolean;
-}
-
-const CONTENT_TYPES: { value: ContentType; label: string }[] = [
-  { value: "social-post", label: "Social Post" },
-  { value: "email-subject", label: "Email Subject" },
-  { value: "ad-copy", label: "Ad Copy" },
-  { value: "blog-headline", label: "Blog Headline" },
-  { value: "cta-button", label: "CTA Button Text" },
-];
-
-const VARIANT_LABELS = ["A", "B", "C"];
-
-// ---------------------------------------------------------------------------
-// Score gauge (inline — matches content-score-panel pattern)
-// ---------------------------------------------------------------------------
-
-function MiniGauge({ score, max, size = 48 }: { score: number; max: number; size?: number }) {
-  const radius = (size - 6) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const pct = score / max;
-  const offset = circumference - pct * circumference;
-  const color = pct > 0.75 ? "#4ADE80" : pct >= 0.5 ? "#F59E0B" : "#EF4444";
-
-  return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="transform -rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="var(--surface-2)" strokeWidth={3} />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke={color}
-          strokeWidth={3}
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-          className="transition-all duration-700 ease-out"
-        />
-      </svg>
-      <span className="absolute inset-0 flex items-center justify-center text-caption font-bold font-mono text-text-primary">
-        {score}
-      </span>
-    </div>
-  );
+  loading: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -101,20 +98,25 @@ export default function ABTestAgentPage({
   const { id: projectId } = use(params);
   const { toast } = useToast();
 
-  // Plan gating
   const [plan, setPlan] = useState<string | null>(null);
   const [planLoading, setPlanLoading] = useState(true);
 
-  // Form state
-  const [contentType, setContentType] = useState<ContentType>("social-post");
-  const [brief, setBrief] = useState("");
-  const [variantCount, setVariantCount] = useState<2 | 3>(2);
-  const [generating, setGenerating] = useState(false);
+  // Input state
+  const [hypothesis, setHypothesis] = useState("");
+  const [surface, setSurface] = useState("");
+  const [baselineRate, setBaselineRate] = useState("");
+  const [trafficPerWeek, setTrafficPerWeek] = useState("");
+  const [targetMDE, setTargetMDE] = useState("10");
+  const [variantIdeas, setVariantIdeas] = useState("");
 
-  // Results
-  const [variants, setVariants] = useState<VariantData[]>([]);
-  const [activeTab, setActiveTab] = useState(0);
-  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+  // Plan state
+  const [generating, setGenerating] = useState(false);
+  const [rawText, setRawText] = useState("");
+  const [testPlan, setTestPlan] = useState<TestPlan | null>(null);
+  const [copiedPlan, setCopiedPlan] = useState(false);
+
+  // Generated variant copy state
+  const [copies, setCopies] = useState<Record<number, GeneratedCopy>>({});
 
   useEffect(() => {
     async function loadPlan() {
@@ -135,139 +137,139 @@ export default function ABTestAgentPage({
 
   const isLocked = plan !== null && !["growth", "agency"].includes(plan);
 
-  // Generate variants: first generate original via copywriting agent, then generate variants via existing API
-  async function handleGenerate() {
-    if (!brief.trim()) {
-      toast("Please enter a brief describing what you want to test.", "error");
+  async function handleGeneratePlan() {
+    if (!hypothesis.trim() || !surface.trim()) {
+      toast("Hypothesis and surface are required.", "warning");
       return;
     }
 
     setGenerating(true);
-    setVariants([]);
-    setActiveTab(0);
+    setTestPlan(null);
+    setRawText("");
+    setCopies({});
 
     try {
-      // Step 1: Generate original content using the AI generate endpoint
-      const genRes = await fetch("/api/ai/generate", {
+      const res = await fetch("/api/ai/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          agentId: "ab-test-setup",
+          projectId,
+          input: {
+            hypothesis,
+            surface,
+            baselineRate: baselineRate || undefined,
+            trafficPerWeek: trafficPerWeek || undefined,
+            targetMDE: `${targetMDE}% relative lift`,
+            variantIdeas: variantIdeas || undefined,
+          },
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        toast(err.error || "Failed to generate plan", "error");
+        setGenerating(false);
+        return;
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) {
+        toast("Streaming not supported", "error");
+        setGenerating(false);
+        return;
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let fullText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop() || "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const data = JSON.parse(line.slice(6));
+          if (data.type === "text") {
+            fullText += data.text;
+            setRawText(fullText);
+          }
+        }
+      }
+
+      if (fullText) {
+        try {
+          const parsed = parseJsonResponse(fullText) as TestPlan;
+          setTestPlan(parsed);
+          toast("Test plan ready", "success");
+        } catch {
+          toast("Output format was off. Check raw text.", "warning");
+        }
+      }
+    } catch (err) {
+      toast(String(err), "error");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function generateVariantCopy(index: number, variant: VariantDef) {
+    if (!testPlan) return;
+    setCopies((prev) => ({
+      ...prev,
+      [index]: { label: variant.label, content: "", loading: true },
+    }));
+
+    try {
+      const res = await fetch("/api/ai/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           projectId,
           agentId: "copywriting",
           input: {
-            type: CONTENT_TYPES.find((t) => t.value === contentType)?.label ?? contentType,
-            context: brief,
-            goal: `Generate a single ${CONTENT_TYPES.find((t) => t.value === contentType)?.label ?? contentType}. Output ONLY the final content, no explanations.`,
+            type: testPlan.surface.page_or_flow,
+            context: `A/B test variant. Surface: ${testPlan.surface.page_or_flow}. Audience: ${testPlan.surface.audience_segment}. Variant: ${variant.description}. Rationale: ${variant.rationale}.`,
+            goal: `Generate the actual content for this variant. Output ONLY the final copy, no explanation.`,
           },
         }),
       });
 
-      if (!genRes.ok) {
-        const err = await genRes.json();
-        toast(err.error || "Failed to generate content", "error");
+      if (!res.ok) {
+        const err = await res.json();
+        toast(err.error || "Failed to generate copy", "error");
+        setCopies((prev) => ({
+          ...prev,
+          [index]: { ...prev[index], loading: false },
+        }));
         return;
       }
 
-      const genData = await genRes.json();
-      // Handle various response shapes from /api/ai/generate
-      const originalContent =
-        typeof genData.data === "string"
-          ? genData.data
-          : genData.data?.raw ?? genData.data?.copy ?? genData.result ?? genData.content ?? JSON.stringify(genData.data ?? "");
+      const data = await res.json();
+      const content =
+        typeof data.data === "string"
+          ? data.data
+          : data.data?.raw ?? data.data?.copy ?? JSON.stringify(data.data ?? "");
 
-      if (!originalContent) {
-        toast("No content was generated. Try a different brief.", "error");
-        return;
-      }
-
-      // Step 2: Generate variants using the existing variant API
-      const varRes = await fetch("/api/ai/generate-variants", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          projectId,
-          agentId: "copywriting",
-          originalContent,
-          variantCount: variantCount - 1, // -1 because original is variant A
-        }),
-      });
-
-      if (!varRes.ok) {
-        const err = await varRes.json();
-        toast(err.error || "Failed to generate variants", "error");
-        return;
-      }
-
-      const varData = await varRes.json();
-      const allContent = [originalContent, ...(varData.variants ?? [])];
-
-      // Initialize variant data
-      const initial: VariantData[] = allContent.map((content: string) => ({
-        content,
-        score: null,
-        scoring: true,
+      setCopies((prev) => ({
+        ...prev,
+        [index]: { label: variant.label, content, loading: false },
       }));
-      setVariants(initial);
-
-      // Step 3: Score each variant in the background
-      for (let i = 0; i < allContent.length; i++) {
-        scoreVariant(projectId, allContent[i], contentType, i);
-      }
     } catch {
-      toast("Something went wrong. Please try again.", "error");
-    } finally {
-      setGenerating(false);
+      toast("Failed to generate copy", "error");
+      setCopies((prev) => ({
+        ...prev,
+        [index]: { ...prev[index], loading: false },
+      }));
     }
   }
 
-  async function scoreVariant(
-    projId: string,
-    content: string,
-    type: string,
-    index: number
-  ) {
-    try {
-      const res = await fetch("/api/ai/score-content", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          projectId: projId,
-          content,
-          contentType: type,
-        }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setVariants((prev) =>
-          prev.map((v, i) =>
-            i === index ? { ...v, score: data, scoring: false } : v
-          )
-        );
-      } else {
-        setVariants((prev) =>
-          prev.map((v, i) =>
-            i === index ? { ...v, scoring: false } : v
-          )
-        );
-      }
-    } catch {
-      setVariants((prev) =>
-        prev.map((v, i) =>
-          i === index ? { ...v, scoring: false } : v
-        )
-      );
-    }
-  }
-
-  function handleCopy(index: number) {
-    navigator.clipboard.writeText(variants[index].content);
-    setCopiedIdx(index);
-    toast("Copied to clipboard", "info");
-    setTimeout(() => setCopiedIdx(null), 2000);
-  }
-
-  async function handleSave(index: number) {
+  async function saveVariant(index: number, variant: VariantDef) {
+    const copy = copies[index];
+    if (!copy || !copy.content || !testPlan) return;
     try {
       const res = await fetch(`/api/projects/${projectId}/assets`, {
         method: "POST",
@@ -275,29 +277,30 @@ export default function ABTestAgentPage({
         body: JSON.stringify({
           type: "copy_block",
           channel: "web",
-          title: `A/B Test — Variant ${VARIANT_LABELS[index]} (${CONTENT_TYPES.find((t) => t.value === contentType)?.label})`,
+          title: `A/B ${variant.label} — ${testPlan.surface.page_or_flow}`,
           content: {
-            raw: variants[index].content,
+            raw: copy.content,
+            variant_description: variant.description,
+            hypothesis: testPlan.hypothesis.statement,
             skill: "ab-test",
-            prompt: brief,
           },
           status: "draft",
         }),
       });
-
-      if (res.ok) {
-        toast(`Variant ${VARIANT_LABELS[index]} saved to library`, "success");
-      } else {
-        toast("Failed to save", "error");
-      }
+      if (res.ok) toast(`${variant.label} saved`, "success");
+      else toast("Save failed", "error");
     } catch {
-      toast("Failed to save", "error");
+      toast("Save failed", "error");
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Render
-  // ---------------------------------------------------------------------------
+  function copyPlanToClipboard() {
+    if (!testPlan) return;
+    navigator.clipboard.writeText(JSON.stringify(testPlan, null, 2));
+    setCopiedPlan(true);
+    toast("Plan copied as JSON", "info");
+    setTimeout(() => setCopiedPlan(false), 2000);
+  }
 
   if (planLoading) {
     return (
@@ -307,253 +310,533 @@ export default function ABTestAgentPage({
     );
   }
 
-  return (
-    <div>
-      <PageHeader
-        title="A/B Test Agent"
-        description="Generate and compare content variants to find what resonates with your audience"
-      />
-
-      {/* Locked state for non-Growth/Agency users */}
-      {isLocked && (
+  if (isLocked) {
+    return (
+      <div>
+        <PageHeader
+          title="A/B Test Planner"
+          description="Rigorous A/B test design — hypothesis, sample size, and decision rules before you ship"
+        />
         <div className="rounded-xl border border-border-default bg-surface-1 p-10 text-center animate-in">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-surface-2 mb-4">
             <Lock className="h-7 w-7 text-text-tertiary" />
           </div>
           <h3 className="text-h3 text-text-primary mb-2">
-            Upgrade to unlock A/B Testing
+            Upgrade to unlock A/B Test Planner
           </h3>
           <p className="text-body text-text-secondary max-w-md mx-auto mb-6">
-            A/B content variants help you test different angles and find what resonates.
+            Design real experiments — hypothesis, sample size, decision rules — not just variant spinners.
             Available on Growth and Agency plans.
           </p>
           <Button asChild>
             <Link href="/settings/billing">
-              Upgrade Plan
-              <ArrowUpRight className="h-4 w-4 ml-1" />
+              Upgrade Plan <ArrowUpRight className="h-4 w-4 ml-1" />
             </Link>
           </Button>
         </div>
-      )}
+      </div>
+    );
+  }
 
-      {/* Main workspace — two-panel layout */}
-      {!isLocked && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left panel — Input */}
-          <div className="rounded-xl border border-border-default bg-surface-1 p-6 animate-in">
-            {/* Agent header */}
-            <div className="flex items-center gap-3 mb-6">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-muted text-accent">
-                <GitBranch className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-body font-semibold text-text-primary">
-                  A/B Test Agent
-                </p>
-                <p className="text-caption text-text-tertiary">
-                  Test different content angles to optimize performance
-                </p>
-              </div>
-              <Badge variant="secondary" className="ml-auto text-[10px] capitalize">
-                Growth+
-              </Badge>
+  return (
+    <div>
+      <PageHeader
+        title="A/B Test Planner"
+        description="Rigorous A/B test design — hypothesis, sample size, and decision rules before you ship"
+      />
+
+      <ExpectationBanner
+        storageKey="conduikt-expect-abtest"
+        message="Most tests fail not because the variant was bad, but because the test was designed wrong. Always plan sample size BEFORE you start running traffic."
+        details={[
+          "A test that can't reach its sample size in 4 weeks is usually worse than no test — the signal gets lost.",
+          "Pre-commit to success criteria. If you decide after the fact what 'winning' means, you're p-hacking.",
+          "Run time must be a multiple of 7 days to average out weekday effects.",
+        ]}
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
+        {/* Input form */}
+        <div className="rounded-xl border border-border-default bg-surface-1 p-6 animate-in h-fit">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-muted text-accent">
+              <GitBranch className="h-5 w-5" />
             </div>
-
-            {/* Content type selector */}
-            <label className="text-small font-medium text-text-secondary mb-2 block">
-              What are we testing?
-            </label>
-            <div className="flex flex-wrap gap-2 mb-5">
-              {CONTENT_TYPES.map((ct) => (
-                <button
-                  key={ct.value}
-                  onClick={() => setContentType(ct.value)}
-                  className={`rounded-lg px-3 py-1.5 text-small font-medium transition-colors border ${
-                    contentType === ct.value
-                      ? "border-accent bg-accent-muted text-accent"
-                      : "border-border-default bg-surface-0 text-text-secondary hover:border-border-strong"
-                  }`}
-                >
-                  {ct.label}
-                </button>
-              ))}
+            <div>
+              <p className="text-body font-semibold text-text-primary">Test brief</p>
+              <p className="text-caption text-text-tertiary">
+                More inputs = more rigorous plan
+              </p>
             </div>
-
-            {/* Brief */}
-            <label className="text-small font-medium text-text-secondary mb-2 block">
-              Brief
-            </label>
-            <textarea
-              value={brief}
-              onChange={(e) => setBrief(e.target.value)}
-              placeholder="Describe what you want to test. What is the goal? Who is the audience?"
-              rows={5}
-              className="w-full rounded-lg border border-border-default bg-surface-0 px-3 py-2.5 text-body text-text-primary placeholder:text-text-tertiary focus:border-accent focus:ring-1 focus:ring-accent outline-none resize-none mb-5"
-            />
-
-            {/* Variant count */}
-            <label className="text-small font-medium text-text-secondary mb-2 block">
-              Number of variants
-            </label>
-            <div className="flex gap-2 mb-6">
-              {([2, 3] as const).map((n) => (
-                <button
-                  key={n}
-                  onClick={() => setVariantCount(n)}
-                  className={`rounded-lg px-4 py-2 text-small font-medium transition-colors border ${
-                    variantCount === n
-                      ? "border-accent bg-accent-muted text-accent"
-                      : "border-border-default bg-surface-0 text-text-secondary hover:border-border-strong"
-                  }`}
-                >
-                  {n} variants
-                </button>
-              ))}
-            </div>
-
-            {/* Generate button */}
-            <Button
-              onClick={handleGenerate}
-              disabled={generating || !brief.trim()}
-              className="w-full"
-            >
-              {generating ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <Sparkles className="h-4 w-4 mr-2" />
-              )}
-              {generating ? "Generating variants..." : "Generate Variants"}
-            </Button>
+            <Badge variant="secondary" className="ml-auto text-[10px]">
+              Growth+
+            </Badge>
           </div>
 
-          {/* Right panel — Output */}
-          <div className="rounded-xl border border-border-default bg-surface-1 overflow-hidden animate-in" style={{ animationDelay: "50ms" }}>
-            {variants.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-2 mb-4">
-                  <GitBranch className="h-6 w-6 text-text-tertiary" />
-                </div>
-                <p className="text-body font-medium text-text-secondary mb-1">
-                  No variants yet
-                </p>
-                <p className="text-small text-text-tertiary max-w-sm">
-                  Describe what you want to test and hit Generate.
-                  Each variant will be auto-scored for quality.
-                </p>
-              </div>
+          <Label>
+            Hypothesis or question <span className="text-warning">*</span>
+          </Label>
+          <textarea
+            value={hypothesis}
+            onChange={(e) => setHypothesis(e.target.value)}
+            placeholder="e.g. Adding social proof above the CTA will increase signup rate by 10%"
+            rows={3}
+            className="w-full rounded-lg border border-border-default bg-surface-0 px-3 py-2.5 text-body text-text-primary placeholder:text-text-tertiary focus:border-accent focus:ring-1 focus:ring-accent outline-none resize-none mb-4"
+          />
+
+          <Label>
+            Surface being tested <span className="text-warning">*</span>
+          </Label>
+          <input
+            value={surface}
+            onChange={(e) => setSurface(e.target.value)}
+            placeholder="e.g. Landing page hero, pricing page CTA"
+            className="w-full rounded-lg border border-border-default bg-surface-0 px-3 py-2.5 text-body text-text-primary placeholder:text-text-tertiary focus:border-accent focus:ring-1 focus:ring-accent outline-none mb-4"
+          />
+
+          <Label>Baseline conversion rate</Label>
+          <input
+            value={baselineRate}
+            onChange={(e) => setBaselineRate(e.target.value)}
+            placeholder="e.g. 2.3% (last 30 days)"
+            className="w-full rounded-lg border border-border-default bg-surface-0 px-3 py-2.5 text-body text-text-primary placeholder:text-text-tertiary focus:border-accent focus:ring-1 focus:ring-accent outline-none mb-4"
+          />
+
+          <Label>Weekly traffic to this surface</Label>
+          <input
+            value={trafficPerWeek}
+            onChange={(e) => setTrafficPerWeek(e.target.value)}
+            placeholder="e.g. 3000 visitors/week"
+            className="w-full rounded-lg border border-border-default bg-surface-0 px-3 py-2.5 text-body text-text-primary placeholder:text-text-tertiary focus:border-accent focus:ring-1 focus:ring-accent outline-none mb-4"
+          />
+
+          <Label>Minimum detectable effect (relative)</Label>
+          <div className="flex items-center gap-2 mb-4">
+            <input
+              type="number"
+              min={1}
+              max={100}
+              value={targetMDE}
+              onChange={(e) => setTargetMDE(e.target.value)}
+              className="w-24 rounded-lg border border-border-default bg-surface-0 px-3 py-2.5 text-body text-text-primary focus:border-accent focus:ring-1 focus:ring-accent outline-none"
+            />
+            <span className="text-small text-text-tertiary">% lift</span>
+          </div>
+
+          <Label>Variant ideas (optional)</Label>
+          <textarea
+            value={variantIdeas}
+            onChange={(e) => setVariantIdeas(e.target.value)}
+            placeholder="Any specific variants you already have in mind"
+            rows={2}
+            className="w-full rounded-lg border border-border-default bg-surface-0 px-3 py-2.5 text-body text-text-primary placeholder:text-text-tertiary focus:border-accent focus:ring-1 focus:ring-accent outline-none resize-none mb-5"
+          />
+
+          <Button
+            onClick={handleGeneratePlan}
+            disabled={generating || !hypothesis.trim() || !surface.trim()}
+            className="w-full"
+          >
+            {generating ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
             ) : (
-              <>
-                {/* Variant tabs */}
-                <div className="flex items-center border-b border-border-default bg-surface-0">
-                  {variants.map((v, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setActiveTab(i)}
-                      className={`relative px-5 py-3 text-small font-medium transition-colors ${
-                        activeTab === i
-                          ? "text-accent bg-surface-1"
-                          : "text-text-tertiary hover:text-text-secondary"
-                      }`}
-                    >
-                      Variant {VARIANT_LABELS[i]}
-                      {v.score && (
-                        <Badge
-                          variant={v.score.total_score >= 70 ? "success" : "secondary"}
-                          className="ml-2 text-[9px] px-1.5 py-0"
-                        >
-                          {v.score.total_score}
-                        </Badge>
-                      )}
-                      {v.scoring && (
-                        <Loader2 className="inline ml-1.5 h-3 w-3 animate-spin text-text-tertiary" />
-                      )}
-                      {activeTab === i && (
-                        <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
-                      )}
-                    </button>
-                  ))}
-                </div>
+              <Sparkles className="h-4 w-4 mr-2" />
+            )}
+            {generating ? "Designing test..." : "Design Test Plan"}
+          </Button>
+        </div>
 
-                {/* Active variant content */}
-                {variants[activeTab] && (
-                  <div className="p-6">
-                    {/* Content */}
-                    <div className="rounded-lg border border-border-default bg-surface-0 p-4 mb-4">
-                      <p className="whitespace-pre-wrap text-body text-text-primary leading-relaxed">
-                        {variants[activeTab].content}
-                      </p>
-                    </div>
+        {/* Output */}
+        <div className="min-w-0">
+          {!testPlan && !generating && (
+            <div className="rounded-xl border border-border-default bg-surface-1 py-20 px-6 text-center animate-in">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-surface-2 mb-4">
+                <Target className="h-6 w-6 text-text-tertiary" />
+              </div>
+              <p className="text-body font-medium text-text-secondary mb-1">
+                No test plan yet
+              </p>
+              <p className="text-small text-text-tertiary max-w-sm mx-auto">
+                Fill in the brief and hit Design. You&apos;ll get a hypothesis,
+                variants, sample size, and decision rules.
+              </p>
+            </div>
+          )}
 
-                    {/* Score panel */}
-                    {variants[activeTab].scoring && (
-                      <div className="flex items-center gap-2 text-small text-text-tertiary mb-4">
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        Scoring this variant...
-                      </div>
-                    )}
-
-                    {variants[activeTab].score && (
-                      <div className="rounded-lg border border-border-default bg-surface-0 p-4 mb-4">
-                        <div className="flex items-center gap-4">
-                          <MiniGauge score={variants[activeTab].score!.total_score} max={100} />
-                          <div className="flex-1 grid grid-cols-2 gap-2">
-                            {(["clarity", "relevance", "engagement_potential", "brand_alignment"] as const).map((dim) => (
-                              <div key={dim} className="flex items-center justify-between text-caption">
-                                <span className="text-text-tertiary capitalize">
-                                  {dim.replace("_", " ")}
-                                </span>
-                                <span className="font-mono font-medium text-text-primary">
-                                  {variants[activeTab].score![dim]}/25
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                        {variants[activeTab].score!.summary && (
-                          <p className="text-caption text-text-secondary mt-3 pt-3 border-t border-border-default">
-                            {variants[activeTab].score!.summary}
-                          </p>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => handleSave(activeTab)}
-                      >
-                        <Save className="h-3.5 w-3.5 mr-1" />
-                        Save this variant
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => handleCopy(activeTab)}
-                      >
-                        {copiedIdx === activeTab ? (
-                          <Check className="h-3.5 w-3.5 mr-1 text-success" />
-                        ) : (
-                          <Copy className="h-3.5 w-3.5 mr-1" />
-                        )}
-                        {copiedIdx === activeTab ? "Copied" : "Use this variant"}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Guidance note */}
-                <div className="px-6 pb-5">
-                  <p className="text-caption text-text-tertiary italic">
-                    To run this test, publish both variants to your audience and compare performance in Analytics.
+          {generating && !testPlan && (
+            <div className="rounded-xl border border-border-default bg-surface-1 p-6 animate-in">
+              <div className="flex items-center gap-2 text-accent mb-3">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span className="text-body font-medium">Designing your test...</span>
+              </div>
+              {rawText && (
+                <div className="max-h-24 overflow-hidden rounded-lg bg-surface-2 p-3">
+                  <p className="text-small font-mono text-text-tertiary line-clamp-4">
+                    {rawText}
                   </p>
                 </div>
-              </>
-            )}
-          </div>
+              )}
+            </div>
+          )}
+
+          {testPlan && (
+            <div className="space-y-5 animate-in">
+              {/* Viability banner */}
+              <ViabilityBanner viability={testPlan.sample_size.viability} note={testPlan.sample_size.viability_note} />
+
+              {/* Hypothesis */}
+              <SectionCard title="Hypothesis" icon={Target}>
+                <p className="text-body text-text-primary leading-relaxed mb-3">
+                  {testPlan.hypothesis.statement}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="rounded-lg border border-border-subtle bg-surface-0 p-3">
+                    <p className="text-caption text-text-tertiary mb-1">Mechanism</p>
+                    <p className="text-small text-text-secondary">
+                      {testPlan.hypothesis.mechanism}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-border-subtle bg-surface-0 p-3">
+                    <p className="text-caption text-text-tertiary mb-1">Kill criteria</p>
+                    <p className="text-small text-text-secondary">
+                      {testPlan.hypothesis.kill_criteria}
+                    </p>
+                  </div>
+                </div>
+              </SectionCard>
+
+              {/* Sample size */}
+              <SectionCard title="Sample size & duration" icon={Calculator}>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+                  <KV label="Per variant" value={testPlan.sample_size.per_variant} />
+                  <KV label="Total required" value={testPlan.sample_size.total_required} />
+                  <KV
+                    label="Est. duration"
+                    value={`${testPlan.sample_size.estimated_duration_days} days`}
+                  />
+                </div>
+                <div className="rounded-lg border border-border-subtle bg-surface-0 p-3 mb-2">
+                  <p className="text-caption text-text-tertiary mb-1">Math</p>
+                  <p className="text-small font-mono text-text-secondary">
+                    {testPlan.sample_size.math_shown}
+                  </p>
+                </div>
+                <p className="text-caption text-text-tertiary italic">
+                  Based on: {testPlan.sample_size.traffic_estimate_used}
+                </p>
+              </SectionCard>
+
+              {/* Variants */}
+              <SectionCard title="Variants" icon={GitBranch}>
+                <div className="space-y-3">
+                  {testPlan.variants.map((v, i) => (
+                    <div
+                      key={i}
+                      className="rounded-lg border border-border-subtle bg-surface-0 p-4"
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant="secondary"
+                            className="font-mono text-[10px]"
+                          >
+                            {v.label}
+                          </Badge>
+                          <p className="text-body font-semibold text-text-primary">
+                            {v.description}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          {!copies[i] || (!copies[i].loading && !copies[i].content) ? (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => generateVariantCopy(i, v)}
+                            >
+                              <Sparkles className="h-3.5 w-3.5 mr-1" />
+                              Generate copy
+                            </Button>
+                          ) : null}
+                          {copies[i]?.content && (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => saveVariant(i, v)}
+                            >
+                              <Save className="h-3.5 w-3.5 mr-1" />
+                              Save
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-small text-text-tertiary mb-2">
+                        {v.rationale}
+                      </p>
+
+                      {copies[i]?.loading && (
+                        <div className="flex items-center gap-2 text-small text-text-tertiary mt-2">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          Generating copy...
+                        </div>
+                      )}
+                      {copies[i]?.content && (
+                        <div className="mt-3 rounded-lg border border-border-subtle bg-surface-1 p-3">
+                          <p className="whitespace-pre-wrap text-small text-text-primary leading-relaxed">
+                            {copies[i].content}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </SectionCard>
+
+              {/* Metrics */}
+              <SectionCard title="Metrics" icon={ShieldCheck}>
+                <div className="rounded-lg border border-accent/30 bg-accent-muted p-3 mb-3">
+                  <p className="text-caption text-text-tertiary mb-0.5">
+                    Primary metric (decides the test)
+                  </p>
+                  <p className="text-body font-semibold text-text-primary">
+                    {testPlan.metrics.primary.name}
+                  </p>
+                  <p className="text-small text-text-secondary mt-1">
+                    {testPlan.metrics.primary.definition}
+                  </p>
+                  <div className="flex items-center gap-4 mt-2 text-caption text-text-tertiary">
+                    <span>Baseline: {testPlan.metrics.primary.baseline_rate}</span>
+                    <span>MDE: {testPlan.metrics.primary.minimum_detectable_effect}</span>
+                  </div>
+                </div>
+
+                {testPlan.metrics.guardrails.length > 0 && (
+                  <>
+                    <p className="text-caption text-text-tertiary mb-2">
+                      Guardrails (stop the test if violated)
+                    </p>
+                    <div className="space-y-2 mb-3">
+                      {testPlan.metrics.guardrails.map((g, i) => (
+                        <div
+                          key={i}
+                          className="rounded-lg border border-border-subtle bg-surface-0 p-3"
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <AlertTriangle className="h-3.5 w-3.5 text-warning" />
+                            <p className="text-body font-medium text-text-primary">
+                              {g.name}
+                            </p>
+                          </div>
+                          <p className="text-small text-text-secondary">
+                            {g.why_it_matters}
+                          </p>
+                          <p className="text-caption text-warning mt-1">
+                            Stop if: {g.stop_threshold}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {testPlan.metrics.secondary.length > 0 && (
+                  <>
+                    <p className="text-caption text-text-tertiary mb-1.5">
+                      Secondary (directional only)
+                    </p>
+                    <ul className="space-y-0.5">
+                      {testPlan.metrics.secondary.map((s, i) => (
+                        <li
+                          key={i}
+                          className="text-small text-text-secondary flex items-start gap-1.5"
+                        >
+                          <span className="text-accent shrink-0">·</span>
+                          {s}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </SectionCard>
+
+              {/* Decision rules */}
+              <SectionCard title="Decision rules (pre-committed)" icon={FileCheck2}>
+                <div className="space-y-2">
+                  <div className="rounded-lg border border-success/30 bg-success/5 p-3">
+                    <p className="text-caption text-success mb-0.5 font-semibold">
+                      Success
+                    </p>
+                    <p className="text-small text-text-secondary">
+                      {testPlan.decision_rules.success}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-error/30 bg-error/5 p-3">
+                    <p className="text-caption text-error mb-0.5 font-semibold">
+                      Failure
+                    </p>
+                    <p className="text-small text-text-secondary">
+                      {testPlan.decision_rules.failure}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-border-subtle bg-surface-0 p-3">
+                    <p className="text-caption text-text-tertiary mb-0.5 font-semibold">
+                      Inconclusive
+                    </p>
+                    <p className="text-small text-text-secondary">
+                      {testPlan.decision_rules.inconclusive}
+                    </p>
+                  </div>
+                </div>
+              </SectionCard>
+
+              {/* Risks */}
+              {testPlan.risks.length > 0 && (
+                <SectionCard title="Risks & mitigations" icon={AlertTriangle} accent="warning">
+                  <div className="space-y-2">
+                    {testPlan.risks.map((r, i) => (
+                      <div
+                        key={i}
+                        className="rounded-lg border border-border-subtle bg-surface-0 p-3"
+                      >
+                        <p className="text-body font-medium text-text-primary mb-1">
+                          {r.risk}
+                        </p>
+                        <p className="text-small text-text-secondary">
+                          Mitigation: {r.mitigation}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </SectionCard>
+              )}
+
+              {/* Shipping checklist */}
+              {testPlan.shipping_checklist.length > 0 && (
+                <SectionCard title="Shipping checklist" icon={FileCheck2}>
+                  <ul className="space-y-1.5">
+                    {testPlan.shipping_checklist.map((item, i) => (
+                      <li
+                        key={i}
+                        className="text-small text-text-secondary flex items-start gap-2"
+                      >
+                        <span className="text-accent shrink-0">·</span>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </SectionCard>
+              )}
+
+              {/* Copy plan JSON */}
+              <div className="flex justify-end">
+                <Button variant="secondary" size="sm" onClick={copyPlanToClipboard}>
+                  {copiedPlan ? (
+                    <Check className="h-3.5 w-3.5 mr-1 text-success" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5 mr-1" />
+                  )}
+                  Copy full plan as JSON
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Subcomponents
+// ---------------------------------------------------------------------------
+
+function Label({ children }: { children: React.ReactNode }) {
+  return (
+    <label className="text-small font-medium text-text-secondary mb-1.5 block">
+      {children}
+    </label>
+  );
+}
+
+function ViabilityBanner({
+  viability,
+  note,
+}: {
+  viability: "ok" | "borderline" | "insufficient_traffic";
+  note: string;
+}) {
+  const cfg = {
+    ok: {
+      border: "border-success/30",
+      bg: "bg-success/5",
+      icon: ShieldCheck,
+      iconColor: "text-success",
+      label: "Test is viable",
+    },
+    borderline: {
+      border: "border-warning/30",
+      bg: "bg-warning/5",
+      icon: AlertTriangle,
+      iconColor: "text-warning",
+      label: "Borderline viable",
+    },
+    insufficient_traffic: {
+      border: "border-error/30",
+      bg: "bg-error/5",
+      icon: AlertTriangle,
+      iconColor: "text-error",
+      label: "Insufficient traffic",
+    },
+  }[viability];
+
+  const Icon = cfg.icon;
+  return (
+    <div
+      className={`rounded-xl border ${cfg.border} ${cfg.bg} p-4 flex items-start gap-3`}
+    >
+      <Icon className={`h-5 w-5 shrink-0 mt-0.5 ${cfg.iconColor}`} />
+      <div>
+        <p className="text-body font-semibold text-text-primary">{cfg.label}</p>
+        {note && (
+          <p className="text-small text-text-secondary mt-1">{note}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SectionCard({
+  title,
+  icon: Icon,
+  accent,
+  children,
+}: {
+  title: string;
+  icon?: React.ElementType;
+  accent?: "warning" | "success";
+  children: React.ReactNode;
+}) {
+  const iconColor =
+    accent === "warning"
+      ? "text-warning"
+      : accent === "success"
+        ? "text-success"
+        : "text-accent";
+  return (
+    <div className="rounded-xl border border-border-default bg-surface-1 p-5">
+      <div className="flex items-center gap-2 mb-3">
+        {Icon && <Icon className={`h-4 w-4 ${iconColor}`} />}
+        <h3 className="text-body font-semibold text-text-primary">{title}</h3>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function KV({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-border-subtle bg-surface-0 p-3">
+      <p className="text-caption text-text-tertiary mb-0.5">{label}</p>
+      <p className="text-body font-semibold text-text-primary">{value}</p>
     </div>
   );
 }

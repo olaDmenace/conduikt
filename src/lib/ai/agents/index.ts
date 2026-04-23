@@ -11,6 +11,9 @@ import { growthPlaybookSkill } from "./growth-playbook";
 import { onboardingAdvisorAgent } from "./onboarding-advisor";
 import { videoScriptAgent } from "./video-script";
 import { contentScorerAgent } from "./content-scorer";
+import { programmaticSeoAgent } from "./programmatic-seo";
+import { launchStrategyAgent } from "./launch-strategy";
+import { abTestSetupAgent } from "./ab-test-setup";
 import type { AgentConfig } from "./types";
 
 export const agents: Record<string, AgentConfig> = {
@@ -28,6 +31,9 @@ export const agents: Record<string, AgentConfig> = {
   "video-script": videoScriptAgent,
   "video-ad": videoScriptAgent,
   "content-scorer": contentScorerAgent,
+  "programmatic-seo": programmaticSeoAgent,
+  "launch-strategy": launchStrategyAgent,
+  "ab-test-setup": abTestSetupAgent,
 };
 
 // Legacy alias

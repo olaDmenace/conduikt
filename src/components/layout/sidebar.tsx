@@ -37,6 +37,8 @@ import {
   Play,
   Lock,
   FileBarChart,
+  Layers,
+  Rocket,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils/cn";
 import { useUIStore } from "@/src/stores/ui-store";
@@ -72,6 +74,8 @@ const ICON_MAP: Record<string, React.ElementType> = {
   BarChart3,
   Video,
   FileBarChart,
+  Layers,
+  Rocket,
 };
 
 interface Project {
