@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Twitter, Linkedin, Facebook, CheckCircle2, AlertCircle, Loader2, Link2, Unlink, Search, Clock, Pencil } from "lucide-react";
+import { Twitter, Linkedin, Facebook, CheckCircle2, AlertCircle, Loader2, Link2, Unlink, Search, Clock, Pencil, BarChart3, Video } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
@@ -50,6 +50,8 @@ function IntegrationsContent() {
     if (connected === "linkedin") toast("LinkedIn account connected successfully!", "success");
     if (connected === "facebook") toast("Facebook Page connected successfully!", "success");
     if (connected === "gsc") toast("Google Search Console connected!", "success");
+    if (connected === "ga4") toast("Google Analytics 4 connected!", "success");
+    if (connected === "youtube") toast("YouTube channel connected!", "success");
     if (error) toast(decodeURIComponent(error), "error");
     // Clean URL
     window.history.replaceState({}, "", "/settings/integrations");
@@ -121,7 +123,7 @@ function IntegrationsContent() {
     if (error) {
       toast("Failed to disconnect account", "error");
     } else {
-      const names: Record<string, string> = { x: "X", linkedin: "LinkedIn", facebook: "Facebook", gsc: "Google Search Console" };
+      const names: Record<string, string> = { x: "X", linkedin: "LinkedIn", facebook: "Facebook", gsc: "Google Search Console", ga4: "Google Analytics 4", youtube: "YouTube" };
       toast(`${names[platform] ?? platform} disconnected`, "info");
       setAccounts((prev) => prev.filter((a) => a.platform !== platform));
     }
@@ -132,6 +134,8 @@ function IntegrationsContent() {
   const liAccount = accounts.find((a) => a.platform === "linkedin");
   const fbAccount = accounts.find((a) => a.platform === "facebook");
   const gscAccount = accounts.find((a) => a.platform === "gsc");
+  const ga4Account = accounts.find((a) => a.platform === "ga4");
+  const ytAccount = accounts.find((a) => a.platform === "youtube");
 
   function isExpired(account: ConnectedAccount) {
     if (!account.token_expires_at) return false;
@@ -173,6 +177,24 @@ function IntegrationsContent() {
       description: "Import real keyword rankings and click data into your Growth Playbook.",
       connectHref: "/api/integrations/gsc/connect",
       account: gscAccount,
+      comingSoon: false,
+    },
+    {
+      key: "ga4",
+      name: "Google Analytics 4",
+      icon: BarChart3,
+      description: "Pull traffic, engagement, and conversion metrics into your analytics dashboard.",
+      connectHref: "/api/integrations/ga4/connect",
+      account: ga4Account,
+      comingSoon: false,
+    },
+    {
+      key: "youtube",
+      name: "YouTube",
+      icon: Video,
+      description: "Pull channel stats and recent video performance into your content dashboard.",
+      connectHref: "/api/integrations/youtube/connect",
+      account: ytAccount,
       comingSoon: false,
     },
   ];
