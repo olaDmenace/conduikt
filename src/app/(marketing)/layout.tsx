@@ -40,10 +40,16 @@ export default function MarketingLayout({
               vs Competitors
             </Link>
             <Link
+              href="/blog"
+              className="text-small text-text-secondary hover:text-text-primary transition-colors"
+            >
+              Blog
+            </Link>
+            <Link
               href="/guides"
               className="text-small text-text-secondary hover:text-text-primary transition-colors"
             >
-              Marketing Guides
+              Guides
             </Link>
             <Link
               href="/launch"
@@ -83,6 +89,9 @@ export default function MarketingLayout({
           <div className="flex items-center gap-6 text-small text-text-tertiary">
             <Link href="/compare" className="hover:text-text-secondary transition-colors">
               Compare
+            </Link>
+            <Link href="/blog" className="hover:text-text-secondary transition-colors">
+              Blog
             </Link>
             <Link href="/guides" className="hover:text-text-secondary transition-colors">
               Guides

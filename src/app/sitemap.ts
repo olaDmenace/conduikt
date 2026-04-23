@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { BLOG_POSTS } from "@/src/content/blog/posts";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://conduikt.com";
@@ -14,6 +15,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/pricing/", changeFrequency: "monthly", priority: 0.9 },
     { path: "/compare/", changeFrequency: "monthly", priority: 0.8 },
     { path: "/guides/", changeFrequency: "weekly", priority: 0.7 },
+    { path: "/blog/", changeFrequency: "weekly", priority: 0.8 },
     { path: "/launch/", changeFrequency: "monthly", priority: 0.6 },
     { path: "/privacy/", changeFrequency: "yearly", priority: 0.3 },
     { path: "/terms/", changeFrequency: "yearly", priority: 0.3 },
@@ -45,6 +47,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified,
       changeFrequency: "monthly" as const,
       priority: 0.6,
+    })),
+    ...BLOG_POSTS.map((p) => ({
+      url: `${baseUrl}/blog/${p.slug}/`,
+      lastModified: new Date(p.dateModified),
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
     })),
   ];
 }
