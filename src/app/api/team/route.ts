@@ -30,7 +30,7 @@ export async function GET() {
   const { data: members, error } = await supabase
     .from("team_members")
     .select(
-      "id, user_id, role, status, invite_email, created_at, profiles(full_name, avatar_url)"
+      "id, user_id, role, status, invite_email, created_at, profiles!team_members_user_id_fkey(full_name, avatar_url)"
     )
     .eq("team_id", callerMembership.team_id)
     .order("created_at", { ascending: true });
