@@ -478,17 +478,24 @@ function PlaygroundInner() {
                   ref={outputRef}
                   className="rounded-lg border border-border-default bg-surface-0 p-4 max-h-[500px] overflow-y-auto"
                 >
-                  {generating ? (
-                    <pre className="whitespace-pre-wrap text-body text-text-primary font-sans">
-                      {result}
-                      <span className="inline-block w-2 h-4 bg-accent animate-pulse ml-0.5" />
-                    </pre>
+                  {generating && !parsedResult ? (
+                    <div className="flex flex-col items-center py-8 text-center">
+                      <Loader2 className="h-8 w-8 animate-spin text-accent mb-4" />
+                      <p className="text-body text-text-primary font-medium">
+                        Writing your {currentAgent.name.toLowerCase()}...
+                      </p>
+                      <p className="text-small text-text-tertiary mt-2">
+                        We&apos;ll format the result once it&apos;s ready.
+                      </p>
+                    </div>
                   ) : parsedResult ? (
                     <FormattedOutput data={parsedResult} />
                   ) : (
-                    <pre className="whitespace-pre-wrap text-body text-text-primary font-sans">
-                      {cleanedResult}
-                    </pre>
+                    <div className="space-y-3">
+                      <p className="text-body text-text-primary whitespace-pre-wrap">
+                        {cleanedResult}
+                      </p>
+                    </div>
                   )}
                 </div>
 

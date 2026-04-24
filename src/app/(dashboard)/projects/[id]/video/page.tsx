@@ -652,9 +652,9 @@ export default function VideoAgentPage({
                   {scriptExpanded ? "Hide script" : "Show script"}
                 </button>
                 {scriptExpanded && (
-                  <pre className="mt-3 rounded-lg bg-surface-0 border border-border-default p-4 text-[0.75rem] text-text-secondary overflow-x-auto max-h-64 whitespace-pre-wrap font-mono">
-                    {JSON.stringify(jobStatus.scriptData, null, 2)}
-                  </pre>
+                  <div className="mt-3 rounded-lg bg-surface-0 border border-border-default p-4 max-h-80 overflow-y-auto">
+                    <ScriptPreview data={jobStatus.scriptData} />
+                  </div>
                 )}
               </div>
             )}
@@ -766,6 +766,48 @@ export default function VideoAgentPage({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function ScriptPreview({ data }: { data: Record<string, unknown> }) {
+  const entries = Object.entries(data);
+  if (entries.length === 0) {
+    return (
+      <p className="text-small text-text-tertiary">No script data available.</p>
+    );
+  }
+  return (
+    <div className="space-y-3">
+      {entries.map(([key, value]) => (
+        <div key={key}>
+          <p className="text-caption text-accent font-medium uppercase tracking-wider mb-1">
+            {key.replace(/_/g, " ")}
+          </p>
+          {Array.isArray(value) ? (
+            <ul className="space-y-1.5">
+              {value.map((item, i) => (
+                <li
+                  key={i}
+                  className="text-small text-text-secondary pl-3 border-l-2 border-border-subtle"
+                >
+                  {typeof item === "string" ? item : JSON.stringify(item)}
+                </li>
+              ))}
+            </ul>
+          ) : typeof value === "object" && value !== null ? (
+            <p className="text-small text-text-secondary whitespace-pre-wrap">
+              {Object.entries(value as Record<string, unknown>)
+                .map(([k, v]) => `${k}: ${typeof v === "string" ? v : JSON.stringify(v)}`)
+                .join("\n")}
+            </p>
+          ) : (
+            <p className="text-small text-text-secondary whitespace-pre-wrap">
+              {String(value ?? "")}
+            </p>
+          )}
+        </div>
+      ))}
     </div>
   );
 }

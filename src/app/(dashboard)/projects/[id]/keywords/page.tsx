@@ -356,16 +356,34 @@ export default function KeywordsPage({
       {/* Generating indicator */}
       {generating && !result && (
         <Card className="mb-8">
-          <CardContent className="py-8 flex flex-col items-center gap-4">
-            <div className="flex items-center gap-2 text-accent">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              <span className="text-body font-medium">Analysing keyword opportunities…</span>
+          <CardContent className="py-10 flex flex-col items-center gap-3 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-muted">
+              <Loader2 className="h-6 w-6 text-accent animate-spin" />
             </div>
-            {rawText && (
-              <div className="w-full max-h-20 overflow-hidden rounded-lg bg-surface-2 p-3">
-                <p className="text-small font-mono text-text-tertiary line-clamp-3">{rawText}</p>
-              </div>
-            )}
+            <p className="text-body font-semibold text-text-primary">
+              Analysing keyword opportunities...
+            </p>
+            <p className="text-small text-text-tertiary max-w-sm">
+              Finding clusters, long-tail opportunities, and quick wins. This usually takes 20-30 seconds.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {!generating && !result && rawText && (
+        <Card className="mb-8 border-warning/30">
+          <CardContent className="py-6 space-y-2">
+            <p className="text-small text-text-primary font-medium">
+              We got a response but couldn&apos;t format it. Try regenerating.
+            </p>
+            <details className="text-small">
+              <summary className="cursor-pointer text-text-tertiary hover:text-text-secondary">
+                Show raw output
+              </summary>
+              <pre className="mt-2 whitespace-pre-wrap text-caption text-text-secondary font-mono break-words max-h-[320px] overflow-y-auto">
+                {rawText}
+              </pre>
+            </details>
           </CardContent>
         </Card>
       )}

@@ -167,7 +167,24 @@ function getTextContent(asset: Asset): string {
   if (c?.markdown && typeof c.markdown === "string") return c.markdown;
   if (c?.text && typeof c.text === "string") return c.text;
   if (c?.subject && typeof c.subject === "string") return c.subject;
-  return JSON.stringify(c, null, 2);
+  // Fallback: readable key/value lines instead of raw JSON.
+  if (c && typeof c === "object") {
+    return Object.entries(c as Record<string, unknown>)
+      .filter(([, v]) => v != null && v !== "")
+      .map(([k, v]) => {
+        const label = k.replace(/_/g, " ");
+        if (typeof v === "string") return `${label}: ${v}`;
+        if (Array.isArray(v))
+          return `${label}:\n${v
+            .map((item) =>
+              typeof item === "string" ? `  • ${item}` : `  • ${JSON.stringify(item)}`
+            )
+            .join("\n")}`;
+        return `${label}: ${String(v)}`;
+      })
+      .join("\n\n");
+  }
+  return "";
 }
 
 /**

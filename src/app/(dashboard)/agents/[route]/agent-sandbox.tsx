@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -207,6 +207,18 @@ export function AgentSandbox({ agent }: { agent: AgentDefinition }) {
   const outputRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
+  const parsedResult = useMemo(() => {
+    if (!result) return null;
+    const cleaned = result
+      .replace(/^```(?:json)?\s*\n?/gm, "")
+      .replace(/\n?```\s*$/gm, "");
+    try {
+      return JSON.parse(cleaned);
+    } catch {
+      return null;
+    }
+  }, [result]);
+
   useEffect(() => {
     if (outputRef.current && generating) {
       outputRef.current.scrollTop = outputRef.current.scrollHeight;
@@ -403,12 +415,23 @@ export function AgentSandbox({ agent }: { agent: AgentDefinition }) {
                   ref={outputRef}
                   className="rounded-lg border border-border-default bg-surface-0 p-4 max-h-[500px] overflow-y-auto"
                 >
-                  <pre className="whitespace-pre-wrap text-body text-text-primary font-sans">
-                    {result}
-                    {generating && (
-                      <span className="inline-block w-2 h-4 bg-accent animate-pulse ml-0.5" />
-                    )}
-                  </pre>
+                  {generating && !parsedResult ? (
+                    <div className="flex flex-col items-center py-8 text-center">
+                      <Loader2 className="h-8 w-8 animate-spin text-accent mb-4" />
+                      <p className="text-body text-text-primary font-medium">
+                        Running {agent.name.toLowerCase()}...
+                      </p>
+                      <p className="text-small text-text-tertiary mt-2">
+                        We&apos;ll format the result once it&apos;s ready.
+                      </p>
+                    </div>
+                  ) : parsedResult ? (
+                    <FormattedAgentOutput data={parsedResult} />
+                  ) : (
+                    <p className="whitespace-pre-wrap text-body text-text-primary">
+                      {result}
+                    </p>
+                  )}
                 </div>
 
                 {usage && (
@@ -438,5 +461,77 @@ export function AgentSandbox({ agent }: { agent: AgentDefinition }) {
         </Card>
       </div>
     </div>
+  );
+}
+
+function FormattedAgentOutput({ data }: { data: unknown }) {
+  if (data == null) return null;
+
+  if (Array.isArray(data)) {
+    return (
+      <div className="space-y-3">
+        {data.map((item, i) => (
+          <div
+            key={i}
+            className="rounded-lg border border-border-default bg-surface-1 p-4"
+          >
+            <FormattedAgentOutput data={item} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (typeof data === "object") {
+    const obj = data as Record<string, unknown>;
+    const scalarKeys = Object.keys(obj).filter(
+      (k) => !Array.isArray(obj[k]) && typeof obj[k] !== "object"
+    );
+    const objectKeys = Object.keys(obj).filter(
+      (k) =>
+        typeof obj[k] === "object" && !Array.isArray(obj[k]) && obj[k] !== null
+    );
+    const arrayKeys = Object.keys(obj).filter((k) => Array.isArray(obj[k]));
+
+    return (
+      <div className="space-y-3">
+        {scalarKeys.map((key) => (
+          <div key={key}>
+            <span className="text-caption text-accent font-medium uppercase tracking-wider">
+              {key.replace(/_/g, " ")}
+            </span>
+            <p className="mt-0.5 text-body text-text-primary whitespace-pre-wrap">
+              {String(obj[key])}
+            </p>
+          </div>
+        ))}
+        {objectKeys.map((key) => (
+          <div key={key} className="mt-2">
+            <span className="text-caption text-accent font-medium uppercase tracking-wider">
+              {key.replace(/_/g, " ")}
+            </span>
+            <div className="mt-1 pl-3 border-l-2 border-accent/20">
+              <FormattedAgentOutput data={obj[key]} />
+            </div>
+          </div>
+        ))}
+        {arrayKeys.map((key) => (
+          <div key={key} className="mt-2">
+            <span className="text-caption text-accent font-medium uppercase tracking-wider">
+              {key.replace(/_/g, " ")} ({(obj[key] as unknown[]).length})
+            </span>
+            <div className="mt-2">
+              <FormattedAgentOutput data={obj[key]} />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <p className="text-body text-text-primary whitespace-pre-wrap">
+      {String(data)}
+    </p>
   );
 }

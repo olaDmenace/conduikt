@@ -384,16 +384,32 @@ export default function ProgrammaticSeoPage({
           )}
 
           {generating && !result && (
-            <div className="rounded-xl border border-border-default bg-surface-1 p-6 animate-in">
-              <div className="flex items-center gap-2 text-accent mb-3">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span className="text-body font-medium">Generating page variants...</span>
+            <div className="rounded-xl border border-border-default bg-surface-1 p-10 animate-in text-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-accent-muted mb-4">
+                <Loader2 className="h-6 w-6 text-accent animate-spin" />
               </div>
-              {rawText && (
-                <div className="max-h-24 overflow-hidden rounded-lg bg-surface-2 p-3">
-                  <p className="text-small font-mono text-text-tertiary line-clamp-4">{rawText}</p>
-                </div>
-              )}
+              <p className="text-body font-semibold text-text-primary">
+                Generating page variants...
+              </p>
+              <p className="text-small text-text-tertiary mt-2 max-w-sm mx-auto">
+                Building the template, variable slots, and a few filled-in examples.
+              </p>
+            </div>
+          )}
+
+          {!generating && !result && rawText && (
+            <div className="rounded-xl border border-warning/30 bg-surface-1 p-6 animate-in space-y-2">
+              <p className="text-small text-text-primary font-medium">
+                We got a response but couldn&apos;t format it into pages. Try regenerating.
+              </p>
+              <details className="text-small">
+                <summary className="cursor-pointer text-text-tertiary hover:text-text-secondary">
+                  Show raw output
+                </summary>
+                <pre className="mt-2 whitespace-pre-wrap text-caption text-text-secondary font-mono break-words max-h-[320px] overflow-y-auto">
+                  {rawText}
+                </pre>
+              </details>
             </div>
           )}
 

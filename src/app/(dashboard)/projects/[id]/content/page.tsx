@@ -37,12 +37,6 @@ import {
 } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from "@/src/components/ui/tabs";
 import { PageHeader } from "@/src/components/layout/page-header";
 
 import { useToast } from "@/src/components/ui/toast";
@@ -1197,12 +1191,32 @@ function ContentPageInner({
     );
   }
 
-  function RawPreview({ text }: { text: string }) {
+  function GeneratingIndicator({ label }: { label: string }) {
     return (
-      <div className="rounded-xl border border-border-default bg-surface-0 p-4">
-        <pre className="whitespace-pre-wrap text-body text-text-primary font-sans break-words max-h-[400px] overflow-y-auto">
-          {text}
-        </pre>
+      <div className="rounded-xl border border-border-default bg-surface-0 p-8 flex flex-col items-center text-center">
+        <Loader2 className="h-8 w-8 animate-spin text-accent mb-4" />
+        <p className="text-body text-text-primary font-medium">{label}</p>
+        <p className="text-small text-text-tertiary mt-2">
+          We&apos;ll format the result as soon as it&apos;s ready.
+        </p>
+      </div>
+    );
+  }
+
+  function ParseFailureNotice({ text }: { text: string }) {
+    return (
+      <div className="rounded-xl border border-warning/30 bg-surface-0 p-4 space-y-2">
+        <p className="text-small text-text-primary font-medium">
+          We got a response but couldn&apos;t format it. You can regenerate below.
+        </p>
+        <details className="text-small">
+          <summary className="cursor-pointer text-text-tertiary hover:text-text-secondary">
+            Show raw output
+          </summary>
+          <pre className="mt-2 whitespace-pre-wrap text-caption text-text-secondary font-mono break-words max-h-[320px] overflow-y-auto">
+            {text}
+          </pre>
+        </details>
       </div>
     );
   }
@@ -1696,249 +1710,108 @@ function ContentPageInner({
             <CardContent>
               {result || generating ? (
                 <div className="space-y-4">
-                  {/* Tab previews based on skill */}
+                  {/* Skill-specific formatted previews — no raw JSON exposure */}
                   {selectedSkill === "social-content" ? (
-                    generating ? (
-                      // Show raw stream while generating
+                    generating && !parsedPosts ? (
                       <div ref={outputRef}>
-                        <RawPreview text={result} />
+                        <GeneratingIndicator label="Writing your social posts..." />
                       </div>
                     ) : parsedPosts ? (
-                      // Parsed post cards
-                      <Tabs defaultValue="posts">
-                        <TabsList>
-                          <TabsTrigger value="posts">
-                            <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-                            Posts ({parsedPosts.length})
-                          </TabsTrigger>
-                          <TabsTrigger value="raw">
-                            <FileText className="h-3.5 w-3.5 mr-1.5" />
-                            Raw JSON
-                          </TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="posts">
-                          <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
-                            {parsedPosts.map((post, i) => (
-                              <SocialPostCard key={i} post={post} index={i} />
-                            ))}
-                          </div>
-                        </TabsContent>
-                        <TabsContent value="raw">
-                          <div ref={outputRef}>
-                            <RawPreview text={result} />
-                          </div>
-                        </TabsContent>
-                      </Tabs>
+                      <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
+                        {parsedPosts.map((post, i) => (
+                          <SocialPostCard key={i} post={post} index={i} />
+                        ))}
+                      </div>
                     ) : (
-                      // Fallback if JSON parse failed
                       <div ref={outputRef}>
-                        <RawPreview text={result} />
+                        <ParseFailureNotice text={result} />
                       </div>
                     )
                   ) : selectedSkill === "email-sequence" ? (
-                    generating ? (
+                    generating && !parsedContent ? (
                       <div ref={outputRef}>
-                        <RawPreview text={result} />
+                        <GeneratingIndicator label="Drafting your email sequence..." />
                       </div>
                     ) : parsedContent ? (
-                      <Tabs defaultValue="email">
-                        <TabsList>
-                          <TabsTrigger value="email">
-                            <Mail className="h-3.5 w-3.5 mr-1.5" />
-                            Email Preview
-                          </TabsTrigger>
-                          <TabsTrigger value="raw">
-                            <FileText className="h-3.5 w-3.5 mr-1.5" />
-                            Raw
-                          </TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="email">
-                          <EmailPreview data={parsedContent} />
-                        </TabsContent>
-                        <TabsContent value="raw">
-                          <div ref={outputRef}>
-                            <RawPreview text={result} />
-                          </div>
-                        </TabsContent>
-                      </Tabs>
+                      <EmailPreview data={parsedContent} />
                     ) : (
                       <div ref={outputRef}>
-                        <RawPreview text={result} />
+                        <ParseFailureNotice text={result} />
                       </div>
                     )
                   ) : selectedSkill === "copywriting" ? (
-                    generating ? (
+                    generating && !parsedContent ? (
                       <div ref={outputRef}>
-                        <RawPreview text={result} />
+                        <GeneratingIndicator label="Writing copy variants..." />
                       </div>
                     ) : parsedContent ? (
-                      <Tabs defaultValue="formatted">
-                        <TabsList>
-                          <TabsTrigger value="formatted">
-                            <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-                            Variants
-                          </TabsTrigger>
-                          <TabsTrigger value="raw">
-                            <FileText className="h-3.5 w-3.5 mr-1.5" />
-                            Raw JSON
-                          </TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="formatted">
-                          <CopywritingPreview data={parsedContent} />
-                        </TabsContent>
-                        <TabsContent value="raw">
-                          <RawPreview text={result} />
-                        </TabsContent>
-                      </Tabs>
+                      <CopywritingPreview data={parsedContent} />
                     ) : (
                       <div ref={outputRef}>
-                        <RawPreview text={result} />
+                        <ParseFailureNotice text={result} />
                       </div>
                     )
                   ) : selectedSkill === "content-strategy" ? (
-                    generating ? (
+                    generating && !parsedContent ? (
                       <div ref={outputRef}>
-                        <RawPreview text={result} />
+                        <GeneratingIndicator label="Building your content strategy..." />
                       </div>
                     ) : parsedContent ? (
-                      <Tabs defaultValue="formatted">
-                        <TabsList>
-                          <TabsTrigger value="formatted">
-                            <Map className="h-3.5 w-3.5 mr-1.5" />
-                            Strategy
-                          </TabsTrigger>
-                          <TabsTrigger value="raw">
-                            <FileText className="h-3.5 w-3.5 mr-1.5" />
-                            Raw JSON
-                          </TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="formatted">
-                          <ContentStrategyPreview data={parsedContent} />
-                        </TabsContent>
-                        <TabsContent value="raw">
-                          <RawPreview text={result} />
-                        </TabsContent>
-                      </Tabs>
+                      <ContentStrategyPreview data={parsedContent} />
                     ) : (
                       <div ref={outputRef}>
-                        <RawPreview text={result} />
+                        <ParseFailureNotice text={result} />
                       </div>
                     )
                   ) : selectedSkill === "competitor-analysis" ? (
-                    generating ? (
+                    generating && !parsedContent ? (
                       <div ref={outputRef}>
-                        <RawPreview text={result} />
+                        <GeneratingIndicator label="Analysing competitors..." />
                       </div>
                     ) : parsedContent ? (
-                      <Tabs defaultValue="formatted">
-                        <TabsList>
-                          <TabsTrigger value="formatted">
-                            <Crosshair className="h-3.5 w-3.5 mr-1.5" />
-                            Analysis
-                          </TabsTrigger>
-                          <TabsTrigger value="raw">
-                            <FileText className="h-3.5 w-3.5 mr-1.5" />
-                            Raw JSON
-                          </TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="formatted">
-                          <CompetitorAnalysisPreview data={parsedContent} />
-                        </TabsContent>
-                        <TabsContent value="raw">
-                          <RawPreview text={result} />
-                        </TabsContent>
-                      </Tabs>
+                      <CompetitorAnalysisPreview data={parsedContent} />
                     ) : (
                       <div ref={outputRef}>
-                        <RawPreview text={result} />
+                        <ParseFailureNotice text={result} />
                       </div>
                     )
                   ) : selectedSkill === "blog-post" ? (
-                    generating ? (
+                    generating && !parsedContent ? (
                       <div ref={outputRef}>
-                        <RawPreview text={result} />
+                        <GeneratingIndicator label="Writing your blog post..." />
                       </div>
                     ) : parsedContent ? (
-                      <Tabs defaultValue="formatted">
-                        <TabsList>
-                          <TabsTrigger value="formatted">
-                            <Globe className="h-3.5 w-3.5 mr-1.5" />
-                            Article
-                          </TabsTrigger>
-                          <TabsTrigger value="raw">
-                            <FileText className="h-3.5 w-3.5 mr-1.5" />
-                            Raw JSON
-                          </TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="formatted">
-                          <BlogPostPreview data={parsedContent} />
-                        </TabsContent>
-                        <TabsContent value="raw">
-                          <RawPreview text={result} />
-                        </TabsContent>
-                      </Tabs>
+                      <BlogPostPreview data={parsedContent} />
                     ) : (
                       <div ref={outputRef}>
-                        <RawPreview text={result} />
+                        <ParseFailureNotice text={result} />
                       </div>
                     )
                   ) : selectedSkill === "page-cro" ? (
-                    generating ? (
+                    generating && !parsedContent ? (
                       <div ref={outputRef}>
-                        <RawPreview text={result} />
+                        <GeneratingIndicator label="Auditing the page..." />
                       </div>
                     ) : parsedContent ? (
-                      <Tabs defaultValue="formatted">
-                        <TabsList>
-                          <TabsTrigger value="formatted">
-                            <ArrowUpRight className="h-3.5 w-3.5 mr-1.5" />
-                            CRO Report
-                          </TabsTrigger>
-                          <TabsTrigger value="raw">
-                            <FileText className="h-3.5 w-3.5 mr-1.5" />
-                            Raw JSON
-                          </TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="formatted">
-                          <CroReportPreview data={parsedContent} />
-                        </TabsContent>
-                        <TabsContent value="raw">
-                          <RawPreview text={result} />
-                        </TabsContent>
-                      </Tabs>
+                      <CroReportPreview data={parsedContent} />
                     ) : (
                       <div ref={outputRef}>
-                        <RawPreview text={result} />
+                        <ParseFailureNotice text={result} />
                       </div>
                     )
+                  ) : generating ? (
+                    <div ref={outputRef}>
+                      <GeneratingIndicator label="Generating..." />
+                    </div>
                   ) : (
-                    <Tabs defaultValue="formatted">
-                      <TabsList>
-                        <TabsTrigger value="formatted">
-                          <Globe className="h-3.5 w-3.5 mr-1.5" />
-                          Preview
-                        </TabsTrigger>
-                        <TabsTrigger value="raw">
-                          <FileText className="h-3.5 w-3.5 mr-1.5" />
-                          Raw
-                        </TabsTrigger>
-                      </TabsList>
-                      <TabsContent value="formatted">
-                        <div
-                          ref={outputRef}
-                          className="rounded-xl border border-border-default bg-surface-0 p-6 max-h-[500px] overflow-y-auto"
-                        >
-                          <div className="prose prose-invert max-w-none">
-                            <pre className="whitespace-pre-wrap text-body text-text-primary font-sans">
-                              {result}
-                            </pre>
-                          </div>
-                        </div>
-                      </TabsContent>
-                      <TabsContent value="raw">
-                        <RawPreview text={result} />
-                      </TabsContent>
-                    </Tabs>
+                    <div
+                      ref={outputRef}
+                      className="rounded-xl border border-border-default bg-surface-0 p-6 max-h-[500px] overflow-y-auto"
+                    >
+                      <p className="whitespace-pre-wrap text-body text-text-primary">
+                        {result}
+                      </p>
+                    </div>
                   )}
 
                   {/* Streaming cursor */}

@@ -483,17 +483,16 @@ function BlogPageInner({
                   </p>
                 </div>
               ) : generating && !parsed ? (
-                // Streaming: show raw text building
-                <div>
-                  <div className="flex items-center gap-2 text-small text-accent mb-3">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <div className="rounded-xl border border-border-default bg-surface-0 p-10 text-center">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-accent-muted mb-4">
+                    <Loader2 className="h-6 w-6 text-accent animate-spin" />
+                  </div>
+                  <p className="text-body font-semibold text-text-primary">
                     Writing your blog post...
-                  </div>
-                  <div className="rounded-xl border border-border-default bg-surface-0 p-4 max-h-[400px] overflow-y-auto">
-                    <pre className="whitespace-pre-wrap text-small text-text-tertiary font-mono break-words">
-                      {rawResult}
-                    </pre>
-                  </div>
+                  </p>
+                  <p className="text-small text-text-tertiary mt-2 max-w-sm mx-auto">
+                    We&apos;ll format the article, SEO meta, and social posts once it&apos;s ready.
+                  </p>
                 </div>
               ) : parsed ? (
                 <Tabs defaultValue="preview">
@@ -509,10 +508,6 @@ function BlogPageInner({
                     <TabsTrigger value="social">
                       <Twitter className="h-3.5 w-3.5 mr-1.5" />
                       Promote
-                    </TabsTrigger>
-                    <TabsTrigger value="raw">
-                      <FileText className="h-3.5 w-3.5 mr-1.5" />
-                      Raw
                     </TabsTrigger>
                   </TabsList>
 
@@ -740,15 +735,21 @@ function BlogPageInner({
                     </div>
                   </TabsContent>
 
-                  {/* Raw JSON */}
-                  <TabsContent value="raw">
-                    <div className="rounded-xl border border-border-default bg-surface-0 p-4 max-h-[500px] overflow-y-auto">
-                      <pre className="whitespace-pre-wrap text-small text-text-primary font-mono break-words">
-                        {rawResult}
-                      </pre>
-                    </div>
-                  </TabsContent>
                 </Tabs>
+              ) : !generating && rawResult ? (
+                <div className="rounded-xl border border-warning/30 bg-surface-1 p-6 space-y-2">
+                  <p className="text-small text-text-primary font-medium">
+                    We got a response but couldn&apos;t format it into an article. Try regenerating.
+                  </p>
+                  <details className="text-small">
+                    <summary className="cursor-pointer text-text-tertiary hover:text-text-secondary">
+                      Show raw output
+                    </summary>
+                    <pre className="mt-2 whitespace-pre-wrap text-caption text-text-secondary font-mono break-words max-h-[320px] overflow-y-auto">
+                      {rawResult}
+                    </pre>
+                  </details>
+                </div>
               ) : null}
 
               {/* Usage stats */}

@@ -240,9 +240,9 @@ export default function LaunchStrategyPage({
 
   function copyPlan() {
     if (!result) return;
-    navigator.clipboard.writeText(JSON.stringify(result, null, 2));
+    navigator.clipboard.writeText(formatLaunchPlanAsMarkdown(result));
     setCopied(true);
-    toast("Plan copied as JSON", "info");
+    toast("Plan copied", "info");
     setTimeout(() => setCopied(false), 2000);
   }
 
@@ -404,16 +404,32 @@ export default function LaunchStrategyPage({
           )}
 
           {generating && !result && (
-            <div className="rounded-xl border border-border-default bg-surface-1 p-6 animate-in">
-              <div className="flex items-center gap-2 text-accent mb-3">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span className="text-body font-medium">Building your launch plan...</span>
+            <div className="rounded-xl border border-border-default bg-surface-1 p-10 animate-in text-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-accent-muted mb-4">
+                <Loader2 className="h-6 w-6 text-accent animate-spin" />
               </div>
-              {rawText && (
-                <div className="max-h-24 overflow-hidden rounded-lg bg-surface-2 p-3">
-                  <p className="text-small font-mono text-text-tertiary line-clamp-4">{rawText}</p>
-                </div>
-              )}
+              <p className="text-body font-semibold text-text-primary">
+                Building your launch plan...
+              </p>
+              <p className="text-small text-text-tertiary mt-2 max-w-sm mx-auto">
+                We&apos;re mapping positioning, pre-launch prep, launch-day runbook, and 30-day targets.
+              </p>
+            </div>
+          )}
+
+          {!generating && !result && rawText && (
+            <div className="rounded-xl border border-warning/30 bg-surface-1 p-6 animate-in space-y-2">
+              <p className="text-small text-text-primary font-medium">
+                We got a response but couldn&apos;t format it into a launch plan. Try regenerating.
+              </p>
+              <details className="text-small">
+                <summary className="cursor-pointer text-text-tertiary hover:text-text-secondary">
+                  Show raw output
+                </summary>
+                <pre className="mt-2 whitespace-pre-wrap text-caption text-text-secondary font-mono break-words max-h-[320px] overflow-y-auto">
+                  {rawText}
+                </pre>
+              </details>
             </div>
           )}
 
@@ -783,4 +799,79 @@ function MetricCol({ label, targets }: { label: string; targets: MetricTarget[] 
       </ul>
     </div>
   );
+}
+
+function formatLaunchPlanAsMarkdown(r: LaunchResult): string {
+  const lines: string[] = [];
+  lines.push(`# Launch Plan`);
+  lines.push("");
+  lines.push(`## Thesis`);
+  lines.push(r.launch_thesis);
+  lines.push("");
+  lines.push(`## Positioning`);
+  lines.push(`- One-liner: ${r.positioning.one_liner}`);
+  lines.push(`- Category: ${r.positioning.category}`);
+  lines.push(`- Against: ${r.positioning.against}`);
+  lines.push("");
+  lines.push(`## Riskiest assumption`);
+  lines.push(r.riskiest_assumption.assumption);
+  lines.push(`Cheap test: ${r.riskiest_assumption.cheap_test}`);
+  lines.push("");
+  lines.push(`## Audience targeting`);
+  lines.push(`- Primary ICP: ${r.audience_targeting.primary_icp}`);
+  lines.push(`- Primary channels: ${r.audience_targeting.primary_channels.join(", ")}`);
+  if (r.audience_targeting.where_not_to_post?.length) {
+    lines.push(`- Where not to post: ${r.audience_targeting.where_not_to_post.join(", ")}`);
+  }
+  lines.push("");
+  lines.push(`## Pre-launch (${r.phases.pre_launch.duration_days} days)`);
+  if (r.phases.pre_launch.goals?.length) {
+    lines.push(`Goals:`);
+    r.phases.pre_launch.goals.forEach((g) => lines.push(`- ${g}`));
+  }
+  if (r.phases.pre_launch.milestones?.length) {
+    lines.push(`Milestones:`);
+    r.phases.pre_launch.milestones.forEach((m) =>
+      lines.push(`- ${m.day}: ${m.task} (owner: ${m.owner}, ${m.effort_hours}h) → ${m.deliverable}`)
+    );
+  }
+  lines.push("");
+  lines.push(`## Launch day (hour by hour)`);
+  r.phases.launch_day.hour_by_hour.forEach((h) =>
+    lines.push(`- ${h.time}: ${h.action} (${h.channel})${h.asset_needed ? ` — asset: ${h.asset_needed}` : ""}`)
+  );
+  lines.push("");
+  lines.push(`## First 30 days`);
+  r.phases.first_30_days.weekly_focus.forEach((w) => {
+    lines.push(`**Week ${w.week}:** ${w.theme}`);
+    w.activities?.forEach((p) => lines.push(`- ${p}`));
+    if (w.leading_indicator) lines.push(`Leading indicator: ${w.leading_indicator}`);
+  });
+  lines.push("");
+  lines.push(`## Assets to create`);
+  r.assets_to_create.forEach((a) =>
+    lines.push(`- ${a.asset} (owner: ${a.owner}, by ${a.deadline}): ${a.purpose}`)
+  );
+  lines.push("");
+  lines.push(`## Channel plays`);
+  r.channel_plays.forEach((c) =>
+    lines.push(`- ${c.channel} (${c.effort}): ${c.play} → ${c.expected_outcome}`)
+  );
+  lines.push("");
+  lines.push(`## Success metrics`);
+  lines.push(`**North star:** ${r.success_metrics.north_star}`);
+  const renderTargets = (label: string, targets: MetricTarget[]) => {
+    if (!targets?.length) return;
+    lines.push(`**${label}:**`);
+    targets.forEach((t) => lines.push(`- ${t.metric} → ${t.target}`));
+  };
+  renderTargets("Day 1", r.success_metrics.day_1_targets);
+  renderTargets("Day 7", r.success_metrics.day_7_targets);
+  renderTargets("Day 30", r.success_metrics.day_30_targets);
+  if (r.gaps?.length) {
+    lines.push("");
+    lines.push(`## Gaps`);
+    r.gaps.forEach((g) => lines.push(`- ${g}`));
+  }
+  return lines.join("\n");
 }

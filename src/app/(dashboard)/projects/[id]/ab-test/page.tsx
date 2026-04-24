@@ -294,11 +294,20 @@ export default function ABTestAgentPage({
     }
   }
 
+  async function generateAllVariantCopy() {
+    if (!testPlan) return;
+    for (let i = 0; i < testPlan.variants.length; i++) {
+      if (copies[i]?.content) continue;
+      await generateVariantCopy(i, testPlan.variants[i]);
+    }
+  }
+
   function copyPlanToClipboard() {
     if (!testPlan) return;
-    navigator.clipboard.writeText(JSON.stringify(testPlan, null, 2));
+    const md = formatPlanAsMarkdown(testPlan);
+    navigator.clipboard.writeText(md);
     setCopiedPlan(true);
-    toast("Plan copied as JSON", "info");
+    toast("Plan copied", "info");
     setTimeout(() => setCopiedPlan(false), 2000);
   }
 
@@ -464,18 +473,33 @@ export default function ABTestAgentPage({
           )}
 
           {generating && !testPlan && (
-            <div className="rounded-xl border border-border-default bg-surface-1 p-6 animate-in">
-              <div className="flex items-center gap-2 text-accent mb-3">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span className="text-body font-medium">Designing your test...</span>
+            <div className="rounded-xl border border-border-default bg-surface-1 p-10 animate-in text-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-accent-muted mb-4">
+                <Loader2 className="h-6 w-6 text-accent animate-spin" />
               </div>
-              {rawText && (
-                <div className="max-h-24 overflow-hidden rounded-lg bg-surface-2 p-3">
-                  <p className="text-small font-mono text-text-tertiary line-clamp-4">
-                    {rawText}
-                  </p>
-                </div>
-              )}
+              <p className="text-body font-semibold text-text-primary">
+                Designing your test...
+              </p>
+              <p className="text-small text-text-tertiary mt-2 max-w-sm mx-auto">
+                We&apos;re working out the hypothesis, sample size, variants, and
+                decision rules. This usually takes about 20 seconds.
+              </p>
+            </div>
+          )}
+
+          {!generating && !testPlan && rawText && (
+            <div className="rounded-xl border border-warning/30 bg-surface-1 p-6 animate-in space-y-2">
+              <p className="text-small text-text-primary font-medium">
+                We got a response but couldn&apos;t format it into a test plan. Try regenerating.
+              </p>
+              <details className="text-small">
+                <summary className="cursor-pointer text-text-tertiary hover:text-text-secondary">
+                  Show raw output
+                </summary>
+                <pre className="mt-2 whitespace-pre-wrap text-caption text-text-secondary font-mono break-words max-h-[320px] overflow-y-auto">
+                  {rawText}
+                </pre>
+              </details>
             </div>
           )}
 
@@ -528,6 +552,37 @@ export default function ABTestAgentPage({
 
               {/* Variants */}
               <SectionCard title="Variants" icon={GitBranch}>
+                {(() => {
+                  const anyLoading = Object.values(copies).some((c) => c?.loading);
+                  const allHaveCopy =
+                    testPlan.variants.length > 0 &&
+                    testPlan.variants.every((_, i) => copies[i]?.content);
+                  return !allHaveCopy ? (
+                    <div className="mb-4 rounded-lg border border-accent/30 bg-accent-muted p-3 flex items-center justify-between gap-3 flex-wrap">
+                      <div className="min-w-0">
+                        <p className="text-small font-semibold text-text-primary">
+                          Generate ready-to-ship copy for each variant
+                        </p>
+                        <p className="text-caption text-text-tertiary mt-0.5">
+                          Turns the brief below into actual headlines, CTAs, or body copy you can paste in.
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={generateAllVariantCopy}
+                        disabled={anyLoading}
+                      >
+                        {anyLoading ? (
+                          <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-3.5 w-3.5 mr-1" />
+                        )}
+                        {anyLoading ? "Generating..." : "Generate copy for all"}
+                      </Button>
+                    </div>
+                  ) : null;
+                })()}
+
                 <div className="space-y-3">
                   {testPlan.variants.map((v, i) => (
                     <div
@@ -550,7 +605,6 @@ export default function ABTestAgentPage({
                           {!copies[i] || (!copies[i].loading && !copies[i].content) ? (
                             <Button
                               size="sm"
-                              variant="secondary"
                               onClick={() => generateVariantCopy(i, v)}
                             >
                               <Sparkles className="h-3.5 w-3.5 mr-1" />
@@ -558,14 +612,27 @@ export default function ABTestAgentPage({
                             </Button>
                           ) : null}
                           {copies[i]?.content && (
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => saveVariant(i, v)}
-                            >
-                              <Save className="h-3.5 w-3.5 mr-1" />
-                              Save
-                            </Button>
+                            <>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(copies[i].content);
+                                  toast("Copy copied", "info");
+                                }}
+                              >
+                                <Copy className="h-3.5 w-3.5 mr-1" />
+                                Copy
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => saveVariant(i, v)}
+                              >
+                                <Save className="h-3.5 w-3.5 mr-1" />
+                                Save
+                              </Button>
+                            </>
                           )}
                         </div>
                       </div>
@@ -580,8 +647,11 @@ export default function ABTestAgentPage({
                         </div>
                       )}
                       {copies[i]?.content && (
-                        <div className="mt-3 rounded-lg border border-border-subtle bg-surface-1 p-3">
-                          <p className="whitespace-pre-wrap text-small text-text-primary leading-relaxed">
+                        <div className="mt-3 rounded-lg border border-accent/20 bg-surface-1 p-3">
+                          <p className="text-caption text-accent font-medium uppercase tracking-wider mb-1.5">
+                            Ready-to-ship copy
+                          </p>
+                          <p className="whitespace-pre-wrap text-body text-text-primary leading-relaxed">
                             {copies[i].content}
                           </p>
                         </div>
@@ -726,7 +796,7 @@ export default function ABTestAgentPage({
                 </SectionCard>
               )}
 
-              {/* Copy plan JSON */}
+              {/* Copy plan as text */}
               <div className="flex justify-end">
                 <Button variant="secondary" size="sm" onClick={copyPlanToClipboard}>
                   {copiedPlan ? (
@@ -734,7 +804,7 @@ export default function ABTestAgentPage({
                   ) : (
                     <Copy className="h-3.5 w-3.5 mr-1" />
                   )}
-                  Copy full plan as JSON
+                  Copy plan
                 </Button>
               </div>
             </div>
@@ -839,4 +909,72 @@ function KV({ label, value }: { label: string; value: string }) {
       <p className="text-body font-semibold text-text-primary">{value}</p>
     </div>
   );
+}
+
+function formatPlanAsMarkdown(plan: TestPlan): string {
+  const lines: string[] = [];
+  lines.push(`# A/B Test Plan`);
+  lines.push("");
+  lines.push(`## Hypothesis`);
+  lines.push(plan.hypothesis.statement);
+  lines.push(`- Mechanism: ${plan.hypothesis.mechanism}`);
+  lines.push(`- Kill criteria: ${plan.hypothesis.kill_criteria}`);
+  lines.push("");
+  lines.push(`## Surface`);
+  lines.push(`- Page / flow: ${plan.surface.page_or_flow}`);
+  lines.push(`- Audience: ${plan.surface.audience_segment}`);
+  if (plan.surface.exclusions?.length) {
+    lines.push(`- Exclusions: ${plan.surface.exclusions.join(", ")}`);
+  }
+  lines.push("");
+  lines.push(`## Sample size`);
+  lines.push(`- Per variant: ${plan.sample_size.per_variant}`);
+  lines.push(`- Total required: ${plan.sample_size.total_required}`);
+  lines.push(`- Estimated duration: ${plan.sample_size.estimated_duration_days} days`);
+  lines.push(`- Viability: ${plan.sample_size.viability} — ${plan.sample_size.viability_note}`);
+  lines.push(`- Math: ${plan.sample_size.math_shown}`);
+  lines.push(`- Traffic estimate used: ${plan.sample_size.traffic_estimate_used}`);
+  lines.push("");
+  lines.push(`## Variants`);
+  plan.variants.forEach((v) => {
+    lines.push(`### ${v.label} — ${v.description}`);
+    lines.push(`Rationale: ${v.rationale}`);
+    lines.push("");
+  });
+  lines.push(`## Metrics`);
+  lines.push(`**Primary:** ${plan.metrics.primary.name}`);
+  lines.push(`- Definition: ${plan.metrics.primary.definition}`);
+  lines.push(`- Baseline: ${plan.metrics.primary.baseline_rate}`);
+  lines.push(`- MDE: ${plan.metrics.primary.minimum_detectable_effect}`);
+  if (plan.metrics.guardrails.length) {
+    lines.push("");
+    lines.push(`**Guardrails:**`);
+    plan.metrics.guardrails.forEach((g) => {
+      lines.push(`- ${g.name} — stop if ${g.stop_threshold}. (${g.why_it_matters})`);
+    });
+  }
+  if (plan.metrics.secondary.length) {
+    lines.push("");
+    lines.push(`**Secondary:** ${plan.metrics.secondary.join(", ")}`);
+  }
+  lines.push("");
+  lines.push(`## Decision rules`);
+  lines.push(`- Success: ${plan.decision_rules.success}`);
+  lines.push(`- Failure: ${plan.decision_rules.failure}`);
+  lines.push(`- Inconclusive: ${plan.decision_rules.inconclusive}`);
+  if (plan.risks.length) {
+    lines.push("");
+    lines.push(`## Risks & mitigations`);
+    plan.risks.forEach((r) => {
+      lines.push(`- ${r.risk} → ${r.mitigation}`);
+    });
+  }
+  if (plan.shipping_checklist.length) {
+    lines.push("");
+    lines.push(`## Shipping checklist`);
+    plan.shipping_checklist.forEach((item) => {
+      lines.push(`- [ ] ${item}`);
+    });
+  }
+  return lines.join("\n");
 }

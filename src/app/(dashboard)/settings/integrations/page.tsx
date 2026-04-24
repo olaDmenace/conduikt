@@ -142,7 +142,7 @@ function IntegrationsContent() {
     return new Date(account.token_expires_at) < new Date();
   }
 
-  const integrations = [
+  const publishingIntegrations = [
     {
       key: "x",
       name: "X (Twitter)",
@@ -170,11 +170,15 @@ function IntegrationsContent() {
       account: fbAccount,
       comingSoon: true,
     },
+  ];
+
+  const analyticsIntegrations = [
     {
       key: "gsc",
       name: "Google Search Console",
       icon: Search,
-      description: "Import real keyword rankings and click data into your Growth Playbook.",
+      description:
+        "Read-only. Pulls your keyword rankings and click data into the Growth Playbook. Conduikt cannot change anything in Search Console.",
       connectHref: "/api/integrations/gsc/connect",
       account: gscAccount,
       comingSoon: false,
@@ -183,7 +187,8 @@ function IntegrationsContent() {
       key: "ga4",
       name: "Google Analytics 4",
       icon: BarChart3,
-      description: "Pull traffic, engagement, and conversion metrics into your analytics dashboard.",
+      description:
+        "Read-only. Pulls traffic, engagement, and conversion metrics into your analytics dashboard. Conduikt cannot modify your GA4 property.",
       connectHref: "/api/integrations/ga4/connect",
       account: ga4Account,
       comingSoon: false,
@@ -192,12 +197,104 @@ function IntegrationsContent() {
       key: "youtube",
       name: "YouTube",
       icon: Video,
-      description: "Pull channel stats and recent video performance into your content dashboard.",
+      description:
+        "Read-only. Pulls channel stats and recent video performance. Conduikt cannot post videos or comments on your channel.",
       connectHref: "/api/integrations/youtube/connect",
       account: ytAccount,
       comingSoon: false,
     },
   ];
+
+  type Integration = (typeof publishingIntegrations)[number];
+
+  function renderIntegrationCard(integration: Integration, i: number) {
+    const connected = !!integration.account;
+    const expired = integration.account ? isExpired(integration.account) : false;
+
+    return (
+      <Card
+        key={integration.key}
+        className="animate-in"
+        style={{ animationDelay: `${i * 60}ms` }}
+      >
+        <CardContent className="flex flex-col sm:flex-row sm:items-center gap-4 py-6">
+          <div className="flex items-center gap-4 flex-1 min-w-0">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-border-default bg-surface-2">
+              <integration.icon className="h-5 w-5 text-text-primary" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-h3 text-text-primary">{integration.name}</h3>
+                {connected && !expired ? (
+                  <Badge variant="success">
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    Connected
+                  </Badge>
+                ) : connected && expired ? (
+                  <Badge variant="warning">
+                    <AlertCircle className="h-3 w-3 mr-1" />
+                    Token expired
+                  </Badge>
+                ) : integration.comingSoon ? (
+                  <Badge variant="secondary">
+                    <Clock className="h-3 w-3 mr-1" />
+                    Coming soon
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary">Not connected</Badge>
+                )}
+              </div>
+              <p className="mt-0.5 text-small text-text-secondary">
+                {connected && integration.account?.platform_username
+                  ? `@${integration.account.platform_username}`
+                  : integration.comingSoon
+                    ? "Awaiting Meta business verification. We'll email you when this is live."
+                    : integration.description}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {connected ? (
+              <>
+                {integration.key === "gsc" && !expired && (
+                  <Button variant="secondary" size="sm" onClick={openGscPicker}>
+                    <Pencil className="h-4 w-4" />
+                    Change site
+                  </Button>
+                )}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => disconnect(integration.key)}
+                  disabled={disconnecting === integration.key}
+                >
+                  {disconnecting === integration.key ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Unlink className="h-4 w-4" />
+                  )}
+                  Disconnect
+                </Button>
+              </>
+            ) : integration.comingSoon ? (
+              <Button variant="secondary" size="sm" disabled>
+                <Clock className="h-4 w-4" />
+                Coming soon
+              </Button>
+            ) : (
+              <Button size="sm" asChild>
+                <a href={integration.connectHref}>
+                  <Link2 className="h-4 w-4" />
+                  {expired ? "Reconnect" : "Connect"}
+                </a>
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div>
@@ -211,109 +308,42 @@ function IntegrationsContent() {
           <Loader2 className="h-6 w-6 text-accent animate-spin" />
         </div>
       ) : (
-        <div className="space-y-4">
-          {integrations.map((integration, i) => {
-            const connected = !!integration.account;
-            const expired = integration.account ? isExpired(integration.account) : false;
+        <div className="space-y-10">
+          {/* Publishing */}
+          <section>
+            <div className="mb-4">
+              <h2 className="text-h2 text-text-primary">Publishing</h2>
+              <p className="mt-1 text-small text-text-secondary">
+                Connect social accounts so Conduikt can post content directly from the Content Studio on your behalf.
+              </p>
+            </div>
+            <div className="space-y-4">
+              {publishingIntegrations.map((integration, i) =>
+                renderIntegrationCard(integration, i)
+              )}
+            </div>
+          </section>
 
-            return (
-              <Card
-                key={integration.key}
-                className="animate-in"
-                style={{ animationDelay: `${i * 60}ms` }}
-              >
-                <CardContent className="flex flex-col sm:flex-row sm:items-center gap-4 py-6">
-                  {/* Icon + info */}
-                  <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-border-default bg-surface-2">
-                      <integration.icon className="h-5 w-5 text-text-primary" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-h3 text-text-primary">{integration.name}</h3>
-                        {connected && !expired ? (
-                          <Badge variant="success">
-                            <CheckCircle2 className="h-3 w-3 mr-1" />
-                            Connected
-                          </Badge>
-                        ) : connected && expired ? (
-                          <Badge variant="warning">
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                            Token expired
-                          </Badge>
-                        ) : integration.comingSoon ? (
-                          <Badge variant="secondary">
-                            <Clock className="h-3 w-3 mr-1" />
-                            Coming soon
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary">Not connected</Badge>
-                        )}
-                      </div>
-                      <p className="mt-0.5 text-small text-text-secondary">
-                        {connected && integration.account?.platform_username
-                          ? `@${integration.account.platform_username}`
-                          : integration.comingSoon
-                            ? "Awaiting Meta business verification. We'll email you when this is live."
-                            : integration.description}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Action */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    {connected ? (
-                      <>
-                        {integration.key === "gsc" && !expired && (
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={openGscPicker}
-                          >
-                            <Pencil className="h-4 w-4" />
-                            Change site
-                          </Button>
-                        )}
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => disconnect(integration.key)}
-                          disabled={disconnecting === integration.key}
-                        >
-                          {disconnecting === integration.key ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Unlink className="h-4 w-4" />
-                          )}
-                          Disconnect
-                        </Button>
-                      </>
-                    ) : integration.comingSoon ? (
-                      <Button variant="secondary" size="sm" disabled>
-                        <Clock className="h-4 w-4" />
-                        Coming soon
-                      </Button>
-                    ) : (
-                      <Button size="sm" asChild>
-                        <a href={integration.connectHref}>
-                          <Link2 className="h-4 w-4" />
-                          {expired ? "Reconnect" : "Connect"}
-                        </a>
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+          {/* Analytics & insights */}
+          <section>
+            <div className="mb-4">
+              <h2 className="text-h2 text-text-primary">Analytics & insights</h2>
+              <p className="mt-1 text-small text-text-secondary">
+                Read-only connections. Conduikt pulls data from these services to power your dashboards and growth playbooks. It cannot post, modify, or delete anything on your behalf.
+              </p>
+            </div>
+            <div className="space-y-4">
+              {analyticsIntegrations.map((integration, i) =>
+                renderIntegrationCard(integration, i)
+              )}
+            </div>
+          </section>
 
           {/* Info card */}
           <Card className="animate-in" style={{ animationDelay: "120ms" }}>
             <CardContent className="py-5">
               <p className="text-small text-text-secondary">
-                Connected accounts are used to publish content directly from the Content
-                Studio. Your OAuth tokens are stored securely and only used to post on
-                your behalf. You can disconnect at any time.
+                Your OAuth tokens are stored securely and only used for the scope each connection requests. You can disconnect any connection at any time.
               </p>
             </CardContent>
           </Card>

@@ -303,18 +303,64 @@ function BlogPostView({ data }: { data: BlogPost }) {
 }
 
 function GenericAssetView({ content }: { content: Record<string, unknown> }) {
-  const text =
-    typeof content.raw === "string" ? content.raw :
-    typeof content.text === "string" ? content.text :
-    typeof content.markdown === "string" ? content.markdown :
-    JSON.stringify(content, null, 2);
+  const plain =
+    typeof content.raw === "string"
+      ? content.raw
+      : typeof content.text === "string"
+        ? content.text
+        : typeof content.markdown === "string"
+          ? content.markdown
+          : null;
+
+  if (plain) {
+    return (
+      <Card>
+        <CardContent className="py-5">
+          <p className="whitespace-pre-wrap break-words text-body text-text-primary leading-relaxed">
+            {plain}
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
-      <CardContent className="py-5">
-        <pre className="whitespace-pre-wrap break-words text-small text-text-secondary font-mono leading-relaxed">
-          {text}
-        </pre>
+      <CardContent className="py-5 space-y-3">
+        {Object.entries(content).map(([key, value]) => (
+          <div key={key}>
+            <p className="text-caption text-accent font-medium uppercase tracking-wider mb-1">
+              {key.replace(/_/g, " ")}
+            </p>
+            {Array.isArray(value) ? (
+              <ul className="space-y-1">
+                {value.map((item, i) => (
+                  <li
+                    key={i}
+                    className="text-small text-text-secondary pl-3 border-l-2 border-border-subtle"
+                  >
+                    {typeof item === "string" ? item : JSON.stringify(item)}
+                  </li>
+                ))}
+              </ul>
+            ) : typeof value === "object" && value !== null ? (
+              <div className="pl-3 border-l-2 border-border-subtle space-y-1">
+                {Object.entries(value as Record<string, unknown>).map(
+                  ([k, v]) => (
+                    <p key={k} className="text-small text-text-secondary">
+                      <span className="text-text-tertiary">{k}:</span>{" "}
+                      {typeof v === "string" ? v : JSON.stringify(v)}
+                    </p>
+                  )
+                )}
+              </div>
+            ) : (
+              <p className="text-body text-text-primary whitespace-pre-wrap">
+                {String(value ?? "")}
+              </p>
+            )}
+          </div>
+        ))}
       </CardContent>
     </Card>
   );
