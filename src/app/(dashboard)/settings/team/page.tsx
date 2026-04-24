@@ -49,10 +49,10 @@ export default function TeamPage() {
   }, []);
 
   async function fetchMembers() {
-    const res = await fetch("/api/team");
+    const res = await fetch("/api/team", { cache: "no-store" });
     if (res.ok) {
       const data = await res.json();
-      setMembers(data);
+      setMembers(Array.isArray(data) ? data : []);
     }
     setLoading(false);
   }
@@ -69,8 +69,25 @@ export default function TeamPage() {
     });
 
     if (res.ok) {
+      const newMember = await res.json();
       toast("Invite sent successfully!", "success");
       setEmail("");
+      // Optimistic append so the pending invite shows immediately,
+      // even if /api/team returns a stale/cached result.
+      setMembers((prev) => {
+        if (prev.some((m) => m.id === newMember.id)) return prev;
+        return [
+          ...prev,
+          {
+            id: newMember.id,
+            user_id: newMember.user_id ?? null,
+            role: newMember.role,
+            invite_email: newMember.invite_email ?? null,
+            created_at: newMember.created_at,
+            profiles: null,
+          } satisfies TeamMember,
+        ];
+      });
       fetchMembers();
     } else {
       const err = await res.json();

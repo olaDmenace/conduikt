@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET() {
   const supabase = await createClient();
 
@@ -21,10 +24,10 @@ export async function GET() {
     .maybeSingle();
 
   if (!callerMembership) {
-    return NextResponse.json([]);
+    return NextResponse.json([], { headers: { "Cache-Control": "no-store" } });
   }
 
-  const { data: members } = await supabase
+  const { data: members, error } = await supabase
     .from("team_members")
     .select(
       "id, user_id, role, status, invite_email, created_at, profiles(full_name, avatar_url)"
@@ -32,7 +35,17 @@ export async function GET() {
     .eq("team_id", callerMembership.team_id)
     .order("created_at", { ascending: true });
 
-  return NextResponse.json(members ?? []);
+  if (error) {
+    console.error("[team GET] list members failed:", error);
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500, headers: { "Cache-Control": "no-store" } }
+    );
+  }
+
+  return NextResponse.json(members ?? [], {
+    headers: { "Cache-Control": "no-store" },
+  });
 }
 
 export async function DELETE(request: NextRequest) {
