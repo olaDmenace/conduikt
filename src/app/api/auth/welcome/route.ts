@@ -23,6 +23,20 @@ export async function POST(_request: NextRequest) {
     // Non-critical — don't fail the confirmation flow
   }
 
+  // Invite acceptance — link any pending team_members rows for this email.
+  // Belt-and-braces: the signup trigger already does this, but this covers
+  // the edge case where an invite arrives for an already-existing account.
+  try {
+    const svc = createServiceClient();
+    await svc
+      .from("team_members")
+      .update({ user_id: user.id, status: "active" })
+      .eq("invite_email", user.email)
+      .is("user_id", null);
+  } catch {
+    // Non-critical — user can retry the invite link manually
+  }
+
   // Referral attribution — consume cookie set by /r/{code}
   try {
     const cookieStore = await cookies();

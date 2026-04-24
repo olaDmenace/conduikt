@@ -10,7 +10,9 @@ export async function getUserRole(
     .from("team_members")
     .select("role")
     .eq("user_id", userId)
-    .single();
+    .eq("status", "active")
+    .limit(1)
+    .maybeSingle();
 
   return (data?.role as TeamRole) ?? null;
 }

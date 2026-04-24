@@ -21,6 +21,23 @@ export const PROJECT_LIMITS: Record<PlanTier, number> = {
   agency: Number.POSITIVE_INFINITY,
 };
 
+// Team seat cap per tier (includes the owner).
+// Free/Pro are single-seat: no teammates. Growth adds 2 teammates. Agency adds 9.
+export const SEAT_LIMITS: Record<PlanTier, number> = {
+  free: 1,
+  pro: 1,
+  growth: 3,
+  agency: 10,
+};
+
+export function getSeatLimit(plan: PlanTier): number {
+  return SEAT_LIMITS[plan];
+}
+
+export function canInviteTeammates(plan: PlanTier): boolean {
+  return SEAT_LIMITS[plan] > 1;
+}
+
 // Human-readable pricing used on landing + pricing pages.
 export const PLAN_PRICING: Record<PlanTier, { price: number; label: string }> = {
   free: { price: 0, label: "$0" },
