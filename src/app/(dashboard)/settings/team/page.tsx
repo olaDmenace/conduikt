@@ -70,7 +70,14 @@ export default function TeamPage() {
 
     if (res.ok) {
       const newMember = await res.json();
-      toast("Invite sent successfully!", "success");
+      if (newMember.email?.delivered) {
+        toast("Invite sent — email on its way", "success");
+      } else {
+        toast(
+          `Invite saved, but email didn't send: ${newMember.email?.error ?? "unknown error"}`,
+          "error"
+        );
+      }
       setEmail("");
       // Optimistic append so the pending invite shows immediately,
       // even if /api/team returns a stale/cached result.

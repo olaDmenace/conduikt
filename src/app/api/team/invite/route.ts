@@ -127,8 +127,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: insertError.message }, { status: 500 });
   }
 
+  let emailStatus: {
+    delivered: boolean;
+    id?: string;
+    error?: string;
+  } = { delivered: false };
+
   try {
-    await resend.emails.send({
+    const { data: emailData, error: emailError } = await resend.emails.send({
       from: "Conduikt <noreply@conduikt.com>",
       to: email,
       subject: "You've been invited to join a team on Conduikt",
@@ -147,9 +153,20 @@ export async function POST(request: NextRequest) {
         </div>
       `,
     });
-  } catch {
-    console.error("Failed to send invite email to", email);
+
+    if (emailError) {
+      console.error("[team invite] Resend returned error for", email, emailError);
+      emailStatus = { delivered: false, error: emailError.message };
+    } else {
+      emailStatus = { delivered: true, id: emailData?.id };
+    }
+  } catch (err) {
+    console.error("[team invite] Resend threw for", email, err);
+    emailStatus = {
+      delivered: false,
+      error: err instanceof Error ? err.message : "unknown error",
+    };
   }
 
-  return NextResponse.json(member);
+  return NextResponse.json({ ...member, email: emailStatus });
 }
