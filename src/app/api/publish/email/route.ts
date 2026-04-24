@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "Conduikt <hello@conduikt.com>",
+      from: `Conduikt <hello@${process.env.RESEND_FROM_DOMAIN || "contacts.conduikt.com"}>`,
       to: Array.isArray(to) ? to : [to],
       subject,
       html,

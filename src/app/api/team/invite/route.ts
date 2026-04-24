@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const { data: emailData, error: emailError } = await resend.emails.send({
-      from: "Conduikt <noreply@conduikt.com>",
+      from: `Conduikt <noreply@${process.env.RESEND_FROM_DOMAIN || "contacts.conduikt.com"}>`,
       to: email,
       subject: "You've been invited to join a team on Conduikt",
       html: `
