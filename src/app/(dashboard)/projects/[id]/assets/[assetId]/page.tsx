@@ -82,6 +82,7 @@ interface BlogPost {
 
 const TYPE_LABELS: Record<string, string> = {
   growth_playbook: "Growth Playbook",
+  launch_plan: "Launch Plan",
   blog_post: "Blog Post",
   copy_block: "Copy Block",
   email: "Email Sequence",

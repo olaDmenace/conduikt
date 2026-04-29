@@ -102,6 +102,7 @@ export async function POST(
     "audit_report",
     "blog_post",
     "growth_playbook",
+    "launch_plan",
   ];
   if (!type || !validTypes.includes(type)) {
     return NextResponse.json(

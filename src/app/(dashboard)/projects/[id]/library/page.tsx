@@ -17,6 +17,7 @@ import {
   Calendar,
   Tag,
   TrendingUp,
+  Rocket,
   Download,
   ExternalLink,
   Lock,
@@ -66,6 +67,7 @@ const TYPE_ICONS: Record<string, typeof FileText> = {
   meta_tags: Tag,
   schema_markup: Tag,
   growth_playbook: TrendingUp,
+  launch_plan: Rocket,
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -82,6 +84,7 @@ const TYPE_LABELS: Record<string, string> = {
   meta_tags: "Meta Tags",
   schema_markup: "Schema Markup",
   growth_playbook: "Growth Playbook",
+  launch_plan: "Launch Plan",
 };
 
 const CHANNEL_LABELS: Record<string, string> = {

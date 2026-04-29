@@ -221,8 +221,7 @@ export default function LaunchStrategyPage({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          type: "strategy_doc",
-          channel: "internal",
+          type: "launch_plan",
           title: `Launch plan — ${result.positioning.one_liner}`,
           content: {
             plan: result,
