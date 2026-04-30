@@ -7,6 +7,7 @@ import {
   uploadMediaToLinkedIn,
 } from "@/src/lib/integrations/media-upload";
 import { hasMedia, type PostMedia } from "@/src/lib/media/types";
+import { splitForX } from "@/src/lib/integrations/x-thread";
 
 // This route is called every 5 minutes by Supabase pg_cron + pg_net.
 // It picks up pending scheduled_posts whose scheduled_for time has passed
@@ -208,6 +209,11 @@ async function publishToX(
   accessToken: string,
   media?: PostMedia
 ): Promise<{ ok: boolean; error?: string }> {
+  const chunks = splitForX(text);
+  if (chunks.length === 0) {
+    return { ok: false, error: "Empty text" };
+  }
+
   let mediaId: string | null = null;
   if (hasMedia(media)) {
     try {
@@ -220,22 +226,40 @@ async function publishToX(
     }
   }
 
-  const body: Record<string, unknown> = { text };
-  if (mediaId) body.media = { media_ids: [mediaId] };
+  let prevTweetId: string | null = null;
+  for (let i = 0; i < chunks.length; i++) {
+    const body: Record<string, unknown> = { text: chunks[i] };
+    if (i === 0 && mediaId) body.media = { media_ids: [mediaId] };
+    if (prevTweetId) body.reply = { in_reply_to_tweet_id: prevTweetId };
 
-  const res = await fetch("https://api.twitter.com/2/tweets", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
+    const res = await fetch("https://api.twitter.com/2/tweets", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
 
-  if (!res.ok) {
-    const b = await res.json().catch(() => ({}));
-    return { ok: false, error: b.detail ?? `X API error ${res.status}` };
+    if (!res.ok) {
+      const b = await res.json().catch(() => ({}));
+      const msg = b.detail ?? `X API error ${res.status}`;
+      if (i === 0) return { ok: false, error: msg };
+      // Partial thread: count it as posted (something went up) but log the gap.
+      console.error(
+        `[cron/publishToX] thread broke at chunk ${i + 1}/${chunks.length}: ${msg}`
+      );
+      return { ok: true, error: `Thread posted ${i}/${chunks.length}: ${msg}` };
+    }
+
+    const data = (await res.json().catch(() => ({}))) as { data?: { id?: string } };
+    prevTweetId = data?.data?.id ?? null;
+    if (!prevTweetId && chunks.length > 1) {
+      console.error("[cron/publishToX] X returned no tweet ID, cannot continue threading");
+      return { ok: true, error: "Posted first tweet but could not chain thread" };
+    }
   }
+
   return { ok: true };
 }
 

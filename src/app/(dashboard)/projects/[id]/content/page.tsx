@@ -392,12 +392,21 @@ function ContentPageInner({
 
     const data = await res.json();
     if (res.ok) {
-      toast(
-        platform === "x"
-          ? `Posted to X!${data.tweetUrl ? ` View it →` : ""}`
-          : "Posted to LinkedIn!",
-        "success"
-      );
+      if (platform === "x" && data.partialFailure) {
+        toast(
+          `Posted ${data.posted}/${data.intended} tweets, then X failed: ${data.partialFailure.error}`,
+          "warning"
+        );
+      } else if (platform === "x" && (data.posted ?? 1) > 1) {
+        toast(`Thread of ${data.posted} tweets posted to X!`, "success");
+      } else {
+        toast(
+          platform === "x"
+            ? `Posted to X!${data.tweetUrl ? ` View it →` : ""}`
+            : "Posted to LinkedIn!",
+          "success"
+        );
+      }
       fetchAssets();
     } else {
       if (data.reconnect) {
@@ -617,8 +626,9 @@ function ContentPageInner({
   // ---------- channel previews ----------
 
   function XPreview({ text }: { text: string }) {
-    const truncated = text.length > 280 ? text.slice(0, 277) + "..." : text;
     const charCount = text.length;
+    const willThread = charCount > 280;
+    const previewText = willThread ? text.slice(0, 277) + "…" : text;
     return (
       <div className="rounded-xl border border-border-default bg-surface-0 p-4">
         <div className="flex items-start gap-3">
@@ -633,17 +643,15 @@ function ContentPageInner({
               <span className="text-small text-text-tertiary">@conduikt</span>
             </div>
             <p className="mt-1 text-body text-text-primary whitespace-pre-line break-words">
-              {truncated}
+              {previewText}
             </p>
             <div className="mt-2 flex items-center gap-2">
-              <Badge
-                variant={charCount <= 280 ? "success" : "error"}
-              >
-                {charCount}/280
+              <Badge variant={willThread ? "secondary" : "success"}>
+                {willThread ? `Thread · ${charCount} chars` : `${charCount}/280`}
               </Badge>
-              {charCount > 280 && (
-                <span className="text-small text-error">
-                  {charCount - 280} chars over limit
+              {willThread && (
+                <span className="text-small text-text-tertiary">
+                  Will auto-split into a thread on paragraph/sentence breaks
                 </span>
               )}
             </div>
@@ -1366,11 +1374,22 @@ function ContentPageInner({
 
         {/* Metadata row */}
         <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border-default">
-          <Badge variant={charCount <= charLimit ? "success" : "error"}>
-            {charCount}/{charLimit}
+          <Badge
+            variant={
+              charCount <= charLimit ? "success" : isX ? "secondary" : "error"
+            }
+          >
+            {isX && charCount > charLimit
+              ? `Thread · ${charCount} chars`
+              : `${charCount}/${charLimit}`}
           </Badge>
-          {charCount > charLimit && (
+          {charCount > charLimit && !isX && (
             <span className="text-small text-error">{charCount - charLimit} over</span>
+          )}
+          {isX && charCount > charLimit && (
+            <span className="text-small text-text-tertiary">
+              Auto-splits into a thread
+            </span>
           )}
           {post.best_time && (
             <span className="flex items-center gap-1 text-small text-text-tertiary">
