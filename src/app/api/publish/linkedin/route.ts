@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
       thirdPartyDistributionChannels: [],
     },
     lifecycleState: "PUBLISHED",
-    isReshareDisableForOperator: false,
+    isReshareDisabledByAuthor: false,
   };
   if (imageUrn) {
     postBody.content = {
