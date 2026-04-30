@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
 
   // Upload media if present
   let imageUrn: string | null = null;
+  let mediaError: string | null = null;
   if (hasMedia(media)) {
     try {
       imageUrn = await uploadMediaToLinkedIn(
@@ -52,11 +53,12 @@ export async function POST(request: NextRequest) {
         media
       );
     } catch (err) {
+      mediaError = err instanceof Error ? err.message : String(err);
       console.error("[publish/linkedin] media upload error:", err);
     }
     if (!imageUrn) {
       return NextResponse.json(
-        { error: "Failed to upload media to LinkedIn." },
+        { error: mediaError ?? "Failed to upload media to LinkedIn." },
         { status: 400 }
       );
     }
@@ -89,16 +91,34 @@ export async function POST(request: NextRequest) {
     headers: {
       Authorization: `Bearer ${freshToken}`,
       "Content-Type": "application/json",
-      "LinkedIn-Version": "202401",
+      "LinkedIn-Version": "202602",
       "X-Restli-Protocol-Version": "2.0.0",
     },
     body: JSON.stringify(postBody),
   });
 
   if (!postRes.ok) {
-    const err = await postRes.text();
-    console.error("LinkedIn post failed:", err);
-    return NextResponse.json({ error: "Failed to post to LinkedIn" }, { status: 400 });
+    const errText = await postRes.text().catch(() => "");
+    console.error("[publish/linkedin] post failed:", postRes.status, errText);
+    let detail = errText;
+    try {
+      const parsed = JSON.parse(errText);
+      detail =
+        parsed?.message ??
+        parsed?.error_description ??
+        parsed?.error?.message ??
+        errText;
+    } catch {
+      // not JSON, fall through with raw text
+    }
+    return NextResponse.json(
+      {
+        error: `LinkedIn rejected the post (${postRes.status}): ${
+          String(detail).slice(0, 300) || "no detail"
+        }`,
+      },
+      { status: 400 }
+    );
   }
 
   // LinkedIn returns the post ID in the X-RestLi-Id header

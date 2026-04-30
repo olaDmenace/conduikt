@@ -71,7 +71,7 @@ export async function uploadMediaToLinkedIn(
       headers: {
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
-        "LinkedIn-Version": "202401",
+        "LinkedIn-Version": "202602",
       },
       body: JSON.stringify({
         initializeUploadRequest: {
@@ -84,14 +84,18 @@ export async function uploadMediaToLinkedIn(
   if (!initRes.ok) {
     const err = await initRes.text().catch(() => "");
     console.error("[linkedin media init] failed:", initRes.status, err);
-    return null;
+    throw new Error(
+      `LinkedIn rejected media init (${initRes.status}): ${err.slice(0, 240) || "no body"}`
+    );
   }
 
   const initData = await initRes.json();
   const uploadUrl: string | undefined = initData?.value?.uploadUrl;
   const imageUrn: string | undefined = initData?.value?.image;
 
-  if (!uploadUrl || !imageUrn) return null;
+  if (!uploadUrl || !imageUrn) {
+    throw new Error("LinkedIn media init returned no upload URL");
+  }
 
   // Step 2: PUT binary to upload URL
   const { buffer, contentType } = await fetchMediaBytes(media.url);
@@ -107,7 +111,9 @@ export async function uploadMediaToLinkedIn(
   if (!putRes.ok) {
     const err = await putRes.text().catch(() => "");
     console.error("[linkedin media put] failed:", putRes.status, err);
-    return null;
+    throw new Error(
+      `LinkedIn rejected media upload (${putRes.status}): ${err.slice(0, 240) || "no body"}`
+    );
   }
 
   return imageUrn;
