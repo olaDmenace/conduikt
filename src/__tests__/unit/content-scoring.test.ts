@@ -38,7 +38,7 @@ describe('Content Scoring Logic', () => {
     })
 
     it('seoFit returns null for non-blog content types', () => {
-      const contentType = 'social-post'
+      const contentType = 'social-post' as 'social-post' | 'blog'
       const seoFit = contentType === 'blog' ? 75 : null
       expect(seoFit).toBeNull()
     })

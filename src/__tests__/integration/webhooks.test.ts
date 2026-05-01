@@ -25,7 +25,7 @@ describe('Webhook Integrations', () => {
       supabase.auth.getUser = vi.fn().mockResolvedValue({ data: { user: null }, error: null })
 
       const { GET } = await import('@/src/app/api/webhooks/route')
-      const response = await GET()
+      const response = await GET(new Request('http://localhost/api/webhooks') as never)
       expect(response.status).toBe(401)
     })
 
@@ -42,7 +42,7 @@ describe('Webhook Integrations', () => {
       supabase.from = vi.fn().mockReturnValue(whChain)
 
       const { GET } = await import('@/src/app/api/webhooks/route')
-      const response = await GET()
+      const response = await GET(new Request('http://localhost/api/webhooks') as never)
       expect(response.status).toBe(200)
     })
   })

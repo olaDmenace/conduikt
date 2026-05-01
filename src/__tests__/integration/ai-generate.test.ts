@@ -137,10 +137,10 @@ describe('AI Generation', () => {
 
       const insertCalls = chain.insert.mock.calls
       const genInsert = insertCalls.find(
-        (call: unknown[]) => call[0]?.agent_used === 'copywriting'
+        (call: unknown[]) => (call[0] as { agent_used?: string })?.agent_used === 'copywriting'
       )
       expect(genInsert).toBeDefined()
-      expect(genInsert![0].project_id).toBe('test-project-id')
+      expect((genInsert![0] as { project_id?: string }).project_id).toBe('test-project-id')
     })
 
     it('increments the user generation count', async () => {
@@ -161,10 +161,10 @@ describe('AI Generation', () => {
       expect(supabase.from).toHaveBeenCalledWith('profiles')
       const updateCalls = chain.update.mock.calls
       const countUpdate = updateCalls.find(
-        (call: unknown[]) => call[0]?.generation_count !== undefined
+        (call: unknown[]) => (call[0] as { generation_count?: number })?.generation_count !== undefined
       )
       expect(countUpdate).toBeDefined()
-      expect(countUpdate![0].generation_count).toBe(4)
+      expect((countUpdate![0] as { generation_count?: number }).generation_count).toBe(4)
     })
   })
 
@@ -292,7 +292,7 @@ describe('AI Generation', () => {
     })
 
     it('seoFit is null when contentType is not blog', () => {
-      const contentType = 'social'
+      const contentType = 'social' as 'social' | 'blog'
       const seoFit = contentType === 'blog' ? 75 : null
       expect(seoFit).toBeNull()
     })

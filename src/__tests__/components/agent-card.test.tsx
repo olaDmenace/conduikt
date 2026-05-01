@@ -71,7 +71,7 @@ describe('AgentCard Component', () => {
   })
 
   it('displays "Not used yet" when no metrics provided', () => {
-    const metrics = undefined
+    const metrics = undefined as { lastUsedLabel?: string } | undefined
     const isUnused = !metrics?.lastUsedLabel
     expect(isUnused).toBe(true)
   })

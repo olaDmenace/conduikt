@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest'
 import { createSupabaseMock, mockProject, mockUser, mockProfile, mockAudit } from '../helpers/supabase-mock'
 
 const { supabase, chain } = createSupabaseMock()
@@ -112,10 +112,10 @@ describe('SEO Audit', () => {
 
       expect(supabase.from).toHaveBeenCalledWith('audits')
       const insertCall = chain.insert.mock.calls.find(
-        (call: unknown[]) => call[0]?.type === 'seo'
+        (call: unknown[]) => (call[0] as { type?: string })?.type === 'seo'
       )
       expect(insertCall).toBeDefined()
-      expect(insertCall![0].project_id).toBe('test-project-id')
+      expect((insertCall![0] as { project_id?: string }).project_id).toBe('test-project-id')
     })
 
     it('findings have severity field: high | medium | low', () => {

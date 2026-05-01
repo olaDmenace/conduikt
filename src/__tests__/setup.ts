@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom'
-import { vi } from 'vitest'
+import { vi, beforeAll, afterAll } from 'vitest'
 
 // Global mocks applied to every test file
 
