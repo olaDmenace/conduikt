@@ -8,6 +8,7 @@ import {
 } from "@/src/lib/integrations/media-upload";
 import { hasMedia, type PostMedia } from "@/src/lib/media/types";
 import { splitForX } from "@/src/lib/integrations/x-thread";
+import { decryptToken } from "@/src/lib/crypto/tokens";
 
 // This route is called every 5 minutes by Supabase pg_cron + pg_net.
 // It picks up pending scheduled_posts whose scheduled_for time has passed
@@ -117,8 +118,10 @@ export async function GET(request: NextRequest) {
       continue;
     }
 
-    // Refresh tokens before publishing
-    let token = account.access_token;
+    // Decrypt the stored access token. For X/LinkedIn this is overwritten
+    // below with the helper's freshly-refreshed plaintext token; for Facebook
+    // (no auto-refresh path) we use this decrypted value directly.
+    let token = decryptToken(account.access_token);
     if (post.channel === "x") {
       const freshToken = await ensureValidXToken(account as Parameters<typeof ensureValidXToken>[0]);
       if (!freshToken) {

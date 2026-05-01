@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/src/lib/supabase/service";
+import { decryptToken, encryptToken } from "@/src/lib/crypto/tokens";
 
 interface RefreshResult {
   access_token: string;
@@ -108,16 +109,18 @@ export async function ensureValidXToken(
   }
 
   if (!isTokenExpiringSoon(current.token_expires_at)) {
-    return current.access_token;
+    return decryptToken(current.access_token);
   }
 
   if (!current.refresh_token) {
     return null;
   }
 
-  // Snapshot the refresh_token we're about to burn. We'll compare against
-  // this value in the failure branch to detect concurrent refreshes.
-  const attemptedRefreshToken = current.refresh_token;
+  // Snapshot the (encrypted) refresh_token we're about to burn. We'll compare
+  // against this exact stored value in the failure branch to detect concurrent
+  // refreshes. The plain refresh_token is decrypted only for the X API call.
+  const attemptedStoredRefreshToken = current.refresh_token;
+  const attemptedRefreshToken = decryptToken(current.refresh_token);
 
   const refreshed = await callXRefresh(attemptedRefreshToken);
 
@@ -125,8 +128,8 @@ export async function ensureValidXToken(
     await db
       .from("connected_accounts")
       .update({
-        access_token: refreshed.access_token,
-        refresh_token: refreshed.refresh_token,
+        access_token: encryptToken(refreshed.access_token),
+        refresh_token: encryptToken(refreshed.refresh_token),
         token_expires_at: new Date(
           Date.now() + refreshed.expires_in * 1000
         ).toISOString(),
@@ -150,13 +153,13 @@ export async function ensureValidXToken(
   if (
     recheck &&
     recheck.refresh_token &&
-    recheck.refresh_token !== attemptedRefreshToken &&
+    recheck.refresh_token !== attemptedStoredRefreshToken &&
     !isTokenExpiringSoon(recheck.token_expires_at)
   ) {
     console.log(
       `[x-token] recovered from refresh race on account ${current.id} — another worker rotated tokens`
     );
-    return recheck.access_token;
+    return decryptToken(recheck.access_token);
   }
 
   // Genuinely revoked or permanently invalid. Clean up and notify.

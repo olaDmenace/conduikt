@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 import { createServiceClient } from "@/src/lib/supabase/service";
+import { encryptToken } from "@/src/lib/crypto/tokens";
 
 // GET /api/integrations/facebook/callback
 // Exchanges code → short-lived user token → long-lived user token →
@@ -101,8 +102,8 @@ export async function GET(request: NextRequest) {
     {
       user_id: user.id,
       platform: "facebook",
-      access_token: page.access_token,
-      refresh_token: longToken, // user token stashed here for re-fetching pages later
+      access_token: encryptToken(page.access_token),
+      refresh_token: encryptToken(longToken), // user token stashed here for re-fetching pages later
       token_expires_at: expiresIn
         ? new Date(Date.now() + expiresIn * 1000).toISOString()
         : null,

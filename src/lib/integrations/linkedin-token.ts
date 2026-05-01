@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/src/lib/supabase/service";
+import { decryptToken, encryptToken } from "@/src/lib/crypto/tokens";
 
 interface RefreshResult {
   access_token: string;
@@ -84,7 +85,7 @@ export async function ensureValidLinkedInToken(
   if (!current) return null;
 
   if (!isLinkedInTokenExpiringSoon(current.token_expires_at)) {
-    return current.access_token;
+    return decryptToken(current.access_token);
   }
 
   // No refresh token → can't refresh. LinkedIn doesn't always issue one.
@@ -103,14 +104,14 @@ export async function ensureValidLinkedInToken(
     return null;
   }
 
-  const refreshed = await callLinkedInRefresh(current.refresh_token);
+  const refreshed = await callLinkedInRefresh(decryptToken(current.refresh_token));
 
   if (refreshed) {
     await db
       .from("connected_accounts")
       .update({
-        access_token: refreshed.access_token,
-        refresh_token: refreshed.refresh_token,
+        access_token: encryptToken(refreshed.access_token),
+        refresh_token: encryptToken(refreshed.refresh_token),
         token_expires_at: new Date(
           Date.now() + refreshed.expires_in * 1000
         ).toISOString(),

@@ -168,7 +168,7 @@ function IntegrationsContent() {
       description: "Publish text and image posts to your Facebook Page from the Content Studio.",
       connectHref: "/api/integrations/facebook/connect",
       account: fbAccount,
-      comingSoon: true,
+      comingSoon: process.env.NEXT_PUBLIC_ENABLE_FACEBOOK_INTEGRATION !== "true",
     },
   ];
 

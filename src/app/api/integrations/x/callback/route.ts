@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 import { createServiceClient } from "@/src/lib/supabase/service";
+import { encryptToken } from "@/src/lib/crypto/tokens";
 
 function getServiceClient() {
   return createServiceClient();
@@ -68,8 +69,8 @@ export async function GET(request: NextRequest) {
   await db.from("connected_accounts").upsert({
     user_id: user.id,
     platform: "x",
-    access_token,
-    refresh_token: refresh_token ?? null,
+    access_token: encryptToken(access_token),
+    refresh_token: encryptToken(refresh_token ?? null),
     token_expires_at: expires_in
       ? new Date(Date.now() + expires_in * 1000).toISOString()
       : null,

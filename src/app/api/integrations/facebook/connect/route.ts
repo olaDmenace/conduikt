@@ -14,6 +14,19 @@ export async function GET(request: NextRequest) {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
+  // Feature gate — Facebook integration is held back pending Meta business
+  // verification. The UI hides the Connect button, but the route is still
+  // reachable by URL, so we 403 here as well to keep the gate honest.
+  if (process.env.NEXT_PUBLIC_ENABLE_FACEBOOK_INTEGRATION !== "true") {
+    return NextResponse.json(
+      {
+        error:
+          "Facebook integration is not yet enabled for this account. Pending Meta business verification.",
+      },
+      { status: 403 }
+    );
+  }
+
   if (!process.env.FACEBOOK_APP_ID || !process.env.FACEBOOK_APP_SECRET) {
     return NextResponse.redirect(
       `${appUrl}/settings/integrations?error=${encodeURIComponent(
