@@ -10,6 +10,7 @@ import {
   Shield,
   Eye,
   Crown,
+  Send,
 } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
@@ -40,6 +41,7 @@ export default function TeamPage() {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviting, setInviting] = useState(false);
+  const [resendingId, setResendingId] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("member");
   const { toast } = useToast();
@@ -101,6 +103,30 @@ export default function TeamPage() {
       toast(err.error || "Failed to send invite", "error");
     }
     setInviting(false);
+  }
+
+  async function handleResend(memberId: string) {
+    setResendingId(memberId);
+    const res = await fetch("/api/team/invite/resend", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ memberId }),
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      if (data.email?.delivered) {
+        toast("Invite resent — email on its way", "success");
+      } else {
+        toast(
+          `Couldn't resend the invite: ${data.email?.error ?? "unknown error"}`,
+          "error"
+        );
+      }
+    } else {
+      toast(data.error || "Failed to resend invite", "error");
+    }
+    setResendingId(null);
   }
 
   async function handleRevoke(memberId: string) {
@@ -225,6 +251,20 @@ export default function TeamPage() {
                     </Badge>
                     {isPending && (
                       <Badge variant="warning">Pending</Badge>
+                    )}
+                    {isPending && (
+                      <button
+                        onClick={() => handleResend(member.id)}
+                        disabled={resendingId === member.id}
+                        className="rounded-lg p-2 text-text-tertiary hover:text-accent hover:bg-accent-muted transition-colors disabled:opacity-50"
+                        title="Resend invite email"
+                      >
+                        {resendingId === member.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Send className="h-4 w-4" />
+                        )}
+                      </button>
                     )}
                     {member.role !== "owner" && (
                       <button
