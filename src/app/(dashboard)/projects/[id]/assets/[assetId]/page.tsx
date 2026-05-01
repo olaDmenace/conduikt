@@ -99,6 +99,7 @@ const TYPE_LABELS: Record<string, string> = {
 
 const OPEN_IN: Record<string, { label: string; path: (projectId: string, assetId: string) => string }> = {
   growth_playbook: { label: "Open in Growth Planner", path: (p, a) => `/projects/${p}/growth?assetId=${a}` },
+  launch_plan: { label: "Open in Launch Strategy", path: (p, a) => `/projects/${p}/launch-strategy?assetId=${a}` },
   blog_post: { label: "Open in Blog Generator", path: (p, a) => `/projects/${p}/blog?assetId=${a}` },
   copy_block: { label: "Open in Content Studio", path: (p, a) => `/projects/${p}/content?assetId=${a}` },
   email: { label: "Open in Content Studio", path: (p, a) => `/projects/${p}/content?assetId=${a}` },

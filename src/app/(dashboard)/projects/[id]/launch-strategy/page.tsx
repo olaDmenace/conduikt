@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Rocket,
@@ -106,6 +107,7 @@ export default function LaunchStrategyPage({
 }) {
   const { id: projectId } = use(params);
   const { toast } = useToast();
+  const searchParams = useSearchParams();
 
   const [plan, setPlan] = useState<string | null>(null);
   const [planLoading, setPlanLoading] = useState(true);
@@ -120,6 +122,8 @@ export default function LaunchStrategyPage({
   const [rawText, setRawText] = useState("");
 
   const [result, setResult] = useState<LaunchResult | null>(null);
+  const [savedId, setSavedId] = useState<string | null>(null);
+  const [loadingAsset, setLoadingAsset] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -137,6 +141,27 @@ export default function LaunchStrategyPage({
       }
     }
     loadPlan();
+  }, []);
+
+  // Load a saved launch plan from ?assetId= param.
+  useEffect(() => {
+    const assetId = searchParams.get("assetId");
+    if (!assetId) return;
+    setLoadingAsset(true);
+    fetch(`/api/projects/${projectId}/assets/${assetId}`)
+      .then((r) => r.json())
+      .then((asset) => {
+        const saved = asset?.content?.plan as LaunchResult | undefined;
+        if (saved?.positioning && saved?.phases) {
+          setResult(saved);
+          setSavedId(assetId);
+        } else {
+          toast("That asset doesn't look like a launch plan.", "warning");
+        }
+      })
+      .catch(() => toast("Could not load saved launch plan", "error"))
+      .finally(() => setLoadingAsset(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const isLocked = plan !== null && !PLAN_TIERS.includes(plan);
@@ -230,8 +255,11 @@ export default function LaunchStrategyPage({
           status: "draft",
         }),
       });
-      if (res.ok) toast("Launch plan saved to library", "success");
-      else toast("Failed to save", "error");
+      if (res.ok) {
+        const saved = await res.json();
+        setSavedId(saved.id);
+        toast("Launch plan saved to library", "success");
+      } else toast("Failed to save", "error");
     } catch {
       toast("Failed to save", "error");
     }
@@ -388,7 +416,18 @@ export default function LaunchStrategyPage({
 
         {/* Output */}
         <div className="min-w-0">
-          {!result && !generating && (
+          {!result && !generating && loadingAsset && (
+            <div className="rounded-xl border border-border-default bg-surface-1 p-10 animate-in text-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-accent-muted mb-4">
+                <Loader2 className="h-6 w-6 text-accent animate-spin" />
+              </div>
+              <p className="text-body font-semibold text-text-primary">
+                Loading saved launch plan...
+              </p>
+            </div>
+          )}
+
+          {!result && !generating && !loadingAsset && (
             <div className="rounded-xl border border-border-default bg-surface-1 py-20 px-6 text-center animate-in">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-surface-2 mb-4">
                 <Rocket className="h-6 w-6 text-text-tertiary" />
@@ -441,9 +480,18 @@ export default function LaunchStrategyPage({
                   {result.launch_thesis}
                 </p>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="secondary" onClick={savePlan}>
-                    <Save className="h-3.5 w-3.5 mr-1" />
-                    Save to library
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={savePlan}
+                    disabled={!!savedId}
+                  >
+                    {savedId ? (
+                      <Check className="h-3.5 w-3.5 mr-1 text-success" />
+                    ) : (
+                      <Save className="h-3.5 w-3.5 mr-1" />
+                    )}
+                    {savedId ? "Saved to library" : "Save to library"}
                   </Button>
                   <Button size="sm" variant="secondary" onClick={copyPlan}>
                     {copied ? (
