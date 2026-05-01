@@ -296,39 +296,54 @@ async function publishToLinkedIn(
     }
   }
 
-  const specificContent: Record<string, unknown> = {
-    shareCommentary: { text },
-    shareMediaCategory: imageUrn ? "IMAGE" : "NONE",
+  const postBody: Record<string, unknown> = {
+    author: authorUrn,
+    commentary: text,
+    visibility: "PUBLIC",
+    distribution: {
+      feedDistribution: "MAIN_FEED",
+      targetEntities: [],
+      thirdPartyDistributionChannels: [],
+    },
+    lifecycleState: "PUBLISHED",
+    isReshareDisabledByAuthor: false,
   };
   if (imageUrn) {
-    specificContent.media = [
-      {
-        status: "READY",
-        media: imageUrn,
-      },
-    ];
+    postBody.content = {
+      media: { id: imageUrn, altText: "" },
+    };
   }
 
-  const postRes = await fetch("https://api.linkedin.com/v2/ugcPosts", {
+  const postRes = await fetch("https://api.linkedin.com/rest/posts", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
+      "LinkedIn-Version": "202602",
       "X-Restli-Protocol-Version": "2.0.0",
     },
-    body: JSON.stringify({
-      author: authorUrn,
-      lifecycleState: "PUBLISHED",
-      specificContent: {
-        "com.linkedin.ugc.ShareContent": specificContent,
-      },
-      visibility: { "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC" },
-    }),
+    body: JSON.stringify(postBody),
   });
 
   if (!postRes.ok) {
-    const body = await postRes.json().catch(() => ({}));
-    return { ok: false, error: body.message ?? `LinkedIn API error ${postRes.status}` };
+    const errText = await postRes.text().catch(() => "");
+    let detail = errText;
+    try {
+      const parsed = JSON.parse(errText);
+      detail =
+        parsed?.message ??
+        parsed?.error_description ??
+        parsed?.error?.message ??
+        errText;
+    } catch {
+      // raw text fallback
+    }
+    return {
+      ok: false,
+      error: `LinkedIn API error (${postRes.status}): ${
+        String(detail).slice(0, 240) || "no detail"
+      }`,
+    };
   }
   return { ok: true };
 }
