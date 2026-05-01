@@ -49,6 +49,7 @@ import { SendToWebhook } from "@/src/components/content/send-to-webhook";
 import { MediaPicker } from "@/src/components/media/media-picker";
 import type { PostMedia } from "@/src/lib/media/types";
 import { EMPTY_MEDIA, hasMedia } from "@/src/lib/media/types";
+import { splitForX } from "@/src/lib/integrations/x-thread";
 
 // ---------- types ----------
 
@@ -1231,6 +1232,48 @@ function ContentPageInner({
 
   // ---------- social post cards ----------
 
+  function ThreadPreview({ text }: { text: string }) {
+    const [expanded, setExpanded] = useState(false);
+    const chunks = splitForX(text);
+    if (chunks.length <= 1) return null;
+    const visible = expanded ? chunks : chunks.slice(0, 2);
+    return (
+      <div className="rounded-lg border border-border-subtle bg-surface-2/30 p-3 space-y-2">
+        <p className="text-caption text-text-tertiary font-medium">
+          Thread preview · {chunks.length} tweets
+        </p>
+        <div className="space-y-1.5">
+          {visible.map((chunk, i) => (
+            <div
+              key={i}
+              className="rounded-md border border-border-subtle bg-surface-0 p-2.5"
+            >
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <Badge variant="secondary" className="font-mono text-[10px]">
+                  {i + 1}/{chunks.length}
+                </Badge>
+                <span className="text-caption text-text-tertiary">
+                  {chunk.length}/280
+                </span>
+              </div>
+              <p className="text-small text-text-secondary whitespace-pre-line">
+                {chunk}
+              </p>
+            </div>
+          ))}
+        </div>
+        {chunks.length > 2 && (
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="text-caption text-accent hover:text-accent-bright transition-colors"
+          >
+            {expanded ? "Hide" : `Show ${chunks.length - 2} more`}
+          </button>
+        )}
+      </div>
+    );
+  }
+
   function SocialPostCard({ post, index }: { post: SocialPost; index: number }) {
     const isX = post.platform === "x";
     const charLimit = isX ? 280 : 700;
@@ -1362,6 +1405,11 @@ function ContentPageInner({
         <p className="text-body text-text-primary whitespace-pre-line leading-relaxed">
           {post.text}
         </p>
+
+        {/* Thread preview — only for X posts that will auto-thread */}
+        {isX && charCount > charLimit && (
+          <ThreadPreview text={post.text} />
+        )}
 
         {/* Media picker */}
         <MediaPicker
