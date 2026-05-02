@@ -39,23 +39,24 @@ export async function buildPerformanceContext(
     .eq("project_id", projectId);
 
   if (posts && posts.length > 0) {
-    const byChannel: Record<string, { total: number; published: number; failed: number }> = {};
+    // scheduled_posts.status values: "pending" | "posted" | "failed" | "cancelled"
+    const byChannel: Record<string, { total: number; posted: number; failed: number }> = {};
     for (const p of posts) {
       if (!byChannel[p.channel]) {
-        byChannel[p.channel] = { total: 0, published: 0, failed: 0 };
+        byChannel[p.channel] = { total: 0, posted: 0, failed: 0 };
       }
       byChannel[p.channel].total++;
-      if (p.status === "published") byChannel[p.channel].published++;
+      if (p.status === "posted") byChannel[p.channel].posted++;
       if (p.status === "failed") byChannel[p.channel].failed++;
     }
     sections.push("### Publishing Success Rates");
     for (const [channel, stats] of Object.entries(byChannel)) {
       const rate =
         stats.total > 0
-          ? Math.round((stats.published / stats.total) * 100)
+          ? Math.round((stats.posted / stats.total) * 100)
           : 0;
       sections.push(
-        `- **${channel}**: ${rate}% success (${stats.published}/${stats.total} published, ${stats.failed} failed)`
+        `- **${channel}**: ${rate}% success (${stats.posted}/${stats.total} posted, ${stats.failed} failed)`
       );
     }
   }
@@ -86,10 +87,10 @@ export async function buildPerformanceContext(
     );
   }
 
-  // 4. Top GSC keywords
+  // 4. Top GSC keywords (column is `term`, not `keyword`)
   const { data: keywords } = await supabase
     .from("keyword_data")
-    .select("keyword, clicks, impressions, position")
+    .select("term, clicks, impressions, position")
     .eq("project_id", projectId)
     .order("clicks", { ascending: false })
     .limit(10);
@@ -98,7 +99,7 @@ export async function buildPerformanceContext(
     sections.push("### Top Search Keywords (Google Search Console)");
     for (const kw of keywords) {
       sections.push(
-        `- "${kw.keyword}" — ${kw.clicks} clicks, ${kw.impressions} impressions, avg pos ${Math.round(kw.position)}`
+        `- "${kw.term}" — ${kw.clicks} clicks, ${kw.impressions} impressions, avg pos ${Math.round(kw.position)}`
       );
     }
   }
@@ -114,29 +115,31 @@ export async function buildPerformanceContext(
     .limit(3);
 
   if (topPosts && topPosts.length > 0) {
-    // Get the post content for these top performers
+    // scheduled_posts has no `content` column — the post text lives on the
+    // linked asset (`assets.content.scheduled_text` or `.raw`). Join through.
     const postIds = topPosts.map((p) => p.scheduled_post_id).filter(Boolean);
     const { data: scheduledPosts } = await supabase
       .from("scheduled_posts")
-      .select("id, content")
+      .select("id, assets(content)")
       .in("id", postIds);
 
-    const postMap = new Map(
-      (scheduledPosts ?? []).map((p) => [p.id, p.content])
-    );
+    const postMap = new Map<string, string>();
+    for (const sp of scheduledPosts ?? []) {
+      const asset = Array.isArray(sp.assets) ? sp.assets[0] : sp.assets;
+      const content = (asset as { content?: Record<string, unknown> } | null)?.content;
+      const text =
+        (content?.scheduled_text as string | undefined) ??
+        (content?.raw as string | undefined) ??
+        "";
+      if (sp.id) postMap.set(sp.id as string, text);
+    }
 
     sections.push("### Top Performing Social Posts");
     sections.push(
       "Use these as examples of what resonates with the audience:"
     );
     for (const p of topPosts) {
-      const content = postMap.get(p.scheduled_post_id);
-      const text =
-        typeof content === "string"
-          ? content.slice(0, 200)
-          : typeof content === "object" && content
-          ? JSON.stringify(content).slice(0, 200)
-          : "N/A";
+      const text = (postMap.get(p.scheduled_post_id) ?? "").slice(0, 200) || "N/A";
       sections.push(
         `- **${p.channel}** (${p.impressions} impressions, ${p.likes} likes): "${text}"`
       );
