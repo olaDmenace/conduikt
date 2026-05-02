@@ -115,7 +115,12 @@ export default function ABTestAgentPage({
   const [testPlan, setTestPlan] = useState<TestPlan | null>(null);
   const [copiedPlan, setCopiedPlan] = useState(false);
 
-  // Generated variant copy state
+  // Generated variant copy state.
+  // Keyed by positional index into `testPlan.variants`. Safe because the
+  // variants array is set once when the test plan is generated (no insert/
+  // delete/reorder UI), and `setCopies({})` resets the state whenever a new
+  // test plan is generated. If reorder/edit-variant UI is ever added,
+  // re-key this off `variant.label` (or a stable uid) instead.
   const [copies, setCopies] = useState<Record<number, GeneratedCopy>>({});
 
   useEffect(() => {

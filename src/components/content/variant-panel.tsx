@@ -21,6 +21,12 @@ export function VariantPanel({
   onPickWinner,
 }: VariantPanelProps) {
   const { toast } = useToast();
+  // `activeTab` and `winner` are positional indices into `allVariants`. This
+  // is safe because variants are set once via `setVariants(data.variants)`
+  // (full replace, never insert/delete/reorder) and the Generate button only
+  // shows when `variants.length === 0`. If reorder/edit-variant UI is ever
+  // added, switch this state to be keyed by a stable id (e.g., variant label
+  // or a generated uid) so the active selection survives mutations.
   const [variants, setVariants] = useState<string[]>([]);
   const [generating, setGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
