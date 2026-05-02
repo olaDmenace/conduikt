@@ -48,25 +48,11 @@ interface FlutterwaveWebhookPayload {
   meta_data?: Record<string, unknown>;
 }
 
-// GET returns a health check + masked env status so you can verify deployment
-// from a browser without needing Flutterwave to actually fire a webhook.
-export async function GET() {
-  const mask = (v: string | undefined) =>
-    !v ? null : v.length > 8 ? `${v.slice(0, 4)}…${v.slice(-4)}` : "set";
-  return NextResponse.json({
-    ok: true,
-    route: "/api/webhooks/flutterwave",
-    env: {
-      FLUTTERWAVE_SECRET_KEY: mask(process.env.FLUTTERWAVE_SECRET_KEY),
-      FLUTTERWAVE_WEBHOOK_SECRET_HASH: mask(
-        process.env.FLUTTERWAVE_WEBHOOK_SECRET_HASH
-      ),
-      FLUTTERWAVE_PLAN_PRO: process.env.FLUTTERWAVE_PLAN_PRO ?? null,
-      FLUTTERWAVE_PLAN_GROWTH: process.env.FLUTTERWAVE_PLAN_GROWTH ?? null,
-      FLUTTERWAVE_PLAN_AGENCY: process.env.FLUTTERWAVE_PLAN_AGENCY ?? null,
-    },
-  });
-}
+// The previous GET handler exposed masked env status (which envs are set,
+// plan IDs) to anyone who hit the URL. That was useful at initial setup but
+// became information disclosure once billing went live. Removed — verify
+// env vars in the Vercel dashboard directly. The webhook itself is POST-only
+// with signature verification.
 
 export async function POST(request: NextRequest) {
   // Rate limit by IP: 30 requests per minute

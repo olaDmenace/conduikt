@@ -9,9 +9,11 @@
 // Key: TOKEN_ENCRYPTION_KEY env var, 64 hex chars (32 bytes). Generate with
 //   `openssl rand -hex 32`.
 //
-// Deploy-safety: if the env var is missing, encryptToken logs a warning and
-// returns plaintext rather than throwing — so a deploy without the var won't
-// break OAuth callbacks. Set the var to actually enable encryption.
+// Deploy-safety:
+//   - In development: a missing key logs a warning and returns plaintext, so
+//     local OAuth flows still work without the var being set.
+//   - In production: a missing key throws. Storing OAuth tokens as plaintext
+//     in prod is a security regression we never want to ship by accident.
 
 import crypto from "crypto";
 
@@ -42,9 +44,14 @@ export function encryptToken<T extends string | null | undefined>(plaintext: T):
 
   const key = loadKey();
   if (!key) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "encryptToken: TOKEN_ENCRYPTION_KEY is not set in production. Refusing to store OAuth tokens as plaintext. Generate one with `openssl rand -hex 32` and add to Vercel env vars."
+      );
+    }
     if (!warnedMissingKey) {
       console.warn(
-        "[tokens] TOKEN_ENCRYPTION_KEY not set — OAuth tokens will be stored in plaintext. Set this env var to activate encryption."
+        "[tokens] TOKEN_ENCRYPTION_KEY not set — OAuth tokens will be stored in plaintext (dev only). Set this env var to activate encryption."
       );
       warnedMissingKey = true;
     }
