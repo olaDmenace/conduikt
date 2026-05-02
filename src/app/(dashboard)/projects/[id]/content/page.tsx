@@ -485,6 +485,108 @@ function SocialPostCard({
   );
 }
 
+// EmailPreview lives at module scope so React reconciles the same instance
+// across parent re-renders. Defined inside ContentPageInner caused state
+// (active email tab, copy confirmation) to reset on every parent setState.
+
+type EmailPreviewProps = {
+  data: Record<string, unknown> | null;
+  projectName: string | null | undefined;
+  toast: (message: string, variant?: "success" | "error" | "warning" | "info") => void;
+};
+
+function EmailPreview({ data, projectName, toast }: EmailPreviewProps) {
+  const [emailCopied, setEmailCopied] = useState(false);
+  const [activeEmail, setActiveEmail] = useState(0);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const emails = (data?.emails as any[]) ?? [];
+
+  if (emails.length === 0) return null;
+
+  const email = emails[activeEmail];
+  const htmlBody = email?.body_html ?? "";
+
+  function copyHtml() {
+    navigator.clipboard.writeText(htmlBody);
+    setEmailCopied(true);
+    toast("HTML copied!", "info");
+    setTimeout(() => setEmailCopied(false), 2000);
+  }
+
+  return (
+    <div className="space-y-3">
+      {data?.sequence_name ? (
+        <p className="text-small font-medium text-text-primary">{String(data.sequence_name)}</p>
+      ) : null}
+      {/* Email step tabs */}
+      <div className="flex gap-2 flex-wrap">
+        {emails.map((_: unknown, i: number) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => setActiveEmail(i)}
+            className={`px-3 py-1.5 rounded-lg text-small font-medium transition-colors ${
+              i === activeEmail
+                ? "bg-accent text-on-accent"
+                : "bg-surface-2 text-text-secondary hover:bg-surface-3"
+            }`}
+          >
+            Email {i + 1}
+          </button>
+        ))}
+      </div>
+      <div className="rounded-xl border border-border-default bg-surface-0 overflow-hidden">
+        <div className="border-b border-border-default px-4 py-3 bg-surface-1 flex items-center justify-between">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-small text-text-secondary">
+              <span className="font-medium text-text-primary">Subject:</span>
+              {email?.subject_line ?? "No subject"}
+            </div>
+            <div className="flex items-center gap-2 text-small text-text-tertiary">
+              <span>From:</span>
+              {projectName || "Conduikt"} &lt;hello@conduikt.com&gt;
+            </div>
+            {email?.goal && (
+              <div className="flex items-center gap-2 text-small text-text-tertiary">
+                <span>Goal:</span> {email.goal}
+              </div>
+            )}
+            {email?.delay_hours != null && (
+              <div className="flex items-center gap-2 text-small text-text-tertiary">
+                <Clock className="h-3 w-3" />
+                Send after {email.delay_hours}h
+              </div>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={copyHtml}
+            className="p-2 rounded-lg hover:bg-surface-2 text-text-tertiary hover:text-text-primary transition-colors"
+            title="Copy HTML"
+          >
+            {emailCopied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
+          </button>
+        </div>
+        <div className="p-1 bg-white">
+          <iframe
+            srcDoc={htmlBody}
+            title="Email preview"
+            className="w-full min-h-[400px] border-0 rounded-lg"
+            sandbox=""
+          />
+        </div>
+      </div>
+      {Array.isArray(data?.exit_conditions) && (data.exit_conditions as string[]).length > 0 && (
+        <div className="text-small text-text-tertiary">
+          <span className="font-medium text-text-secondary">Exit conditions: </span>
+          {(data.exit_conditions as string[]).join(" · ")}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ---------- component ----------
 
 function ContentPageInner({
@@ -880,180 +982,11 @@ function ContentPageInner({
     }
   }
 
-  // ---------- channel previews ----------
+  // XPreview, LinkedInPreview, and the inner EmailPreview were previously
+  // defined here. XPreview/LinkedInPreview were never rendered (dead code) —
+  // removed. EmailPreview is now at module scope (above ContentPageInner)
+  // so React doesn't unmount its state on every parent re-render.
 
-  function XPreview({ text }: { text: string }) {
-    const charCount = text.length;
-    const willThread = charCount > 280;
-    const previewText = willThread ? text.slice(0, 277) + "…" : text;
-    return (
-      <div className="rounded-xl border border-border-default bg-surface-0 p-4">
-        <div className="flex items-start gap-3">
-          <div className="h-10 w-10 shrink-0 rounded-full bg-gradient-to-br from-[#D4945A] to-[#C88550] flex items-center justify-center">
-            <span className="text-xs font-bold text-on-accent">C</span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
-              <span className="text-body font-medium text-text-primary">
-                {project?.name || "Conduikt"}
-              </span>
-              <span className="text-small text-text-tertiary">@conduikt</span>
-            </div>
-            <p className="mt-1 text-body text-text-primary whitespace-pre-line break-words">
-              {previewText}
-            </p>
-            <div className="mt-2 flex items-center gap-2">
-              <Badge variant={willThread ? "secondary" : "success"}>
-                {willThread ? `Thread · ${charCount} chars` : `${charCount}/280`}
-              </Badge>
-              {willThread && (
-                <span className="text-small text-text-tertiary">
-                  Will auto-split into a thread on paragraph/sentence breaks
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  function LinkedInPreview({ text }: { text: string }) {
-    const charCount = text.length;
-    const isLong = charCount > 700;
-    const preview = isLong ? text.slice(0, 200) : text;
-    const [expanded, setExpanded] = useState(false);
-    return (
-      <div className="rounded-xl border border-border-default bg-surface-0 p-4">
-        <div className="flex items-start gap-3 mb-3">
-          <div className="h-12 w-12 shrink-0 rounded-full bg-gradient-to-br from-[#D4945A] to-[#C88550] flex items-center justify-center">
-            <span className="text-sm font-bold text-on-accent">C</span>
-          </div>
-          <div>
-            <p className="text-body font-medium text-text-primary">
-              {project?.name || "Conduikt"}
-            </p>
-            <p className="text-small text-text-tertiary">
-              AI Marketing Automation
-            </p>
-          </div>
-        </div>
-        <p className="text-body text-text-primary whitespace-pre-line break-words">
-          {expanded ? text : preview}
-          {isLong && !expanded && (
-            <button
-              onClick={() => setExpanded(true)}
-              className="text-accent ml-1"
-            >
-              ...see more
-            </button>
-          )}
-        </p>
-        <div className="mt-3 flex items-center gap-2">
-          <Badge variant={charCount <= 700 ? "success" : "warning"}>
-            {charCount}/700
-          </Badge>
-          {charCount > 700 && (
-            <span className="text-small text-warning">
-              Optimal LinkedIn length is under 700
-            </span>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  function EmailPreview({ data }: { data: Record<string, unknown> | null; }) {
-    const [emailCopied, setEmailCopied] = useState(false);
-    const [activeEmail, setActiveEmail] = useState(0);
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const emails = (data?.emails as any[]) ?? [];
-
-    if (emails.length === 0) return null;
-
-    const email = emails[activeEmail];
-    const htmlBody = email?.body_html ?? "";
-
-    function copyHtml() {
-      navigator.clipboard.writeText(htmlBody);
-      setEmailCopied(true);
-      toast("HTML copied!", "info");
-      setTimeout(() => setEmailCopied(false), 2000);
-    }
-
-    return (
-      <div className="space-y-3">
-        {data?.sequence_name ? (
-          <p className="text-small font-medium text-text-primary">{String(data.sequence_name)}</p>
-        ) : null}
-        {/* Email step tabs */}
-        <div className="flex gap-2 flex-wrap">
-          {emails.map((_: unknown, i: number) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => setActiveEmail(i)}
-              className={`px-3 py-1.5 rounded-lg text-small font-medium transition-colors ${
-                i === activeEmail
-                  ? "bg-accent text-on-accent"
-                  : "bg-surface-2 text-text-secondary hover:bg-surface-3"
-              }`}
-            >
-              Email {i + 1}
-            </button>
-          ))}
-        </div>
-        <div className="rounded-xl border border-border-default bg-surface-0 overflow-hidden">
-          <div className="border-b border-border-default px-4 py-3 bg-surface-1 flex items-center justify-between">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-small text-text-secondary">
-                <span className="font-medium text-text-primary">Subject:</span>
-                {email?.subject_line ?? "No subject"}
-              </div>
-              <div className="flex items-center gap-2 text-small text-text-tertiary">
-                <span>From:</span>
-                {project?.name || "Conduikt"} &lt;hello@conduikt.com&gt;
-              </div>
-              {email?.goal && (
-                <div className="flex items-center gap-2 text-small text-text-tertiary">
-                  <span>Goal:</span> {email.goal}
-                </div>
-              )}
-              {email?.delay_hours != null && (
-                <div className="flex items-center gap-2 text-small text-text-tertiary">
-                  <Clock className="h-3 w-3" />
-                  Send after {email.delay_hours}h
-                </div>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={copyHtml}
-              className="p-2 rounded-lg hover:bg-surface-2 text-text-tertiary hover:text-text-primary transition-colors"
-              title="Copy HTML"
-            >
-              {emailCopied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
-            </button>
-          </div>
-          <div className="p-1 bg-white">
-            <iframe
-              srcDoc={htmlBody}
-              title="Email preview"
-              className="w-full min-h-[400px] border-0 rounded-lg"
-              sandbox=""
-            />
-          </div>
-        </div>
-        {Array.isArray(data?.exit_conditions) && (data.exit_conditions as string[]).length > 0 && (
-          <div className="text-small text-text-tertiary">
-            <span className="font-medium text-text-secondary">Exit conditions: </span>
-            {(data.exit_conditions as string[]).join(" · ")}
-          </div>
-        )}
-      </div>
-    );
-  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function CopywritingPreview({ data }: { data: Record<string, any> }) {
@@ -1843,7 +1776,11 @@ function ContentPageInner({
                         <GeneratingIndicator label="Drafting your email sequence..." />
                       </div>
                     ) : parsedContent ? (
-                      <EmailPreview data={parsedContent} />
+                      <EmailPreview
+                        data={parsedContent}
+                        projectName={project?.name}
+                        toast={toast}
+                      />
                     ) : (
                       <div ref={outputRef}>
                         <ParseFailureNotice text={result} />
