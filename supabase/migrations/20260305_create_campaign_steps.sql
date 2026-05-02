@@ -1,3 +1,8 @@
+-- This migration was applied directly via Supabase Studio SQL editor and
+-- isn't recorded in supabase_migrations.schema_migrations. The source file
+-- is kept here so `supabase db reset` reproduces the schema locally. The
+-- DDL is idempotent (CREATE TABLE IF NOT EXISTS) so re-application is a no-op.
+
 CREATE TABLE IF NOT EXISTS campaign_steps (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,

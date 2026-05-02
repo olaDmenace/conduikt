@@ -1,3 +1,8 @@
+-- This migration was applied directly via Supabase Studio SQL editor and
+-- isn't recorded in supabase_migrations.schema_migrations. The source file
+-- is kept here so `supabase db reset` reproduces the schema locally.
+-- DDL uses DROP IF EXISTS / ADD COLUMN IF NOT EXISTS so re-application is safe.
+
 -- Drop Lemon Squeezy columns (never used in production)
 ALTER TABLE profiles
   DROP COLUMN IF EXISTS lemon_squeezy_customer_id,

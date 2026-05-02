@@ -1,28 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/src/lib/supabase/server";
 import { createServiceClient } from "@/src/lib/supabase/service";
-
-async function verifyAdmin() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  return profile?.role === "admin" ? user : null;
-}
+import { requireAdmin } from "@/src/lib/admin/auth";
 
 export async function GET() {
-  const admin = await verifyAdmin();
-  if (!admin) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.response;
 
   const supabase = createServiceClient();
   const { data } = await supabase
@@ -35,10 +17,8 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
-  const admin = await verifyAdmin();
-  if (!admin) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.response;
 
   const { emails } = (await request.json()) as { emails: string[] };
 

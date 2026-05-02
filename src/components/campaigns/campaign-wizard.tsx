@@ -17,8 +17,18 @@ import { Badge } from "@/src/components/ui/badge";
 import { AGENT_REGISTRY } from "@/src/lib/ai/agents/registry";
 
 interface WizardStep {
+  // Client-only stable id for React keys. Same agent can appear twice in
+  // a pipeline (e.g., two blog-post steps), so agent_id alone isn't unique.
+  // Stripped before sending to the API.
+  _uid: string;
   agent_id: string;
   config: Record<string, unknown>;
+}
+
+function newUid() {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 interface CampaignWizardProps {
@@ -73,7 +83,7 @@ export function CampaignWizard({
   const [error, setError] = useState("");
 
   function addStep(agentId: string) {
-    setSteps((prev) => [...prev, { agent_id: agentId, config: {} }]);
+    setSteps((prev) => [...prev, { _uid: newUid(), agent_id: agentId, config: {} }]);
   }
 
   function removeStep(index: number) {
@@ -84,10 +94,13 @@ export function CampaignWizard({
     setCreating(true);
     setError("");
 
+    // Strip client-only _uid before sending to the API.
+    const apiSteps = steps.map((s) => ({ agent_id: s.agent_id, config: s.config }));
+
     const res = await fetch(`/api/projects/${projectId}/campaigns`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, steps }),
+      body: JSON.stringify({ name, steps: apiSteps }),
     });
 
     if (res.ok) {
@@ -143,7 +156,7 @@ export function CampaignWizard({
                     key={tpl.name}
                     onClick={() => {
                       setName(tpl.name);
-                      setSteps(tpl.steps.map((s) => ({ ...s })));
+                      setSteps(tpl.steps.map((s) => ({ ...s, _uid: newUid() })));
                       setPhase("review");
                     }}
                     className="text-left rounded-lg border border-border-default bg-surface-0 p-3 hover:border-accent hover:bg-surface-2 transition-colors"
@@ -209,7 +222,7 @@ export function CampaignWizard({
                     );
                     return (
                       <div
-                        key={i}
+                        key={step._uid}
                         className="flex items-center gap-3 rounded-lg border border-border-default bg-surface-0 p-3"
                       >
                         <GripVertical className="h-4 w-4 text-text-tertiary shrink-0" />
