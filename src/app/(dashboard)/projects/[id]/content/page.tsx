@@ -229,6 +229,262 @@ const channelIcons: Record<string, typeof Twitter> = {
   web: Globe,
 };
 
+// ---------- inline social-post components ----------
+// These live at module scope so React reconciles the same component instance
+// across parent re-renders. Defining them inside the parent caused the entire
+// card subtree to unmount/remount on every keystroke — which closed the
+// datetime-local picker and lost focus/scroll position.
+
+function ThreadPreview({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const chunks = splitForX(text);
+  if (chunks.length <= 1) return null;
+  const visible = expanded ? chunks : chunks.slice(0, 2);
+  return (
+    <div className="rounded-lg border border-border-subtle bg-surface-2/30 p-3 space-y-2">
+      <p className="text-caption text-text-tertiary font-medium">
+        Thread preview · {chunks.length} tweets
+      </p>
+      <div className="space-y-1.5">
+        {visible.map((chunk, i) => (
+          <div
+            key={i}
+            className="rounded-md border border-border-subtle bg-surface-0 p-2.5"
+          >
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <Badge variant="secondary" className="font-mono text-[10px]">
+                {i + 1}/{chunks.length}
+              </Badge>
+              <span className="text-caption text-text-tertiary">
+                {chunk.length}/280
+              </span>
+            </div>
+            <p className="text-small text-text-secondary whitespace-pre-line">
+              {chunk}
+            </p>
+          </div>
+        ))}
+      </div>
+      {chunks.length > 2 && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="text-caption text-accent hover:text-accent-bright transition-colors"
+        >
+          {expanded ? "Hide" : `Show ${chunks.length - 2} more`}
+        </button>
+      )}
+    </div>
+  );
+}
+
+type SocialPostCardProps = {
+  post: SocialPost;
+  index: number;
+  connectedPlatforms: string[];
+  publishing: string | null;
+  schedulingKey: string | null;
+  scheduleDateTime: string;
+  postMedia: Record<string, PostMedia>;
+  toast: (message: string, variant?: "success" | "error" | "warning" | "info") => void;
+  onPublish: (platform: "x" | "linkedin", text: string, publishKey: string) => void;
+  onSchedule: (platform: "x" | "linkedin", text: string, publishKey: string) => void;
+  onSchedulingKeyChange: (key: string | null) => void;
+  onScheduleDateTimeChange: (value: string) => void;
+  onPostMediaChange: (publishKey: string, media: PostMedia) => void;
+};
+
+function SocialPostCard({
+  post,
+  index,
+  connectedPlatforms,
+  publishing,
+  schedulingKey,
+  scheduleDateTime,
+  postMedia,
+  toast,
+  onPublish,
+  onSchedule,
+  onSchedulingKeyChange,
+  onScheduleDateTimeChange,
+  onPostMediaChange,
+}: SocialPostCardProps) {
+  const isX = post.platform === "x";
+  const charLimit = isX ? 280 : 700;
+  const charCount = post.text.length;
+  const publishKey = `${post.platform}-${index}`;
+  const [cardCopied, setCardCopied] = useState(false);
+  const isScheduling = schedulingKey === publishKey;
+
+  const minDateTime = new Date(Date.now() + 5 * 60 * 1000)
+    .toISOString()
+    .slice(0, 16);
+
+  function copyPost() {
+    navigator.clipboard.writeText(post.text);
+    setCardCopied(true);
+    toast("Copied!", "info");
+    setTimeout(() => setCardCopied(false), 2000);
+  }
+
+  return (
+    <div
+      className="rounded-xl border border-border-default bg-surface-0 p-4 space-y-3 animate-in"
+      style={{ animationDelay: `${index * 60}ms` }}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
+          {isX ? (
+            <Twitter className="h-4 w-4 text-text-primary" />
+          ) : (
+            <Linkedin className="h-4 w-4 text-[#0A66C2]" />
+          )}
+          <Badge variant="secondary">{isX ? "X (Twitter)" : "LinkedIn"}</Badge>
+          {post.angle && (
+            <Badge variant="secondary" className="text-text-tertiary">{post.angle}</Badge>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Button size="sm" variant="ghost" onClick={copyPost}>
+            {cardCopied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
+            {cardCopied ? "Copied" : "Copy"}
+          </Button>
+          {((isX && connectedPlatforms.includes("x")) ||
+            (!isX && connectedPlatforms.includes("linkedin"))) && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() =>
+                onSchedulingKeyChange(isScheduling ? null : publishKey)
+              }
+            >
+              <CalendarClock className="h-3.5 w-3.5" />
+              Schedule
+              <ChevronDown className={`h-3 w-3 transition-transform ${isScheduling ? "rotate-180" : ""}`} />
+            </Button>
+          )}
+          {isX && connectedPlatforms.includes("x") && (
+            <Button
+              size="sm"
+              onClick={() => onPublish("x", post.text, publishKey)}
+              disabled={publishing !== null}
+            >
+              {publishing === publishKey ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Twitter className="h-3.5 w-3.5" />
+              )}
+              {publishing === publishKey ? "Posting…" : "Post now"}
+            </Button>
+          )}
+          {!isX && connectedPlatforms.includes("linkedin") && (
+            <Button
+              size="sm"
+              onClick={() => onPublish("linkedin", post.text, publishKey)}
+              disabled={publishing !== null}
+            >
+              {publishing === publishKey ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Linkedin className="h-3.5 w-3.5" />
+              )}
+              {publishing === publishKey ? "Posting…" : "Post now"}
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Schedule picker — inline, only shows when active */}
+      {isScheduling && (
+        <div className="rounded-lg border border-accent/30 bg-accent/5 p-3 space-y-2">
+          <p className="text-small font-medium text-text-primary flex items-center gap-1.5">
+            <CalendarClock className="h-3.5 w-3.5 text-accent" />
+            Schedule for later
+          </p>
+          <div className="flex items-center gap-2">
+            <input
+              type="datetime-local"
+              min={minDateTime}
+              value={scheduleDateTime}
+              onChange={(e) => onScheduleDateTimeChange(e.target.value)}
+              className="flex-1 rounded-lg border border-border-strong bg-surface-0 px-3 py-1.5 text-small text-text-primary focus:border-accent focus:outline-none"
+            />
+            <Button
+              size="sm"
+              onClick={() => onSchedule(post.platform, post.text, publishKey)}
+              disabled={!scheduleDateTime}
+            >
+              Confirm
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                onSchedulingKeyChange(null);
+                onScheduleDateTimeChange("");
+              }}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Text */}
+      <p className="text-body text-text-primary whitespace-pre-line leading-relaxed">
+        {post.text}
+      </p>
+
+      {/* Thread preview — only for X posts that will auto-thread */}
+      {isX && charCount > charLimit && <ThreadPreview text={post.text} />}
+
+      {/* Media picker */}
+      <MediaPicker
+        value={postMedia[publishKey] ?? EMPTY_MEDIA}
+        onChange={(m) => onPostMediaChange(publishKey, m)}
+        defaultOverlayText={post.hook || post.text.slice(0, 120)}
+      />
+
+      {/* Metadata row */}
+      <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border-default">
+        <Badge
+          variant={
+            charCount <= charLimit ? "success" : isX ? "secondary" : "error"
+          }
+        >
+          {isX && charCount > charLimit
+            ? `Thread · ${charCount} chars`
+            : `${charCount}/${charLimit}`}
+        </Badge>
+        {charCount > charLimit && !isX && (
+          <span className="text-small text-error">{charCount - charLimit} over</span>
+        )}
+        {isX && charCount > charLimit && (
+          <span className="text-small text-text-tertiary">
+            Auto-splits into a thread
+          </span>
+        )}
+        {post.best_time && (
+          <span className="flex items-center gap-1 text-small text-text-tertiary">
+            <Clock className="h-3 w-3" />
+            {post.best_time}
+          </span>
+        )}
+        {hasMedia(postMedia[publishKey]) && (
+          <Badge variant="secondary">With image</Badge>
+        )}
+      </div>
+
+      {/* Image suggestion */}
+      {post.image_suggestion && !hasMedia(postMedia[publishKey]) && (
+        <p className="text-small text-text-tertiary italic border-l-2 border-accent/30 pl-3">
+          {post.image_suggestion}
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ---------- component ----------
 
 function ContentPageInner({
@@ -1230,236 +1486,6 @@ function ContentPageInner({
     );
   }
 
-  // ---------- social post cards ----------
-
-  function ThreadPreview({ text }: { text: string }) {
-    const [expanded, setExpanded] = useState(false);
-    const chunks = splitForX(text);
-    if (chunks.length <= 1) return null;
-    const visible = expanded ? chunks : chunks.slice(0, 2);
-    return (
-      <div className="rounded-lg border border-border-subtle bg-surface-2/30 p-3 space-y-2">
-        <p className="text-caption text-text-tertiary font-medium">
-          Thread preview · {chunks.length} tweets
-        </p>
-        <div className="space-y-1.5">
-          {visible.map((chunk, i) => (
-            <div
-              key={i}
-              className="rounded-md border border-border-subtle bg-surface-0 p-2.5"
-            >
-              <div className="flex items-center justify-between gap-2 mb-1">
-                <Badge variant="secondary" className="font-mono text-[10px]">
-                  {i + 1}/{chunks.length}
-                </Badge>
-                <span className="text-caption text-text-tertiary">
-                  {chunk.length}/280
-                </span>
-              </div>
-              <p className="text-small text-text-secondary whitespace-pre-line">
-                {chunk}
-              </p>
-            </div>
-          ))}
-        </div>
-        {chunks.length > 2 && (
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="text-caption text-accent hover:text-accent-bright transition-colors"
-          >
-            {expanded ? "Hide" : `Show ${chunks.length - 2} more`}
-          </button>
-        )}
-      </div>
-    );
-  }
-
-  function SocialPostCard({ post, index }: { post: SocialPost; index: number }) {
-    const isX = post.platform === "x";
-    const charLimit = isX ? 280 : 700;
-    const charCount = post.text.length;
-    const publishKey = `${post.platform}-${index}`;
-    const [cardCopied, setCardCopied] = useState(false);
-    const isScheduling = schedulingKey === publishKey;
-
-    // Min datetime for the picker — 5 minutes from now
-    const minDateTime = new Date(Date.now() + 5 * 60 * 1000)
-      .toISOString()
-      .slice(0, 16);
-
-    function copyPost() {
-      navigator.clipboard.writeText(post.text);
-      setCardCopied(true);
-      toast("Copied!", "info");
-      setTimeout(() => setCardCopied(false), 2000);
-    }
-
-    return (
-      <div
-        className="rounded-xl border border-border-default bg-surface-0 p-4 space-y-3 animate-in"
-        style={{ animationDelay: `${index * 60}ms` }}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-2">
-            {isX ? (
-              <Twitter className="h-4 w-4 text-text-primary" />
-            ) : (
-              <Linkedin className="h-4 w-4 text-[#0A66C2]" />
-            )}
-            <Badge variant="secondary">{isX ? "X (Twitter)" : "LinkedIn"}</Badge>
-            {post.angle && (
-              <Badge variant="secondary" className="text-text-tertiary">{post.angle}</Badge>
-            )}
-          </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <Button size="sm" variant="ghost" onClick={copyPost}>
-              {cardCopied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
-              {cardCopied ? "Copied" : "Copy"}
-            </Button>
-            {/* Schedule button — shown when platform is connected */}
-            {((isX && connectedPlatforms.includes("x")) ||
-              (!isX && connectedPlatforms.includes("linkedin"))) && (
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() =>
-                  setSchedulingKey(isScheduling ? null : publishKey)
-                }
-              >
-                <CalendarClock className="h-3.5 w-3.5" />
-                Schedule
-                <ChevronDown className={`h-3 w-3 transition-transform ${isScheduling ? "rotate-180" : ""}`} />
-              </Button>
-            )}
-            {isX && connectedPlatforms.includes("x") && (
-              <Button
-                size="sm"
-                onClick={() => handlePublish("x", post.text, publishKey)}
-                disabled={publishing !== null}
-              >
-                {publishing === publishKey ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Twitter className="h-3.5 w-3.5" />
-                )}
-                {publishing === publishKey ? "Posting…" : "Post now"}
-              </Button>
-            )}
-            {!isX && connectedPlatforms.includes("linkedin") && (
-              <Button
-                size="sm"
-                onClick={() => handlePublish("linkedin", post.text, publishKey)}
-                disabled={publishing !== null}
-              >
-                {publishing === publishKey ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Linkedin className="h-3.5 w-3.5" />
-                )}
-                {publishing === publishKey ? "Posting…" : "Post now"}
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Schedule picker — inline, only shows when active */}
-        {isScheduling && (
-          <div className="rounded-lg border border-accent/30 bg-accent/5 p-3 space-y-2">
-            <p className="text-small font-medium text-text-primary flex items-center gap-1.5">
-              <CalendarClock className="h-3.5 w-3.5 text-accent" />
-              Schedule for later
-            </p>
-            <div className="flex items-center gap-2">
-              <input
-                type="datetime-local"
-                min={minDateTime}
-                value={scheduleDateTime}
-                onChange={(e) => setScheduleDateTime(e.target.value)}
-                className="flex-1 rounded-lg border border-border-strong bg-surface-0 px-3 py-1.5 text-small text-text-primary focus:border-accent focus:outline-none"
-              />
-              <Button
-                size="sm"
-                onClick={() =>
-                  handleSchedule(post.platform, post.text, publishKey)
-                }
-                disabled={!scheduleDateTime}
-              >
-                Confirm
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setSchedulingKey(null);
-                  setScheduleDateTime("");
-                }}
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Text */}
-        <p className="text-body text-text-primary whitespace-pre-line leading-relaxed">
-          {post.text}
-        </p>
-
-        {/* Thread preview — only for X posts that will auto-thread */}
-        {isX && charCount > charLimit && (
-          <ThreadPreview text={post.text} />
-        )}
-
-        {/* Media picker */}
-        <MediaPicker
-          value={postMedia[publishKey] ?? EMPTY_MEDIA}
-          onChange={(m) =>
-            setPostMedia((prev) => ({ ...prev, [publishKey]: m }))
-          }
-          defaultOverlayText={post.hook || post.text.slice(0, 120)}
-        />
-
-        {/* Metadata row */}
-        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border-default">
-          <Badge
-            variant={
-              charCount <= charLimit ? "success" : isX ? "secondary" : "error"
-            }
-          >
-            {isX && charCount > charLimit
-              ? `Thread · ${charCount} chars`
-              : `${charCount}/${charLimit}`}
-          </Badge>
-          {charCount > charLimit && !isX && (
-            <span className="text-small text-error">{charCount - charLimit} over</span>
-          )}
-          {isX && charCount > charLimit && (
-            <span className="text-small text-text-tertiary">
-              Auto-splits into a thread
-            </span>
-          )}
-          {post.best_time && (
-            <span className="flex items-center gap-1 text-small text-text-tertiary">
-              <Clock className="h-3 w-3" />
-              {post.best_time}
-            </span>
-          )}
-          {hasMedia(postMedia[publishKey]) && (
-            <Badge variant="secondary">With image</Badge>
-          )}
-        </div>
-
-        {/* Image suggestion */}
-        {post.image_suggestion && !hasMedia(postMedia[publishKey]) && (
-          <p className="text-small text-text-tertiary italic border-l-2 border-accent/30 pl-3">
-            {post.image_suggestion}
-          </p>
-        )}
-      </div>
-    );
-  }
-
   // ---------- render ----------
 
   return (
@@ -1786,7 +1812,24 @@ function ContentPageInner({
                     ) : parsedPosts ? (
                       <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
                         {parsedPosts.map((post, i) => (
-                          <SocialPostCard key={i} post={post} index={i} />
+                          <SocialPostCard
+                            key={i}
+                            post={post}
+                            index={i}
+                            connectedPlatforms={connectedPlatforms}
+                            publishing={publishing}
+                            schedulingKey={schedulingKey}
+                            scheduleDateTime={scheduleDateTime}
+                            postMedia={postMedia}
+                            toast={toast}
+                            onPublish={handlePublish}
+                            onSchedule={handleSchedule}
+                            onSchedulingKeyChange={setSchedulingKey}
+                            onScheduleDateTimeChange={setScheduleDateTime}
+                            onPostMediaChange={(key, m) =>
+                              setPostMedia((prev) => ({ ...prev, [key]: m }))
+                            }
+                          />
                         ))}
                       </div>
                     ) : (
