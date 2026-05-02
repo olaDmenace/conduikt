@@ -13,16 +13,20 @@ export const syncSocialMetrics = inngest.createFunction(
   async ({ step }) => {
     const supabase = createServiceClient();
 
-    // Step 1: Get all published posts from the last 30 days with external IDs
+    // Step 1: Get all posted scheduled_posts from the last 30 days with
+    // external IDs. scheduled_posts has no user_id column, so we resolve it
+    // through the project FK (one-account-per-platform-per-user is implicit).
     const posts = await step.run("fetch-published-posts", async () => {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
       const { data } = await supabase
         .from("scheduled_posts")
-        .select("id, project_id, channel, external_post_id, user_id")
+        .select(
+          "id, project_id, channel, external_post_id, projects!inner(user_id)"
+        )
         .in("channel", ["x", "linkedin"])
-        .eq("status", "published")
+        .eq("status", "posted")
         .not("external_post_id", "is", null)
         .gte("created_at", thirtyDaysAgo.toISOString())
         .limit(200);
@@ -34,8 +38,17 @@ export const syncSocialMetrics = inngest.createFunction(
       return { synced: 0, skipped: 0, errors: 0 };
     }
 
+    // Helper: PostgREST returns the nested object as `projects` — typed as
+    // either an object or array depending on the relationship. We normalise.
+    const getUserId = (p: (typeof posts)[number]): string | undefined => {
+      const proj = Array.isArray(p.projects) ? p.projects[0] : p.projects;
+      return (proj as { user_id?: string } | null)?.user_id;
+    };
+
     // Step 2: Get unique user IDs and their connected accounts
-    const userIds = [...new Set(posts.map((p) => p.user_id))];
+    const userIds = [
+      ...new Set(posts.map((p) => getUserId(p)).filter((u): u is string => Boolean(u))),
+    ];
 
     const accounts = await step.run("fetch-connected-accounts", async () => {
       const { data } = await supabase
@@ -68,7 +81,8 @@ export const syncSocialMetrics = inngest.createFunction(
       let errors = 0;
 
       for (const post of posts) {
-        const token = tokenMap.get(`${post.user_id}:${post.channel}`);
+        const userId = getUserId(post);
+        const token = userId ? tokenMap.get(`${userId}:${post.channel}`) : undefined;
         if (!token) {
           skipped++;
           continue;

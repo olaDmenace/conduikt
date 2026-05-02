@@ -39,7 +39,7 @@ export async function POST() {
     .from("scheduled_posts")
     .select("id, project_id, external_post_id")
     .eq("channel", "x")
-    .eq("status", "published")
+    .eq("status", "posted")
     .not("external_post_id", "is", null)
     .limit(50);
 

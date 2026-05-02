@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
+import { ensureValidLinkedInToken } from "@/src/lib/integrations/linkedin-token";
 
 export async function POST() {
   const supabase = await createClient();
@@ -11,7 +12,7 @@ export async function POST() {
 
   const { data: account } = await supabase
     .from("connected_accounts")
-    .select("access_token")
+    .select("id, user_id, access_token, refresh_token, token_expires_at, platform_username")
     .eq("user_id", user.id)
     .eq("platform", "linkedin")
     .maybeSingle();
@@ -23,11 +24,20 @@ export async function POST() {
     );
   }
 
+  // Decrypt + refresh the LinkedIn token before calling the API.
+  const validToken = await ensureValidLinkedInToken(account);
+  if (!validToken) {
+    return NextResponse.json(
+      { error: "LinkedIn token expired. Please reconnect your account." },
+      { status: 401 }
+    );
+  }
+
   const { data: posts } = await supabase
     .from("scheduled_posts")
     .select("id, project_id, external_post_id")
     .eq("channel", "linkedin")
-    .eq("status", "published")
+    .eq("status", "posted")
     .not("external_post_id", "is", null)
     .limit(50);
 
@@ -43,7 +53,7 @@ export async function POST() {
         `https://api.linkedin.com/v2/socialActions/${post.external_post_id}`,
         {
           headers: {
-            Authorization: `Bearer ${account.access_token}`,
+            Authorization: `Bearer ${validToken}`,
             "X-Restli-Protocol-Version": "2.0.0",
           },
         }
