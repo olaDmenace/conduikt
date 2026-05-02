@@ -58,7 +58,10 @@ export async function GET(request: NextRequest) {
   const supabase = getServiceClient();
   const now = new Date().toISOString();
 
-  // Fetch all pending posts due to be published
+  // Fetch all pending posts due to be published.
+  // scheduled_posts has no FK to connected_accounts (one account per
+  // user-per-platform is implicit), so we resolve the account in a
+  // second query keyed by (project.user_id, platform=channel).
   const { data: posts, error } = await supabase
     .from("scheduled_posts")
     .select(`
@@ -71,15 +74,8 @@ export async function GET(request: NextRequest) {
         content,
         title
       ),
-      connected_accounts!inner (
-        id,
-        user_id,
-        access_token,
-        refresh_token,
-        token_expires_at,
-        platform,
-        platform_user_id,
-        platform_username
+      projects!inner (
+        user_id
       )
     `)
     .eq("status", "pending")
@@ -95,26 +91,60 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ published: 0 });
   }
 
+  // Bulk-fetch connected accounts for every user touched by this batch.
+  const userIds = Array.from(
+    new Set(
+      posts
+        .map((p) => {
+          const proj = Array.isArray(p.projects) ? p.projects[0] : p.projects;
+          return proj?.user_id as string | undefined;
+        })
+        .filter((u): u is string => Boolean(u))
+    )
+  );
+
+  const { data: accounts, error: accountsError } = await supabase
+    .from("connected_accounts")
+    .select(
+      "id, user_id, access_token, refresh_token, token_expires_at, platform, platform_user_id, platform_username"
+    )
+    .in("user_id", userIds);
+
+  if (accountsError) {
+    console.error("[cron/publish] Accounts query error:", accountsError);
+    return NextResponse.json({ error: accountsError.message }, { status: 500 });
+  }
+
+  // (user_id|platform) → account, e.g. "abc-123|x"
+  const accountKey = (uid: string, platform: string) => `${uid}|${platform}`;
+  const accountMap = new Map<string, (typeof accounts)[number]>();
+  for (const a of accounts ?? []) {
+    if (a.user_id && a.platform) accountMap.set(accountKey(a.user_id, a.platform), a);
+  }
+
   const results: { id: string; status: string; error?: string }[] = [];
 
   for (const post of posts) {
     const asset = Array.isArray(post.assets) ? post.assets[0] : post.assets;
-    const account = Array.isArray(post.connected_accounts)
-      ? post.connected_accounts[0]
-      : post.connected_accounts;
+    const project = Array.isArray(post.projects) ? post.projects[0] : post.projects;
+    const userId = project?.user_id as string | undefined;
+    const account = userId ? accountMap.get(accountKey(userId, post.channel)) : undefined;
 
     const text: string = asset?.content?.scheduled_text ?? asset?.content?.raw ?? "";
     const media: PostMedia | undefined = asset?.content?.media;
 
     if (!text || !account?.access_token) {
+      const reason = !text
+        ? "Missing post text"
+        : `No connected ${post.channel} account for this user — reconnect in Settings`;
       await supabase
         .from("scheduled_posts")
         .update({
           status: "failed",
-          error_message: "Missing post text or account credentials",
+          error_message: reason,
         })
         .eq("id", post.id);
-      results.push({ id: post.id, status: "failed", error: "Missing content or credentials" });
+      results.push({ id: post.id, status: "failed", error: reason });
       continue;
     }
 
@@ -147,7 +177,7 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-      let publishResult: { ok: boolean; error?: string };
+      let publishResult: { ok: boolean; error?: string; externalId?: string };
 
       if (post.channel === "x") {
         publishResult = await publishToX(text, token, media);
@@ -165,9 +195,16 @@ export async function GET(request: NextRequest) {
       }
 
       if (publishResult.ok) {
+        const update: Record<string, unknown> = {
+          status: "posted",
+          posted_at: new Date().toISOString(),
+        };
+        if (publishResult.externalId) {
+          update.external_post_id = publishResult.externalId;
+        }
         await supabase
           .from("scheduled_posts")
-          .update({ status: "posted", posted_at: new Date().toISOString() })
+          .update(update)
           .eq("id", post.id);
 
         // Mark the linked asset as published
@@ -211,7 +248,7 @@ async function publishToX(
   text: string,
   accessToken: string,
   media?: PostMedia
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<{ ok: boolean; error?: string; externalId?: string }> {
   const chunks = splitForX(text);
   if (chunks.length === 0) {
     return { ok: false, error: "Empty text" };
@@ -229,6 +266,8 @@ async function publishToX(
     }
   }
 
+  // The first tweet's id is what analytics tools and links use.
+  let firstTweetId: string | null = null;
   let prevTweetId: string | null = null;
   for (let i = 0; i < chunks.length; i++) {
     const body: Record<string, unknown> = { text: chunks[i] };
@@ -252,25 +291,34 @@ async function publishToX(
       console.error(
         `[cron/publishToX] thread broke at chunk ${i + 1}/${chunks.length}: ${msg}`
       );
-      return { ok: true, error: `Thread posted ${i}/${chunks.length}: ${msg}` };
+      return {
+        ok: true,
+        error: `Thread posted ${i}/${chunks.length}: ${msg}`,
+        externalId: firstTweetId ?? undefined,
+      };
     }
 
     const data = (await res.json().catch(() => ({}))) as { data?: { id?: string } };
     prevTweetId = data?.data?.id ?? null;
+    if (i === 0) firstTweetId = prevTweetId;
     if (!prevTweetId && chunks.length > 1) {
       console.error("[cron/publishToX] X returned no tweet ID, cannot continue threading");
-      return { ok: true, error: "Posted first tweet but could not chain thread" };
+      return {
+        ok: true,
+        error: "Posted first tweet but could not chain thread",
+        externalId: firstTweetId ?? undefined,
+      };
     }
   }
 
-  return { ok: true };
+  return { ok: true, externalId: firstTweetId ?? undefined };
 }
 
 async function publishToLinkedIn(
   text: string,
   accessToken: string,
   media?: PostMedia
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<{ ok: boolean; error?: string; externalId?: string }> {
   // Get author URN — requires a /me call first
   const meRes = await fetch("https://api.linkedin.com/v2/userinfo", {
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -345,7 +393,9 @@ async function publishToLinkedIn(
       }`,
     };
   }
-  return { ok: true };
+  // LinkedIn returns the post URN in the x-restli-id response header.
+  const externalId = postRes.headers.get("x-restli-id");
+  return { ok: true, externalId: externalId ?? undefined };
 }
 
 async function publishToFacebook(
