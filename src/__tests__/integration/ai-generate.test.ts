@@ -157,14 +157,13 @@ describe('AI Generation', () => {
 
       await POST(request as any)
 
-      // Verify profiles update was called
-      expect(supabase.from).toHaveBeenCalledWith('profiles')
-      const updateCalls = chain.update.mock.calls
-      const countUpdate = updateCalls.find(
-        (call: unknown[]) => (call[0] as { generation_count?: number })?.generation_count !== undefined
+      // The route uses an atomic RPC (`increment_generation_count`) rather
+      // than a read-then-update, so the test asserts the RPC call instead
+      // of an update payload. Atomic = correct under concurrent generations.
+      expect(supabase.rpc).toHaveBeenCalledWith(
+        'increment_generation_count',
+        expect.objectContaining({ user_id_param: mockUser.id })
       )
-      expect(countUpdate).toBeDefined()
-      expect((countUpdate![0] as { generation_count?: number }).generation_count).toBe(4)
     })
   })
 

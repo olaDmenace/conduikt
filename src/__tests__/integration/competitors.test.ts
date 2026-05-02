@@ -38,9 +38,14 @@ describe('Competitor Tracking', () => {
         { id: 'ct1', competitor_url: 'https://competitor.com', last_checked_at: null },
       ]
       // The route chains .eq("project_id").order() — need eq to return chainable
-      const compChain = {
+      // Route calls verifyProjectOwnership first (chains .eq().eq().single())
+      // then the actual competitor_trackers query (.eq().order()). Both go
+      // through the same supabase.from(...) mock, so the chain needs all of
+      // .single, .eq, .order, .select.
+      const compChain: Record<string, ReturnType<typeof vi.fn>> = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { id: 'test-project-id', user_id: mockUser.id }, error: null }),
         order: vi.fn().mockResolvedValue({ data: mockTrackers, error: null }),
       }
       supabase.from = vi.fn().mockReturnValue(compChain)
@@ -137,9 +142,14 @@ describe('Competitor Tracking', () => {
       const mockTrackers = [
         { id: 'ct1', competitor_url: 'https://competitor.com', last_checked_at: null },
       ]
-      const compChain = {
+      // Route calls verifyProjectOwnership first (chains .eq().eq().single())
+      // then the actual competitor_trackers query (.eq().order()). Both go
+      // through the same supabase.from(...) mock, so the chain needs all of
+      // .single, .eq, .order, .select.
+      const compChain: Record<string, ReturnType<typeof vi.fn>> = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { id: 'test-project-id', user_id: mockUser.id }, error: null }),
         order: vi.fn().mockResolvedValue({ data: mockTrackers, error: null }),
       }
       supabase.from = vi.fn().mockReturnValue(compChain)

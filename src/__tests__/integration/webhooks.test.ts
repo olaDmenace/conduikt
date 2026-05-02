@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { NextRequest } from 'next/server'
 import { createSupabaseMock, mockUser, mockProfile } from '../helpers/supabase-mock'
 
 const { supabase, chain } = createSupabaseMock()
@@ -25,7 +26,7 @@ describe('Webhook Integrations', () => {
       supabase.auth.getUser = vi.fn().mockResolvedValue({ data: { user: null }, error: null })
 
       const { GET } = await import('@/src/app/api/webhooks/route')
-      const response = await GET(new Request('http://localhost/api/webhooks') as never)
+      const response = await GET(new NextRequest('http://localhost/api/webhooks'))
       expect(response.status).toBe(401)
     })
 
@@ -33,16 +34,18 @@ describe('Webhook Integrations', () => {
       const mockConfigs = [
         { id: 'wh1', type: 'wordpress', endpoint_url: 'https://example.com/wp-json/wp/v2/posts', active: true },
       ]
-      // Route chains .eq("user_id").order()
-      const whChain = {
+      // Route reads request.nextUrl.searchParams (needs NextRequest) and may
+      // chain .eq().eq().order() / .single() depending on project_id presence.
+      const whChain: Record<string, ReturnType<typeof vi.fn>> = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { id: 'test-project-id', user_id: mockUser.id }, error: null }),
         order: vi.fn().mockResolvedValue({ data: mockConfigs, error: null }),
       }
       supabase.from = vi.fn().mockReturnValue(whChain)
 
       const { GET } = await import('@/src/app/api/webhooks/route')
-      const response = await GET(new Request('http://localhost/api/webhooks') as never)
+      const response = await GET(new NextRequest('http://localhost/api/webhooks'))
       expect(response.status).toBe(200)
     })
   })

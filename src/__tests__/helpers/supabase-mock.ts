@@ -84,6 +84,7 @@ export function createSupabaseMock(overrides: Record<string, unknown> = {}) {
       resetPasswordForEmail: vi.fn().mockResolvedValue({ error: null }),
       signInWithOAuth: vi.fn().mockResolvedValue({ data: { url: 'https://oauth.example.com' }, error: null }),
     },
+    rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
     from: vi.fn().mockReturnValue(chain),
     storage: {
       from: vi.fn().mockReturnValue({
