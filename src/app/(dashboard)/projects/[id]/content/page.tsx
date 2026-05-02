@@ -587,6 +587,444 @@ function EmailPreview({ data, projectName, toast }: EmailPreviewProps) {
   );
 }
 
+// The seven preview components below were previously declared inside
+// ContentPageInner. They held no state of their own, so the remount-on-
+// every-render cost was invisible (no flickering picker, no scroll jump),
+// but the pattern is the same trap that bit SocialPostCard and EmailPreview.
+// Hoisted to module scope here for consistency and to make any future
+// re-introduction of internal state safe by default.
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function CopywritingPreview({ data }: { data: Record<string, any> }) {
+  const variants = data?.variants ?? [];
+  const recommendations = data?.recommendations ?? [];
+
+  return (
+    <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
+      {variants.map((v: { text: string; rationale?: string; tone?: string }, i: number) => (
+        <div
+          key={i}
+          className="rounded-xl border border-border-default bg-surface-0 p-4 space-y-3 animate-in"
+          style={{ animationDelay: `${i * 60}ms` }}
+        >
+          <div className="flex items-center justify-between gap-2">
+            <Badge variant="secondary">Variant {i + 1}</Badge>
+            {data?.type && <Badge variant="secondary" className="text-text-tertiary">{data.type}</Badge>}
+          </div>
+          <p className="text-body text-text-primary font-medium leading-relaxed">
+            {v.text}
+          </p>
+          {v.rationale && (
+            <p className="text-small text-text-secondary">
+              <span className="font-medium text-text-primary">Why it works: </span>
+              {v.rationale}
+            </p>
+          )}
+          {v.tone && (
+            <p className="text-small text-text-tertiary">
+              <span className="font-medium text-text-secondary">Tone: </span>
+              {v.tone}
+            </p>
+          )}
+        </div>
+      ))}
+      {recommendations.length > 0 && (
+        <div className="rounded-xl border border-border-default bg-surface-1 p-4 space-y-2">
+          <p className="text-small font-medium text-text-primary">Recommendations</p>
+          <ul className="space-y-1.5">
+            {recommendations.map((r: string, i: number) => (
+              <li key={i} className="text-small text-text-secondary flex gap-2">
+                <span className="text-accent shrink-0">•</span>
+                <span>{r}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function ContentStrategyPreview({ data }: { data: Record<string, any> }) {
+  const pillars = data?.pillars ?? [];
+  const calendar = data?.content_calendar ?? [];
+  const kpis = data?.kpis ?? [];
+  const quickWins = data?.quick_wins ?? [];
+
+  return (
+    <div className="space-y-5 max-h-[600px] overflow-y-auto pr-1">
+      {data?.strategy_name && (
+        <div className="space-y-1">
+          <h3 className="text-body font-medium text-text-primary">{data.strategy_name}</h3>
+          {data?.time_horizon && (
+            <p className="text-small text-text-tertiary">Timeline: {data.time_horizon}</p>
+          )}
+        </div>
+      )}
+
+      {/* Quick wins */}
+      {quickWins.length > 0 && (
+        <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 space-y-2">
+          <p className="text-small font-medium text-accent">Quick Wins</p>
+          <ul className="space-y-1.5">
+            {quickWins.map((w: string, i: number) => (
+              <li key={i} className="text-small text-text-secondary flex gap-2">
+                <span className="text-accent shrink-0">{i + 1}.</span>
+                <span>{w}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Content pillars */}
+      {pillars.map((pillar: { topic: string; intent?: string; search_opportunity?: string; content_pieces?: { title: string; format?: string; channel?: string; priority?: string; brief?: string }[] }, pi: number) => (
+        <div key={pi} className="rounded-xl border border-border-default bg-surface-0 p-4 space-y-3 animate-in" style={{ animationDelay: `${pi * 60}ms` }}>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-body font-medium text-text-primary">{pillar.topic}</span>
+            {pillar.intent && <Badge variant="secondary">{pillar.intent}</Badge>}
+            {pillar.search_opportunity && (
+              <Badge variant="secondary" className="text-text-tertiary">SEO: {pillar.search_opportunity}</Badge>
+            )}
+          </div>
+          {pillar.content_pieces?.map((piece, ci: number) => (
+            <div key={ci} className="ml-3 pl-3 border-l border-border-subtle space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-small font-medium text-text-primary">{piece.title}</span>
+                {piece.format && <Badge variant="secondary" className="text-[0.65rem]">{piece.format}</Badge>}
+                {piece.channel && <Badge variant="secondary" className="text-[0.65rem] text-text-tertiary">{piece.channel}</Badge>}
+                {piece.priority && (
+                  <Badge variant="secondary" className={`text-[0.65rem] ${piece.priority === "high" ? "text-error" : piece.priority === "medium" ? "text-warning" : "text-text-tertiary"}`}>
+                    {piece.priority}
+                  </Badge>
+                )}
+              </div>
+              {piece.brief && <p className="text-small text-text-tertiary">{piece.brief}</p>}
+            </div>
+          ))}
+        </div>
+      ))}
+
+      {/* Calendar */}
+      {calendar.length > 0 && (
+        <div className="rounded-xl border border-border-default bg-surface-0 p-4 space-y-3">
+          <p className="text-small font-medium text-text-primary">Content Calendar</p>
+          {calendar.map((week: { week: number; pieces: string[]; theme?: string }, wi: number) => (
+            <div key={wi} className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">Week {week.week}</Badge>
+                {week.theme && <span className="text-small text-text-tertiary">{week.theme}</span>}
+              </div>
+              <ul className="ml-4 space-y-0.5">
+                {week.pieces.map((p, pi: number) => (
+                  <li key={pi} className="text-small text-text-secondary flex gap-2">
+                    <span className="text-text-tertiary shrink-0">•</span>{p}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* KPIs */}
+      {kpis.length > 0 && (
+        <div className="rounded-xl border border-border-default bg-surface-1 p-4 space-y-2">
+          <p className="text-small font-medium text-text-primary">KPIs</p>
+          <ul className="space-y-1">
+            {kpis.map((kpi: string, i: number) => (
+              <li key={i} className="text-small text-text-secondary flex gap-2">
+                <span className="text-accent shrink-0">•</span>{kpi}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function CompetitorAnalysisPreview({ data }: { data: Record<string, any> }) {
+  const competitors = data?.competitors ?? [];
+  const gaps = data?.positioning_gaps ?? [];
+  const contentOpps = data?.content_opportunities ?? [];
+  const messagingRecs = data?.messaging_recommendations ?? [];
+  const quickWins = data?.quick_wins ?? [];
+
+  return (
+    <div className="space-y-5 max-h-[600px] overflow-y-auto pr-1">
+      {data?.analysis_name && (
+        <h3 className="text-body font-medium text-text-primary">{data.analysis_name}</h3>
+      )}
+
+      {/* Competitors */}
+      {competitors.map((c: { name: string; url?: string; positioning?: string; strengths?: string[]; weaknesses?: string[]; messaging_analysis?: string; pricing_model?: string }, i: number) => (
+        <div key={i} className="rounded-xl border border-border-default bg-surface-0 p-4 space-y-3 animate-in" style={{ animationDelay: `${i * 60}ms` }}>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-body font-medium text-text-primary">{c.name}</span>
+            {c.url && <Badge variant="secondary" className="text-text-tertiary text-[0.65rem]">{c.url}</Badge>}
+          </div>
+          {c.positioning && <p className="text-small text-text-secondary">{c.positioning}</p>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {c.strengths && c.strengths.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-small font-medium text-success">Strengths</p>
+                <ul className="space-y-1">
+                  {c.strengths.map((s: string, si: number) => (
+                    <li key={si} className="text-small text-text-secondary flex gap-2">
+                      <span className="text-success shrink-0">+</span><span>{s}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {c.weaknesses && c.weaknesses.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-small font-medium text-error">Weaknesses</p>
+                <ul className="space-y-1">
+                  {c.weaknesses.map((w: string, wi: number) => (
+                    <li key={wi} className="text-small text-text-secondary flex gap-2">
+                      <span className="text-error shrink-0">−</span><span>{w}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+          {c.messaging_analysis && (
+            <p className="text-small text-text-tertiary">
+              <span className="font-medium text-text-secondary">Messaging: </span>{c.messaging_analysis}
+            </p>
+          )}
+        </div>
+      ))}
+
+      {/* Positioning gaps */}
+      {gaps.length > 0 && (
+        <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 space-y-3">
+          <p className="text-small font-medium text-accent">Positioning Gaps</p>
+          {gaps.map((g: { gap: string; opportunity: string; impact?: string; effort?: string }, i: number) => (
+            <div key={i} className="space-y-1 pb-3 border-b border-border-subtle last:border-0 last:pb-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-small font-medium text-text-primary">{g.gap}</span>
+                {g.impact && <Badge variant="secondary" className={`text-[0.65rem] ${g.impact === "high" ? "text-error" : g.impact === "medium" ? "text-warning" : "text-text-tertiary"}`}>{g.impact} impact</Badge>}
+                {g.effort && <Badge variant="secondary" className="text-[0.65rem] text-text-tertiary">{g.effort} effort</Badge>}
+              </div>
+              <p className="text-small text-text-secondary">{g.opportunity}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Content opportunities */}
+      {contentOpps.length > 0 && (
+        <div className="rounded-xl border border-border-default bg-surface-0 p-4 space-y-3">
+          <p className="text-small font-medium text-text-primary">Content Opportunities</p>
+          {contentOpps.map((c: { topic: string; rationale: string; suggested_format?: string; priority?: string }, i: number) => (
+            <div key={i} className="space-y-1 pb-3 border-b border-border-subtle last:border-0 last:pb-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-small font-medium text-text-primary">{c.topic}</span>
+                {c.priority && <Badge variant="secondary" className={`text-[0.65rem] ${c.priority === "high" ? "text-error" : "text-text-tertiary"}`}>{c.priority}</Badge>}
+                {c.suggested_format && <Badge variant="secondary" className="text-[0.65rem] text-text-tertiary">{c.suggested_format}</Badge>}
+              </div>
+              <p className="text-small text-text-secondary">{c.rationale}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Messaging recommendations */}
+      {messagingRecs.length > 0 && (
+        <div className="rounded-xl border border-border-default bg-surface-1 p-4 space-y-3">
+          <p className="text-small font-medium text-text-primary">Messaging Recommendations</p>
+          {messagingRecs.map((r: { area: string; current_issue?: string; recommendation: string; example?: string }, i: number) => (
+            <div key={i} className="space-y-1 pb-3 border-b border-border-subtle last:border-0 last:pb-0">
+              <Badge variant="secondary">{r.area}</Badge>
+              {r.current_issue && <p className="text-small text-error">{r.current_issue}</p>}
+              <p className="text-small text-text-secondary">{r.recommendation}</p>
+              {r.example && <p className="text-small text-accent italic">&ldquo;{r.example}&rdquo;</p>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Quick wins */}
+      {quickWins.length > 0 && (
+        <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 space-y-2">
+          <p className="text-small font-medium text-accent">Quick Wins</p>
+          <ul className="space-y-1.5">
+            {quickWins.map((w: string, i: number) => (
+              <li key={i} className="text-small text-text-secondary flex gap-2">
+                <span className="text-accent shrink-0">{i + 1}.</span><span>{w}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function BlogPostPreview({ data }: { data: Record<string, any> }) {
+  const markdown = data?.content_markdown ?? "";
+  const socialPromo = data?.social_promotion;
+
+  return (
+    <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
+      {/* Meta info */}
+      <div className="rounded-xl border border-border-default bg-surface-1 p-4 space-y-2">
+        {data?.meta_title && (
+          <div>
+            <span className="text-small font-medium text-text-tertiary">SEO Title: </span>
+            <span className="text-small text-text-primary">{data.meta_title}</span>
+          </div>
+        )}
+        {data?.meta_description && (
+          <div>
+            <span className="text-small font-medium text-text-tertiary">Meta Description: </span>
+            <span className="text-small text-text-secondary">{data.meta_description}</span>
+          </div>
+        )}
+        <div className="flex gap-3 flex-wrap">
+          {data?.slug && <Badge variant="secondary">/{data.slug}</Badge>}
+          {data?.word_count && <Badge variant="secondary">{data.word_count} words</Badge>}
+          {data?.reading_time_minutes && <Badge variant="secondary">{data.reading_time_minutes} min read</Badge>}
+        </div>
+      </div>
+
+      {/* Blog content rendered from markdown */}
+      <div className="rounded-xl border border-border-default bg-surface-0 p-6">
+        <div className="prose prose-invert max-w-none text-text-primary">
+          <div className="whitespace-pre-wrap text-body font-sans leading-relaxed">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
+          </div>
+        </div>
+      </div>
+
+      {/* Social promotion */}
+      {socialPromo && (
+        <div className="rounded-xl border border-border-default bg-surface-1 p-4 space-y-3">
+          <p className="text-small font-medium text-text-primary">Social Promotion</p>
+          {socialPromo.x_post && (
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Twitter className="h-3.5 w-3.5 text-text-primary" />
+                <span className="text-small font-medium text-text-secondary">X Post</span>
+              </div>
+              <p className="text-small text-text-secondary bg-surface-0 rounded-lg p-3">{socialPromo.x_post}</p>
+            </div>
+          )}
+          {socialPromo.linkedin_post && (
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Linkedin className="h-3.5 w-3.5 text-[#0A66C2]" />
+                <span className="text-small font-medium text-text-secondary">LinkedIn</span>
+              </div>
+              <p className="text-small text-text-secondary bg-surface-0 rounded-lg p-3 whitespace-pre-line">{socialPromo.linkedin_post}</p>
+            </div>
+          )}
+          {socialPromo.email_subject && (
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Mail className="h-3.5 w-3.5 text-text-tertiary" />
+                <span className="text-small font-medium text-text-secondary">Email Subject</span>
+              </div>
+              <p className="text-small text-text-secondary bg-surface-0 rounded-lg p-3">{socialPromo.email_subject}</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function CroReportPreview({ data }: { data: Record<string, any> }) {
+  const findings = data?.findings ?? [];
+  const quickWins = data?.quick_wins ?? [];
+  const severityColor: Record<string, string> = { critical: "text-error", warning: "text-warning", info: "text-info" };
+
+  return (
+    <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
+      {data?.score != null && (
+        <div className="flex items-center gap-4">
+          <div className={`text-h1 font-bold font-mono ${data.score >= 70 ? "text-success" : data.score >= 40 ? "text-warning" : "text-error"}`}>
+            {data.score}
+          </div>
+          <div>
+            <p className="text-body font-medium text-text-primary">CRO Score</p>
+            <p className="text-small text-text-tertiary">out of 100</p>
+          </div>
+        </div>
+      )}
+      {data?.summary && <p className="text-small text-text-secondary">{data.summary}</p>}
+
+      {findings.map((f: { severity: string; category?: string; title: string; detail?: string; recommendation?: string; impact?: string }, i: number) => (
+        <div key={i} className="rounded-xl border border-border-default bg-surface-0 p-4 space-y-2 animate-in" style={{ animationDelay: `${i * 40}ms` }}>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`text-small font-bold uppercase ${severityColor[f.severity] ?? "text-text-tertiary"}`}>{f.severity}</span>
+            {f.category && <Badge variant="secondary">{f.category}</Badge>}
+            {f.impact && <Badge variant="secondary" className="text-text-tertiary">{f.impact} impact</Badge>}
+          </div>
+          <p className="text-small font-medium text-text-primary">{f.title}</p>
+          {f.detail && <p className="text-small text-text-secondary">{f.detail}</p>}
+          {f.recommendation && (
+            <p className="text-small text-accent">
+              <span className="font-medium">Fix: </span>{f.recommendation}
+            </p>
+          )}
+        </div>
+      ))}
+
+      {quickWins.length > 0 && (
+        <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 space-y-2">
+          <p className="text-small font-medium text-accent">Quick Wins</p>
+          <ul className="space-y-1.5">
+            {quickWins.map((w: string, i: number) => (
+              <li key={i} className="text-small text-text-secondary flex gap-2">
+                <span className="text-accent shrink-0">{i + 1}.</span><span>{w}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GeneratingIndicator({ label }: { label: string }) {
+  return (
+    <div className="rounded-xl border border-border-default bg-surface-0 p-8 flex flex-col items-center text-center">
+      <Loader2 className="h-8 w-8 animate-spin text-accent mb-4" />
+      <p className="text-body text-text-primary font-medium">{label}</p>
+      <p className="text-small text-text-tertiary mt-2">
+        We&apos;ll format the result as soon as it&apos;s ready.
+      </p>
+    </div>
+  );
+}
+
+function ParseFailureNotice({ text }: { text: string }) {
+  return (
+    <div className="rounded-xl border border-warning/30 bg-surface-0 p-4 space-y-2">
+      <p className="text-small text-text-primary font-medium">
+        We got a response but couldn&apos;t format it. You can regenerate below.
+      </p>
+      <details className="text-small">
+        <summary className="cursor-pointer text-text-tertiary hover:text-text-secondary">
+          Show raw output
+        </summary>
+        <pre className="mt-2 whitespace-pre-wrap text-caption text-text-secondary font-mono break-words max-h-[320px] overflow-y-auto">
+          {text}
+        </pre>
+      </details>
+    </div>
+  );
+}
+
 // ---------- component ----------
 
 function ContentPageInner({
@@ -980,443 +1418,6 @@ function ContentPageInner({
       toast("Copied to clipboard!", "info");
       setTimeout(() => setCopied(false), 2000);
     }
-  }
-
-  // XPreview, LinkedInPreview, and the inner EmailPreview were previously
-  // defined here. XPreview/LinkedInPreview were never rendered (dead code) —
-  // removed. EmailPreview is now at module scope (above ContentPageInner)
-  // so React doesn't unmount its state on every parent re-render.
-
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function CopywritingPreview({ data }: { data: Record<string, any> }) {
-    const variants = data?.variants ?? [];
-    const recommendations = data?.recommendations ?? [];
-
-    return (
-      <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
-        {variants.map((v: { text: string; rationale?: string; tone?: string }, i: number) => (
-          <div
-            key={i}
-            className="rounded-xl border border-border-default bg-surface-0 p-4 space-y-3 animate-in"
-            style={{ animationDelay: `${i * 60}ms` }}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <Badge variant="secondary">Variant {i + 1}</Badge>
-              {data?.type && <Badge variant="secondary" className="text-text-tertiary">{data.type}</Badge>}
-            </div>
-            <p className="text-body text-text-primary font-medium leading-relaxed">
-              {v.text}
-            </p>
-            {v.rationale && (
-              <p className="text-small text-text-secondary">
-                <span className="font-medium text-text-primary">Why it works: </span>
-                {v.rationale}
-              </p>
-            )}
-            {v.tone && (
-              <p className="text-small text-text-tertiary">
-                <span className="font-medium text-text-secondary">Tone: </span>
-                {v.tone}
-              </p>
-            )}
-          </div>
-        ))}
-        {recommendations.length > 0 && (
-          <div className="rounded-xl border border-border-default bg-surface-1 p-4 space-y-2">
-            <p className="text-small font-medium text-text-primary">Recommendations</p>
-            <ul className="space-y-1.5">
-              {recommendations.map((r: string, i: number) => (
-                <li key={i} className="text-small text-text-secondary flex gap-2">
-                  <span className="text-accent shrink-0">•</span>
-                  <span>{r}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function ContentStrategyPreview({ data }: { data: Record<string, any> }) {
-    const pillars = data?.pillars ?? [];
-    const calendar = data?.content_calendar ?? [];
-    const kpis = data?.kpis ?? [];
-    const quickWins = data?.quick_wins ?? [];
-
-    return (
-      <div className="space-y-5 max-h-[600px] overflow-y-auto pr-1">
-        {data?.strategy_name && (
-          <div className="space-y-1">
-            <h3 className="text-body font-medium text-text-primary">{data.strategy_name}</h3>
-            {data?.time_horizon && (
-              <p className="text-small text-text-tertiary">Timeline: {data.time_horizon}</p>
-            )}
-          </div>
-        )}
-
-        {/* Quick wins */}
-        {quickWins.length > 0 && (
-          <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 space-y-2">
-            <p className="text-small font-medium text-accent">Quick Wins</p>
-            <ul className="space-y-1.5">
-              {quickWins.map((w: string, i: number) => (
-                <li key={i} className="text-small text-text-secondary flex gap-2">
-                  <span className="text-accent shrink-0">{i + 1}.</span>
-                  <span>{w}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Content pillars */}
-        {pillars.map((pillar: { topic: string; intent?: string; search_opportunity?: string; content_pieces?: { title: string; format?: string; channel?: string; priority?: string; brief?: string }[] }, pi: number) => (
-          <div key={pi} className="rounded-xl border border-border-default bg-surface-0 p-4 space-y-3 animate-in" style={{ animationDelay: `${pi * 60}ms` }}>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-body font-medium text-text-primary">{pillar.topic}</span>
-              {pillar.intent && <Badge variant="secondary">{pillar.intent}</Badge>}
-              {pillar.search_opportunity && (
-                <Badge variant="secondary" className="text-text-tertiary">SEO: {pillar.search_opportunity}</Badge>
-              )}
-            </div>
-            {pillar.content_pieces?.map((piece, ci: number) => (
-              <div key={ci} className="ml-3 pl-3 border-l border-border-subtle space-y-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-small font-medium text-text-primary">{piece.title}</span>
-                  {piece.format && <Badge variant="secondary" className="text-[0.65rem]">{piece.format}</Badge>}
-                  {piece.channel && <Badge variant="secondary" className="text-[0.65rem] text-text-tertiary">{piece.channel}</Badge>}
-                  {piece.priority && (
-                    <Badge variant="secondary" className={`text-[0.65rem] ${piece.priority === "high" ? "text-error" : piece.priority === "medium" ? "text-warning" : "text-text-tertiary"}`}>
-                      {piece.priority}
-                    </Badge>
-                  )}
-                </div>
-                {piece.brief && <p className="text-small text-text-tertiary">{piece.brief}</p>}
-              </div>
-            ))}
-          </div>
-        ))}
-
-        {/* Calendar */}
-        {calendar.length > 0 && (
-          <div className="rounded-xl border border-border-default bg-surface-0 p-4 space-y-3">
-            <p className="text-small font-medium text-text-primary">Content Calendar</p>
-            {calendar.map((week: { week: number; pieces: string[]; theme?: string }, wi: number) => (
-              <div key={wi} className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary">Week {week.week}</Badge>
-                  {week.theme && <span className="text-small text-text-tertiary">{week.theme}</span>}
-                </div>
-                <ul className="ml-4 space-y-0.5">
-                  {week.pieces.map((p, pi: number) => (
-                    <li key={pi} className="text-small text-text-secondary flex gap-2">
-                      <span className="text-text-tertiary shrink-0">•</span>{p}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* KPIs */}
-        {kpis.length > 0 && (
-          <div className="rounded-xl border border-border-default bg-surface-1 p-4 space-y-2">
-            <p className="text-small font-medium text-text-primary">KPIs</p>
-            <ul className="space-y-1">
-              {kpis.map((kpi: string, i: number) => (
-                <li key={i} className="text-small text-text-secondary flex gap-2">
-                  <span className="text-accent shrink-0">•</span>{kpi}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function CompetitorAnalysisPreview({ data }: { data: Record<string, any> }) {
-    const competitors = data?.competitors ?? [];
-    const gaps = data?.positioning_gaps ?? [];
-    const contentOpps = data?.content_opportunities ?? [];
-    const messagingRecs = data?.messaging_recommendations ?? [];
-    const quickWins = data?.quick_wins ?? [];
-
-    return (
-      <div className="space-y-5 max-h-[600px] overflow-y-auto pr-1">
-        {data?.analysis_name && (
-          <h3 className="text-body font-medium text-text-primary">{data.analysis_name}</h3>
-        )}
-
-        {/* Competitors */}
-        {competitors.map((c: { name: string; url?: string; positioning?: string; strengths?: string[]; weaknesses?: string[]; messaging_analysis?: string; pricing_model?: string }, i: number) => (
-          <div key={i} className="rounded-xl border border-border-default bg-surface-0 p-4 space-y-3 animate-in" style={{ animationDelay: `${i * 60}ms` }}>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-body font-medium text-text-primary">{c.name}</span>
-              {c.url && <Badge variant="secondary" className="text-text-tertiary text-[0.65rem]">{c.url}</Badge>}
-            </div>
-            {c.positioning && <p className="text-small text-text-secondary">{c.positioning}</p>}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {c.strengths && c.strengths.length > 0 && (
-                <div className="space-y-1">
-                  <p className="text-small font-medium text-success">Strengths</p>
-                  <ul className="space-y-1">
-                    {c.strengths.map((s: string, si: number) => (
-                      <li key={si} className="text-small text-text-secondary flex gap-2">
-                        <span className="text-success shrink-0">+</span><span>{s}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {c.weaknesses && c.weaknesses.length > 0 && (
-                <div className="space-y-1">
-                  <p className="text-small font-medium text-error">Weaknesses</p>
-                  <ul className="space-y-1">
-                    {c.weaknesses.map((w: string, wi: number) => (
-                      <li key={wi} className="text-small text-text-secondary flex gap-2">
-                        <span className="text-error shrink-0">−</span><span>{w}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-            {c.messaging_analysis && (
-              <p className="text-small text-text-tertiary">
-                <span className="font-medium text-text-secondary">Messaging: </span>{c.messaging_analysis}
-              </p>
-            )}
-          </div>
-        ))}
-
-        {/* Positioning gaps */}
-        {gaps.length > 0 && (
-          <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 space-y-3">
-            <p className="text-small font-medium text-accent">Positioning Gaps</p>
-            {gaps.map((g: { gap: string; opportunity: string; impact?: string; effort?: string }, i: number) => (
-              <div key={i} className="space-y-1 pb-3 border-b border-border-subtle last:border-0 last:pb-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-small font-medium text-text-primary">{g.gap}</span>
-                  {g.impact && <Badge variant="secondary" className={`text-[0.65rem] ${g.impact === "high" ? "text-error" : g.impact === "medium" ? "text-warning" : "text-text-tertiary"}`}>{g.impact} impact</Badge>}
-                  {g.effort && <Badge variant="secondary" className="text-[0.65rem] text-text-tertiary">{g.effort} effort</Badge>}
-                </div>
-                <p className="text-small text-text-secondary">{g.opportunity}</p>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Content opportunities */}
-        {contentOpps.length > 0 && (
-          <div className="rounded-xl border border-border-default bg-surface-0 p-4 space-y-3">
-            <p className="text-small font-medium text-text-primary">Content Opportunities</p>
-            {contentOpps.map((c: { topic: string; rationale: string; suggested_format?: string; priority?: string }, i: number) => (
-              <div key={i} className="space-y-1 pb-3 border-b border-border-subtle last:border-0 last:pb-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-small font-medium text-text-primary">{c.topic}</span>
-                  {c.priority && <Badge variant="secondary" className={`text-[0.65rem] ${c.priority === "high" ? "text-error" : "text-text-tertiary"}`}>{c.priority}</Badge>}
-                  {c.suggested_format && <Badge variant="secondary" className="text-[0.65rem] text-text-tertiary">{c.suggested_format}</Badge>}
-                </div>
-                <p className="text-small text-text-secondary">{c.rationale}</p>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Messaging recommendations */}
-        {messagingRecs.length > 0 && (
-          <div className="rounded-xl border border-border-default bg-surface-1 p-4 space-y-3">
-            <p className="text-small font-medium text-text-primary">Messaging Recommendations</p>
-            {messagingRecs.map((r: { area: string; current_issue?: string; recommendation: string; example?: string }, i: number) => (
-              <div key={i} className="space-y-1 pb-3 border-b border-border-subtle last:border-0 last:pb-0">
-                <Badge variant="secondary">{r.area}</Badge>
-                {r.current_issue && <p className="text-small text-error">{r.current_issue}</p>}
-                <p className="text-small text-text-secondary">{r.recommendation}</p>
-                {r.example && <p className="text-small text-accent italic">&ldquo;{r.example}&rdquo;</p>}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Quick wins */}
-        {quickWins.length > 0 && (
-          <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 space-y-2">
-            <p className="text-small font-medium text-accent">Quick Wins</p>
-            <ul className="space-y-1.5">
-              {quickWins.map((w: string, i: number) => (
-                <li key={i} className="text-small text-text-secondary flex gap-2">
-                  <span className="text-accent shrink-0">{i + 1}.</span><span>{w}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function BlogPostPreview({ data }: { data: Record<string, any> }) {
-    const markdown = data?.content_markdown ?? "";
-    const socialPromo = data?.social_promotion;
-
-    return (
-      <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
-        {/* Meta info */}
-        <div className="rounded-xl border border-border-default bg-surface-1 p-4 space-y-2">
-          {data?.meta_title && (
-            <div>
-              <span className="text-small font-medium text-text-tertiary">SEO Title: </span>
-              <span className="text-small text-text-primary">{data.meta_title}</span>
-            </div>
-          )}
-          {data?.meta_description && (
-            <div>
-              <span className="text-small font-medium text-text-tertiary">Meta Description: </span>
-              <span className="text-small text-text-secondary">{data.meta_description}</span>
-            </div>
-          )}
-          <div className="flex gap-3 flex-wrap">
-            {data?.slug && <Badge variant="secondary">/{data.slug}</Badge>}
-            {data?.word_count && <Badge variant="secondary">{data.word_count} words</Badge>}
-            {data?.reading_time_minutes && <Badge variant="secondary">{data.reading_time_minutes} min read</Badge>}
-          </div>
-        </div>
-
-        {/* Blog content rendered from markdown */}
-        <div className="rounded-xl border border-border-default bg-surface-0 p-6">
-          <div className="prose prose-invert max-w-none text-text-primary">
-            <div className="whitespace-pre-wrap text-body font-sans leading-relaxed">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
-            </div>
-          </div>
-        </div>
-
-        {/* Social promotion */}
-        {socialPromo && (
-          <div className="rounded-xl border border-border-default bg-surface-1 p-4 space-y-3">
-            <p className="text-small font-medium text-text-primary">Social Promotion</p>
-            {socialPromo.x_post && (
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Twitter className="h-3.5 w-3.5 text-text-primary" />
-                  <span className="text-small font-medium text-text-secondary">X Post</span>
-                </div>
-                <p className="text-small text-text-secondary bg-surface-0 rounded-lg p-3">{socialPromo.x_post}</p>
-              </div>
-            )}
-            {socialPromo.linkedin_post && (
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Linkedin className="h-3.5 w-3.5 text-[#0A66C2]" />
-                  <span className="text-small font-medium text-text-secondary">LinkedIn</span>
-                </div>
-                <p className="text-small text-text-secondary bg-surface-0 rounded-lg p-3 whitespace-pre-line">{socialPromo.linkedin_post}</p>
-              </div>
-            )}
-            {socialPromo.email_subject && (
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Mail className="h-3.5 w-3.5 text-text-tertiary" />
-                  <span className="text-small font-medium text-text-secondary">Email Subject</span>
-                </div>
-                <p className="text-small text-text-secondary bg-surface-0 rounded-lg p-3">{socialPromo.email_subject}</p>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function CroReportPreview({ data }: { data: Record<string, any> }) {
-    const findings = data?.findings ?? [];
-    const quickWins = data?.quick_wins ?? [];
-    const severityColor: Record<string, string> = { critical: "text-error", warning: "text-warning", info: "text-info" };
-
-    return (
-      <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
-        {data?.score != null && (
-          <div className="flex items-center gap-4">
-            <div className={`text-h1 font-bold font-mono ${data.score >= 70 ? "text-success" : data.score >= 40 ? "text-warning" : "text-error"}`}>
-              {data.score}
-            </div>
-            <div>
-              <p className="text-body font-medium text-text-primary">CRO Score</p>
-              <p className="text-small text-text-tertiary">out of 100</p>
-            </div>
-          </div>
-        )}
-        {data?.summary && <p className="text-small text-text-secondary">{data.summary}</p>}
-
-        {findings.map((f: { severity: string; category?: string; title: string; detail?: string; recommendation?: string; impact?: string }, i: number) => (
-          <div key={i} className="rounded-xl border border-border-default bg-surface-0 p-4 space-y-2 animate-in" style={{ animationDelay: `${i * 40}ms` }}>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className={`text-small font-bold uppercase ${severityColor[f.severity] ?? "text-text-tertiary"}`}>{f.severity}</span>
-              {f.category && <Badge variant="secondary">{f.category}</Badge>}
-              {f.impact && <Badge variant="secondary" className="text-text-tertiary">{f.impact} impact</Badge>}
-            </div>
-            <p className="text-small font-medium text-text-primary">{f.title}</p>
-            {f.detail && <p className="text-small text-text-secondary">{f.detail}</p>}
-            {f.recommendation && (
-              <p className="text-small text-accent">
-                <span className="font-medium">Fix: </span>{f.recommendation}
-              </p>
-            )}
-          </div>
-        ))}
-
-        {quickWins.length > 0 && (
-          <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 space-y-2">
-            <p className="text-small font-medium text-accent">Quick Wins</p>
-            <ul className="space-y-1.5">
-              {quickWins.map((w: string, i: number) => (
-                <li key={i} className="text-small text-text-secondary flex gap-2">
-                  <span className="text-accent shrink-0">{i + 1}.</span><span>{w}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  function GeneratingIndicator({ label }: { label: string }) {
-    return (
-      <div className="rounded-xl border border-border-default bg-surface-0 p-8 flex flex-col items-center text-center">
-        <Loader2 className="h-8 w-8 animate-spin text-accent mb-4" />
-        <p className="text-body text-text-primary font-medium">{label}</p>
-        <p className="text-small text-text-tertiary mt-2">
-          We&apos;ll format the result as soon as it&apos;s ready.
-        </p>
-      </div>
-    );
-  }
-
-  function ParseFailureNotice({ text }: { text: string }) {
-    return (
-      <div className="rounded-xl border border-warning/30 bg-surface-0 p-4 space-y-2">
-        <p className="text-small text-text-primary font-medium">
-          We got a response but couldn&apos;t format it. You can regenerate below.
-        </p>
-        <details className="text-small">
-          <summary className="cursor-pointer text-text-tertiary hover:text-text-secondary">
-            Show raw output
-          </summary>
-          <pre className="mt-2 whitespace-pre-wrap text-caption text-text-secondary font-mono break-words max-h-[320px] overflow-y-auto">
-            {text}
-          </pre>
-        </details>
-      </div>
-    );
   }
 
   // ---------- render ----------
