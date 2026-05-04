@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   Inbox,
   Copy,
+  Users,
 } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
@@ -38,8 +39,9 @@ interface EmailSequence {
 interface SequenceStep {
   id: string;
   step_order: number;
-  subject: string;
-  delay_days: number;
+  subject_line: string | null;
+  preview_text: string | null;
+  delay_hours: number;
   asset_id: string | null;
   assets: {
     id: string;
@@ -47,12 +49,19 @@ interface SequenceStep {
       subject?: string;
       preview_text?: string;
       html?: string;
+      body_html?: string;
       cta_text?: string;
       cta_url?: string;
     };
     title: string | null;
     status: string;
   } | null;
+}
+
+interface AudienceOption {
+  id: string;
+  name: string;
+  contact_count: number;
 }
 
 interface SequenceDetail {
@@ -94,6 +103,12 @@ export default function EmailsPage({
   const [selectedSeq, setSelectedSeq] = useState<SequenceDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [sendingStep, setSendingStep] = useState<string | null>(null);
+  // Enroll-audience flow state. The dialog opens from the sequence detail
+  // header; selecting an audience reveals the confirm preview.
+  const [enrollOpen, setEnrollOpen] = useState(false);
+  const [audiences, setAudiences] = useState<AudienceOption[]>([]);
+  const [selectedAudienceId, setSelectedAudienceId] = useState<string | null>(null);
+  const [enrolling, setEnrolling] = useState(false);
 
   useEffect(() => {
     fetchSequences();
@@ -115,6 +130,50 @@ export default function EmailsPage({
     setDetailLoading(false);
   }
 
+  async function openEnroll() {
+    setEnrollOpen(true);
+    setSelectedAudienceId(null);
+    if (audiences.length === 0) {
+      const res = await fetch(`/api/projects/${projectId}/audiences`);
+      if (res.ok) setAudiences(await res.json());
+    }
+  }
+
+  async function handleEnroll() {
+    if (!selectedSeq || !selectedAudienceId) return;
+    setEnrolling(true);
+    const res = await fetch(
+      `/api/projects/${projectId}/email-sequences/${selectedSeq.id}/enroll`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ audienceId: selectedAudienceId }),
+      }
+    );
+    setEnrolling(false);
+    if (res.ok) {
+      const data = await res.json();
+      const enrolled = data.enrolled ?? 0;
+      const skipped = data.skipped ?? 0;
+      const skippedNote = skipped > 0 ? ` (${skipped} already enrolled)` : "";
+      toast(
+        `Enrolled ${enrolled} contact${enrolled === 1 ? "" : "s"}${skippedNote}. First step sends shortly.`,
+        "success"
+      );
+      setEnrollOpen(false);
+    } else {
+      const err = await res.json().catch(() => ({}));
+      toast(err.error || "Could not enroll", "error");
+    }
+  }
+
+  function describeDelay(hours: number) {
+    if (!hours || hours <= 0) return "Immediately";
+    if (hours < 24) return `+${hours}h`;
+    const days = Math.round(hours / 24);
+    return `+${days}d`;
+  }
+
   async function handleSendTest(step: SequenceStep) {
     if (!step.assets?.content) return;
     const to = window.prompt(
@@ -127,14 +186,22 @@ export default function EmailsPage({
       toast("That doesn't look like a valid email address", "error");
       return;
     }
+    const subject =
+      step.subject_line ||
+      step.assets?.content?.subject ||
+      "(no subject)";
+    const html =
+      step.assets?.content?.body_html ||
+      step.assets?.content?.html ||
+      `<p>${subject}</p>`;
     setSendingStep(step.id);
     const res = await fetch("/api/publish/email", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         to: trimmed,
-        subject: step.subject,
-        html: step.assets.content.html || `<p>${step.subject}</p>`,
+        subject,
+        html,
         projectId,
       }),
     });
@@ -150,10 +217,13 @@ export default function EmailsPage({
   function handleCopyStep(step: SequenceStep) {
     const c = step.assets?.content;
     if (!c) return;
+    const subject = step.subject_line || c.subject || "";
+    const html = c.body_html || c.html || "";
+    const preview = step.preview_text || c.preview_text || "";
     const parts: string[] = [];
-    if (step.subject) parts.push(`Subject: ${step.subject}`);
-    if (c.preview_text) parts.push(`Preview: ${c.preview_text}`);
-    if (c.html) parts.push("", c.html);
+    if (subject) parts.push(`Subject: ${subject}`);
+    if (preview) parts.push(`Preview: ${preview}`);
+    if (html) parts.push("", html);
     if (c.cta_text || c.cta_url) {
       parts.push("", `CTA: ${c.cta_text ?? ""}${c.cta_url ? ` (${c.cta_url})` : ""}`);
     }
@@ -316,6 +386,12 @@ export default function EmailsPage({
                     ? "s"
                     : ""}
                 </DialogDescription>
+                <div className="pt-3">
+                  <Button size="sm" onClick={openEnroll}>
+                    <Users className="h-3.5 w-3.5 mr-1.5" />
+                    Send to audience
+                  </Button>
+                </div>
               </DialogHeader>
 
               <div className="space-y-4 mt-2">
@@ -330,7 +406,9 @@ export default function EmailsPage({
                           {i + 1}
                         </span>
                         <h4 className="text-body font-medium text-text-primary">
-                          {step.subject}
+                          {step.subject_line ||
+                            step.assets?.content?.subject ||
+                            "(no subject)"}
                         </h4>
                       </div>
                       <div className="flex items-center gap-1">
@@ -364,18 +442,16 @@ export default function EmailsPage({
                       </div>
                     </div>
 
-                    {step.assets?.content?.preview_text && (
+                    {(step.preview_text || step.assets?.content?.preview_text) && (
                       <p className="text-small text-text-secondary mb-2">
-                        {step.assets.content.preview_text}
+                        {step.preview_text || step.assets?.content?.preview_text}
                       </p>
                     )}
 
                     <div className="flex items-center gap-3 text-caption text-text-tertiary">
                       <span className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        {step.delay_days === 0
-                          ? "Immediately"
-                          : `Day ${step.delay_days}`}
+                        {describeDelay(step.delay_hours)}
                       </span>
                       {step.assets?.content?.cta_text && (
                         <span>CTA: {step.assets.content.cta_text}</span>
@@ -386,6 +462,122 @@ export default function EmailsPage({
               </div>
             </>
           ) : null}
+        </DialogContent>
+      </Dialog>
+
+      {/* Enroll Audience Dialog */}
+      <Dialog open={enrollOpen} onOpenChange={setEnrollOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Send sequence to an audience</DialogTitle>
+            <DialogDescription>
+              Every subscribed contact will be enrolled. Steps fire on their
+              configured delays. Unsubscribed and bounced contacts are
+              skipped.
+            </DialogDescription>
+          </DialogHeader>
+
+          {audiences.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border-default p-6 text-center">
+              <p className="text-body text-text-secondary mb-4">
+                No audiences yet — create one before enrolling.
+              </p>
+              <Button asChild size="sm">
+                <Link href={`/projects/${projectId}/audiences`}>
+                  Create Audience
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {audiences.map((aud) => {
+                  const isSelected = selectedAudienceId === aud.id;
+                  const isEmpty = aud.contact_count === 0;
+                  return (
+                    <button
+                      key={aud.id}
+                      type="button"
+                      onClick={() => !isEmpty && setSelectedAudienceId(aud.id)}
+                      disabled={isEmpty}
+                      className={`w-full text-left rounded-lg border p-3 transition-colors ${
+                        isSelected
+                          ? "border-accent bg-accent/5"
+                          : "border-border-default hover:border-border-strong"
+                      } ${isEmpty ? "opacity-50 cursor-not-allowed" : ""}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-body font-medium text-text-primary truncate">
+                          {aud.name}
+                        </span>
+                        <span className="text-caption text-text-tertiary font-mono shrink-0 ml-2">
+                          {aud.contact_count} subscribed
+                        </span>
+                      </div>
+                      {isEmpty && (
+                        <p className="text-caption text-text-tertiary mt-1">
+                          No subscribed contacts to send to.
+                        </p>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {selectedAudienceId && selectedSeq && (
+                <div className="rounded-lg bg-surface-2 p-3 text-small">
+                  <p className="text-text-secondary">
+                    {(() => {
+                      const a = audiences.find((x) => x.id === selectedAudienceId);
+                      const stepCount = selectedSeq.email_sequence_steps?.length ?? 0;
+                      const total = (a?.contact_count ?? 0) * stepCount;
+                      return (
+                        <>
+                          About to enroll{" "}
+                          <span className="font-mono text-text-primary">
+                            {a?.contact_count}
+                          </span>{" "}
+                          contact{(a?.contact_count ?? 0) === 1 ? "" : "s"} across{" "}
+                          <span className="font-mono text-text-primary">
+                            {stepCount}
+                          </span>{" "}
+                          step{stepCount === 1 ? "" : "s"} —{" "}
+                          <span className="font-mono text-accent">{total}</span>{" "}
+                          email{total === 1 ? "" : "s"} total over the
+                          sequence's lifetime.
+                        </>
+                      );
+                    })()}
+                  </p>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setEnrollOpen(false)}
+                  disabled={enrolling}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleEnroll}
+                  disabled={!selectedAudienceId || enrolling}
+                >
+                  {enrolling ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                      Enrolling...
+                    </>
+                  ) : (
+                    "Enroll & start sending"
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
