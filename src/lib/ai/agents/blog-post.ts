@@ -6,7 +6,9 @@ export const blogPostSkill: SkillConfig = {
   name: "Blog Post",
   description: "SEO-optimized long-form blog posts with meta tags, structure, and social promotion snippets",
   model: "claude-sonnet-4-6",
-  maxTokens: 8000,
+  // 1500-word blog posts plus meta + social_promotion + conclusion run
+  // ~6500-7500 output tokens. 12000 keeps headroom for outliers.
+  maxTokens: 12000,
 
   buildSystemPrompt: (context: ProjectContext) => `
 You are an expert content marketer and SEO writer creating a blog post for a specific product/company.
