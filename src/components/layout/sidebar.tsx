@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -201,23 +202,32 @@ export function Sidebar() {
           {showLabel && (
             <Link
               href="/dashboard"
-              className="flex items-center gap-2"
+              className="flex items-center"
               onClick={handleNavClick}
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#D4945A] to-[#C88550]">
-                <span className="text-sm font-bold text-on-accent">C</span>
-              </div>
-              <span className="font-display text-lg text-text-primary">
-                Conduikt
-              </span>
+              <Image
+                src="/conduikt-horizontal.png"
+                alt="Conduikt"
+                width={140}
+                height={36}
+                priority
+                className="h-9 w-auto"
+              />
             </Link>
           )}
           {!showLabel && (
             <Link
               href="/dashboard"
-              className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#D4945A] to-[#C88550]"
+              className="mx-auto flex h-8 w-8 items-center justify-center"
             >
-              <span className="text-sm font-bold text-on-accent">C</span>
+              <Image
+                src="/conduikt-icon.png"
+                alt="Conduikt"
+                width={32}
+                height={32}
+                priority
+                className="h-8 w-8"
+              />
             </Link>
           )}
           {mobileMenuOpen && (
