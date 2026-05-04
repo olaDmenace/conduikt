@@ -330,6 +330,7 @@ export function Sidebar() {
                       <ProjectSubLink href={`${projectBase}/competitors`} icon={Swords} label="Competitors" pathname={pathname} onClick={handleNavClick} />
                       <ProjectSubLink href={`${projectBase}/emails`} icon={Mail} label="Email Sequences" pathname={pathname} onClick={handleNavClick} />
                       <ProjectSubLink href={`${projectBase}/audiences`} icon={Users} label="Audiences" pathname={pathname} onClick={handleNavClick} />
+                      <ProjectSubLink href={`${projectBase}/forms`} icon={FileText} label="Forms" pathname={pathname} onClick={handleNavClick} />
                       <ProjectSubLink href={`${projectBase}/broadcasts`} icon={Send} label="Broadcasts" pathname={pathname} onClick={handleNavClick} />
 
                       {/* Divider between project tools and agents */}
