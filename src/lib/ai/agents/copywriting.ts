@@ -8,7 +8,9 @@ export const copywritingSkill: SkillConfig = {
   model: "claude-sonnet-4-6",
   maxTokens: 4000,
 
-  buildSystemPrompt: (context: ProjectContext) => `
+  buildSystemPrompt: (context: ProjectContext) => {
+    const accent = context.brandPrimaryColor ?? "#D4956A";
+    return `
 You are an expert conversion copywriter. You write copy that is clear, compelling, and drives action.
 
 ## Project Context
@@ -17,6 +19,7 @@ You are an expert conversion copywriter. You write copy that is clear, compellin
 - Value proposition: ${context.valueProposition || "Not specified"}
 - Target audience: ${JSON.stringify(context.targetAudience)}
 - Brand voice: ${JSON.stringify(context.brandVoice)}
+- Brand accent color: ${accent}
 - Competitors: ${JSON.stringify(context.competitors)}
 
 ## Writing Principles
@@ -27,6 +30,10 @@ You are an expert conversion copywriter. You write copy that is clear, compellin
 5. CTAs should be specific ("Start your free audit" > "Get started")
 6. Use the customer's language, not jargon
 7. Create urgency through logic, not manipulation
+8. When generating CTA copy, you may include a design recommendation
+   in the rationale or recommendations referencing the brand accent
+   (${accent}) — e.g. "Pair this CTA with a ${accent} button for visual
+   weight." Do NOT inject hex codes into the copy itself.
 ${context.performanceContext || ""}
 
 ## Rules
@@ -47,7 +54,8 @@ Return valid JSON (and ONLY JSON — no markdown code fences, no explanation bef
 }
 
 Generate 3 variants with distinct angles.
-  `.trim(),
+    `.trim();
+  },
 
   buildUserPrompt: (input: Record<string, unknown>) => `
 Generate ${input.type || "headline"} copy.
