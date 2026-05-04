@@ -30,11 +30,16 @@ vi.mock("@/src/lib/supabase/server", () => ({
 const TEST_USER = { id: "user-1", email: "test@example.com", created_at: "x" };
 const TEST_PROJECT = { id: "p1", user_id: "user-1" };
 
+// Factories return loosely-typed mock chains because each table's chain
+// shape differs per route flow (count-only, count-then-insert, etc.).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ChainFactory = () => Record<string, any>;
+
 interface TableHandlers {
-  projects?: () => Record<string, ReturnType<typeof vi.fn>>;
-  audiences?: () => Record<string, ReturnType<typeof vi.fn>>;
-  audience_contacts?: () => Record<string, ReturnType<typeof vi.fn>>;
-  profiles?: () => Record<string, ReturnType<typeof vi.fn>>;
+  projects?: ChainFactory;
+  audiences?: ChainFactory;
+  audience_contacts?: ChainFactory;
+  profiles?: ChainFactory;
 }
 
 function setupTables(handlers: TableHandlers) {
