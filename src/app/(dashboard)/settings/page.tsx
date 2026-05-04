@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { User, CreditCard, Zap, Users, Loader2, Webhook, Palette, Mail } from "lucide-react";
+import { User, CreditCard, Zap, Users, Loader2, Webhook, Palette, Mail, Bot } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Input } from "@/src/components/ui/input";
@@ -48,6 +48,12 @@ const settingsNav = [
     name: "Brand Kit",
     href: "/settings/brand",
     icon: Palette,
+    active: false,
+  },
+  {
+    name: "Automation",
+    href: "/settings/automation",
+    icon: Bot,
     active: false,
   },
   {
