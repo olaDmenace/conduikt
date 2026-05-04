@@ -6,7 +6,12 @@ export const emailSequenceSkill: SkillConfig = {
   name: "Email Sequence",
   description: "Automated email sequence generation",
   model: "claude-sonnet-4-6",
-  maxTokens: 6000,
+  // 5 full HTML emails with table-based markup, inline-styled brand
+  // accents, and table-of-contents-style sections regularly hit 5500-6500
+  // output tokens. The previous 6000 cap pushed Claude to truncation
+  // exactly when the JSON closing braces would be emitted. 12000 gives
+  // comfortable headroom; tokens are billed on actual usage, not the cap.
+  maxTokens: 12000,
 
   buildSystemPrompt: (context: ProjectContext) => {
     const accent = context.brandPrimaryColor ?? "#D4956A";
