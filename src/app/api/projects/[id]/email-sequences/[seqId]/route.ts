@@ -29,8 +29,9 @@ export async function GET(
       email_sequence_steps (
         id,
         step_order,
-        subject,
-        delay_days,
+        subject_line,
+        preview_text,
+        delay_hours,
         asset_id,
         assets (
           id,
