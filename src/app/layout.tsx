@@ -42,7 +42,7 @@ const organizationJsonLd = {
   legalName: "Conduikt",
   url: "https://conduikt.com/",
   description:
-    "Conduikt is an AI marketing automation platform for SaaS founders. It audits websites, generates SEO content, publishes to LinkedIn and X, and produces ready-to-export email sequences from one dashboard.",
+    "Conduikt is an AI marketing automation platform for SaaS founders. It audits websites, generates SEO content, publishes to LinkedIn and X, and runs email marketing campaigns from one dashboard.",
   foundingDate: "2025",
   slogan: "AI Marketing Automation for SaaS Founders",
   logo: {
@@ -93,7 +93,7 @@ export const metadata: Metadata = {
     template: "%s | Conduikt",
   },
   description:
-    "Conduikt audits your site, generates SEO content, publishes to LinkedIn and X, and produces ready-to-export email sequences. AI marketing automation built for SaaS founders. Start free.",
+    "Conduikt audits your site, generates SEO content, publishes to LinkedIn and X, and runs email marketing campaigns from one dashboard. AI marketing automation built for SaaS founders. Start free.",
   robots: {
     index: true,
     follow: true,
@@ -118,7 +118,7 @@ export const metadata: Metadata = {
     locale: "en_US",
     title: "Conduikt: AI Marketing Automation for SaaS Founders",
     description:
-      "Conduikt audits your site, generates SEO content, publishes to LinkedIn and X, and produces ready-to-export email sequences. AI marketing automation built for SaaS founders. Start free.",
+      "Conduikt audits your site, generates SEO content, publishes to LinkedIn and X, and runs email marketing campaigns from one dashboard. AI marketing automation built for SaaS founders. Start free.",
     url: "https://conduikt.com/",
     siteName: "Conduikt",
     images: [

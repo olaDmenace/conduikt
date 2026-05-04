@@ -34,6 +34,58 @@ export function getSeatLimit(plan: PlanTier): number {
   return SEAT_LIMITS[plan];
 }
 
+// Email marketing per-tier limits. Resend bills Conduikt for every email
+// sent (transactional + marketing combined), so these limits cap our
+// liability on the free tier and shape the upgrade ladder. See
+// conduikt-pricing-strategy-v2.md for the rationale.
+export interface EmailLimits {
+  audiences: number;          // max audiences per user
+  contactsPerAudience: number; // max contacts in a single audience
+  emailsPerMonth: number;      // marketing emails this user can send per month
+  customDomain: boolean;       // can verify their own sending domain
+}
+
+export const EMAIL_LIMITS: Record<PlanTier, EmailLimits> = {
+  free: {
+    audiences: 1,
+    contactsPerAudience: 100,
+    emailsPerMonth: 50,
+    customDomain: false,
+  },
+  pro: {
+    audiences: 3,
+    contactsPerAudience: 2_000,
+    emailsPerMonth: 10_000,
+    customDomain: true,
+  },
+  growth: {
+    audiences: 10,
+    contactsPerAudience: 10_000,
+    emailsPerMonth: 50_000,
+    customDomain: true,
+  },
+  agency: {
+    audiences: Number.POSITIVE_INFINITY,
+    contactsPerAudience: 25_000,
+    emailsPerMonth: 200_000,
+    customDomain: true,
+  },
+};
+
+export function getEmailLimits(plan: PlanTier): EmailLimits {
+  return EMAIL_LIMITS[plan];
+}
+
+export function canVerifyCustomDomain(plan: PlanTier): boolean {
+  return EMAIL_LIMITS[plan].customDomain;
+}
+
+export function hasEmailQuotaAvailable(plan: PlanTier, used: number): boolean {
+  const limit = EMAIL_LIMITS[plan].emailsPerMonth;
+  if (isUnlimited(limit)) return true;
+  return used < limit;
+}
+
 export function canInviteTeammates(plan: PlanTier): boolean {
   return SEAT_LIMITS[plan] > 1;
 }

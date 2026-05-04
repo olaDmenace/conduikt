@@ -38,7 +38,12 @@ const plans: {
   {
     key: "free",
     name: "Free",
-    features: ["1 project", "5 AI generations/month", "Basic audit"],
+    features: [
+      "1 project",
+      "5 AI generations/month",
+      "Basic audit",
+      "1 audience, 50 marketing emails/mo",
+    ],
   },
   {
     key: "pro",
@@ -48,6 +53,7 @@ const plans: {
       "250 generations/month",
       "10 AI agents",
       "Multi-channel publishing",
+      "3 audiences, 10K marketing emails/mo + custom domain",
     ],
   },
   {
@@ -58,6 +64,7 @@ const plans: {
       "500 generations/month",
       "14 AI agents",
       "Analytics feedback loop",
+      "10 audiences, 50K marketing emails/mo",
     ],
   },
   {
@@ -69,6 +76,7 @@ const plans: {
       "15 AI agents",
       "White-label reports",
       "API access",
+      "Unlimited audiences, 200K marketing emails/mo",
     ],
   },
 ];

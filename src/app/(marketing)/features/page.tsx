@@ -7,12 +7,12 @@ import { Button } from "@/src/components/ui/button";
 export const metadata: Metadata = {
   title: "Features — 10 AI Marketing Agents for SEO, Content & Publishing",
   description:
-    "Explore Conduikt's AI marketing features: SEO audits, CRO analysis, AI copywriting, social content, email sequences, campaign orchestration, and multi-channel publishing.",
+    "Explore Conduikt's AI marketing features: SEO audits, CRO analysis, AI copywriting, social content, email marketing campaigns, campaign orchestration, and multi-channel publishing.",
   alternates: { canonical: "https://conduikt.com/features/" },
   openGraph: {
     title: "Features — 10 AI Marketing Agents for SEO, Content & Publishing",
     description:
-      "Explore Conduikt's AI marketing features: SEO audits, CRO analysis, AI copywriting, social content, email sequences, campaign orchestration, and multi-channel publishing.",
+      "Explore Conduikt's AI marketing features: SEO audits, CRO analysis, AI copywriting, social content, email marketing campaigns, campaign orchestration, and multi-channel publishing.",
     url: "https://conduikt.com/features/",
     type: "website",
   },
@@ -43,7 +43,7 @@ const featureGroups = [
     features: [
       { icon: Sparkles, title: "AI Copywriting", detail: "Headlines, body copy, CTAs — written in your brand voice with conversion psychology baked in." },
       { icon: FileText, title: "Social Content", detail: "A week of X and LinkedIn posts in seconds. Platform-optimized with hooks, formatting, and timing." },
-      { icon: Mail, title: "Email Sequences", detail: "Welcome, nurture, launch, re-engagement flows. AI writes the copy, you set the triggers." },
+      { icon: Mail, title: "Email Sequences", detail: "Welcome, nurture, launch, and re-engagement sequences. AI writes the copy and you send broadcasts to your audience without leaving Conduikt." },
     ],
   },
   {
@@ -52,7 +52,7 @@ const featureGroups = [
     features: [
       { icon: Shield, title: "Campaign Builder", detail: "Visual flow builder that chains audit, strategy, content, and publish into automated workflows." },
       { icon: Calendar, title: "Content Calendar", detail: "Schedule posts across X and LinkedIn. Visual calendar with drag-and-drop rescheduling." },
-      { icon: Globe, title: "Multi-Channel Publishing", detail: "One dashboard for all channels. Preview how content looks on each platform before publishing." },
+      { icon: Globe, title: "Multi-Channel Publishing", detail: "Schedule social posts to X and LinkedIn, send email broadcasts to your audience, and preview every piece before it ships — all from one dashboard." },
     ],
   },
   {

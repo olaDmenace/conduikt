@@ -47,6 +47,7 @@ import { VariantPanel } from "@/src/components/content/variant-panel";
 import { BulkGenerateDialog } from "@/src/components/content/bulk-generate-dialog";
 import { SendToWebhook } from "@/src/components/content/send-to-webhook";
 import { MediaPicker } from "@/src/components/media/media-picker";
+import { SendBroadcastModal } from "@/src/components/email/send-broadcast-modal";
 import type { PostMedia } from "@/src/lib/media/types";
 import { EMPTY_MEDIA, hasMedia } from "@/src/lib/media/types";
 import { splitForX } from "@/src/lib/integrations/x-thread";
@@ -491,13 +492,15 @@ function SocialPostCard({
 
 type EmailPreviewProps = {
   data: Record<string, unknown> | null;
+  projectId: string;
   projectName: string | null | undefined;
   toast: (message: string, variant?: "success" | "error" | "warning" | "info") => void;
 };
 
-function EmailPreview({ data, projectName, toast }: EmailPreviewProps) {
+function EmailPreview({ data, projectId, projectName, toast }: EmailPreviewProps) {
   const [emailCopied, setEmailCopied] = useState(false);
   const [activeEmail, setActiveEmail] = useState(0);
+  const [sendModalOpen, setSendModalOpen] = useState(false);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const emails = (data?.emails as any[]) ?? [];
@@ -515,6 +518,15 @@ function EmailPreview({ data, projectName, toast }: EmailPreviewProps) {
   }
 
   return (
+    <>
+    <SendBroadcastModal
+      open={sendModalOpen}
+      onClose={() => setSendModalOpen(false)}
+      projectId={projectId}
+      defaultSubject={email?.subject_line ?? ""}
+      htmlBody={htmlBody}
+      toast={toast}
+    />
     <div className="space-y-3">
       {data?.sequence_name ? (
         <p className="text-small font-medium text-text-primary">{String(data.sequence_name)}</p>
@@ -559,14 +571,25 @@ function EmailPreview({ data, projectName, toast }: EmailPreviewProps) {
               </div>
             )}
           </div>
-          <button
-            type="button"
-            onClick={copyHtml}
-            className="p-2 rounded-lg hover:bg-surface-2 text-text-tertiary hover:text-text-primary transition-colors"
-            title="Copy HTML"
-          >
-            {emailCopied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setSendModalOpen(true)}
+              className="flex items-center gap-1.5 rounded-lg border border-border-default bg-surface-0 px-3 py-1.5 text-caption font-medium text-text-primary hover:border-accent hover:bg-accent-muted hover:text-accent transition-colors"
+              title="Send this email to an audience"
+            >
+              <Send className="h-3.5 w-3.5" />
+              Send Broadcast
+            </button>
+            <button
+              type="button"
+              onClick={copyHtml}
+              className="p-2 rounded-lg hover:bg-surface-2 text-text-tertiary hover:text-text-primary transition-colors"
+              title="Copy HTML"
+            >
+              {emailCopied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
         <div className="p-1 bg-white">
           <iframe
@@ -584,6 +607,7 @@ function EmailPreview({ data, projectName, toast }: EmailPreviewProps) {
         </div>
       )}
     </div>
+    </>
   );
 }
 
@@ -1779,6 +1803,7 @@ function ContentPageInner({
                     ) : parsedContent ? (
                       <EmailPreview
                         data={parsedContent}
+                        projectId={projectId}
                         projectName={project?.name}
                         toast={toast}
                       />
