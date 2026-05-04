@@ -13,6 +13,8 @@ import {
   ArrowRight,
   AlertTriangle,
   FileEdit,
+  Globe,
+  Sparkles,
 } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
@@ -115,6 +117,33 @@ export default function BroadcastsPage({
         title="Broadcasts"
         description="One-shot email campaigns sent to your audiences. Send a new broadcast from any generated email sequence."
       />
+
+      {/* Sender info — sets expectations about which domain emails come from
+          and previews the upcoming custom-domain feature for paid users. */}
+      <Card className="mb-6 border-accent/20 bg-accent-muted/40">
+        <CardContent>
+          <div className="flex items-start gap-3">
+            <Globe className="h-5 w-5 text-accent shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-body font-medium text-text-primary">
+                Sending from{" "}
+                <code className="font-mono text-accent">mail@conduikt.com</code>
+              </p>
+              <p className="text-small text-text-secondary mt-1">
+                Free and Pro tiers send from our shared domain.{" "}
+                <strong>Custom sending domain</strong> (verify your own
+                e.g. <code className="font-mono">mail.yourcompany.com</code>) is
+                shipping soon as a Pro+ feature for better deliverability and
+                brand consistency.
+              </p>
+              <Badge variant="secondary" className="mt-2">
+                <Sparkles className="h-3 w-3 mr-1" />
+                Coming soon
+              </Badge>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {loading ? (
         <div className="flex items-center justify-center py-12">
