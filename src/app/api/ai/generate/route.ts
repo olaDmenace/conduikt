@@ -50,10 +50,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  // Check generation limits
+  // Check generation limits + pull Brand Kit fields for prompt context.
   const { data: profile } = await supabase
     .from("profiles")
-    .select("plan, generation_count, generation_reset_at")
+    .select(
+      "plan, generation_count, generation_reset_at, brand_primary_color"
+    )
     .eq("id", user.id)
     .single();
 
@@ -66,8 +68,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Build prompts with performance context
-  const context = buildProjectContext(project);
+  // Build prompts with performance context + user's Brand Kit color.
+  const context = buildProjectContext(project, profile);
   const performanceCtx = await buildPerformanceContext(projectId, supabase);
   if (performanceCtx) {
     context.performanceContext = performanceCtx;

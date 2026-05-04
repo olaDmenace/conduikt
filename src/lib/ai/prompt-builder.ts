@@ -2,23 +2,33 @@ import type { ProjectContext } from "./agents/types";
 
 /**
  * Builds a ProjectContext from a database project record.
+ *
+ * Optional second arg `profile` carries user-level Brand Kit data. We
+ * keep it optional so callers that don't fetch the profile (older
+ * routes, internal agent invocations) don't break — those agents simply
+ * won't see the brand color and will use neutral defaults.
  */
-export function buildProjectContext(project: {
-  name: string;
-  website_url: string | null;
-  description: string | null;
-  target_audience: unknown;
-  value_proposition: string | null;
-  brand_voice: unknown;
-  competitors: unknown;
-  keywords: unknown;
-  industry?: string | null;
-  business_description?: string | null;
-  audience_pain_point?: string | null;
-  online_channels?: string[] | null;
-  brand_voice_example?: string | null;
-  primary_goal?: string | null;
-}): ProjectContext {
+export function buildProjectContext(
+  project: {
+    name: string;
+    website_url: string | null;
+    description: string | null;
+    target_audience: unknown;
+    value_proposition: string | null;
+    brand_voice: unknown;
+    competitors: unknown;
+    keywords: unknown;
+    industry?: string | null;
+    business_description?: string | null;
+    audience_pain_point?: string | null;
+    online_channels?: string[] | null;
+    brand_voice_example?: string | null;
+    primary_goal?: string | null;
+  },
+  profile?: {
+    brand_primary_color?: string | null;
+  } | null
+): ProjectContext {
   // Use onboarding industry column if available, else fall back to existing fields
   const description =
     project.business_description || project.description || undefined;
@@ -44,6 +54,14 @@ export function buildProjectContext(project: {
     };
   }
 
+  // Brand color: only forward a syntactically-plausible #RRGGBB hex.
+  // Defaults stay undefined so agents fall back to neutral styling.
+  const rawColor = profile?.brand_primary_color;
+  const brandPrimaryColor =
+    typeof rawColor === "string" && /^#[0-9a-fA-F]{6}$/.test(rawColor)
+      ? rawColor
+      : undefined;
+
   return {
     name: project.name,
     websiteUrl: project.website_url ?? "",
@@ -54,5 +72,6 @@ export function buildProjectContext(project: {
     brandVoice,
     competitors: project.competitors as ProjectContext["competitors"],
     keywords: project.keywords as ProjectContext["keywords"],
+    brandPrimaryColor,
   };
 }
