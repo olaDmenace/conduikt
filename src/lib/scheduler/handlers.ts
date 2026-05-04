@@ -5,5 +5,5 @@
 // As new handler files are added under src/lib/scheduler/handlers/, append
 // their import here. They each call registerHandler() at module-eval time.
 
-// Handlers registered so far: (none yet — added in subsequent tasks)
-export {};
+// Handlers registered so far:
+import "./handlers/email-sequence-step";
