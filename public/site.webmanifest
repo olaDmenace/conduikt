@@ -1,21 +1,80 @@
 {
-  "name": "Conduikt",
+  "$schema": "https://json.schemastore.org/web-manifest-combined.json",
+  "id": "/",
+  "name": "Conduikt — AI Marketing Automation",
   "short_name": "Conduikt",
-  "description": "AI-powered marketing automation for founders, marketers, and agencies.",
+  "description": "AI marketing automation for SaaS founders. Audit your site, generate SEO content, publish to LinkedIn and X, and run email marketing campaigns from one dashboard.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#1A1816",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "lang": "en-US",
+  "dir": "ltr",
+  "background_color": "#0C0C0E",
   "theme_color": "#D4956A",
+  "categories": ["productivity", "business", "marketing"],
   "icons": [
+    {
+      "src": "/favicon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Open your Conduikt dashboard",
+      "url": "/dashboard",
+      "icons": [
+        { "src": "/icon-192.png", "sizes": "192x192" }
+      ]
+    },
+    {
+      "name": "New Project",
+      "short_name": "New",
+      "description": "Start a new marketing project",
+      "url": "/projects/new",
+      "icons": [
+        { "src": "/icon-192.png", "sizes": "192x192" }
+      ]
+    }
+  ],
+  "prefer_related_applications": false
 }
