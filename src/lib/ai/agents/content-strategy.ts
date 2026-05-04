@@ -6,7 +6,9 @@ export const contentStrategySkill: SkillConfig = {
   name: "Content Strategy",
   description: "Strategic content planning with topics, formats, and calendar recommendations",
   model: "claude-sonnet-4-6",
-  maxTokens: 5000,
+  // Pillars × content_pieces × calendar entries fan out fast on bigger
+  // strategies; 8000 gives headroom for 90-day plans without truncation.
+  maxTokens: 8000,
 
   buildSystemPrompt: (context: ProjectContext) => `
 You are an expert content strategist who builds data-driven content plans for SaaS and digital products.

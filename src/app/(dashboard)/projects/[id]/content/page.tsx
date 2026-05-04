@@ -1031,7 +1031,39 @@ function GeneratingIndicator({ label }: { label: string }) {
   );
 }
 
-function ParseFailureNotice({ text }: { text: string }) {
+function ParseFailureNotice({
+  text,
+  truncationMessage,
+}: {
+  text: string;
+  truncationMessage?: string | null;
+}) {
+  // Distinct surface for "ran out of token budget mid-stream" — the
+  // partial JSON below isn't a parse bug, the AI literally stopped
+  // mid-thought. Tell the user that directly so they don't burn another
+  // generation thinking the parser is broken.
+  if (truncationMessage) {
+    return (
+      <div className="rounded-xl border border-warning/30 bg-surface-0 p-4 space-y-2">
+        <p className="text-small text-text-primary font-medium">
+          The AI ran out of space before it could finish.
+        </p>
+        <p className="text-caption text-text-tertiary">
+          {truncationMessage} Your generation count was still used for this
+          attempt — sorry about that. Click Regenerate to retry; we&apos;ve
+          adjusted the limits so this should be rare.
+        </p>
+        <details className="text-small">
+          <summary className="cursor-pointer text-text-tertiary hover:text-text-secondary">
+            Show partial output
+          </summary>
+          <pre className="mt-2 whitespace-pre-wrap text-caption text-text-secondary font-mono break-words max-h-[320px] overflow-y-auto">
+            {text}
+          </pre>
+        </details>
+      </div>
+    );
+  }
   return (
     <div className="rounded-xl border border-warning/30 bg-surface-0 p-4 space-y-2">
       <p className="text-small text-text-primary font-medium">
@@ -1097,6 +1129,10 @@ function ContentPageInner({
   // Parsed structured content for other skills
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [parsedContent, setParsedContent] = useState<Record<string, any> | null>(null);
+  // Set when the stream emits a `generation_truncated` error event so we
+  // can surface a clearer notice ("ran out of space") instead of the
+  // generic "couldn't format it" parse-failure UI.
+  const [truncationNotice, setTruncationNotice] = useState<string | null>(null);
 
   // Publish state
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
@@ -1320,6 +1356,7 @@ function ContentPageInner({
     setSavedAssetId(null);
     setParsedPosts(null);
     setParsedContent(null);
+    setTruncationNotice(null);
 
     try {
       const res = await fetch("/api/ai/stream", {
@@ -1372,7 +1409,17 @@ function ContentPageInner({
           } else if (data.type === "done") {
             setUsage(data.usage);
           } else if (data.type === "error") {
-            toast(data.error, "error");
+            if (data.code === "generation_truncated") {
+              // Distinct UX path: don't toast a generic error; show the
+              // dedicated truncation notice so the user understands the
+              // partial output below isn't a parser bug.
+              setTruncationNotice(
+                data.error ||
+                  "The AI ran out of space before finishing. Try again, or shorten your prompt."
+              );
+            } else {
+              toast(data.error, "error");
+            }
           }
         }
       }
@@ -1792,7 +1839,7 @@ function ContentPageInner({
                       </div>
                     ) : (
                       <div ref={outputRef}>
-                        <ParseFailureNotice text={result} />
+                        <ParseFailureNotice text={result} truncationMessage={truncationNotice} />
                       </div>
                     )
                   ) : selectedSkill === "email-sequence" ? (
@@ -1809,7 +1856,7 @@ function ContentPageInner({
                       />
                     ) : (
                       <div ref={outputRef}>
-                        <ParseFailureNotice text={result} />
+                        <ParseFailureNotice text={result} truncationMessage={truncationNotice} />
                       </div>
                     )
                   ) : selectedSkill === "copywriting" ? (
@@ -1821,7 +1868,7 @@ function ContentPageInner({
                       <CopywritingPreview data={parsedContent} />
                     ) : (
                       <div ref={outputRef}>
-                        <ParseFailureNotice text={result} />
+                        <ParseFailureNotice text={result} truncationMessage={truncationNotice} />
                       </div>
                     )
                   ) : selectedSkill === "content-strategy" ? (
@@ -1833,7 +1880,7 @@ function ContentPageInner({
                       <ContentStrategyPreview data={parsedContent} />
                     ) : (
                       <div ref={outputRef}>
-                        <ParseFailureNotice text={result} />
+                        <ParseFailureNotice text={result} truncationMessage={truncationNotice} />
                       </div>
                     )
                   ) : selectedSkill === "competitor-analysis" ? (
@@ -1845,7 +1892,7 @@ function ContentPageInner({
                       <CompetitorAnalysisPreview data={parsedContent} />
                     ) : (
                       <div ref={outputRef}>
-                        <ParseFailureNotice text={result} />
+                        <ParseFailureNotice text={result} truncationMessage={truncationNotice} />
                       </div>
                     )
                   ) : selectedSkill === "blog-post" ? (
@@ -1857,7 +1904,7 @@ function ContentPageInner({
                       <BlogPostPreview data={parsedContent} />
                     ) : (
                       <div ref={outputRef}>
-                        <ParseFailureNotice text={result} />
+                        <ParseFailureNotice text={result} truncationMessage={truncationNotice} />
                       </div>
                     )
                   ) : selectedSkill === "page-cro" ? (
@@ -1869,7 +1916,7 @@ function ContentPageInner({
                       <CroReportPreview data={parsedContent} />
                     ) : (
                       <div ref={outputRef}>
-                        <ParseFailureNotice text={result} />
+                        <ParseFailureNotice text={result} truncationMessage={truncationNotice} />
                       </div>
                     )
                   ) : generating ? (
