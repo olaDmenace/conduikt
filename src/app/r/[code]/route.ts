@@ -19,14 +19,14 @@ const CRAWLER_HTML = `<!DOCTYPE html>
 <head>
 <meta charset="utf-8">
 <title>Conduikt: AI Marketing Automation for SaaS Founders</title>
-<meta name="description" content="Conduikt audits your site, generates SEO content, publishes to LinkedIn and X, and produces ready-to-export email sequences. AI marketing automation built for SaaS founders. Start free.">
+<meta name="description" content="Conduikt audits your site, generates SEO content, publishes to LinkedIn and X, and runs email marketing campaigns from one dashboard. AI marketing automation built for SaaS founders. Start free.">
 <link rel="canonical" href="https://conduikt.com/">
 <meta name="robots" content="noindex,follow">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Conduikt">
 <meta property="og:title" content="Conduikt: AI Marketing Automation for SaaS Founders">
-<meta property="og:description" content="Conduikt audits your site, generates SEO content, publishes to LinkedIn and X, and produces ready-to-export email sequences. AI marketing automation built for SaaS founders. Start free.">
+<meta property="og:description" content="Conduikt audits your site, generates SEO content, publishes to LinkedIn and X, and runs email marketing campaigns from one dashboard. AI marketing automation built for SaaS founders. Start free.">
 <meta property="og:url" content="https://conduikt.com/">
 <meta property="og:image" content="https://conduikt.com/og-image.png">
 <meta property="og:image:width" content="1200">
@@ -36,7 +36,7 @@ const CRAWLER_HTML = `<!DOCTYPE html>
 <meta name="twitter:site" content="@conduikt">
 <meta name="twitter:creator" content="@olayinkafag">
 <meta name="twitter:title" content="Conduikt: AI Marketing Automation for SaaS Founders">
-<meta name="twitter:description" content="Conduikt audits your site, generates SEO content, publishes to LinkedIn and X, and produces ready-to-export email sequences.">
+<meta name="twitter:description" content="Conduikt audits your site, generates SEO content, publishes to LinkedIn and X, and runs email marketing campaigns from one dashboard.">
 <meta name="twitter:image" content="https://conduikt.com/og-image.png">
 <meta name="twitter:image:alt" content="Conduikt AI marketing dashboard showing SEO audit, content generation, and multi-channel publishing">
 </head>

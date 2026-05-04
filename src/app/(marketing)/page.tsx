@@ -60,10 +60,10 @@ const features = [
   },
   {
     icon: Globe,
-    title: "Multi-Channel Publishing for LinkedIn and X",
+    title: "Multi-Channel Publishing — Social and Email",
     href: "/features#publishing",
     description:
-      "Schedule and publish directly to X and LinkedIn from one dashboard. Email sequences export to your ESP.",
+      "Schedule X and LinkedIn posts, send email broadcasts to your audience, and track delivery — all from one dashboard.",
   },
   {
     icon: TrendingUp,
@@ -74,10 +74,10 @@ const features = [
   },
   {
     icon: Mail,
-    title: "AI Email Sequence Builder for SaaS",
+    title: "AI Email Marketing for SaaS",
     href: "/features#email",
     description:
-      "Create automated welcome, nurture, and launch email flows. AI writes the copy, you set the triggers.",
+      "Generate welcome, nurture, and launch email sequences with AI, then send them to your audience without leaving Conduikt. Track opens, clicks, and unsubscribes in one place.",
   },
   {
     icon: Shield,
@@ -97,6 +97,7 @@ const tiers = [
       "3 AI agents (SEO Audit, Social, Keywords)",
       "5 generations/month",
       "1 project",
+      "1 audience, 50 marketing emails/mo",
       "Basic results (critical findings require Pro)",
     ],
     cta: "Start Free",
@@ -113,6 +114,7 @@ const tiers = [
       "Full unblurred results on all agents",
       "Growth Playbook included",
       "Multi-channel publishing",
+      "3 audiences, 10K emails/mo + custom domain",
       "Saved assets library",
     ],
     cta: "Start Pro Trial",
@@ -126,6 +128,7 @@ const tiers = [
       "14 AI agents — Pro plus Campaigns, Calendar, A/B Tests, Video Ads",
       "500 generations/month",
       "15 projects",
+      "10 audiences, 50K emails/mo",
       "Analytics feedback loop",
       "Priority support (24h response)",
     ],
@@ -142,6 +145,7 @@ const tiers = [
       "Unlimited projects",
       "Multi-client workspace",
       "Team seats (up to 5)",
+      "Unlimited audiences, 200K emails/mo",
       "White-label exports + API access",
       "Dedicated support",
     ],
