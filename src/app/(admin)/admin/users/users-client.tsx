@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Search, ArrowUpDown } from "lucide-react";
+import { Search, ArrowUpDown, Download } from "lucide-react";
 
 type User = {
   id: string;
@@ -68,15 +68,26 @@ export function AdminUsersClient({ users }: { users: User[] }) {
             {users.length} registered users
           </p>
         </div>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary" />
-          <input
-            type="text"
-            placeholder="Search by name or email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="rounded-lg border border-border-default bg-surface-2 pl-9 pr-4 py-2 text-body text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/40 w-72"
-          />
+        <div className="flex items-center gap-2">
+          <a
+            href="/api/admin/users/export"
+            download
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border-default bg-surface-2 px-3 py-2 text-small font-medium text-text-primary hover:border-accent hover:bg-accent-muted transition-colors"
+            title="Download all users as CSV"
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </a>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary" />
+            <input
+              type="text"
+              placeholder="Search by name or email..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="rounded-lg border border-border-default bg-surface-2 pl-9 pr-4 py-2 text-body text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/40 w-72"
+            />
+          </div>
         </div>
       </div>
 

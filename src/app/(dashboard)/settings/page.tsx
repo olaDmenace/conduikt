@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { User, CreditCard, Zap, Users, Loader2, Webhook, Palette } from "lucide-react";
+import { User, CreditCard, Zap, Users, Loader2, Webhook, Palette, Mail } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Input } from "@/src/components/ui/input";
@@ -38,6 +38,12 @@ const settingsNav = [
     active: false,
   },
   { name: "Team", href: "/settings/team", icon: Users, active: false },
+  {
+    name: "Sending Domain",
+    href: "/settings/email-domain",
+    icon: Mail,
+    active: false,
+  },
   {
     name: "Brand Kit",
     href: "/settings/brand",
