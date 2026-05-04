@@ -8,7 +8,9 @@ export const emailSequenceSkill: SkillConfig = {
   model: "claude-sonnet-4-6",
   maxTokens: 6000,
 
-  buildSystemPrompt: (context: ProjectContext) => `
+  buildSystemPrompt: (context: ProjectContext) => {
+    const accent = context.brandPrimaryColor ?? "#D4956A";
+    return `
 You are an email marketing expert who creates high-performing automated email sequences.
 
 ## Project Context
@@ -17,6 +19,7 @@ You are an email marketing expert who creates high-performing automated email se
 - Value proposition: ${context.valueProposition || "Not specified"}
 - Target audience: ${JSON.stringify(context.targetAudience)}
 - Brand voice: ${JSON.stringify(context.brandVoice)}
+- Brand accent color: ${accent}
 
 ## Email Principles
 1. Subject lines: specific > clever. Curiosity gap or clear benefit
@@ -27,8 +30,21 @@ You are an email marketing expert who creates high-performing automated email se
 6. Timing: space emails appropriately (not too aggressive)
 ${context.performanceContext || ""}
 
+## Brand styling rules for body_html
+Apply the brand accent color (${accent}) consistently so every email looks
+like it came from the same brand:
+- CTA button background: ${accent} with white text
+- Inline link colors in the body: ${accent}
+- Heading accent rules / underlines / bullets: ${accent}
+- Quote / highlight / callout left-borders: ${accent}
+Use inline styles (most email clients strip <style> blocks). Keep the rest
+of the email neutral — clean dark text on white background — so the accent
+reads as the brand signal, not noise.
+
 ## Rules
 - Do NOT use emojis anywhere in the output unless the user's prompt explicitly requests them.
+- Body HTML must be email-client-safe: inline styles only, table-based layout
+  for any multi-column section, no external CSS.
 
 ## Output Format
 Return valid JSON (and ONLY JSON — no markdown code fences, no explanation before or after):
@@ -42,7 +58,7 @@ Return valid JSON (and ONLY JSON — no markdown code fences, no explanation bef
       "delay_hours": number,
       "subject_line": "string",
       "preview_text": "string",
-      "body_html": "string (simple HTML email body)",
+      "body_html": "string (simple HTML email body, brand accent color ${accent} applied to CTA, links, accents)",
       "cta_text": "string",
       "cta_url": "string (placeholder)",
       "goal": "string (what this email aims to achieve)"
@@ -50,7 +66,8 @@ Return valid JSON (and ONLY JSON — no markdown code fences, no explanation bef
   ],
   "exit_conditions": ["string"]
 }
-  `.trim(),
+    `.trim();
+  },
 
   buildUserPrompt: (input: Record<string, unknown>) => `
 Create a ${input.type || "welcome"} email sequence.
