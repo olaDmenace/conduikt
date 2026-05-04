@@ -33,6 +33,7 @@ import {
   Swords,
   Webhook,
   Users,
+  Send,
   CreditCard,
   Link2,
   Play,
@@ -328,6 +329,8 @@ export function Sidebar() {
                       <ProjectSubLink href={`${projectBase}/analytics`} icon={TrendingUp} label="Analytics" pathname={pathname} onClick={handleNavClick} />
                       <ProjectSubLink href={`${projectBase}/competitors`} icon={Swords} label="Competitors" pathname={pathname} onClick={handleNavClick} />
                       <ProjectSubLink href={`${projectBase}/emails`} icon={Mail} label="Email Sequences" pathname={pathname} onClick={handleNavClick} />
+                      <ProjectSubLink href={`${projectBase}/audiences`} icon={Users} label="Audiences" pathname={pathname} onClick={handleNavClick} />
+                      <ProjectSubLink href={`${projectBase}/broadcasts`} icon={Send} label="Broadcasts" pathname={pathname} onClick={handleNavClick} />
 
                       {/* Divider between project tools and agents */}
                       <div className="my-1.5 border-t border-border-subtle/60" />
