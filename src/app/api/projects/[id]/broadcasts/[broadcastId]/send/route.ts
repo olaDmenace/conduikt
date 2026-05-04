@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 import { createServiceClient } from "@/src/lib/supabase/service";
 import { verifyProjectOwnership } from "@/src/lib/auth/verify-ownership";
-import { createBroadcast, sendBroadcast } from "@/src/lib/email/marketing";
+import { createBroadcast, ensureUnsubscribeFooter, sendBroadcast } from "@/src/lib/email/marketing";
 import { checkEmailsPerMonthLimit, getUserPlan } from "@/src/lib/email/usage";
 
 // POST /api/projects/[id]/broadcasts/[broadcastId]/send
@@ -131,12 +131,16 @@ export async function POST(
     );
   }
 
-  // Create the broadcast in Resend.
+  // Create the broadcast in Resend. Auto-inject the unsubscribe footer
+  // if the user didn't include {{{RESEND_UNSUBSCRIBE_URL}}} themselves —
+  // Resend rejects broadcasts without an unsubscribe link, and CAN-SPAM/
+  // GDPR require one regardless.
   const fromHeader = `${broadcast.from_name || "Conduikt"} <${broadcast.from_email}>`;
+  const finalHtml = ensureUnsubscribeFooter(broadcast.html_body);
   const resendCreate = await createBroadcast({
     audienceId: audience.resend_audience_id,
     subject: broadcast.subject,
-    html: broadcast.html_body,
+    html: finalHtml,
     text: broadcast.text_body ?? undefined,
     from: fromHeader,
     replyTo: broadcast.reply_to ?? undefined,

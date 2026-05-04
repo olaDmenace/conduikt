@@ -70,6 +70,11 @@ interface ResendWebhookData {
   subject?: string;
   click?: { link?: string };
   bounce?: { type?: string; message?: string };
+  // contact.* events
+  id?: string;          // Resend contact id
+  email?: string;       // contact email
+  audience_id?: string; // Resend audience id
+  unsubscribed?: boolean;
   // Many other fields may be present depending on event type — we capture
   // the lot via metadata: jsonb.
   [key: string]: unknown;
@@ -132,6 +137,12 @@ export async function POST(request: NextRequest) {
     event = JSON.parse(rawBody);
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  // Contact events: Resend fires contact.updated when a recipient clicks
+  // the unsubscribe link in their hosted unsubscribe page. Sync to our DB.
+  if (event.type === "contact.updated" || event.type === "contact.deleted") {
+    return await handleContactEvent(event, svixId);
   }
 
   const dbEventType = EVENT_TO_DB[event.type];
@@ -217,4 +228,96 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ ok: true });
+}
+
+// ---------------------------------------------------------------------------
+// contact.updated / contact.deleted
+//
+// Fires when a recipient clicks Resend's hosted one-click unsubscribe link
+// (the {{{RESEND_UNSUBSCRIBE_URL}}} we inject into broadcast HTML), or
+// when a contact is removed via Resend dashboard. We mirror the change
+// into our audience_contacts row so future sends skip them.
+// ---------------------------------------------------------------------------
+async function handleContactEvent(event: ResendWebhookEvent, svixId: string | null) {
+  const data = event.data ?? {};
+  const resendContactId = typeof data.id === "string" ? data.id : null;
+  const email = typeof data.email === "string" ? data.email.toLowerCase() : null;
+  if (!resendContactId && !email) {
+    return NextResponse.json({ ok: true, ignored: "no contact identity" });
+  }
+
+  const supabase = createServiceClient();
+
+  // Locate our contact row by resend_contact_id first (most reliable),
+  // falling back to email if the resend id wasn't synced when the contact
+  // was created (best-effort fallback for orphaned mirrors).
+  let contactQuery = supabase
+    .from("audience_contacts")
+    .select("id, audience_id, status");
+  if (resendContactId) {
+    contactQuery = contactQuery.eq("resend_contact_id", resendContactId);
+  } else if (email) {
+    contactQuery = contactQuery.eq("email", email);
+  }
+  const { data: contact } = await contactQuery.maybeSingle();
+  if (!contact) {
+    return NextResponse.json({ ok: true, ignored: "contact not in conduikt" });
+  }
+
+  if (event.type === "contact.deleted") {
+    // Hard delete on Resend side → soft-delete on ours (mark unsubscribed
+    // with reason so analytics retain the row but we never send to them).
+    await supabase
+      .from("audience_contacts")
+      .update({
+        status: "unsubscribed",
+        suppression_reason: "manual",
+        unsubscribed_at: new Date().toISOString(),
+      })
+      .eq("id", contact.id);
+    return NextResponse.json({ ok: true, action: "soft-deleted" });
+  }
+
+  // contact.updated — only act if the unsubscribe state changed.
+  const nowUnsubscribed = data.unsubscribed === true;
+  const wasUnsubscribed = contact.status === "unsubscribed";
+  if (nowUnsubscribed && !wasUnsubscribed) {
+    await supabase
+      .from("audience_contacts")
+      .update({
+        status: "unsubscribed",
+        suppression_reason: "manual",
+        unsubscribed_at: new Date().toISOString(),
+      })
+      .eq("id", contact.id);
+
+    // Also append an email_events row so per-broadcast unsubscribe rates
+    // can be computed. We don't have broadcast_id from contact.updated,
+    // so leave that null — analytics queries that need broadcast attribution
+    // can correlate by occurred_at and contact_id.
+    await supabase.from("email_events").insert({
+      broadcast_id: null,
+      contact_id: contact.id,
+      event_type: "unsubscribed",
+      occurred_at: event.created_at ?? new Date().toISOString(),
+      metadata: data as Record<string, unknown>,
+      resend_event_id: svixId,
+    }).then(() => {}, () => {}); // unique-violation tolerant
+
+    return NextResponse.json({ ok: true, action: "unsubscribed" });
+  } else if (!nowUnsubscribed && wasUnsubscribed) {
+    // Re-subscribe — rare, but possible if the user fixes their unsubscribe.
+    await supabase
+      .from("audience_contacts")
+      .update({
+        status: "subscribed",
+        suppression_reason: null,
+        unsubscribed_at: null,
+      })
+      .eq("id", contact.id);
+    return NextResponse.json({ ok: true, action: "resubscribed" });
+  }
+
+  // No state change → no-op.
+  return NextResponse.json({ ok: true, action: "no-change" });
 }

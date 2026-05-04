@@ -336,3 +336,25 @@ export const CONDUIKT_MARKETING_DOMAIN = "conduikt.com";
 // to the user's own email. This sidesteps the cost of provisioning a
 // per-user subdomain on Resend.
 export const CONDUIKT_SHARED_FROM_EMAIL = "mail@conduikt.com";
+
+// Resend rejects broadcasts that don't include an unsubscribe link, and
+// CAN-SPAM/GDPR require one anyway. Resend templates support a magic
+// {{{RESEND_UNSUBSCRIBE_URL}}} variable that is replaced per-recipient
+// with their one-click unsubscribe link.
+//
+// ensureUnsubscribeFooter returns the html unchanged if it already
+// references the variable; otherwise it appends a minimal styled footer.
+const UNSUBSCRIBE_TOKEN_RE = /RESEND_UNSUBSCRIBE_URL/i;
+
+export function ensureUnsubscribeFooter(html: string): string {
+  if (UNSUBSCRIBE_TOKEN_RE.test(html)) return html;
+  const footer = `
+<div style="margin-top:32px;padding-top:16px;border-top:1px solid #e5e0db;color:#8a8176;font-size:12px;line-height:1.6;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <p style="margin:0;">You're receiving this because you subscribed to our list. <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#C88540;text-decoration:underline;">Unsubscribe</a>.</p>
+</div>`;
+  // If the html has a closing </body>, inject before it; otherwise append.
+  if (/<\/body>/i.test(html)) {
+    return html.replace(/<\/body>/i, `${footer}\n</body>`);
+  }
+  return html + footer;
+}
