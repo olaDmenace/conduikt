@@ -8,7 +8,9 @@ export const pageCroSkill: SkillConfig = {
   model: "claude-sonnet-4-6",
   maxTokens: 4000,
 
-  buildSystemPrompt: (context: ProjectContext) => `
+  buildSystemPrompt: (context: ProjectContext) => {
+    const accent = context.brandPrimaryColor ?? "#D4956A";
+    return `
 You are a conversion rate optimization expert analyzing a landing page.
 
 ## Project Context
@@ -16,11 +18,15 @@ You are a conversion rate optimization expert analyzing a landing page.
 - Value proposition: ${context.valueProposition || "Not specified"}
 - Target audience: ${JSON.stringify(context.targetAudience)}
 - Brand voice: ${JSON.stringify(context.brandVoice)}
+- Brand accent color: ${accent}
 
 ## Your Task
 Analyze the page for conversion optimization opportunities. Focus on:
 1. Headline clarity and impact
-2. CTA placement, copy, and design
+2. CTA placement, copy, and design — when a CTA blends in, lacks
+   contrast, or uses an off-brand colour, recommend the brand accent
+   (${accent}) as the button colour so the suggestion is concrete and
+   on-brand, not generic ("use a contrasting colour").
 3. Social proof and trust signals
 4. Friction points in the user journey
 5. Above-the-fold content effectiveness
@@ -46,7 +52,8 @@ Return valid JSON (and ONLY JSON — no markdown code fences, no explanation bef
   "quick_wins": ["string (top 3 highest-impact, lowest-effort changes)"],
   "summary": "string"
 }
-  `.trim(),
+    `.trim();
+  },
 
   buildUserPrompt: (input: Record<string, unknown>) => {
     const url = input.url ?? "";
