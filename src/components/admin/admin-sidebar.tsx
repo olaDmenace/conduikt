@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -10,7 +11,6 @@ import {
   CreditCard,
   Settings,
   ArrowLeft,
-  Shield,
   DollarSign,
   Share2,
   Wallet,
@@ -35,17 +35,22 @@ export function AdminSidebar() {
   return (
     <aside className="fixed left-0 top-0 z-50 flex h-screen w-[260px] flex-col border-r border-border-default bg-surface-0">
       {/* Logo */}
-      <div className="flex h-16 items-center gap-2 border-b border-border-subtle px-4 shrink-0">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#D4945A] to-[#C88550]">
-          <Shield className="h-4 w-4 text-on-accent" />
-        </div>
-        <div>
-          <span className="font-display text-lg text-text-primary">Admin</span>
-          <span className="ml-1.5 text-[0.6875rem] font-medium uppercase tracking-wider text-accent">
-            Panel
-          </span>
-        </div>
-      </div>
+      <Link
+        href="/admin"
+        className="flex h-16 items-center gap-2 border-b border-border-subtle px-4 shrink-0"
+      >
+        <Image
+          src="/conduikt-horizontal.png"
+          alt="Conduikt"
+          width={140}
+          height={32}
+          priority
+          className="h-8 w-auto"
+        />
+        <span className="text-[0.6875rem] font-medium uppercase tracking-wider text-accent border-l border-border-subtle pl-2">
+          Admin
+        </span>
+      </Link>
 
       {/* Nav links */}
       <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">

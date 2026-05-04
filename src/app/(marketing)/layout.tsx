@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/src/components/ui/button";
 import { ArrowRight, Facebook, Twitter } from "lucide-react";
@@ -12,13 +13,15 @@ export default function MarketingLayout({
       {/* Navigation */}
       <nav className="fixed top-0 z-50 w-full border-b border-border-subtle bg-surface-0/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#D4945A] to-[#C88550]">
-              <span className="text-sm font-bold text-on-accent">C</span>
-            </div>
-            <span className="font-display text-lg text-text-primary">
-              Conduikt
-            </span>
+          <Link href="/" className="flex items-center" aria-label="Conduikt home">
+            <Image
+              src="/conduikt-horizontal.png"
+              alt="Conduikt"
+              width={160}
+              height={40}
+              priority
+              className="h-10 w-auto"
+            />
           </Link>
           <div className="hidden items-center gap-8 md:flex">
             <Link
@@ -78,12 +81,16 @@ export default function MarketingLayout({
       {/* Footer */}
       <footer className="border-t border-border-subtle py-12">
         <div className="mx-auto max-w-6xl px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded bg-gradient-to-br from-[#D4945A] to-[#C88550]">
-              <span className="text-[0.625rem] font-bold text-on-accent">C</span>
-            </div>
-            <span className="text-small text-text-secondary">
-              Conduikt by Technicity Digital
+          <div className="flex items-center gap-3">
+            <Image
+              src="/conduikt-horizontal.png"
+              alt="Conduikt"
+              width={120}
+              height={28}
+              className="h-7 w-auto opacity-90"
+            />
+            <span className="text-small text-text-tertiary">
+              by Technicity Digital
             </span>
           </div>
           <div className="flex items-center gap-6 text-small text-text-tertiary">
