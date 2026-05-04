@@ -7,3 +7,4 @@
 
 // Handlers registered so far:
 import "./handlers/email-sequence-step";
+import "./handlers/playbook-action";

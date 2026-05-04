@@ -105,15 +105,22 @@ function ActionCard({
   projectId,
   checked,
   onCheck,
+  onAutoExecute,
+  autoBusyChannel,
 }: {
   action: PlaybookAction;
   projectId: string;
   checked: boolean;
   onCheck: () => void;
+  onAutoExecute: (action: PlaybookAction, channel: "x" | "linkedin") => void;
+  autoBusyChannel: "x" | "linkedin" | null;
 }) {
   const [expanded, setExpanded] = useState(false);
   const cat = categoryConfig[action.category] ?? categoryConfig.content;
   const CatIcon = cat.icon;
+  // Auto-execute is only wired for social actions for now — that's the
+  // surface we have publish handlers for.
+  const showAutoExecute = action.category === "social";
 
   return (
     <div
@@ -184,6 +191,37 @@ function ActionCard({
                   <span className="text-text-secondary font-medium">Success metric:</span> {action.success_metric}
                 </p>
               </div>
+              {showAutoExecute && (
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <span className="text-caption text-text-tertiary">
+                    Auto-execute:
+                  </span>
+                  <button
+                    onClick={() => onAutoExecute(action, "x")}
+                    disabled={autoBusyChannel !== null}
+                    className="inline-flex items-center gap-1 rounded-md border border-border-default bg-surface-0 px-2.5 py-1 text-caption text-text-secondary hover:border-accent/40 hover:text-accent transition-colors disabled:opacity-50"
+                  >
+                    {autoBusyChannel === "x" ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Zap className="h-3 w-3" />
+                    )}
+                    Generate for X
+                  </button>
+                  <button
+                    onClick={() => onAutoExecute(action, "linkedin")}
+                    disabled={autoBusyChannel !== null}
+                    className="inline-flex items-center gap-1 rounded-md border border-border-default bg-surface-0 px-2.5 py-1 text-caption text-text-secondary hover:border-accent/40 hover:text-accent transition-colors disabled:opacity-50"
+                  >
+                    {autoBusyChannel === "linkedin" ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Zap className="h-3 w-3" />
+                    )}
+                    Generate for LinkedIn
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -218,6 +256,52 @@ function GrowthPageInner({
   // Track checked actions
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [expandedPhase, setExpandedPhase] = useState<number | null>(1);
+  // Auto-execute busy state — which action+channel is mid-flight, so we
+  // can disable both buttons on that card and show a spinner.
+  const [autoBusyAction, setAutoBusyAction] = useState<string | null>(null);
+  const [autoBusyChannel, setAutoBusyChannel] = useState<"x" | "linkedin" | null>(
+    null
+  );
+
+  async function handleAutoExecute(
+    action: PlaybookAction,
+    channel: "x" | "linkedin"
+  ) {
+    setAutoBusyAction(action.id);
+    setAutoBusyChannel(channel);
+    try {
+      const res = await fetch(
+        `/api/projects/${projectId}/playbook/auto-execute`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            actionId: action.id,
+            title: action.title,
+            channel,
+          }),
+        }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast(data.error || "Auto-execute failed", "error");
+        return;
+      }
+      if (data.mode === "off") {
+        toast(
+          `Auto-execute is off for ${channel === "x" ? "X" : "LinkedIn"}. Open Settings → Automation to enable.`,
+          "info"
+        );
+        return;
+      }
+      toast(data.message || "Queued.", "success");
+    } catch {
+      toast("Network error", "error");
+    } finally {
+      setAutoBusyAction(null);
+      setAutoBusyChannel(null);
+    }
+  }
 
   // Fetch user plan for save gating
   useEffect(() => {
@@ -630,6 +714,10 @@ function GrowthPageInner({
                       projectId={projectId}
                       checked={checked.has(action.id)}
                       onCheck={() => toggleCheck(action.id)}
+                      onAutoExecute={handleAutoExecute}
+                      autoBusyChannel={
+                        autoBusyAction === action.id ? autoBusyChannel : null
+                      }
                     />
                   ))}
                 </CardContent>
