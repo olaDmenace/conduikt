@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/src/lib/supabase/client";
 import { Button } from "@/src/components/ui/button";
@@ -115,9 +116,14 @@ export default function SignupPage() {
     <div className="animate-in">
       {/* Logo */}
       <div className="mb-8 text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#D4945A] to-[#C88550]">
-          <span className="text-xl font-bold text-on-accent">C</span>
-        </div>
+        <Image
+          src="/conduikt-icon.png"
+          alt="Conduikt"
+          width={56}
+          height={56}
+          priority
+          className="mx-auto mb-4 h-14 w-14"
+        />
         <h1 className="text-h1">Create your account</h1>
         <p className="mt-2 text-body text-text-secondary">
           Start automating your marketing with AI
