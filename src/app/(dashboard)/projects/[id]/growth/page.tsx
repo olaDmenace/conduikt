@@ -227,7 +227,9 @@ function GrowthPageInner({
       .catch(() => {});
   }, []);
 
-  // Load saved playbook from ?assetId= param
+  // Load saved playbook from ?assetId= param. Also restores per-action
+  // checkbox state from asset.content.completed_actions so reload doesn't
+  // wipe progress.
   useEffect(() => {
     const assetId = searchParams.get("assetId");
     if (!assetId) return;
@@ -240,12 +242,47 @@ function GrowthPageInner({
           setPlaybook(parsed);
           setSavedId(assetId);
           setExpandedPhase(1);
+          // Restore checkbox state if present.
+          const completed = asset?.content?.completed_actions;
+          if (Array.isArray(completed)) {
+            setChecked(new Set(completed.filter((x) => typeof x === "string")));
+          }
         }
       })
       .catch(() => toast("Could not load saved playbook", "error"))
       .finally(() => setLoadingAsset(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Debounced persistence of checked-state to asset.content.completed_actions.
+  // Only fires once the playbook is saved (savedId is set) — drafts in
+  // memory keep their state in component state until the user explicitly
+  // saves the playbook.
+  useEffect(() => {
+    if (!savedId) return;
+    const handle = setTimeout(() => {
+      // Re-fetch the existing content blob to merge our update without
+      // clobbering the parsed playbook payload alongside it.
+      fetch(`/api/projects/${projectId}/assets/${savedId}`)
+        .then((r) => r.json())
+        .then((asset) => {
+          const nextContent = {
+            ...(asset?.content ?? {}),
+            completed_actions: Array.from(checked),
+          };
+          return fetch(`/api/projects/${projectId}/assets/${savedId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content: nextContent }),
+          });
+        })
+        .catch(() => {
+          // Don't toast on every flake — the next toggle will retry.
+        });
+    }, 800);
+    return () => clearTimeout(handle);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checked, savedId]);
 
   function toggleCheck(id: string) {
     setChecked((prev) => {
