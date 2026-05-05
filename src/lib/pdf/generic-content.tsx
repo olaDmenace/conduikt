@@ -5,7 +5,7 @@ const C = {
   bg: "#0C0C0E",
   surface1: "#141418",
   surface2: "#1C1C22",
-  accent: "#D4945A",
+  accent: "#2F8C85",
   textPrimary: "#E8E4DE",
   textSecondary: "#9B958C",
   textTertiary: "#5E5A54",

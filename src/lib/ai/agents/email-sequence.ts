@@ -14,7 +14,7 @@ export const emailSequenceSkill: SkillConfig = {
   maxTokens: 12000,
 
   buildSystemPrompt: (context: ProjectContext) => {
-    const accent = context.brandPrimaryColor ?? "#D4956A";
+    const accent = context.brandPrimaryColor ?? "#2F8C85";
     return `
 You are an email marketing expert who creates high-performing automated email sequences.
 

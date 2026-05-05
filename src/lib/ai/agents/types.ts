@@ -1,4 +1,4 @@
-import type { AIModel } from "../client";
+﻿import type { AIModel } from "../client";
 
 export interface ProjectContext {
   websiteUrl: string;
@@ -26,7 +26,7 @@ export interface ProjectContext {
     difficulty?: number;
   }>;
   performanceContext?: string;
-  // From profiles.brand_primary_color (default #D4956A). Surfaced into
+  // From profiles.brand_primary_color (default #2F8C85). Surfaced into
   // agents that generate styled content (email sequences, blog posts,
   // CRO copy) so CTAs / accents match the user's Brand Kit.
   brandPrimaryColor?: string;

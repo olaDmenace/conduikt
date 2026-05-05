@@ -25,7 +25,7 @@ function buildEmbedJs(baseUrl: string): string {
   var FIELD_STYLE =
     "display:block;width:100%;padding:10px 12px;border:1px solid #d6cfc6;border-radius:8px;font:14px/1.4 system-ui,-apple-system,sans-serif;color:#1a1714;background:#fff;box-sizing:border-box;margin-bottom:10px;";
   var BUTTON_STYLE =
-    "display:block;width:100%;padding:12px 16px;background:#C88540;color:#fff;border:0;border-radius:8px;font:600 14px/1 system-ui,-apple-system,sans-serif;cursor:pointer;letter-spacing:0.2px;";
+    "display:block;width:100%;padding:12px 16px;background:#2F8C85;color:#fff;border:0;border-radius:8px;font:600 14px/1 system-ui,-apple-system,sans-serif;cursor:pointer;letter-spacing:0.2px;";
   var ERROR_STYLE =
     "color:#b54848;font:13px/1.4 system-ui,-apple-system,sans-serif;margin-top:6px;";
   var SUCCESS_STYLE =
