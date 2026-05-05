@@ -1031,6 +1031,98 @@ function GeneratingIndicator({ label }: { label: string }) {
   );
 }
 
+// Renders below the per-email preview cards. Two actions, framed by a
+// cadence summary so the user sees what they're committing to BEFORE
+// they click. "Save & Schedule Drip" hands off to the /emails page with
+// ?enroll=<seqId> so the audience picker auto-opens.
+//
+// Free users get an "upgrade to schedule" gate (matches the existing
+// asset-save gate); the user can still preview + copy locally.
+function SequenceScheduleAction({
+  parsedContent,
+  userPlan,
+  scheduling,
+  onSchedule,
+}: {
+  parsedContent: Record<string, unknown>;
+  userPlan: string;
+  scheduling: boolean;
+  onSchedule: () => void;
+}) {
+  const emails = Array.isArray(parsedContent?.emails)
+    ? (parsedContent.emails as Array<Record<string, unknown>>)
+    : [];
+  if (emails.length === 0) return null;
+
+  // Cadence summary — shows each step's *cumulative* offset from
+  // enrollment so users see the actual calendar of sends. delay_hours is
+  // the gap from the previous step (matches what the runner does).
+  let cumulativeHours = 0;
+  const summaryParts: string[] = emails.map((e, i) => {
+    const delay = Math.max(0, Number(e.delay_hours ?? 0));
+    cumulativeHours += delay;
+    if (i === 0) return "now";
+    if (cumulativeHours < 24) return `+${cumulativeHours}h`;
+    const days = Math.round((cumulativeHours / 24) * 10) / 10;
+    return `+${days}d`;
+  });
+  const totalDays =
+    cumulativeHours < 24
+      ? `${cumulativeHours}h`
+      : `${Math.round(cumulativeHours / 24)}d`;
+
+  return (
+    <div className="rounded-xl border border-border-default bg-surface-0 p-5 space-y-4">
+      <div>
+        <p className="text-small font-medium text-text-primary mb-1.5">
+          {emails.length} email{emails.length === 1 ? "" : "s"} over ~{totalDays}
+        </p>
+        <p className="text-caption text-text-tertiary font-mono break-words">
+          {summaryParts.join(" → ")}
+        </p>
+      </div>
+      <div className="rounded-lg bg-surface-2 px-4 py-3 text-caption text-text-secondary leading-relaxed">
+        <span className="text-text-primary font-medium">
+          Save &amp; Schedule Drip
+        </span>{" "}
+        promotes this into a real sequence and asks you to pick an audience.
+        Once you confirm, the runner sends each email on its delay
+        automatically. Pick{" "}
+        <span className="text-text-primary font-medium">Save Draft</span> if
+        you want to edit before going live — nothing fires until you enrol an
+        audience.
+      </div>
+      {userPlan === "free" ? (
+        <Link href="/settings/billing" className="block">
+          <Button size="sm" className="w-full" variant="secondary">
+            <Lock className="h-4 w-4 mr-1.5" />
+            Upgrade to schedule the drip
+          </Button>
+        </Link>
+      ) : (
+        <Button
+          size="sm"
+          className="w-full"
+          onClick={onSchedule}
+          disabled={scheduling}
+        >
+          {scheduling ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+              Saving sequence...
+            </>
+          ) : (
+            <>
+              <Send className="h-4 w-4 mr-1.5" />
+              Save &amp; Schedule Drip
+            </>
+          )}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 function ParseFailureNotice({
   text,
   truncationMessage,
@@ -1480,6 +1572,49 @@ function ContentPageInner({
     setSaving(false);
   }
 
+  // ---------- save email-sequence as a real drip ----------
+  // Promotes the AI's parsedContent into email_sequences +
+  // email_sequence_steps + per-step assets, then sends the user to the
+  // /emails page with ?enroll=<seqId> so the audience picker auto-opens.
+  // From there, picking an audience kicks off the drip via the existing
+  // enroll endpoint + scheduler.
+  const [scheduling, setScheduling] = useState(false);
+
+  async function handleScheduleDrip() {
+    if (!parsedContent || scheduling) return;
+    const emails = Array.isArray(parsedContent?.emails)
+      ? parsedContent.emails
+      : null;
+    if (!emails || emails.length === 0) {
+      toast("Couldn't read the generated emails — try regenerating", "error");
+      return;
+    }
+    setScheduling(true);
+    const res = await fetch(`/api/projects/${projectId}/email-sequences`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sequence_name:
+          (parsedContent.sequence_name as string | undefined) ||
+          prompt.slice(0, 80) ||
+          "Untitled sequence",
+        type: (parsedContent.type as string | undefined) || "welcome",
+        trigger: (parsedContent.trigger as string | undefined) || null,
+        emails,
+      }),
+    });
+    setScheduling(false);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      toast(err.error || "Couldn't save sequence", "error");
+      return;
+    }
+    const data = await res.json();
+    // Hand off to the /emails page; the picker auto-opens via ?enroll=
+    // and once the user selects an audience the drip starts.
+    window.location.href = `/projects/${projectId}/emails?enroll=${data.id}`;
+  }
+
   // ---------- copy ----------
 
   function handleCopy() {
@@ -1848,12 +1983,20 @@ function ContentPageInner({
                         <GeneratingIndicator label="Drafting your email sequence..." />
                       </div>
                     ) : parsedContent ? (
-                      <EmailPreview
-                        data={parsedContent}
-                        projectId={projectId}
-                        projectName={project?.name}
-                        toast={toast}
-                      />
+                      <div className="space-y-4">
+                        <EmailPreview
+                          data={parsedContent}
+                          projectId={projectId}
+                          projectName={project?.name}
+                          toast={toast}
+                        />
+                        <SequenceScheduleAction
+                          parsedContent={parsedContent}
+                          userPlan={userPlan}
+                          scheduling={scheduling}
+                          onSchedule={handleScheduleDrip}
+                        />
+                      </div>
                     ) : (
                       <div ref={outputRef}>
                         <ParseFailureNotice text={result} truncationMessage={truncationNotice} />
