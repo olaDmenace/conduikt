@@ -119,36 +119,44 @@ const handler: ExecutionHandler = async (rawPayload, { execution, supabase }) =>
     };
   }
 
-  // 3b. Brand identity for the header. Pull the enrollment owner's
-  // brand_logo_url + the project name (used as the logo's alt text).
-  // Both are best-effort: if the lookup fails or the logo is unset,
-  // prependBrandHeader becomes a no-op and the email goes out without
-  // a header — better than failing the whole send for branding.
-  const { data: brandRow } = await supabase
-    .from("profiles")
-    .select("brand_logo_url")
-    .eq("id", enrollment.user_id)
+  // 3b. Brand identity for the header. The audience belongs to a
+  // project, and the project carries `client_logo_url` (per-client
+  // branding for Agency-tier multi-client setups) — that's the correct
+  // source for sequence emails since the sequence belongs to the
+  // project, not the user's personal Brand Kit.
+  //
+  // Lookup order:
+  //   1. projects.client_logo_url (per-project; matches the audience)
+  //   2. profiles.brand_logo_url  (user-level Brand Kit fallback)
+  // Both lookups are best-effort: if neither is set, prependBrandHeader
+  // becomes a no-op and the email goes out without a header — better
+  // than failing the whole send for branding.
+  const { data: audienceRow } = await supabase
+    .from("audiences")
+    .select("project_id")
+    .eq("id", enrollment.audience_id)
     .maybeSingle();
 
-  const { data: projectRow } = await supabase
-    .from("projects")
-    .select("name")
-    .eq(
-      "id",
-      // The audience belongs to the project; one extra fetch keeps the
-      // type alignment simple.
-      (
-        await supabase
-          .from("audiences")
-          .select("project_id")
-          .eq("id", enrollment.audience_id)
-          .maybeSingle()
-      ).data?.project_id ?? ""
-    )
-    .maybeSingle();
+  const { data: projectRow } = audienceRow?.project_id
+    ? await supabase
+        .from("projects")
+        .select("name, client_logo_url")
+        .eq("id", audienceRow.project_id)
+        .maybeSingle()
+    : { data: null };
+
+  let logoUrl: string | null = projectRow?.client_logo_url ?? null;
+  if (!logoUrl) {
+    const { data: profileRow } = await supabase
+      .from("profiles")
+      .select("brand_logo_url")
+      .eq("id", enrollment.user_id)
+      .maybeSingle();
+    logoUrl = profileRow?.brand_logo_url ?? null;
+  }
 
   const brandedHtml = prependBrandHeader(html, {
-    logoUrl: brandRow?.brand_logo_url,
+    logoUrl,
     altText: projectRow?.name,
   });
 
