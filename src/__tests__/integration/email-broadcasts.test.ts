@@ -185,7 +185,7 @@ describe("POST /api/projects/[id]/broadcasts", () => {
     const res = await POST(req as never, { params: Promise.resolve({ id: "p1" }) });
     expect(res.status).toBe(201);
     expect(inserted).toBeTruthy();
-    expect(inserted!.from_email).toBe("mail@conduikt.com");
+    expect(inserted!.from_email).toBe("mail@contacts.conduikt.com");
     expect(inserted!.status).toBe("draft");
     expect(inserted!.from_name).toBe("List"); // defaulted from audience name
   });
@@ -209,7 +209,7 @@ describe("POST .../broadcasts/[broadcastId]/send", () => {
             html_body: "<p>x</p>",
             text_body: null,
             from_name: "List",
-            from_email: "mail@conduikt.com",
+            from_email: "mail@contacts.conduikt.com",
             reply_to: null,
             status: "sent",
             scheduled_for: null,
@@ -245,7 +245,7 @@ describe("POST .../broadcasts/[broadcastId]/send", () => {
             html_body: "<p>x</p>",
             text_body: null,
             from_name: "List",
-            from_email: "mail@conduikt.com",
+            from_email: "mail@contacts.conduikt.com",
             reply_to: null,
             status: "draft",
             scheduled_for: null,
@@ -295,7 +295,7 @@ describe("POST .../broadcasts/[broadcastId]/send", () => {
             html_body: "<p>x</p>",
             text_body: null,
             from_name: "List",
-            from_email: "mail@conduikt.com",
+            from_email: "mail@contacts.conduikt.com",
             reply_to: null,
             status: "draft",
             scheduled_for: null,
@@ -353,7 +353,7 @@ describe("POST .../broadcasts/[broadcastId]/send", () => {
               html_body: "<p>x</p>",
               text_body: null,
               from_name: "List",
-              from_email: "mail@conduikt.com",
+              from_email: "mail@contacts.conduikt.com",
               reply_to: null,
               status: "draft",
               scheduled_for: null,

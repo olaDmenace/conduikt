@@ -127,7 +127,7 @@ export default function BroadcastsPage({
             <div className="flex-1">
               <p className="text-body font-medium text-text-primary">
                 Sending from{" "}
-                <code className="font-mono text-accent">mail@conduikt.com</code>
+                <code className="font-mono text-accent">mail@contacts.conduikt.com</code>
               </p>
               <p className="text-small text-text-secondary mt-1">
                 Free and Pro tiers send from our shared domain.{" "}
