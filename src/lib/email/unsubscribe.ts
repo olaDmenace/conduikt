@@ -30,7 +30,7 @@ export function injectUnsubscribeIntoHtml(
   }
   const footer = `
 <div style="margin-top:32px;padding-top:16px;border-top:1px solid #e5e0db;color:#8a8176;font-size:12px;line-height:1.6;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-  <p style="margin:0;">You're receiving this because you subscribed to our list. <a href="${unsubscribeUrl}" style="color:#C88540;text-decoration:underline;">Unsubscribe</a>.</p>
+  <p style="margin:0;">You're receiving this because you subscribed to our list. <a href="${unsubscribeUrl}" style="color:#2F8C85;text-decoration:underline;">Unsubscribe</a>.</p>
 </div>`;
   if (/<\/body>/i.test(html)) {
     return html.replace(/<\/body>/i, `${footer}\n</body>`);

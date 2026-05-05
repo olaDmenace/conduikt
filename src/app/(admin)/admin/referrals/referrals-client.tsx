@@ -120,7 +120,7 @@ export function ReferralsClient({
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-br from-[#D4945A] to-[#C88550] px-4 py-2.5 text-[0.875rem] font-medium text-on-accent shadow-[0_0_20px_var(--accent-glow)] hover:brightness-110 transition-all"
+          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-br from-[#2F8C85] to-[#1F6B66] px-4 py-2.5 text-[0.875rem] font-medium text-on-accent shadow-[0_0_20px_var(--accent-glow)] hover:brightness-110 transition-all"
         >
           <Plus className="h-4 w-4" />
           New Referral Link
@@ -563,7 +563,7 @@ function CreateModal({
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-br from-[#D4945A] to-[#C88550] px-4 py-2 text-[0.875rem] font-medium text-on-accent hover:brightness-110 transition-all disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-br from-[#2F8C85] to-[#1F6B66] px-4 py-2 text-[0.875rem] font-medium text-on-accent hover:brightness-110 transition-all disabled:opacity-50"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
               Create link
@@ -693,7 +693,7 @@ function PayoutModal({
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-br from-[#D4945A] to-[#C88550] px-4 py-2 text-[0.875rem] font-medium text-on-accent hover:brightness-110 transition-all disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-br from-[#2F8C85] to-[#1F6B66] px-4 py-2 text-[0.875rem] font-medium text-on-accent hover:brightness-110 transition-all disabled:opacity-50"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />}
               Record payout

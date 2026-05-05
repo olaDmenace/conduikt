@@ -9,7 +9,7 @@ export const copywritingSkill: SkillConfig = {
   maxTokens: 4000,
 
   buildSystemPrompt: (context: ProjectContext) => {
-    const accent = context.brandPrimaryColor ?? "#D4956A";
+    const accent = context.brandPrimaryColor ?? "#2F8C85";
     return `
 You are an expert conversion copywriter. You write copy that is clear, compelling, and drives action.
 

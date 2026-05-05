@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { ImageResponse } from "next/og";
 import { createClient } from "@/src/lib/supabase/server";
 
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     .eq("id", user.id)
     .single();
 
-  const primary = profile?.brand_primary_color ?? "#D4945A";
+  const primary = profile?.brand_primary_color ?? "#2F8C85";
   const secondary = profile?.brand_secondary_color ?? "#1A1A1A";
   const logo = profile?.brand_logo_url ?? null;
 
