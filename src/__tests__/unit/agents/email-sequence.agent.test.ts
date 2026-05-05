@@ -135,6 +135,31 @@ describe('Email Sequence Agent', () => {
       const prompt = emailSequenceSkill.buildUserPrompt({ goal: 'Drive feature adoption' })
       expect(prompt).toContain('Drive feature adoption')
     })
+
+    it('clamps requested count to a maximum of 10', () => {
+      const prompt = emailSequenceSkill.buildUserPrompt({ count: 25 })
+      expect(prompt).toContain('Number of emails: 10')
+      expect(prompt).not.toContain('Number of emails: 25')
+    })
+
+    it('treats count=0 and negative counts as invalid and uses default of 5', () => {
+      // 0 is falsy in JS so the `|| 5` fallback kicks in. Negative gets
+      // floored to its negative value, then Math.max(1, ...) clamps to 1.
+      const promptZero = emailSequenceSkill.buildUserPrompt({ count: 0 })
+      expect(promptZero).toContain('Number of emails: 5')
+      const promptNeg = emailSequenceSkill.buildUserPrompt({ count: -3 })
+      expect(promptNeg).toContain('Number of emails: 1')
+    })
+
+    it('falls back to default 5 when count is missing or invalid', () => {
+      const prompt = emailSequenceSkill.buildUserPrompt({ count: 'not-a-number' })
+      expect(prompt).toContain('Number of emails: 5')
+    })
+
+    it('floors fractional counts', () => {
+      const prompt = emailSequenceSkill.buildUserPrompt({ count: 7.7 })
+      expect(prompt).toContain('Number of emails: 7')
+    })
   })
 
   describe('buildSystemPrompt', () => {

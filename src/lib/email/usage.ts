@@ -63,6 +63,34 @@ export async function checkContactsLimit(
   return { ok: wouldBe <= limit, used, limit, remaining: Math.max(0, limit - used) };
 }
 
+// Caps how many email_sequences a user can have at once. Sequences are
+// counted across ALL the user's projects (not per-project) because the
+// limit's purpose is plan-tier differentiation, not per-project scope.
+export async function checkSequenceLimit(
+  supabase: SupabaseClient,
+  userId: string,
+  plan: PlanTier
+): Promise<UsageCheck> {
+  const limit = getEmailLimits(plan).sequences;
+  // email_sequences has project_id but no user_id column — join through
+  // projects to scope by user.
+  const { data: projects } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("user_id", userId);
+  const projectIds = (projects ?? []).map((p) => p.id);
+  if (projectIds.length === 0) {
+    return { ok: true, used: 0, limit, remaining: isUnlimited(limit) ? Infinity : limit };
+  }
+  const { count } = await supabase
+    .from("email_sequences")
+    .select("id", { count: "exact", head: true })
+    .in("project_id", projectIds);
+  const used = count ?? 0;
+  if (isUnlimited(limit)) return { ok: true, used, limit, remaining: Infinity };
+  return { ok: used < limit, used, limit, remaining: Math.max(0, limit - used) };
+}
+
 export async function checkEmailsPerMonthLimit(
   supabase: SupabaseClient,
   userId: string,
