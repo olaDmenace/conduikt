@@ -42,10 +42,10 @@ export function AdminSidebar() {
         <Image
           src="/conduikt-horizontal.png"
           alt="Conduikt"
-          width={140}
-          height={32}
+          width={176}
+          height={40}
           priority
-          className="h-8 w-auto"
+          className="h-10 w-auto"
         />
         <span className="text-[0.6875rem] font-medium uppercase tracking-wider text-accent border-l border-border-subtle pl-2">
           Admin

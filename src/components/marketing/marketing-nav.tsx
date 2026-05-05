@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { ThemeToggle } from "@/src/components/theme/theme-toggle";
@@ -28,6 +29,7 @@ const NAV_LINKS: Array<{ href: string; label: string }> = [
 
 export function MarketingNav() {
   const [scrolled, setScrolled] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     function onScroll() {
@@ -37,6 +39,14 @@ export function MarketingNav() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // A nav link is active when the current pathname starts with its
+  // href (so /blog/[slug] keeps "Blog" active, /pricing keeps "Pricing"
+  // active, etc.). Home (/) only matches exactly.
+  function isActive(href: string): boolean {
+    if (href === "/") return pathname === "/";
+    return pathname === href || pathname.startsWith(href + "/");
+  }
 
   return (
     <nav
@@ -63,22 +73,39 @@ export function MarketingNav() {
           <Image
             src="/conduikt-horizontal.png"
             alt="Conduikt"
-            width={160}
-            height={40}
+            width={192}
+            height={48}
             priority
-            className="h-10 w-auto"
+            className="h-12 w-auto"
           />
         </Link>
         <div className="hidden items-center gap-8 md:flex">
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="text-small text-text-secondary hover:text-text-primary transition-colors"
-            >
-              {link.label}
-            </Link>
-          ))}
+          {NAV_LINKS.map((link) => {
+            const active = isActive(link.href);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                aria-current={active ? "page" : undefined}
+                className={`relative text-small transition-colors duration-[var(--duration-base)] ${
+                  active
+                    ? "text-accent font-medium"
+                    : "text-text-secondary hover:text-text-primary"
+                }`}
+              >
+                {link.label}
+                {/* Underline tick for the active link — sits a bit
+                    below the text so it reads as "you are here"
+                    without taking the visual weight of a full pill. */}
+                {active && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute -bottom-1.5 left-0 right-0 mx-auto h-0.5 w-6 rounded-full bg-accent"
+                  />
+                )}
+              </Link>
+            );
+          })}
         </div>
         <div className="flex items-center gap-3">
           <ThemeToggle />
