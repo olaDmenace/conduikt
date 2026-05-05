@@ -223,25 +223,25 @@ export function Sidebar() {
               <Image
                 src="/conduikt-horizontal.png"
                 alt="Conduikt"
-                width={180}
-                height={48}
+                width={216}
+                height={56}
                 priority
-                className="h-12 w-auto"
+                className="h-14 w-auto"
               />
             </Link>
           )}
           {!showLabel && (
             <Link
               href="/dashboard"
-              className="mx-auto flex h-10 w-10 items-center justify-center"
+              className="mx-auto flex h-11 w-11 items-center justify-center"
             >
               <Image
                 src="/conduikt-icon.png"
                 alt="Conduikt"
-                width={40}
-                height={40}
+                width={44}
+                height={44}
                 priority
-                className="h-10 w-10"
+                className="h-11 w-11"
               />
             </Link>
           )}

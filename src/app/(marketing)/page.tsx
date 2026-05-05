@@ -12,7 +12,6 @@ import {
   TrendingUp,
   Shield,
   CheckCircle2,
-  Plus,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
@@ -21,6 +20,7 @@ import { homepageFaqs as faqs } from "@/src/lib/seo/homepage-schema";
 import { TestimonialMarquee } from "@/src/components/marketing/testimonial-marquee";
 import { RevealOnScroll } from "@/src/components/marketing/reveal-on-scroll";
 import { PricingGrid } from "@/src/components/marketing/pricing-card";
+import { FaqAccordion } from "@/src/components/marketing/faq-accordion";
 
 const testimonials = [
   {
@@ -183,10 +183,11 @@ export default function LandingPage() {
           aria-hidden="true"
           className="pinstripe-faint pointer-events-none absolute inset-0 opacity-80"
         />
-        {/* Two radial accent orbs that drift slowly out-of-phase to
-            give the hero some ambient motion. Orange near the
-            headline column, teal in the opposite corner — the same
-            primary/secondary brand pairing the rest of the site uses. */}
+        {/* Five radial accent orbs drift slowly out-of-phase to give
+            the hero quiet ambient life. Mix of brand orange (primary)
+            and teal (secondary) at different sizes and opacities; each
+            uses a different keyframe with offset delays so they never
+            line up the same way twice. */}
         <div
           aria-hidden="true"
           className="radial-accent-glow orb-drift-a pointer-events-none absolute -top-32 -left-24 h-[600px] w-[600px] rounded-full opacity-90"
@@ -194,6 +195,18 @@ export default function LandingPage() {
         <div
           aria-hidden="true"
           className="radial-secondary-glow orb-drift-b pointer-events-none absolute -bottom-40 -right-32 h-[520px] w-[520px] rounded-full"
+        />
+        <div
+          aria-hidden="true"
+          className="radial-accent-glow orb-drift-c pointer-events-none absolute top-1/3 right-1/4 h-[340px] w-[340px] rounded-full"
+        />
+        <div
+          aria-hidden="true"
+          className="radial-secondary-glow orb-drift-d pointer-events-none absolute -top-12 right-1/3 h-[280px] w-[280px] rounded-full"
+        />
+        <div
+          aria-hidden="true"
+          className="radial-accent-glow orb-drift-e pointer-events-none absolute bottom-1/4 left-1/3 h-[260px] w-[260px] rounded-full opacity-70"
         />
         <div className="relative mx-auto max-w-6xl px-6 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -396,36 +409,10 @@ export default function LandingPage() {
               Everything you need to know about Conduikt.
             </p>
           </div>
-          {/* Hairline-divided FAQ rows per DESIGN_SYSTEM.md. The +
-              glyph rotates 45° to × on open. Smooth height transition
-              comes from the native <details> element (browsers handle
-              the open animation; we just style the chevron). */}
-          <div className="border-t border-border-subtle">
-            {faqs.map((faq, i) => (
-              <details
-                key={i}
-                name="homepage-faq"
-                open={i === 0}
-                className="group animate-in border-b border-border-subtle"
-                style={{ animationDelay: `${i * 60}ms` }}
-              >
-                <summary className="flex cursor-pointer items-center justify-between gap-4 py-5 list-none [&::-webkit-details-marker]:hidden hover:text-accent transition-colors">
-                  <h3 className="text-h3 text-text-primary group-open:text-accent transition-colors">
-                    {faq.question}
-                  </h3>
-                  <Plus
-                    className="h-5 w-5 shrink-0 text-text-tertiary transition-transform duration-300 group-open:rotate-45 group-open:text-accent"
-                    aria-hidden="true"
-                  />
-                </summary>
-                <div className="pb-6 pr-9">
-                  <p className="text-body text-text-secondary leading-relaxed">
-                    {faq.answer}
-                  </p>
-                </div>
-              </details>
-            ))}
-          </div>
+          {/* Hairline-divided rows with a smooth height transition on
+              open. Driven by max-height interpolation (native <details>
+              can't animate height reliably). + glyph rotates 45° to ×. */}
+          <FaqAccordion items={faqs} />
         </div>
       </section>
 

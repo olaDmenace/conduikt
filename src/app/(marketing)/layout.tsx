@@ -22,9 +22,9 @@ export default function MarketingLayout({
             <Image
               src="/conduikt-horizontal.png"
               alt="Conduikt"
-              width={120}
-              height={28}
-              className="h-7 w-auto opacity-90"
+              width={144}
+              height={36}
+              className="h-9 w-auto opacity-90"
             />
             <span className="text-small text-text-tertiary">
               by Technicity Digital
