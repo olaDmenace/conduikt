@@ -557,7 +557,7 @@ function EmailPreview({ data, projectId, projectName, toast }: EmailPreviewProps
             </div>
             <div className="flex items-center gap-2 text-small text-text-tertiary">
               <span>From:</span>
-              {projectName || "Conduikt"} &lt;hello@conduikt.com&gt;
+              {projectName || "Conduikt"} &lt;hello@contacts.conduikt.com&gt;
             </div>
             {email?.goal && (
               <div className="flex items-center gap-2 text-small text-text-tertiary">

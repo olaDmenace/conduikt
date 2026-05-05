@@ -1,6 +1,9 @@
 import { Resend } from "resend";
 
-const FROM = "Conduikt <hello@conduikt.com>";
+// Transactional sender. Uses `contacts.conduikt.com` — the Resend-
+// verified subdomain — with the friendly `hello@` mailbox so welcome
+// + plan-upgrade emails land with a non-marketing-feel address.
+const FROM = "Conduikt <hello@contacts.conduikt.com>";
 
 // Lazy client — only instantiated when RESEND_API_KEY is present
 function getResend(): Resend {
