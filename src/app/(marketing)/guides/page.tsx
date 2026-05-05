@@ -144,7 +144,7 @@ export default function GuidesIndexPage() {
             Stop reading. Start automating.
           </h2>
           <p className="text-body text-text-secondary mb-8">
-            Conduikt puts all of these strategies into practice with 10 AI agents.
+            Conduikt puts all of these strategies into practice with 15 AI agents.
             Start free — no credit card required.
           </p>
           <Link href="/signup">

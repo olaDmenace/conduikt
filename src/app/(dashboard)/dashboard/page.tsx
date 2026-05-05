@@ -130,7 +130,7 @@ export default function DashboardPage() {
         },
         {
           title: "Content Studio",
-          description: "Create social posts, emails, copy, and more with 10 AI skills",
+          description: "Create social posts, emails, copy, and more with 15 AI skills",
           icon: Sparkles,
           href: `/projects/${pid}/content`,
           color: "text-warning",
@@ -172,7 +172,7 @@ export default function DashboardPage() {
     ? [
         { name: "SEO Audit",         href: `/projects/${pid}/audit`,       icon: BarChart3,  desc: "Technical & on-page analysis"           },
         { name: "CRO Analysis",     href: `/projects/${pid}/content?skill=page-cro`, icon: Target, desc: "Conversion rate optimization"     },
-        { name: "Content Studio",    href: `/projects/${pid}/content`,   icon: Sparkles,   desc: "10 AI skills for all channels"           },
+        { name: "Content Studio",    href: `/projects/${pid}/content`,   icon: Sparkles,   desc: "15 AI skills for all channels"           },
         { name: "Blog Generator",    href: `/projects/${pid}/blog`,      icon: PenLine,    desc: "SEO posts with meta & social snippets"   },
         { name: "Keyword Research",  href: `/projects/${pid}/keywords`,  icon: Search,     desc: "Clusters, long-tail & question keywords" },
         { name: "Growth Playbook",   href: `/projects/${pid}/growth`,    icon: Rocket,     desc: "90-day AI-powered growth plan"           },

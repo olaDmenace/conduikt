@@ -24,14 +24,14 @@ import { Badge } from "@/src/components/ui/badge";
 import { AGENT_REGISTRY } from "@/src/lib/ai/agents/registry";
 
 export const metadata: Metadata = {
-  title: "Conduikt Launch — 10 AI Marketing Agents",
+  title: "Conduikt Launch — 15 AI Marketing Agents",
   description:
-    "Conduikt connects to your website, runs SEO audits, and deploys 10 AI agents to generate, publish, and optimize your marketing. Built for founders who'd rather build than write copy.",
+    "Conduikt connects to your website, runs SEO audits, and deploys 15 AI agents to generate, publish, and optimize your marketing. Built for founders who'd rather build than write copy.",
   alternates: { canonical: "https://conduikt.com/launch/" },
   openGraph: {
-    title: "Conduikt Launch — 10 AI Marketing Agents",
+    title: "Conduikt Launch — 15 AI Marketing Agents",
     description:
-      "Conduikt connects to your website, runs SEO audits, and deploys 10 AI agents to generate, publish, and optimize your marketing. Built for founders who'd rather build than write copy.",
+      "Conduikt connects to your website, runs SEO audits, and deploys 15 AI agents to generate, publish, and optimize your marketing. Built for founders who'd rather build than write copy.",
     url: "https://conduikt.com/launch/",
     type: "website",
   },
@@ -95,7 +95,7 @@ export default function LaunchPage() {
         <div className="mx-auto max-w-4xl px-6 text-center">
           <Badge className="mb-6 animate-in">Launching on Product Hunt</Badge>
           <h1 className="text-hero text-text-primary leading-[1.1] animate-in" style={{ animationDelay: "60ms" }}>
-            10 AI Marketing Agents.
+            15 AI Marketing Agents.
             <br />
             <span className="text-accent">One Platform.</span>
             <br />

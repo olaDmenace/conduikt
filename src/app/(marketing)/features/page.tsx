@@ -5,12 +5,12 @@ import { Card, CardContent } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 
 export const metadata: Metadata = {
-  title: "Features — 10 AI Marketing Agents for SEO, Content & Publishing",
+  title: "Features — 15 AI Marketing Agents for SEO, Content & Publishing",
   description:
     "Explore Conduikt's AI marketing features: SEO audits, CRO analysis, AI copywriting, social content, email marketing campaigns, campaign orchestration, and multi-channel publishing.",
   alternates: { canonical: "https://conduikt.com/features/" },
   openGraph: {
-    title: "Features — 10 AI Marketing Agents for SEO, Content & Publishing",
+    title: "Features — 15 AI Marketing Agents for SEO, Content & Publishing",
     description:
       "Explore Conduikt's AI marketing features: SEO audits, CRO analysis, AI copywriting, social content, email marketing campaigns, campaign orchestration, and multi-channel publishing.",
     url: "https://conduikt.com/features/",

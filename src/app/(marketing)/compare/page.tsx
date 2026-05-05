@@ -8,12 +8,12 @@ import { Badge } from "@/src/components/ui/badge";
 export const metadata: Metadata = {
   title: "Conduikt vs Competitors — AI Marketing Tool Comparisons",
   description:
-    "See how Conduikt's 10 AI marketing agents compare to Jasper, Copy.ai, Writesonic, and Surfer SEO. Full feature breakdowns and honest analysis.",
+    "See how Conduikt's 15 AI marketing agents compare to Jasper, Copy.ai, Writesonic, and Surfer SEO. Full feature breakdowns and honest analysis.",
   alternates: { canonical: "https://conduikt.com/compare/" },
   openGraph: {
     title: "Conduikt vs Competitors — AI Marketing Tool Comparisons",
     description:
-      "See how Conduikt's 10 AI marketing agents compare to Jasper, Copy.ai, Writesonic, and Surfer SEO. Full feature breakdowns and honest analysis.",
+      "See how Conduikt's 15 AI marketing agents compare to Jasper, Copy.ai, Writesonic, and Surfer SEO. Full feature breakdowns and honest analysis.",
     url: "https://conduikt.com/compare/",
     type: "website",
   },

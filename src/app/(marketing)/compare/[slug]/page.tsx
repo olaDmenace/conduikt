@@ -99,7 +99,7 @@ const COMPARISONS: Comparison[] = [
     tagline: "SEO analysis + AI content in one platform",
     features: [
       { name: "SEO Audit", conduikt: true, competitor: true },
-      { name: "Content Generation", conduikt: "10 agents", competitor: "1 editor" },
+      { name: "Content Generation", conduikt: "15 agents", competitor: "1 editor" },
       { name: "CRO Analysis", conduikt: true, competitor: false },
       { name: "Social Content", conduikt: true, competitor: false },
       { name: "Email Sequences", conduikt: true, competitor: false },
@@ -134,7 +134,7 @@ export async function generateMetadata({
   const competitor = comparison?.competitor || slug;
   const url = `https://conduikt.com/compare/${slug}/`;
   const title = `Conduikt vs ${competitor} — AI Marketing Comparison`;
-  const description = `Compare Conduikt and ${competitor}. See how Conduikt's 10 AI marketing agents stack up for SEO audits, content generation, and multi-channel publishing.`;
+  const description = `Compare Conduikt and ${competitor}. See how Conduikt's 15 AI marketing agents stack up for SEO audits, content generation, and multi-channel publishing.`;
   return {
     title,
     description,

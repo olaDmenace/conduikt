@@ -41,7 +41,7 @@ const steps = [
     icon: PenLine,
     title: "Generate Content",
     description:
-      "Use 10 AI agents to create blog posts, social content, email sequences, copywriting, keyword research, and more — all tailored to your brand voice.",
+      "Use 15 AI agents to create blog posts, social content, email sequences, copywriting, keyword research, and more — all tailored to your brand voice.",
     hint: "Project > Content Studio",
   },
   {
