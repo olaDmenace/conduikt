@@ -2,6 +2,7 @@ import { registerHandler } from "../registry";
 import { enqueueExecution } from "../enqueue";
 import { sendSequenceEmail } from "@/src/lib/email/sequence-send";
 import { CONDUIKT_SHARED_FROM_EMAIL } from "@/src/lib/email/marketing";
+import { prependBrandHeader } from "@/src/lib/email/brand-header";
 import type { ExecutionHandler } from "../types";
 
 // Handler for execution_type='email_sequence_step'.
@@ -118,12 +119,45 @@ const handler: ExecutionHandler = async (rawPayload, { execution, supabase }) =>
     };
   }
 
+  // 3b. Brand identity for the header. Pull the enrollment owner's
+  // brand_logo_url + the project name (used as the logo's alt text).
+  // Both are best-effort: if the lookup fails or the logo is unset,
+  // prependBrandHeader becomes a no-op and the email goes out without
+  // a header — better than failing the whole send for branding.
+  const { data: brandRow } = await supabase
+    .from("profiles")
+    .select("brand_logo_url")
+    .eq("id", enrollment.user_id)
+    .maybeSingle();
+
+  const { data: projectRow } = await supabase
+    .from("projects")
+    .select("name")
+    .eq(
+      "id",
+      // The audience belongs to the project; one extra fetch keeps the
+      // type alignment simple.
+      (
+        await supabase
+          .from("audiences")
+          .select("project_id")
+          .eq("id", enrollment.audience_id)
+          .maybeSingle()
+      ).data?.project_id ?? ""
+    )
+    .maybeSingle();
+
+  const brandedHtml = prependBrandHeader(html, {
+    logoUrl: brandRow?.brand_logo_url,
+    altText: projectRow?.name,
+  });
+
   // 4. Send. The user's project may set a custom from_name later; for
   // now we use the shared sender (mail@conduikt.com) — same as broadcasts.
   const sendResult = await sendSequenceEmail({
     to: contact.email,
     subject,
-    html,
+    html: brandedHtml,
     unsubscribeToken: contact.unsubscribe_token,
     from: `Conduikt <${CONDUIKT_SHARED_FROM_EMAIL}>`,
     tags: [
