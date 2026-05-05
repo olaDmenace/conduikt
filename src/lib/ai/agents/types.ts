@@ -26,7 +26,7 @@ export interface ProjectContext {
     difficulty?: number;
   }>;
   performanceContext?: string;
-  // From profiles.brand_primary_color (default #2F8C85). Surfaced into
+  // From profiles.brand_primary_color (default #D9663A). Surfaced into
   // agents that generate styled content (email sequences, blog posts,
   // CRO copy) so CTAs / accents match the user's Brand Kit.
   brandPrimaryColor?: string;

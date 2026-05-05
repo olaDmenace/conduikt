@@ -113,7 +113,7 @@ const agentLabels: Record<string, string> = {
   "growth-playbook": "Growth Playbook",
 };
 
-const ACCENT = "#2F8C85";
+const ACCENT = "#D9663A";
 const SURFACE_2 = "#1C1C22";
 const BORDER = "#FFFFFF12";
 const TEXT_TERTIARY = "#5E5A54";
@@ -350,7 +350,7 @@ export default function AnalyticsPage() {
     return point;
   });
 
-  const KW_COLORS = ["#2F8C85", "#4ADE80", "#60A5FA", "#F59E0B", "#A78BFA"];
+  const KW_COLORS = ["#D9663A", "#4ADE80", "#60A5FA", "#F59E0B", "#A78BFA"];
 
   // Biggest win
   const biggestWinAudit =

@@ -50,7 +50,7 @@ export default function ProjectSettingsPage() {
   const [keywordsText, setKeywordsText] = useState("");
   const [clientName, setClientName] = useState("");
   const [clientLogoUrl, setClientLogoUrl] = useState("");
-  const [reportAccentColor, setReportAccentColor] = useState("#2F8C85");
+  const [reportAccentColor, setReportAccentColor] = useState("#D9663A");
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [userPlan, setUserPlan] = useState("free");
 
@@ -82,7 +82,7 @@ export default function ProjectSettingsPage() {
         );
         setClientName(data.client_name || "");
         setClientLogoUrl(data.client_logo_url || "");
-        setReportAccentColor(data.report_accent_color || "#2F8C85");
+        setReportAccentColor(data.report_accent_color || "#D9663A");
       } else {
         toast("Failed to load project", "error");
       }
@@ -149,7 +149,7 @@ export default function ProjectSettingsPage() {
         keywords,
         client_name: clientName.trim() || null,
         client_logo_url: clientLogoUrl.trim() || null,
-        report_accent_color: reportAccentColor || "#2F8C85",
+        report_accent_color: reportAccentColor || "#D9663A",
       }),
     });
 
@@ -416,7 +416,7 @@ export default function ProjectSettingsPage() {
                     className="w-10 h-10 rounded-lg border border-border-strong cursor-pointer bg-transparent"
                   />
                   <Input
-                    placeholder="#2F8C85"
+                    placeholder="#D9663A"
                     value={reportAccentColor}
                     onChange={(e) => setReportAccentColor(e.target.value)}
                     className="max-w-[140px] font-mono"
