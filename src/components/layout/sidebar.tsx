@@ -96,6 +96,20 @@ interface Profile {
 // login is a reminder of what the user could unlock.
 const SIDEBAR_AGENTS = AGENT_REGISTRY;
 
+// Sidebar agent category groupings — same labels + order as the project
+// overview page. Section headers are visual-only (non-collapsible) here
+// since the sidebar is already secondary nav; adding another click layer
+// would feel tedious.
+const SIDEBAR_AGENT_CATEGORIES: Array<{
+  id: AgentDefinition["category"];
+  label: string;
+}> = [
+  { id: "analysis", label: "Audit & Analyze" },
+  { id: "creation", label: "Create Content" },
+  { id: "strategy", label: "Plan & Strategy" },
+  { id: "distribution", label: "Publish & Distribute" },
+];
+
 // Icon for the global Agents menu
 const AgentsMenuIcon = Sparkles;
 
@@ -336,56 +350,73 @@ export function Sidebar() {
                       {/* Divider between project tools and agents */}
                       <div className="my-1.5 border-t border-border-subtle/60" />
 
-                      {/* Agents (driven by registry) */}
-                      {SIDEBAR_AGENTS.map((agent) => {
-                        const path = agent.projectPath ?? agent.route;
-                        const href = `${projectBase}/${path}`;
-                        const hrefPath = href.split("?")[0];
-                        const isActive = pathname === hrefPath || pathname.startsWith(hrefPath + "/");
-                        const IconComp = ICON_MAP[agent.icon] ?? FileText;
-                        const unlocked = isPlanAtLeast(plan, agent.tier as PlanTier);
-                        const comingSoon = agent.status === "coming_soon";
-                        const locked = !unlocked || comingSoon;
-
-                        if (locked) {
-                          return (
-                            <button
-                              key={agent.id}
-                              type="button"
-                              onClick={() => setLockedPreview(agent)}
-                              title={
-                                comingSoon
-                                  ? `${agent.name} — coming soon`
-                                  : `${agent.name} — upgrade to ${tierLabel(agent.tier as PlanTier)}`
-                              }
-                              className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-[0.8125rem] font-medium text-text-tertiary/60 hover:bg-surface-2 hover:text-text-tertiary transition-colors text-left"
-                            >
-                              <IconComp className="h-3.5 w-3.5 shrink-0" />
-                              <span className="truncate flex-1">{agent.shortName}</span>
-                              <span className="inline-flex items-center gap-0.5 rounded bg-surface-2 px-1 py-0.5 text-[0.55rem] font-semibold uppercase tracking-wide text-accent">
-                                <Lock className="h-2.5 w-2.5" />
-                                {comingSoon ? "Soon" : tierLabel(agent.tier as PlanTier)}
-                              </span>
-                            </button>
-                          );
-                        }
-
+                      {/* Agents (driven by registry) — grouped by category
+                          with quiet section captions so the sidebar isn't a
+                          17-item flat list. */}
+                      {SIDEBAR_AGENT_CATEGORIES.map((cat) => {
+                        const agentsInCat = SIDEBAR_AGENTS.filter(
+                          (a) => a.category === cat.id
+                        );
+                        if (agentsInCat.length === 0) return null;
                         return (
-                          <Link
-                            key={agent.id}
-                            href={href}
-                            onClick={handleNavClick}
-                            title={agent.description}
-                            className={cn(
-                              "flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[0.8125rem] font-medium transition-colors",
-                              isActive
-                                ? "bg-surface-2 text-accent"
-                                : "text-text-tertiary hover:bg-surface-2 hover:text-text-primary"
-                            )}
-                          >
-                            <IconComp className="h-3.5 w-3.5 shrink-0" />
-                            <span className="truncate">{agent.shortName}</span>
-                          </Link>
+                          <div key={cat.id} className="space-y-0.5">
+                            <p className="px-2.5 pt-1.5 pb-0.5 text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-text-tertiary/60">
+                              {cat.label}
+                            </p>
+                            {agentsInCat.map((agent) => {
+                              const path = agent.projectPath ?? agent.route;
+                              const href = `${projectBase}/${path}`;
+                              const hrefPath = href.split("?")[0];
+                              const isActive =
+                                pathname === hrefPath ||
+                                pathname.startsWith(hrefPath + "/");
+                              const IconComp = ICON_MAP[agent.icon] ?? FileText;
+                              const unlocked = isPlanAtLeast(plan, agent.tier as PlanTier);
+                              const comingSoon = agent.status === "coming_soon";
+                              const locked = !unlocked || comingSoon;
+
+                              if (locked) {
+                                return (
+                                  <button
+                                    key={agent.id}
+                                    type="button"
+                                    onClick={() => setLockedPreview(agent)}
+                                    title={
+                                      comingSoon
+                                        ? `${agent.name} — coming soon`
+                                        : `${agent.name} — upgrade to ${tierLabel(agent.tier as PlanTier)}`
+                                    }
+                                    className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-[0.8125rem] font-medium text-text-tertiary/60 hover:bg-surface-2 hover:text-text-tertiary transition-colors text-left"
+                                  >
+                                    <IconComp className="h-3.5 w-3.5 shrink-0" />
+                                    <span className="truncate flex-1">{agent.shortName}</span>
+                                    <span className="inline-flex items-center gap-0.5 rounded bg-surface-2 px-1 py-0.5 text-[0.55rem] font-semibold uppercase tracking-wide text-accent">
+                                      <Lock className="h-2.5 w-2.5" />
+                                      {comingSoon ? "Soon" : tierLabel(agent.tier as PlanTier)}
+                                    </span>
+                                  </button>
+                                );
+                              }
+
+                              return (
+                                <Link
+                                  key={agent.id}
+                                  href={href}
+                                  onClick={handleNavClick}
+                                  title={agent.description}
+                                  className={cn(
+                                    "flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[0.8125rem] font-medium transition-colors",
+                                    isActive
+                                      ? "bg-surface-2 text-accent"
+                                      : "text-text-tertiary hover:bg-surface-2 hover:text-text-primary"
+                                  )}
+                                >
+                                  <IconComp className="h-3.5 w-3.5 shrink-0" />
+                                  <span className="truncate">{agent.shortName}</span>
+                                </Link>
+                              );
+                            })}
+                          </div>
                         );
                       })}
 
@@ -441,52 +472,65 @@ export function Sidebar() {
 
               {agentsMenuOpen && (
                 <div className="ml-3 pl-3 border-l border-border-subtle mt-0.5 mb-1 space-y-0.5">
-                  {SIDEBAR_AGENTS.map((agent) => {
-                    const href = `/agents/${agent.route}`;
-                    const isActive = pathname.startsWith(`/agents/${agent.route}`);
-                    const IconComp = ICON_MAP[agent.icon] ?? FileText;
-                    const unlocked = isPlanAtLeast(plan, agent.tier as PlanTier);
-                    const comingSoon = agent.status === "coming_soon";
-                    const locked = !unlocked || comingSoon;
-
-                    if (locked) {
-                      return (
-                        <button
-                          key={agent.id}
-                          type="button"
-                          onClick={() => setLockedPreview(agent)}
-                          title={
-                            comingSoon
-                              ? `${agent.name} — coming soon`
-                              : `${agent.name} — upgrade to ${tierLabel(agent.tier as PlanTier)}`
-                          }
-                          className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-[0.8125rem] font-medium text-text-tertiary/60 hover:bg-surface-2 hover:text-text-tertiary transition-colors text-left"
-                        >
-                          <IconComp className="h-3.5 w-3.5 shrink-0" />
-                          <span className="truncate flex-1">{agent.shortName}</span>
-                          <span className="inline-flex items-center gap-0.5 rounded bg-surface-2 px-1 py-0.5 text-[0.55rem] font-semibold uppercase tracking-wide text-accent">
-                            <Lock className="h-2.5 w-2.5" />
-                            {comingSoon ? "Soon" : tierLabel(agent.tier as PlanTier)}
-                          </span>
-                        </button>
-                      );
-                    }
-
+                  {SIDEBAR_AGENT_CATEGORIES.map((cat) => {
+                    const agentsInCat = SIDEBAR_AGENTS.filter(
+                      (a) => a.category === cat.id
+                    );
+                    if (agentsInCat.length === 0) return null;
                     return (
-                      <Link
-                        key={agent.id}
-                        href={href}
-                        onClick={handleNavClick}
-                        className={cn(
-                          "flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[0.8125rem] font-medium transition-colors",
-                          isActive
-                            ? "bg-surface-2 text-accent"
-                            : "text-text-tertiary hover:bg-surface-2 hover:text-text-primary"
-                        )}
-                      >
-                        <IconComp className="h-3.5 w-3.5 shrink-0" />
-                        <span className="truncate">{agent.shortName}</span>
-                      </Link>
+                      <div key={cat.id} className="space-y-0.5">
+                        <p className="px-2.5 pt-1.5 pb-0.5 text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-text-tertiary/60">
+                          {cat.label}
+                        </p>
+                        {agentsInCat.map((agent) => {
+                          const href = `/agents/${agent.route}`;
+                          const isActive = pathname.startsWith(`/agents/${agent.route}`);
+                          const IconComp = ICON_MAP[agent.icon] ?? FileText;
+                          const unlocked = isPlanAtLeast(plan, agent.tier as PlanTier);
+                          const comingSoon = agent.status === "coming_soon";
+                          const locked = !unlocked || comingSoon;
+
+                          if (locked) {
+                            return (
+                              <button
+                                key={agent.id}
+                                type="button"
+                                onClick={() => setLockedPreview(agent)}
+                                title={
+                                  comingSoon
+                                    ? `${agent.name} — coming soon`
+                                    : `${agent.name} — upgrade to ${tierLabel(agent.tier as PlanTier)}`
+                                }
+                                className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-[0.8125rem] font-medium text-text-tertiary/60 hover:bg-surface-2 hover:text-text-tertiary transition-colors text-left"
+                              >
+                                <IconComp className="h-3.5 w-3.5 shrink-0" />
+                                <span className="truncate flex-1">{agent.shortName}</span>
+                                <span className="inline-flex items-center gap-0.5 rounded bg-surface-2 px-1 py-0.5 text-[0.55rem] font-semibold uppercase tracking-wide text-accent">
+                                  <Lock className="h-2.5 w-2.5" />
+                                  {comingSoon ? "Soon" : tierLabel(agent.tier as PlanTier)}
+                                </span>
+                              </button>
+                            );
+                          }
+
+                          return (
+                            <Link
+                              key={agent.id}
+                              href={href}
+                              onClick={handleNavClick}
+                              className={cn(
+                                "flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[0.8125rem] font-medium transition-colors",
+                                isActive
+                                  ? "bg-surface-2 text-accent"
+                                  : "text-text-tertiary hover:bg-surface-2 hover:text-text-primary"
+                              )}
+                            >
+                              <IconComp className="h-3.5 w-3.5 shrink-0" />
+                              <span className="truncate">{agent.shortName}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
                     );
                   })}
                 </div>
