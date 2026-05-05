@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Mail,
   Loader2,
@@ -98,6 +99,7 @@ export default function EmailsPage({
 }) {
   const { id: projectId } = use(params);
   const { toast } = useToast();
+  const searchParams = useSearchParams();
   const [sequences, setSequences] = useState<EmailSequence[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSeq, setSelectedSeq] = useState<SequenceDetail | null>(null);
@@ -115,6 +117,23 @@ export default function EmailsPage({
   useEffect(() => {
     fetchSequences();
   }, [projectId]);
+
+  // Hand-off from /content?skill=email-sequence — when the user clicks
+  // "Save & Schedule Drip", we redirect here with ?enroll=<seqId> so the
+  // audience picker opens automatically. The user picks an audience and
+  // the drip starts. We only auto-open once per page load, hence the
+  // ref-style guard via state.
+  const [autoEnrollHandled, setAutoEnrollHandled] = useState(false);
+  useEffect(() => {
+    if (autoEnrollHandled) return;
+    const enrollSeqId = searchParams.get("enroll");
+    if (!enrollSeqId) return;
+    // Wait until the sequence list has loaded so the picker shows the
+    // right step count in its preview.
+    if (loading) return;
+    setAutoEnrollHandled(true);
+    openEnroll(enrollSeqId);
+  }, [searchParams, loading, autoEnrollHandled]);
 
   async function fetchSequences() {
     const res = await fetch(`/api/projects/${projectId}/email-sequences`);
