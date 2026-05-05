@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 import { verifyProjectOwnership } from "@/src/lib/auth/verify-ownership";
+import { checkSequenceLimit, getUserPlan } from "@/src/lib/email/usage";
 
 export async function GET(
   _request: NextRequest,
@@ -77,6 +78,21 @@ export async function POST(
     return NextResponse.json(
       { error: "name and steps are required" },
       { status: 400 }
+    );
+  }
+
+  // Plan-tier gate on total sequences. Counted across all the user's
+  // projects since the limit is per-account, not per-project.
+  const plan = await getUserPlan(supabase, user.id);
+  const seqLimit = await checkSequenceLimit(supabase, user.id, plan);
+  if (!seqLimit.ok) {
+    return NextResponse.json(
+      {
+        error: `You've hit your plan's sequence limit (${seqLimit.used}/${seqLimit.limit}). Upgrade or delete an existing sequence to create another.`,
+        code: "PLAN_GATED_SEQUENCES",
+        limits: seqLimit,
+      },
+      { status: 403 }
     );
   }
 

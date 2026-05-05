@@ -106,14 +106,22 @@ Return valid JSON (and ONLY JSON — no markdown code fences, no explanation bef
     `.trim();
   },
 
-  buildUserPrompt: (input: Record<string, unknown>) => `
+  buildUserPrompt: (input: Record<string, unknown>) => {
+    // Universal hard cap — even at the 1500-char body cap, ~10 emails is
+    // the safe ceiling for the 12K maxTokens budget. Anything higher
+    // risks truncation. The default stays at 5 so typical welcome/
+    // onboarding flows are unaffected.
+    const requested = Number(input.count) || 5;
+    const safeCount = Math.min(10, Math.max(1, Math.floor(requested)));
+    return `
 Create a ${input.type || "welcome"} email sequence.
 
-Number of emails: ${input.count || 5}
+Number of emails: ${safeCount}
 Goal: ${input.goal || "Onboard new users and drive activation"}
 Trigger event: ${input.trigger || "User signs up"}
 Additional context: ${input.context || "None"}
-  `.trim(),
+  `.trim();
+  },
 
   parseResponse: (response: string): SkillOutput => {
     const parsed = parseJsonResponse(response);

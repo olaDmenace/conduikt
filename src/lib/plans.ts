@@ -43,6 +43,7 @@ export interface EmailLimits {
   contactsPerAudience: number; // max contacts in a single audience
   emailsPerMonth: number;      // marketing emails this user can send per month
   customDomain: boolean;       // can verify their own sending domain
+  sequences: number;           // max email sequences per user (across all projects)
 }
 
 export const EMAIL_LIMITS: Record<PlanTier, EmailLimits> = {
@@ -51,24 +52,28 @@ export const EMAIL_LIMITS: Record<PlanTier, EmailLimits> = {
     contactsPerAudience: 100,
     emailsPerMonth: 50,
     customDomain: false,
+    sequences: 1,
   },
   pro: {
     audiences: 3,
     contactsPerAudience: 2_000,
     emailsPerMonth: 10_000,
     customDomain: true,
+    sequences: 10,
   },
   growth: {
     audiences: 10,
     contactsPerAudience: 10_000,
     emailsPerMonth: 50_000,
     customDomain: true,
+    sequences: 50,
   },
   agency: {
     audiences: Number.POSITIVE_INFINITY,
     contactsPerAudience: 25_000,
     emailsPerMonth: 200_000,
     customDomain: true,
+    sequences: Number.POSITIVE_INFINITY,
   },
 };
 

@@ -70,4 +70,19 @@ describe("Email plan limits", () => {
       expect(getEmailLimits("free")).toEqual(EMAIL_LIMITS.free);
     });
   });
+
+  describe("sequence limits", () => {
+    it("free is 1, pro 10, growth 50, agency unlimited", () => {
+      expect(EMAIL_LIMITS.free.sequences).toBe(1);
+      expect(EMAIL_LIMITS.pro.sequences).toBe(10);
+      expect(EMAIL_LIMITS.growth.sequences).toBe(50);
+      expect(EMAIL_LIMITS.agency.sequences).toBe(Number.POSITIVE_INFINITY);
+    });
+
+    it("higher tiers always allow >= lower-tier sequence count", () => {
+      expect(EMAIL_LIMITS.pro.sequences).toBeGreaterThan(EMAIL_LIMITS.free.sequences);
+      expect(EMAIL_LIMITS.growth.sequences).toBeGreaterThan(EMAIL_LIMITS.pro.sequences);
+      expect(EMAIL_LIMITS.agency.sequences).toBeGreaterThan(EMAIL_LIMITS.growth.sequences);
+    });
+  });
 });
