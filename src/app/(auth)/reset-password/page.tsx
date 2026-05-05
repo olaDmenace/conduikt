@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/src/lib/supabase/client";
 import { Button } from "@/src/components/ui/button";
@@ -118,16 +119,18 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="animate-in">
-      {/* Logo */}
+      {/* Logo — links back to the homepage. */}
       <div className="mb-8 text-center">
-        <Image
-          src="/conduikt-icon.png"
-          alt="Conduikt"
-          width={56}
-          height={56}
-          priority
-          className="mx-auto mb-4 h-14 w-14"
-        />
+        <Link href="/" aria-label="Conduikt home" className="inline-block mb-4">
+          <Image
+            src="/conduikt-icon.png"
+            alt="Conduikt"
+            width={72}
+            height={72}
+            priority
+            className="mx-auto h-[72px] w-[72px] transition-transform duration-300 hover:scale-105"
+          />
+        </Link>
         <h1 className="text-h1">Set new password</h1>
         <p className="mt-2 text-body text-text-secondary">
           {done

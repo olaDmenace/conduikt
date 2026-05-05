@@ -85,16 +85,19 @@ export default function LoginPage() {
 
   return (
     <div className="animate-in">
-      {/* Logo */}
+      {/* Logo — links back to the homepage so users can escape the
+          auth flow without using the browser back button. */}
       <div className="mb-8 text-center">
-        <Image
-          src="/conduikt-icon.png"
-          alt="Conduikt"
-          width={56}
-          height={56}
-          priority
-          className="mx-auto mb-4 h-14 w-14"
-        />
+        <Link href="/" aria-label="Conduikt home" className="inline-block mb-4">
+          <Image
+            src="/conduikt-icon.png"
+            alt="Conduikt"
+            width={72}
+            height={72}
+            priority
+            className="mx-auto h-[72px] w-[72px] transition-transform duration-300 hover:scale-105"
+          />
+        </Link>
         <h1 className="text-h1">Welcome back</h1>
         <p className="mt-2 text-body text-text-secondary">
           Sign in to your Conduikt account

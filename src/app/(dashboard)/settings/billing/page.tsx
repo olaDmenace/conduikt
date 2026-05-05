@@ -312,8 +312,10 @@ function BillingContent() {
             </div>
           )}
 
-          {/* Plans Grid */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Plans Grid — items-stretch so cards in the same row share
+              height, and each card uses flex-column inside so its CTA
+              button pins to the bottom regardless of feature count. */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-stretch">
             {plans.map((plan, i) => {
               const isCurrent = plan.key === currentPlan;
               const currentIdx = plans.findIndex(
@@ -330,10 +332,10 @@ function BillingContent() {
               return (
                 <Card
                   key={plan.key}
-                  className={`animate-in ${isCurrent ? "border-accent" : ""}`}
+                  className={`animate-in h-full ${isCurrent ? "border-accent" : ""}`}
                   style={{ animationDelay: `${(i + 2) * 60}ms` }}
                 >
-                  <CardContent className="pt-6">
+                  <CardContent className="pt-6 flex flex-col h-full">
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="text-h3 text-text-primary">
                         {plan.name}
@@ -342,8 +344,14 @@ function BillingContent() {
                         <Badge variant="success">Current</Badge>
                       )}
                     </div>
-                    <div className="mb-4">
-                      <span className="text-2xl font-bold font-mono text-text-primary">
+                    <div className="mb-4 flex items-baseline gap-1">
+                      <span
+                        className="text-2xl font-bold text-text-primary"
+                        style={{
+                          fontFamily: "var(--font-display)",
+                          letterSpacing: "-0.02em",
+                        }}
+                      >
                         {price.label}
                       </span>
                       <span className="text-text-tertiary text-small">
@@ -354,55 +362,60 @@ function BillingContent() {
                       {plan.features.map((f) => (
                         <li
                           key={f}
-                          className="flex items-center gap-2 text-small text-text-secondary"
+                          className="flex items-start gap-2 text-small text-text-secondary"
                         >
-                          <CheckCircle2 className="h-3.5 w-3.5 text-success shrink-0" />
-                          {f}
+                          <CheckCircle2 className="h-3.5 w-3.5 text-accent shrink-0 mt-0.5" />
+                          <span>{f}</span>
                         </li>
                       ))}
                     </ul>
-                    {isCurrent ? (
-                      <Button
-                        variant="secondary"
-                        className="w-full"
-                        disabled
-                      >
-                        Current Plan
-                      </Button>
-                    ) : plan.key === "free" ? (
-                      <Button
-                        variant="secondary"
-                        className="w-full"
-                        disabled
-                      >
-                        {isDowngrade
-                          ? "Contact Support"
-                          : "Free Tier"}
-                      </Button>
-                    ) : isUpgrade ? (
-                      <Button
-                        className="w-full"
-                        disabled={isLoading || verifying}
-                        onClick={() => handleUpgrade(plan.key)}
-                      >
-                        {isLoading ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <>
-                            <CreditCard className="h-4 w-4" />
-                            Upgrade
-                          </>
-                        )}
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="secondary"
-                        className="w-full"
-                        disabled
-                      >
-                        Contact Support
-                      </Button>
-                    )}
+                    {/* mt-auto pins the CTA to the bottom of the flex
+                        column so all four cards line up at the
+                        baseline regardless of feature count. */}
+                    <div className="mt-auto">
+                      {isCurrent ? (
+                        <Button
+                          variant="secondary"
+                          className="w-full"
+                          disabled
+                        >
+                          Current Plan
+                        </Button>
+                      ) : plan.key === "free" ? (
+                        <Button
+                          variant="secondary"
+                          className="w-full"
+                          disabled
+                        >
+                          {isDowngrade
+                            ? "Contact Support"
+                            : "Free Tier"}
+                        </Button>
+                      ) : isUpgrade ? (
+                        <Button
+                          className="w-full"
+                          disabled={isLoading || verifying}
+                          onClick={() => handleUpgrade(plan.key)}
+                        >
+                          {isLoading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <>
+                              <CreditCard className="h-4 w-4" />
+                              Upgrade
+                            </>
+                          )}
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="secondary"
+                          className="w-full"
+                          disabled
+                        >
+                          Contact Support
+                        </Button>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               );
