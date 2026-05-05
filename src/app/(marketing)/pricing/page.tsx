@@ -112,7 +112,7 @@ const tiers: PricingTier[] = [
 
 export default function PricingPage() {
   return (
-    <div className="pt-8 pb-20">
+    <div className="pt-6 sm:pt-8 pb-14 sm:pb-20">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}

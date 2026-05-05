@@ -202,12 +202,18 @@ body {
    TYPE SCALE
    =================================================== */
 
-/* Display tier uses Space Grotesk 700 with the tight -0.02em tracking
-   the spec calls for. h2/h3 also use the display family at 600 — Space
-   Grotesk reads cleaner at section/card heading sizes than Inter. */
-.text-hero    { font: 700 3.5rem/1.1 var(--font-display); letter-spacing: -0.02em; }
-.text-h1      { font: 700 2.25rem/1.15 var(--font-display); letter-spacing: -0.02em; }
-.text-h2      { font: 600 1.5rem/1.25 var(--font-display); letter-spacing: -0.01em; }
+/* Display tier uses Space Grotesk 700 with tight -0.02em tracking. h2/h3
+   also use the display family at 600 — Space Grotesk reads cleaner at
+   section/card heading sizes than Inter.
+   Sizes are clamp()-based so they scale fluidly between mobile and
+   desktop without a hard jump at the md breakpoint:
+     hero — ~36px on a 360px phone, ~56px at 1280px+
+     h1   — ~28px on phone, ~36px on desktop
+     h2   — ~20px on phone, ~24px on desktop
+   Body sizes stay constant — they're already in a comfortable range. */
+.text-hero    { font: 700 clamp(2.25rem, 4.5vw + 1rem, 3.5rem)/1.1 var(--font-display); letter-spacing: -0.02em; }
+.text-h1      { font: 700 clamp(1.75rem, 2.5vw + 1rem, 2.25rem)/1.15 var(--font-display); letter-spacing: -0.02em; }
+.text-h2      { font: 600 clamp(1.25rem, 1vw + 1rem, 1.5rem)/1.25 var(--font-display); letter-spacing: -0.01em; }
 .text-h3      { font: 600 1.125rem/1.35 var(--font-display); letter-spacing: -0.01em; }
 .text-body    { font: 400 0.9375rem/1.6 var(--font-body); }
 .text-small   { font: 400 0.8125rem/1.5 var(--font-body); }
