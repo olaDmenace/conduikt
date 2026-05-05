@@ -392,15 +392,31 @@ export default function LandingPage() {
                 <CardContent className="pt-6">
                   <h3 className="text-h3 text-text-primary">{tier.name}</h3>
                   <p className="text-small text-text-secondary mt-1">{tier.description}</p>
-                  <div className="mt-4 mb-6">
-                    <span className="text-3xl font-bold font-mono text-text-primary">{tier.price}</span>
+                  {/* Display-typography price per DESIGN_SYSTEM.md —
+                      Space Grotesk bold via --font-display, tighter
+                      tracking, and a touch larger than the prior mono
+                      treatment so the number reads as a hero number,
+                      not a code value. */}
+                  <div className="mt-4 mb-6 flex items-baseline gap-1">
+                    <span
+                      className="text-4xl font-bold text-text-primary"
+                      style={{
+                        fontFamily: "var(--font-display)",
+                        letterSpacing: "-0.02em",
+                      }}
+                    >
+                      {tier.price}
+                    </span>
                     <span className="text-text-tertiary text-small">/month</span>
                   </div>
                   <ul className="space-y-2.5 mb-6">
                     {tier.features.map((feature) => (
-                      <li key={feature} className="flex items-center gap-2 text-small text-text-secondary">
-                        <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
-                        {feature}
+                      <li key={feature} className="flex items-start gap-2 text-small text-text-secondary">
+                        {/* Orange checkmark per DESIGN_SYSTEM.md (the
+                            previous green --success was a carryover
+                            from the old design). */}
+                        <CheckCircle2 className="h-4 w-4 text-accent shrink-0 mt-0.5" />
+                        <span>{feature}</span>
                       </li>
                     ))}
                   </ul>
