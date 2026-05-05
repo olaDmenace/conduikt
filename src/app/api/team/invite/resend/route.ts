@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
           <p>This is a reminder that you've been invited to join a team as a <strong>${invite.role}</strong>.</p>
           <p>Conduikt is an AI-powered marketing automation platform that helps you audit, generate, and publish marketing content.</p>
           <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://conduikt.com"}/signup?invite=${invite.id}&email=${encodeURIComponent(invite.invite_email)}"
-             style="display: inline-block; padding: 12px 24px; background: #2F8C85; color: #0C0C0E; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 16px;">
+             style="display: inline-block; padding: 12px 24px; background: #2F8C85; color: #FFFFFF; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 16px;">
             Accept Invite
           </a>
           <p style="color: #9B958C; font-size: 0.875rem; margin-top: 24px;">
