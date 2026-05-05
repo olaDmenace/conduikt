@@ -222,15 +222,12 @@ export default function LandingPage() {
               <div className="mt-8 flex items-center gap-4">
                 <Button size="lg" asChild>
                   <Link href="/signup">
-                    Start Free AI Marketing Audit
+                    Get Started
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
-                <Button variant="secondary" size="lg" asChild>
-                  <Link href="/features">See How It Works</Link>
-                </Button>
               </div>
-              <div className="mt-8 flex items-center gap-6 text-small text-text-tertiary">
+              <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-small text-text-tertiary">
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="h-4 w-4 text-success" />
                   No credit card required
@@ -307,7 +304,7 @@ export default function LandingPage() {
       </section>
 
       {/* Features Grid */}
-      <section id="features" className="py-20">
+      <section id="features" className="py-14 sm:py-20">
         <div className="mx-auto max-w-6xl px-6">
           <div className="text-center mb-16">
             <RevealOnScroll as="h2" className="text-h1 text-text-primary">
@@ -363,7 +360,7 @@ export default function LandingPage() {
           marquee cards. */}
       <section
         id="testimonials"
-        className="relative py-20 border-t border-border-subtle overflow-hidden"
+        className="relative py-14 sm:py-20 border-t border-border-subtle overflow-hidden"
       >
         <div
           aria-hidden="true"
@@ -385,7 +382,7 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="py-20 border-t border-border-subtle">
+      <section id="pricing" className="py-14 sm:py-20 border-t border-border-subtle">
         <div className="mx-auto max-w-6xl px-6">
           <div className="text-center mb-16">
             <RevealOnScroll as="h2" className="text-h1 text-text-primary">
@@ -399,7 +396,7 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="py-20 border-t border-border-subtle">
+      <section id="faq" className="py-14 sm:py-20 border-t border-border-subtle">
         <div className="mx-auto max-w-3xl px-6">
           <div className="text-center mb-16">
             <RevealOnScroll as="h2" className="text-h1 text-text-primary">
@@ -420,7 +417,7 @@ export default function LandingPage() {
           radial accent glow per DESIGN_SYSTEM.md. The pinstripe gives
           the section weight without making it heavy; the radial glow
           pulls focus to the headline + CTA. */}
-      <section className="relative py-20 overflow-hidden border-t border-border-subtle">
+      <section className="relative py-14 sm:py-20 overflow-hidden border-t border-border-subtle">
         <div
           aria-hidden="true"
           className="pinstripe absolute inset-0 opacity-80 pointer-events-none"
