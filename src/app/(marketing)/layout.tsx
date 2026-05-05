@@ -16,8 +16,8 @@ export default function MarketingLayout({
       <main className="pt-[72px]">{children}</main>
 
       {/* Footer */}
-      <footer className="border-t border-border-subtle py-12">
-        <div className="mx-auto max-w-6xl px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <footer className="border-t border-border-subtle py-10 sm:py-12">
+        <div className="mx-auto max-w-6xl px-6 flex flex-col items-center gap-6 sm:gap-4 lg:flex-row lg:justify-between">
           <div className="flex items-center gap-3">
             <Image
               src="/conduikt-horizontal.png"
@@ -30,7 +30,7 @@ export default function MarketingLayout({
               by Technicity Digital
             </span>
           </div>
-          <div className="flex items-center gap-6 text-small text-text-tertiary">
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-small text-text-tertiary">
             <Link href="/compare" className="hover:text-text-secondary transition-colors">
               Compare
             </Link>
@@ -64,7 +64,7 @@ export default function MarketingLayout({
               <Facebook className="h-4 w-4" />
             </a>
           </div>
-          <div className="flex items-center gap-4 text-small text-text-tertiary">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-small text-text-tertiary">
             <Link href="/privacy" className="hover:text-text-secondary transition-colors">
               Privacy
             </Link>
