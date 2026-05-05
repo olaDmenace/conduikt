@@ -8,7 +8,10 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "rounded-xl border border-border-default bg-surface-1 p-6 shadow-[var(--shadow-ambient)] transition-all duration-200",
+      // Use the soft-cubic easing so card hovers feel composed rather
+      // than snappy. Duration matches --duration-base for consistency
+      // across UI elements.
+      "rounded-xl border border-border-default bg-surface-1 p-6 shadow-[var(--shadow-ambient)] transition-[border-color,box-shadow,transform] duration-[var(--duration-base)] ease-[var(--ease-out-soft)]",
       hover &&
         "hover:border-border-strong hover:shadow-[var(--shadow-elevated)] cursor-pointer",
       className

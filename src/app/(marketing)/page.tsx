@@ -20,6 +20,7 @@ import { Badge } from "@/src/components/ui/badge";
 import { homepageFaqs as faqs } from "@/src/lib/seo/homepage-schema";
 import { TestimonialMarquee } from "@/src/components/marketing/testimonial-marquee";
 import { RevealOnScroll } from "@/src/components/marketing/reveal-on-scroll";
+import { PricingGrid } from "@/src/components/marketing/pricing-card";
 
 const testimonials = [
   {
@@ -89,15 +90,16 @@ const features = [
   },
 ];
 
+// Pricing tiers — `features` are the headline bullets shown by default
+// (3-4 per tier per the reference layout). `extraFeatures` are the rest,
+// hidden behind a "Show all features" toggle so users who want the full
+// breakdown can expand a card without leaving the page.
 const tiers = [
   {
     name: "Free",
     price: "$0",
-    description: "See what Conduikt can do",
-    features: [
-      "3 AI agents (SEO Audit, Social, Keywords)",
-      "5 generations/month",
-      "1 project",
+    features: ["3 AI agents", "5 generations/month", "1 project"],
+    extraFeatures: [
       "1 audience, 50 marketing emails/mo",
       "Basic results (critical findings require Pro)",
     ],
@@ -107,14 +109,15 @@ const tiers = [
   {
     name: "Pro",
     price: "$49",
-    description: "Everything you need to market your business",
     features: [
-      "10 AI agents — full suite",
+      "10 AI agents",
       "250 generations/month",
       "5 projects",
+      "Multi-channel publishing",
+    ],
+    extraFeatures: [
       "Full unblurred results on all agents",
       "Growth Playbook included",
-      "Multi-channel publishing",
       "3 audiences, 10K emails/mo + custom domain",
       "Saved assets library",
     ],
@@ -124,11 +127,9 @@ const tiers = [
   {
     name: "Growth",
     price: "$99",
-    description: "Execute and optimize at scale",
-    features: [
-      "14 AI agents — Pro plus Campaigns, Calendar, A/B Tests, Video Ads",
-      "500 generations/month",
-      "15 projects",
+    features: ["14 AI agents", "500 generations/month", "15 projects"],
+    extraFeatures: [
+      "Pro plus Campaigns, Calendar, A/B Tests, Video Ads",
       "10 audiences, 50K emails/mo",
       "Analytics feedback loop",
       "Priority support (24h response)",
@@ -139,18 +140,21 @@ const tiers = [
   {
     name: "Agency",
     price: "$249",
-    description: "Manage multiple clients from one account",
     features: [
-      "15 AI agents — Growth plus exclusive Client Reports (white-label PDFs)",
+      "15 AI agents",
       "Unlimited generations",
+      "White-label exports",
+    ],
+    extraFeatures: [
+      "Growth plus exclusive Client Reports (white-label PDFs)",
       "Unlimited projects",
       "Multi-client workspace",
       "Team seats (up to 5)",
       "Unlimited audiences, 200K emails/mo",
-      "White-label exports + API access",
+      "API access",
       "Dedicated support",
     ],
-    cta: "Contact Agency Sales",
+    cta: "Contact Sales",
     popular: false,
   },
 ];
@@ -173,19 +177,23 @@ export default function LandingPage() {
         }}
       >
         {/* Diagonal pinstripe across the full hero background. Sits at
-            a low opacity so the radial accent glow above can still
+            a low opacity so the drifting glow orbs above can still
             colour the headline column without the stripes feeling busy. */}
         <div
           aria-hidden="true"
           className="pinstripe-faint pointer-events-none absolute inset-0 opacity-80"
         />
-        {/* Radial accent glow behind the headline column — 18% opacity
-            per DESIGN_SYSTEM.md. Sits above the pinstripe so the
-            headline area pops while the rest of the hero stays
-            textured. */}
+        {/* Two radial accent orbs that drift slowly out-of-phase to
+            give the hero some ambient motion. Orange near the
+            headline column, teal in the opposite corner — the same
+            primary/secondary brand pairing the rest of the site uses. */}
         <div
           aria-hidden="true"
-          className="radial-accent-glow pointer-events-none absolute -top-32 -left-24 h-[600px] w-[600px] rounded-full opacity-90"
+          className="radial-accent-glow orb-drift-a pointer-events-none absolute -top-32 -left-24 h-[600px] w-[600px] rounded-full opacity-90"
+        />
+        <div
+          aria-hidden="true"
+          className="radial-secondary-glow orb-drift-b pointer-events-none absolute -bottom-40 -right-32 h-[520px] w-[520px] rounded-full"
         />
         <div className="relative mx-auto max-w-6xl px-6 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -373,60 +381,7 @@ export default function LandingPage() {
             <p className="mt-4 text-lg text-text-secondary">Start free. Scale as you grow.</p>
             <p className="mt-2 text-small text-text-tertiary">Annual plans coming soon &mdash; save up to 20%.</p>
           </div>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 lg:items-start">
-            {tiers.map((tier, i) => (
-              <Card
-                key={tier.name}
-                className={`animate-in relative ${
-                  tier.popular
-                    ? "border-accent shadow-[0_0_40px_var(--accent-glow)] lg:-translate-y-2"
-                    : ""
-                }`}
-                style={{ animationDelay: `${i * 60}ms` }}
-              >
-                {tier.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-                    <Badge>Most Popular</Badge>
-                  </div>
-                )}
-                <CardContent className="pt-6">
-                  <h3 className="text-h3 text-text-primary">{tier.name}</h3>
-                  <p className="text-small text-text-secondary mt-1">{tier.description}</p>
-                  {/* Display-typography price per DESIGN_SYSTEM.md —
-                      Space Grotesk bold via --font-display, tighter
-                      tracking, and a touch larger than the prior mono
-                      treatment so the number reads as a hero number,
-                      not a code value. */}
-                  <div className="mt-4 mb-6 flex items-baseline gap-1">
-                    <span
-                      className="text-4xl font-bold text-text-primary"
-                      style={{
-                        fontFamily: "var(--font-display)",
-                        letterSpacing: "-0.02em",
-                      }}
-                    >
-                      {tier.price}
-                    </span>
-                    <span className="text-text-tertiary text-small">/month</span>
-                  </div>
-                  <ul className="space-y-2.5 mb-6">
-                    {tier.features.map((feature) => (
-                      <li key={feature} className="flex items-start gap-2 text-small text-text-secondary">
-                        {/* Orange checkmark per DESIGN_SYSTEM.md (the
-                            previous green --success was a carryover
-                            from the old design). */}
-                        <CheckCircle2 className="h-4 w-4 text-accent shrink-0 mt-0.5" />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button variant={tier.popular ? "primary" : "secondary"} className="w-full" asChild>
-                    <Link href="/signup">{tier.cta}</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <PricingGrid tiers={tiers} />
         </div>
       </section>
 

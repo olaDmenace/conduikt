@@ -5,10 +5,15 @@ import { Slot } from "@radix-ui/react-slot";
 import { cn } from "@/src/lib/utils/cn";
 
 const buttonVariants = {
+  // Primary: brand-orange gradient with a soft accent glow that
+  // strengthens on hover.
   primary:
-    "bg-gradient-to-br from-[#D9663A] to-[#B24E27] text-on-accent shadow-[0_0_20px_var(--accent-glow)] hover:brightness-110 hover:scale-[1.02] active:brightness-95 active:scale-[0.98]",
+    "bg-gradient-to-br from-[#D9663A] to-[#B24E27] text-on-accent shadow-[0_0_20px_var(--accent-glow)] hover:shadow-[0_0_32px_var(--accent-glow)] hover:brightness-110 hover:scale-[1.015] active:brightness-95 active:scale-[0.985]",
+  // Secondary: hairline outline. Hover picks up an accent border and
+  // a very soft accent halo so the button doesn't feel inert next to
+  // the primary CTA's glow.
   secondary:
-    "bg-transparent border border-border-strong text-text-primary hover:bg-surface-3",
+    "bg-transparent border border-border-strong text-text-primary hover:bg-surface-3 hover:border-accent/40 hover:shadow-[0_0_16px_var(--accent-glow)]",
   ghost:
     "bg-transparent border-none text-text-secondary hover:text-text-primary",
   danger:
@@ -35,7 +40,10 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <Comp
         className={cn(
-          "inline-flex items-center justify-center gap-2 rounded-lg font-medium font-sans transition-all duration-150 cursor-pointer disabled:opacity-50 disabled:pointer-events-none",
+          // Soft-cubic easing + 250ms aligns with the rest of the UI —
+          // slower than the previous 150ms snap, faster than section
+          // reveals.
+          "inline-flex items-center justify-center gap-2 rounded-lg font-medium font-sans transition-all duration-[250ms] ease-[var(--ease-out-soft)] cursor-pointer disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed",
           buttonVariants[variant],
           buttonSizes[size],
           className

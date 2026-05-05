@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { CheckCircle2, ArrowRight } from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
-import { Badge } from "@/src/components/ui/badge";
-import { Button } from "@/src/components/ui/button";
+import {
+  PricingGrid,
+  type PricingTier,
+} from "@/src/components/marketing/pricing-card";
 
 export const metadata: Metadata = {
   title: "Pricing — Free, Pro $49, Growth $99, Agency $249",
@@ -28,12 +27,15 @@ const breadcrumbJsonLd = {
   ],
 };
 
-const tiers = [
+// Full feature lists shown on the dedicated pricing page (no
+// "Show all features" toggle since the whole point of /pricing is the
+// full breakdown). Tier-specific period suffix passed through; "/forever"
+// reads better for Free than "/mo".
+const tiers: PricingTier[] = [
   {
     name: "Free",
     price: "$0",
-    period: "forever",
-    description: "See what Conduikt can do.",
+    period: "/forever",
     features: [
       "3 AI agents (SEO Audit, Social, Keywords)",
       "5 generations / month",
@@ -45,12 +47,12 @@ const tiers = [
     ],
     cta: "Get Started Free",
     popular: false,
+    ctaHref: "/signup",
   },
   {
     name: "Pro",
     price: "$49",
-    period: "per month",
-    description: "Everything you need to market your business.",
+    period: "/per month",
     features: [
       "10 AI agents — full suite",
       "250 generations / month",
@@ -66,12 +68,12 @@ const tiers = [
     ],
     cta: "Start Pro Trial",
     popular: true,
+    ctaHref: "/signup?plan=pro",
   },
   {
     name: "Growth",
     price: "$99",
-    period: "per month",
-    description: "Execute and optimize at scale.",
+    period: "/per month",
     features: [
       "14 AI agents — Pro plus Campaigns, Calendar, A/B Tests, Video Ads",
       "500 generations / month",
@@ -83,12 +85,12 @@ const tiers = [
     ],
     cta: "Start Growth Trial",
     popular: false,
+    ctaHref: "/signup?plan=growth",
   },
   {
     name: "Agency",
     price: "$249",
-    period: "per month",
-    description: "Manage multiple clients from one account.",
+    period: "/per month",
     features: [
       "15 AI agents — exclusive Client Reports (white-label PDFs)",
       "Unlimited generations",
@@ -104,6 +106,7 @@ const tiers = [
     ],
     cta: "Contact Sales",
     popular: false,
+    ctaHref: "/signup?plan=agency",
   },
 ];
 
@@ -122,41 +125,7 @@ export default function PricingPage() {
           </p>
           <p className="mt-2 text-small text-text-tertiary">Annual plans coming soon &mdash; save up to 20%.</p>
         </div>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {tiers.map((tier, i) => (
-            <Card
-              key={tier.name}
-              className={`animate-in relative ${tier.popular ? "border-accent shadow-[0_0_30px_var(--accent-glow)]" : ""}`}
-              style={{ animationDelay: `${i * 60}ms` }}
-            >
-              {tier.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2"><Badge>Most Popular</Badge></div>
-              )}
-              <CardContent className="pt-8 flex flex-col h-full">
-                <h3 className="text-h2 text-text-primary">{tier.name}</h3>
-                <div className="mt-2 mb-2">
-                  <span className="text-3xl font-bold font-mono text-text-primary">{tier.price}</span>
-                  <span className="text-text-tertiary text-small">/{tier.period}</span>
-                </div>
-                <p className="text-small text-text-secondary mb-6">{tier.description}</p>
-                <ul className="space-y-2.5 mb-8 flex-1">
-                  {tier.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-2 text-small text-text-secondary">
-                      <CheckCircle2 className="h-4 w-4 text-success shrink-0 mt-0.5" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                <Button variant={tier.popular ? "primary" : "secondary"} className="w-full" asChild>
-                  <Link href={tier.name === "Free" ? "/signup" : "/signup?plan=" + tier.name.toLowerCase()}>
-                    {tier.cta}
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <PricingGrid tiers={tiers} />
       </div>
     </div>
   );

@@ -65,6 +65,18 @@
   /* Diagonal-stripe utility colour. Used by .pinstripe sparingly behind
      hero / testimonial band / final CTA strip. */
   --stripe: rgba(255, 255, 255, 0.06);
+
+  /* --- Motion tokens ---
+     Single source of truth for animation timing across the app. Use
+     these on ad-hoc transitions instead of hard-coding ms values so
+     the app feels rhythmically consistent. The "soft" easing curve
+     decelerates naturally — reads as mature rather than bouncy. */
+  --ease-out-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 400ms;
+  --duration-section: 700ms;
   --glass-blur: 16px;
   --shadow-ambient: 0 0 0 1px var(--border-subtle), 0 2px 8px #00000040;
   --shadow-elevated: 0 0 0 1px var(--border-default), 0 8px 32px #00000060;
@@ -145,12 +157,45 @@
    BASE STYLES
    =================================================== */
 
+html {
+  /* Smooth scroll for in-page anchors (FAQ jumps, pricing #pricing
+     links, etc). Mature pages don't snap-jump. */
+  scroll-behavior: smooth;
+}
+
+/* Pointer cursor on every interactive button. Chrome ships native
+   buttons with the default arrow which reads as "not clickable" — this
+   guarantees every button across the app shows the right affordance,
+   including raw <button> elements that don't go through our <Button>
+   wrapper. Disabled buttons still show the default cursor. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
 body {
   background: var(--surface-0);
   color: var(--text-primary);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Global reduced-motion guard. When the user opts out at the OS level
+   we collapse every animation + transition to a near-zero duration
+   instead of disabling them outright (so layout still snaps cleanly
+   without intermediate states). Components that need finer control
+   (e.g., the RevealOnScroll heading) check the media query themselves
+   and fully short-circuit. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ===================================================
@@ -174,24 +219,28 @@ body {
    =================================================== */
 
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Default entry animation: 500ms, soft-cubic ease-out. Reads as
+   "introduced", not "appeared". Stagger steps are 80ms — slow enough
+   to feel composed, fast enough that a 6-card grid finishes inside
+   the viewport's first second. */
 .animate-in {
-  animation: fadeUp 0.4s ease-out forwards;
+  animation: fadeUp 500ms var(--ease-out-soft) forwards;
   opacity: 0;
 }
 .animate-in:nth-child(1) { animation-delay: 0ms; }
-.animate-in:nth-child(2) { animation-delay: 60ms; }
-.animate-in:nth-child(3) { animation-delay: 120ms; }
-.animate-in:nth-child(4) { animation-delay: 180ms; }
-.animate-in:nth-child(5) { animation-delay: 240ms; }
-.animate-in:nth-child(6) { animation-delay: 300ms; }
-.animate-in:nth-child(7) { animation-delay: 360ms; }
-.animate-in:nth-child(8) { animation-delay: 420ms; }
-.animate-in:nth-child(9) { animation-delay: 480ms; }
-.animate-in:nth-child(10) { animation-delay: 540ms; }
+.animate-in:nth-child(2) { animation-delay: 80ms; }
+.animate-in:nth-child(3) { animation-delay: 160ms; }
+.animate-in:nth-child(4) { animation-delay: 240ms; }
+.animate-in:nth-child(5) { animation-delay: 320ms; }
+.animate-in:nth-child(6) { animation-delay: 400ms; }
+.animate-in:nth-child(7) { animation-delay: 480ms; }
+.animate-in:nth-child(8) { animation-delay: 560ms; }
+.animate-in:nth-child(9) { animation-delay: 640ms; }
+.animate-in:nth-child(10) { animation-delay: 720ms; }
 
 /* Skeleton Loading — warm shimmer */
 @keyframes shimmer {
@@ -232,6 +281,40 @@ body {
     color-mix(in srgb, var(--accent-primary) 18%, transparent),
     transparent 70%
   );
+}
+
+/* A softer secondary glow tinted with the secondary accent (teal). Used
+   alongside .radial-accent-glow to give the hero two-tone luminance. */
+.radial-secondary-glow {
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--accent-secondary) 14%, transparent),
+    transparent 70%
+  );
+}
+
+/* Slow drifting orbs for the hero backdrop — gives the page some life
+   without becoming distracting. Two different keyframes + durations
+   so the orbs move out-of-phase, never returning to the same arrangement.
+   Both use ease-in-out and run 16-24s — slow enough to read as "ambient",
+   not "animated". The reduced-motion guard later in this file collapses
+   these to a near-zero duration for users who opted out. */
+@keyframes orb-drift-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(48px, 28px) scale(1.08); }
+  66%      { transform: translate(-24px, 56px) scale(0.94); }
+}
+@keyframes orb-drift-b {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.7; }
+  50%      { transform: translate(-56px, -32px) scale(1.12); opacity: 0.95; }
+}
+.orb-drift-a {
+  animation: orb-drift-a 24s ease-in-out infinite;
+  will-change: transform;
+}
+.orb-drift-b {
+  animation: orb-drift-b 18s ease-in-out infinite;
+  will-change: transform, opacity;
 }
 
 /* Grain Texture Overlay */
