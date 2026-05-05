@@ -221,7 +221,7 @@ export function CampaignFlowEditor({
           {
             ...connection,
             animated: true,
-            style: { stroke: "#2F8C85", strokeWidth: 2 },
+            style: { stroke: "#D9663A", strokeWidth: 2 },
           },
           eds
         )
@@ -318,7 +318,7 @@ export function CampaignFlowEditor({
   const defaultEdgeOptions = useMemo(
     () => ({
       animated: true,
-      style: { stroke: "#2F8C85", strokeWidth: 2 },
+      style: { stroke: "#D9663A", strokeWidth: 2 },
     }),
     []
   );
@@ -437,7 +437,7 @@ export function CampaignFlowEditor({
             />
             <MiniMap
               className="!bg-surface-1 !border-border-default !rounded-lg"
-              nodeColor="#2F8C85"
+              nodeColor="#D9663A"
               maskColor="rgba(12, 12, 14, 0.8)"
             />
           </ReactFlow>

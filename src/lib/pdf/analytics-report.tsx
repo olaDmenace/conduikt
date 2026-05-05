@@ -12,7 +12,7 @@ const colors = {
   surface0: "#0C0C0E",
   surface1: "#141418",
   surface2: "#1C1C22",
-  accent: "#2F8C85",
+  accent: "#D9663A",
   textPrimary: "#E8E4DE",
   textSecondary: "#9B958C",
   textTertiary: "#5E5A54",

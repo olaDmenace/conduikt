@@ -260,7 +260,7 @@ export default function NewProjectPage() {
             <div
               className={`flex h-8 w-8 items-center justify-center rounded-full text-[0.8125rem] font-medium transition-colors ${
                 step === s
-                  ? "bg-gradient-to-br from-[#2F8C85] to-[#1F6B66] text-on-accent"
+                  ? "bg-gradient-to-br from-[#D9663A] to-[#B24E27] text-on-accent"
                   : i < stepIndex
                   ? "bg-success/20 text-success"
                   : "bg-surface-2 text-text-tertiary"

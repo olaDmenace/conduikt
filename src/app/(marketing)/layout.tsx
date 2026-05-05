@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Button } from "@/src/components/ui/button";
-import { ArrowRight, Facebook, Twitter } from "lucide-react";
+import { Facebook, Twitter } from "lucide-react";
+import { MarketingNav } from "@/src/components/marketing/marketing-nav";
 
 export default function MarketingLayout({
   children,
@@ -10,73 +10,10 @@ export default function MarketingLayout({
 }) {
   return (
     <div className="min-h-screen bg-surface-0">
-      {/* Navigation */}
-      <nav className="fixed top-0 z-50 w-full border-b border-border-subtle bg-surface-0/80 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <Link href="/" className="flex items-center" aria-label="Conduikt home">
-            <Image
-              src="/conduikt-horizontal.png"
-              alt="Conduikt"
-              width={160}
-              height={40}
-              priority
-              className="h-10 w-auto"
-            />
-          </Link>
-          <div className="hidden items-center gap-8 md:flex">
-            <Link
-              href="/features"
-              className="text-small text-text-secondary hover:text-text-primary transition-colors"
-            >
-              Features
-            </Link>
-            <Link
-              href="/pricing"
-              className="text-small text-text-secondary hover:text-text-primary transition-colors"
-            >
-              Pricing
-            </Link>
-            <Link
-              href="/compare"
-              className="text-small text-text-secondary hover:text-text-primary transition-colors"
-            >
-              vs Competitors
-            </Link>
-            <Link
-              href="/blog"
-              className="text-small text-text-secondary hover:text-text-primary transition-colors"
-            >
-              Blog
-            </Link>
-            <Link
-              href="/guides"
-              className="text-small text-text-secondary hover:text-text-primary transition-colors"
-            >
-              Guides
-            </Link>
-            <Link
-              href="/launch"
-              className="text-small text-text-secondary hover:text-text-primary transition-colors"
-            >
-              Product Launch
-            </Link>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" asChild>
-              <Link href="/login">Sign in</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/signup">
-                Get Started
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </nav>
+      <MarketingNav />
 
-      {/* Content */}
-      <main className="pt-16">{children}</main>
+      {/* Content — top padding matches the nav height (72px per spec). */}
+      <main className="pt-[72px]">{children}</main>
 
       {/* Footer */}
       <footer className="border-t border-border-subtle py-12">

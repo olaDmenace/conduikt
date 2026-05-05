@@ -176,7 +176,7 @@ export function AdminSettingsClient({ admins: initialAdmins }: { admins: Admin[]
           <button
             type="submit"
             disabled={loading || !promoteEmail.trim()}
-            className="rounded-lg bg-gradient-to-br from-[#2F8C85] to-[#1F6B66] px-5 py-2.5 text-[0.875rem] font-medium text-on-accent shadow-[0_0_20px_var(--accent-glow)] hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="rounded-lg bg-gradient-to-br from-[#D9663A] to-[#B24E27] px-5 py-2.5 text-[0.875rem] font-medium text-on-accent shadow-[0_0_20px_var(--accent-glow)] hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shield className="h-4 w-4" />}
             Promote
