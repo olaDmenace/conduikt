@@ -103,9 +103,11 @@ export default function EmailsPage({
   const [selectedSeq, setSelectedSeq] = useState<SequenceDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [sendingStep, setSendingStep] = useState<string | null>(null);
-  // Enroll-audience flow state. The dialog opens from the sequence detail
-  // header; selecting an audience reveals the confirm preview.
+  // Enroll-audience flow state. The dialog opens from either the sequence
+  // detail dialog OR directly from a card's Send button — `enrollForSeqId`
+  // is the single source of truth for which sequence we're enrolling into.
   const [enrollOpen, setEnrollOpen] = useState(false);
+  const [enrollForSeqId, setEnrollForSeqId] = useState<string | null>(null);
   const [audiences, setAudiences] = useState<AudienceOption[]>([]);
   const [selectedAudienceId, setSelectedAudienceId] = useState<string | null>(null);
   const [enrolling, setEnrolling] = useState(false);
@@ -130,7 +132,8 @@ export default function EmailsPage({
     setDetailLoading(false);
   }
 
-  async function openEnroll() {
+  async function openEnroll(seqId: string) {
+    setEnrollForSeqId(seqId);
     setEnrollOpen(true);
     setSelectedAudienceId(null);
     if (audiences.length === 0) {
@@ -140,10 +143,10 @@ export default function EmailsPage({
   }
 
   async function handleEnroll() {
-    if (!selectedSeq || !selectedAudienceId) return;
+    if (!enrollForSeqId || !selectedAudienceId) return;
     setEnrolling(true);
     const res = await fetch(
-      `/api/projects/${projectId}/email-sequences/${selectedSeq.id}/enroll`,
+      `/api/projects/${projectId}/email-sequences/${enrollForSeqId}/enroll`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -327,11 +330,10 @@ export default function EmailsPage({
           {sequences.map((seq, i) => (
             <Card
               key={seq.id}
-              className="animate-in cursor-pointer hover:border-accent/40 transition-colors"
+              className="animate-in hover:border-accent/40 transition-colors flex flex-col"
               style={{ animationDelay: `${i * 60}ms` }}
-              onClick={() => openDetail(seq.id)}
             >
-              <CardContent className="p-5">
+              <CardContent className="p-5 flex flex-col flex-1">
                 <div className="flex items-start justify-between mb-3">
                   <div className="rounded-lg bg-surface-2 p-2.5">
                     <Mail className="h-4 w-4 text-accent" />
@@ -347,13 +349,33 @@ export default function EmailsPage({
                     {seq.step_count} email{seq.step_count !== 1 ? "s" : ""}
                   </span>
                 </div>
-                <p className="text-caption text-text-tertiary mt-2">
+                <p className="text-caption text-text-tertiary mt-2 mb-4">
                   Created{" "}
                   {new Date(seq.created_at).toLocaleDateString(undefined, {
                     month: "short",
                     day: "numeric",
                   })}
                 </p>
+                {/* Inline actions — both clearly labeled so users don't have
+                    to click into the detail dialog just to find Send. */}
+                <div className="mt-auto flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    className="flex-1"
+                    disabled={seq.step_count === 0}
+                    onClick={() => openEnroll(seq.id)}
+                  >
+                    <Send className="h-3.5 w-3.5 mr-1.5" />
+                    Send to audience
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => openDetail(seq.id)}
+                  >
+                    Preview
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -387,7 +409,7 @@ export default function EmailsPage({
                     : ""}
                 </DialogDescription>
                 <div className="pt-3">
-                  <Button size="sm" onClick={openEnroll}>
+                  <Button size="sm" onClick={() => openEnroll(selectedSeq.id)}>
                     <Users className="h-3.5 w-3.5 mr-1.5" />
                     Send to audience
                   </Button>
@@ -524,12 +546,22 @@ export default function EmailsPage({
                 })}
               </div>
 
-              {selectedAudienceId && selectedSeq && (
+              {selectedAudienceId && enrollForSeqId && (
                 <div className="rounded-lg bg-surface-2 p-3 text-small">
                   <p className="text-text-secondary">
                     {(() => {
                       const a = audiences.find((x) => x.id === selectedAudienceId);
-                      const stepCount = selectedSeq.email_sequence_steps?.length ?? 0;
+                      // Step count from whichever source we have. The
+                      // detail-loaded selectedSeq has the full steps array;
+                      // the list view only has step_count. Either is fine
+                      // because we matched on enrollForSeqId.
+                      const detailMatches =
+                        selectedSeq?.id === enrollForSeqId
+                          ? selectedSeq.email_sequence_steps?.length
+                          : undefined;
+                      const listMatch = sequences.find((s) => s.id === enrollForSeqId);
+                      const stepCount =
+                        detailMatches ?? listMatch?.step_count ?? 0;
                       const total = (a?.contact_count ?? 0) * stepCount;
                       return (
                         <>
