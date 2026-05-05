@@ -20,6 +20,11 @@ import {
   Zap,
   Calendar,
   GitBranch,
+  ChevronDown,
+  Microscope,
+  Sparkles,
+  Compass,
+  Send,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -168,6 +173,140 @@ function AgentCard({
   );
 }
 
+// ---------------------------------------------------------------------
+// Agent categories — drives the collapsible sections on the dashboard.
+// Order here = order on the page. Labels are action-oriented so users
+// know what each section delivers, not just an abstract noun.
+// ---------------------------------------------------------------------
+type CategoryId = AgentDefinition["category"];
+
+interface CategoryMeta {
+  id: CategoryId;
+  label: string;
+  description: string;
+  icon: React.ElementType;
+}
+
+const AGENT_CATEGORIES: CategoryMeta[] = [
+  {
+    id: "analysis",
+    label: "Audit & Analyze",
+    description: "Score your site, study competitors, find what's working",
+    icon: Microscope,
+  },
+  {
+    id: "creation",
+    label: "Create Content",
+    description: "Generate posts, emails, blogs, ads — on brand, on demand",
+    icon: Sparkles,
+  },
+  {
+    id: "strategy",
+    label: "Plan & Strategy",
+    description: "Set the playbook — keywords, calendar, launch plans",
+    icon: Compass,
+  },
+  {
+    id: "distribution",
+    label: "Publish & Distribute",
+    description: "Schedule and run multi-step campaigns end-to-end",
+    icon: Send,
+  },
+];
+
+function AgentCategorySection({
+  category,
+  agents,
+  projectId,
+  metrics,
+}: {
+  category: CategoryMeta;
+  agents: AgentDefinition[];
+  projectId: string;
+  metrics: MetricsMap | null;
+}) {
+  // Default-collapsed: the user explicitly asked for this so the page
+  // isn't a wall of cards on first load. Per-category preference
+  // persists in localStorage. Storage key is project-agnostic so the
+  // setting applies across all projects — opening "Create Content" once
+  // shouldn't re-collapse it next time.
+  const storageKey = `dash:agents:cat:${category.id}:expanded`;
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = window.localStorage.getItem(storageKey);
+    if (saved === "1") setExpanded(true);
+  }, [storageKey]);
+
+  function toggle() {
+    setExpanded((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(storageKey, next ? "1" : "0");
+      } catch {
+        // localStorage may be unavailable (private mode) — non-fatal.
+      }
+      return next;
+    });
+  }
+
+  const HeaderIcon = category.icon;
+
+  return (
+    <div className="rounded-xl border border-border-default bg-surface-1 overflow-hidden">
+      <button
+        type="button"
+        onClick={toggle}
+        aria-expanded={expanded}
+        aria-controls={`agent-cat-${category.id}`}
+        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-surface-2 transition-colors"
+      >
+        <div className="rounded-lg bg-accent-muted p-2 shrink-0">
+          <HeaderIcon className="h-4 w-4 text-accent" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="text-body font-medium text-text-primary">
+              {category.label}
+            </p>
+            <span className="text-caption text-text-tertiary font-mono">
+              {agents.length}
+            </span>
+          </div>
+          <p className="text-small text-text-tertiary truncate">
+            {category.description}
+          </p>
+        </div>
+        <ChevronDown
+          className={cn(
+            "h-4 w-4 text-text-tertiary transition-transform shrink-0",
+            expanded && "rotate-180"
+          )}
+        />
+      </button>
+      {expanded && (
+        <div
+          id={`agent-cat-${category.id}`}
+          className="border-t border-border-default p-4 bg-surface-0"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {agents.map((agent, i) => (
+              <AgentCard
+                key={agent.id}
+                agent={agent}
+                projectId={projectId}
+                metrics={metrics?.[agent.id]}
+                delay={i * 50}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ProjectOverviewPage({
   params,
 }: {
@@ -289,23 +428,32 @@ export default function ProjectOverviewPage({
         </div>
       </div>
 
-      {/* Active Agents */}
+      {/* Active Agents — grouped by category in collapsible sections so
+          the dashboard isn't a wall of cards. Each category persists its
+          expanded state in localStorage so the user's preference sticks
+          across visits. */}
       <div className="mb-3">
         <p className="text-caption text-text-tertiary tracking-wider uppercase px-1">
           Your Agents
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        {activeAgents.map((agent, i) => (
-          <AgentCard
-            key={agent.id}
-            agent={agent}
-            projectId={id}
-            metrics={metrics?.[agent.id]}
-            delay={i * 50}
-          />
-        ))}
+      <div className="space-y-3 mb-8">
+        {AGENT_CATEGORIES.map((cat) => {
+          const agentsInCat = activeAgents.filter(
+            (a) => a.category === cat.id
+          );
+          if (agentsInCat.length === 0) return null;
+          return (
+            <AgentCategorySection
+              key={cat.id}
+              category={cat}
+              agents={agentsInCat}
+              projectId={id}
+              metrics={metrics}
+            />
+          );
+        })}
       </div>
 
       {/* Coming Soon */}

@@ -1,8 +1,12 @@
 @import "tailwindcss";
 
 /* ===================================================
-   MINERAL DESIGN SYSTEM — Conduikt
-   Obsidian surfaces with copper/amber highlights
+   CONDUIKT DESIGN SYSTEM
+   Obsidian surfaces, teal primary, copper as a
+   secondary brand accent. The primary teal is sampled
+   from the logo (--brand-teal-400). The full token
+   ladder (teal-400/500/600, orange-400/500/600, etc.)
+   lives below for component-level use.
    =================================================== */
 
 :root {
@@ -17,18 +21,32 @@
   --text-secondary: #9B958C;
   --text-tertiary: #5E5A54;
 
-  /* --- Accent: Copper/Amber --- */
-  --accent-primary: #D4945A;
-  --accent-hover: #E0A76B;
-  --accent-muted: #D4945A1A;
-  --accent-glow: #D4945A33;
-  /* Text color that sits on the accent gradient. Stays dark in both themes
-     because the gradient is always warm orange. */
-  --on-accent: #1A0F08;
+  /* --- Brand colour ladder (sampled from logo) --- */
+  --brand-teal-400: #2F8C85;
+  --brand-teal-500: #1F6B66;
+  --brand-teal-600: #144B47;
+  --brand-orange-400: #E78457;
+  --brand-orange-500: #D9663A;
+  --brand-orange-600: #B24E27;
+  --brand-ink: #1E2A2E;
+  --accent-cream: #F4E2C9;
 
-  /* --- Secondary Accent: Slate Blue --- */
-  --accent-secondary: #6B8FAD;
-  --accent-secondary-hover: #7FA3C1;
+  /* --- Accent: brand teal (primary) ---
+     Dark mode uses teal-400 — sits at ~3.7:1 vs surface-0 cream text but
+     ~5.4:1 vs dark surface, AA for UI elements + buttons. */
+  --accent-primary: #2F8C85;
+  --accent-hover: #3FA09A;
+  --accent-muted: #2F8C851A;
+  --accent-glow: #2F8C8533;
+  /* Text color that sits on the accent button. Cream rather than pure
+     white — quieter on the teal fill. */
+  --on-accent: #F4EFE7;
+
+  /* --- Secondary Accent: brand copper ---
+     Kept for charts, illustrative highlights, and the marketing
+     homepage's optional accents. Not used as a CTA primary. */
+  --accent-secondary: #D9663A;
+  --accent-secondary-hover: #E78457;
 
   /* --- Semantic --- */
   --success: #6B9E78;
@@ -64,13 +82,15 @@
   --text-primary: #1A1917;
   --text-secondary: #4A453E;
   --text-tertiary: #6B665E;
-  /* Deeper copper for AA contrast on cream (4.6:1 vs #F5F2ED, 5.1:1 vs #FFFFFF) */
-  --accent-primary: #A0612C;
-  --accent-hover: #8E5325;
-  --accent-muted: #A0612C14;
-  --accent-glow: #A0612C26;
-  --accent-secondary: #4F7090;
-  --accent-secondary-hover: #3D5F80;
+  /* Deeper teal for AA contrast on cream (~5.3:1 vs #F5F2ED). */
+  --accent-primary: #1F6B66;
+  --accent-hover: #144B47;
+  --accent-muted: #1F6B6614;
+  --accent-glow: #1F6B6626;
+  /* Cream text reads cleanly on the deeper teal in light mode too. */
+  --on-accent: #F4EFE7;
+  --accent-secondary: #B24E27;
+  --accent-secondary-hover: #D9663A;
   --success: #3F7A4F;
   --warning: #8A7530;
   --error: #9B3F3F;

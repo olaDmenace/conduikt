@@ -40,7 +40,7 @@ export default function BrandKitPage() {
       .then((data) => {
         setKit({
           brand_logo_url: data.brand_logo_url ?? null,
-          brand_primary_color: data.brand_primary_color ?? "#D4945A",
+          brand_primary_color: data.brand_primary_color ?? "#2F8C85",
           brand_secondary_color: data.brand_secondary_color ?? "#1A1A1A",
           brand_font: data.brand_font ?? "Outfit",
         });

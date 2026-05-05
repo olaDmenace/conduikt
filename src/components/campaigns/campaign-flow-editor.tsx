@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useMemo, useState } from "react";
 import {
@@ -221,7 +221,7 @@ export function CampaignFlowEditor({
           {
             ...connection,
             animated: true,
-            style: { stroke: "#D4945A", strokeWidth: 2 },
+            style: { stroke: "#2F8C85", strokeWidth: 2 },
           },
           eds
         )
@@ -318,7 +318,7 @@ export function CampaignFlowEditor({
   const defaultEdgeOptions = useMemo(
     () => ({
       animated: true,
-      style: { stroke: "#D4945A", strokeWidth: 2 },
+      style: { stroke: "#2F8C85", strokeWidth: 2 },
     }),
     []
   );
@@ -437,7 +437,7 @@ export function CampaignFlowEditor({
             />
             <MiniMap
               className="!bg-surface-1 !border-border-default !rounded-lg"
-              nodeColor="#D4945A"
+              nodeColor="#2F8C85"
               maskColor="rgba(12, 12, 14, 0.8)"
             />
           </ReactFlow>

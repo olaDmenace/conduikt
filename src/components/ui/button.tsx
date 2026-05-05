@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
@@ -6,7 +6,7 @@ import { cn } from "@/src/lib/utils/cn";
 
 const buttonVariants = {
   primary:
-    "bg-gradient-to-br from-[#D4945A] to-[#C88550] text-on-accent shadow-[0_0_20px_var(--accent-glow)] hover:brightness-110 hover:scale-[1.02] active:brightness-95 active:scale-[0.98]",
+    "bg-gradient-to-br from-[#2F8C85] to-[#1F6B66] text-on-accent shadow-[0_0_20px_var(--accent-glow)] hover:brightness-110 hover:scale-[1.02] active:brightness-95 active:scale-[0.98]",
   secondary:
     "bg-transparent border border-border-strong text-text-primary hover:bg-surface-3",
   ghost:
