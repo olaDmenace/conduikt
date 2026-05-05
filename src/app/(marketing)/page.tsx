@@ -12,13 +12,14 @@ import {
   TrendingUp,
   Shield,
   CheckCircle2,
-  ChevronDown,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { homepageFaqs as faqs } from "@/src/lib/seo/homepage-schema";
 import { TestimonialMarquee } from "@/src/components/marketing/testimonial-marquee";
+import { BrushstrokeBackplate } from "@/src/components/marketing/brushstroke-backplate";
 
 const testimonials = [
   {
@@ -159,7 +160,14 @@ export default function LandingPage() {
     <>
       {/* Hero Section */}
       <section className="relative pt-16 pb-20 overflow-hidden">
-        <div className="mx-auto max-w-6xl px-6">
+        {/* Radial accent glow behind the headline column — 18% opacity
+            per DESIGN_SYSTEM.md. Sits well below the content so it
+            colours the section without competing with copy. */}
+        <div
+          aria-hidden="true"
+          className="radial-accent-glow pointer-events-none absolute -top-32 -left-24 h-[600px] w-[600px] rounded-full opacity-90"
+        />
+        <div className="relative mx-auto max-w-6xl px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="animate-in">
               <Badge className="mb-6">Now in Beta</Badge>
@@ -211,8 +219,14 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Dashboard Preview */}
+            {/* Dashboard Preview — wrapped in a relative container so
+                the pinstripe overlay can sit behind it at 6% opacity
+                per DESIGN_SYSTEM.md. */}
             <div className="animate-in relative" style={{ animationDelay: "120ms" }}>
+              <div
+                aria-hidden="true"
+                className="pinstripe pointer-events-none absolute -inset-6 rounded-2xl opacity-60"
+              />
               <Image
                 src="/images/conduikt-dashboard.png"
                 alt="Conduikt AI marketing dashboard showing SEO score 87, CRO score 92, and 24 generated marketing assets"
@@ -220,7 +234,7 @@ export default function LandingPage() {
                 height={450}
                 priority
                 sizes="(max-width: 1024px) 100vw, 600px"
-                className="rounded-xl border border-border-default shadow-[var(--shadow-elevated)] transform rotate-1 hover:rotate-0 transition-transform duration-500 w-full h-auto"
+                className="relative rounded-xl border border-border-default shadow-[var(--shadow-elevated)] transform rotate-1 hover:rotate-0 transition-transform duration-500 w-full h-auto"
               />
               <div className="absolute -bottom-8 -right-8 h-40 w-40 rounded-full bg-accent/10 blur-3xl" />
               <div className="absolute -top-8 -left-8 h-32 w-32 rounded-full bg-accent-secondary/10 blur-3xl" />
@@ -229,21 +243,26 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Channel Badges */}
+      {/* Channel Badges — hairline-bordered pills per DESIGN_SYSTEM.md.
+          Hover lifts the pill 2px and tints the icon to the brand
+          accent. No marquee — these are static so users can read them. */}
       <section className="py-12 border-y border-border-subtle">
         <div className="mx-auto max-w-6xl px-6">
           <p className="text-center text-caption text-text-tertiary mb-6">
             Publish everywhere from one dashboard
           </p>
-          <div className="flex items-center justify-center gap-8 flex-wrap">
+          <div className="flex items-center justify-center gap-3 flex-wrap">
             {[
               { icon: Twitter, name: "X / Twitter" },
               { icon: Linkedin, name: "LinkedIn" },
               { icon: Mail, name: "Email" },
               { icon: Globe, name: "Your Website" },
             ].map((channel) => (
-              <div key={channel.name} className="flex items-center gap-2 text-text-secondary">
-                <channel.icon className="h-5 w-5" />
+              <div
+                key={channel.name}
+                className="group flex items-center gap-2 rounded-full border border-border-default bg-surface-1 px-4 py-2 text-text-secondary transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/50 hover:bg-surface-2"
+              >
+                <channel.icon className="h-4 w-4 transition-colors group-hover:text-accent" />
                 <span className="text-small font-medium">{channel.name}</span>
               </div>
             ))}
@@ -264,49 +283,77 @@ export default function LandingPage() {
             </p>
           </div>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {features.map((feature, i) => (
-              <Card key={feature.title} hover className="animate-in" style={{ animationDelay: `${i * 60}ms` }}>
-                <CardContent>
-                  <div className="mb-4 rounded-lg bg-accent-muted p-3 w-fit">
-                    <feature.icon className="h-6 w-6 text-accent" />
-                  </div>
-                  <h3 className="text-h3 text-text-primary">
-                    <Link href={feature.href} className="hover:text-accent transition-colors">
-                      {feature.title}
-                    </Link>
-                  </h3>
-                  <p className="mt-2 text-body text-text-secondary">{feature.description}</p>
-                </CardContent>
-              </Card>
-            ))}
+            {features.map((feature, i) => {
+              // Slight pseudo-random rotation per card so the painted
+              // plates don't read as 6 identical strokes. Stable across
+              // re-renders (deterministic by index).
+              const tilt = [-1.6, 1.2, -0.8, 1.8, -1.2, 0.6][i] ?? 0;
+              return (
+                <Card
+                  key={feature.title}
+                  hover
+                  className="animate-in transition-all duration-300 hover:-translate-y-1 hover:border-accent/40"
+                  style={{ animationDelay: `${i * 60}ms` }}
+                >
+                  <CardContent>
+                    <div className="mb-5 w-fit">
+                      <BrushstrokeBackplate rotate={tilt}>
+                        <feature.icon className="h-5 w-5" />
+                      </BrushstrokeBackplate>
+                    </div>
+                    <h3 className="text-h3 text-text-primary">
+                      <Link href={feature.href} className="hover:text-accent transition-colors">
+                        {feature.title}
+                      </Link>
+                    </h3>
+                    <p className="mt-2 text-body text-text-secondary">{feature.description}</p>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
-          <div className="mt-10 text-center">
+          <div className="mt-12 text-center">
             <Link
               href="/compare"
-              className="text-small text-text-tertiary hover:text-accent transition-colors underline underline-offset-4"
+              className="group inline-flex items-center gap-1.5 text-small font-medium text-accent"
             >
-              See how Conduikt compares to Jasper, Copy.ai, and other AI marketing tools
+              <span className="relative">
+                See how Conduikt compares to Jasper, Copy.ai, and other AI
+                marketing tools
+                {/* Animated underline — grows from 0 to full width on hover. */}
+                <span className="absolute -bottom-0.5 left-0 h-px w-0 bg-accent transition-all duration-300 group-hover:w-full" />
+              </span>
+              <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Testimonials */}
+      {/* Testimonials — full-width band with diagonal pinstripe behind
+          the section per DESIGN_SYSTEM.md. The pinstripe sits at 6%
+          opacity so it textures the surface without competing with the
+          marquee cards. */}
       <section
         id="testimonials"
-        className="py-20 border-t border-border-subtle"
+        className="relative py-20 border-t border-border-subtle overflow-hidden"
       >
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-h1 text-text-primary">
-              Founders and Marketers Are Already Building With Conduikt
-            </h2>
-            <p className="mt-4 text-lg text-text-secondary max-w-2xl mx-auto">
-              Real feedback from real users. Hover or click a card to pause.
-            </p>
+        <div
+          aria-hidden="true"
+          className="pinstripe absolute inset-0 opacity-60 pointer-events-none"
+        />
+        <div className="relative">
+          <div className="mx-auto max-w-6xl px-6">
+            <div className="text-center mb-12">
+              <h2 className="text-h1 text-text-primary">
+                Founders and Marketers Are Already Building With Conduikt
+              </h2>
+              <p className="mt-4 text-lg text-text-secondary max-w-2xl mx-auto">
+                Real feedback from real users. Hover or click a card to pause.
+              </p>
+            </div>
           </div>
+          <TestimonialMarquee testimonials={testimonials} />
         </div>
-        <TestimonialMarquee testimonials={testimonials} />
       </section>
 
       {/* Pricing */}
@@ -317,15 +364,19 @@ export default function LandingPage() {
             <p className="mt-4 text-lg text-text-secondary">Start free. Scale as you grow.</p>
             <p className="mt-2 text-small text-text-tertiary">Annual plans coming soon &mdash; save up to 20%.</p>
           </div>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 lg:items-start">
             {tiers.map((tier, i) => (
               <Card
                 key={tier.name}
-                className={`animate-in relative ${tier.popular ? "border-accent shadow-[0_0_30px_var(--accent-glow)]" : ""}`}
+                className={`animate-in relative ${
+                  tier.popular
+                    ? "border-accent shadow-[0_0_40px_var(--accent-glow)] lg:-translate-y-2"
+                    : ""
+                }`}
                 style={{ animationDelay: `${i * 60}ms` }}
               >
                 {tier.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
                     <Badge>Most Popular</Badge>
                   </div>
                 )}
@@ -363,23 +414,29 @@ export default function LandingPage() {
               Everything you need to know about Conduikt.
             </p>
           </div>
-          <div className="space-y-4">
+          {/* Hairline-divided FAQ rows per DESIGN_SYSTEM.md. The +
+              glyph rotates 45° to × on open. Smooth height transition
+              comes from the native <details> element (browsers handle
+              the open animation; we just style the chevron). */}
+          <div className="border-t border-border-subtle">
             {faqs.map((faq, i) => (
               <details
                 key={i}
                 name="homepage-faq"
                 open={i === 0}
-                className="group animate-in rounded-xl border border-border-default bg-surface-1 open:border-accent/30 open:shadow-[0_0_0_1px_var(--accent-glow)] transition-colors"
+                className="group animate-in border-b border-border-subtle"
                 style={{ animationDelay: `${i * 60}ms` }}
               >
-                <summary className="flex cursor-pointer items-center justify-between gap-4 px-6 py-5 list-none [&::-webkit-details-marker]:hidden">
-                  <h3 className="text-h3 text-text-primary">{faq.question}</h3>
-                  <ChevronDown
-                    className="h-5 w-5 shrink-0 text-text-tertiary transition-transform duration-200 group-open:rotate-180 group-open:text-accent"
+                <summary className="flex cursor-pointer items-center justify-between gap-4 py-5 list-none [&::-webkit-details-marker]:hidden hover:text-accent transition-colors">
+                  <h3 className="text-h3 text-text-primary group-open:text-accent transition-colors">
+                    {faq.question}
+                  </h3>
+                  <Plus
+                    className="h-5 w-5 shrink-0 text-text-tertiary transition-transform duration-300 group-open:rotate-45 group-open:text-accent"
                     aria-hidden="true"
                   />
                 </summary>
-                <div className="px-6 pb-6">
+                <div className="pb-6 pr-9">
                   <p className="text-body text-text-secondary leading-relaxed">
                     {faq.answer}
                   </p>
@@ -390,10 +447,23 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-20">
-        <div className="mx-auto max-w-3xl px-6 text-center">
-          <h2 className="text-h1 text-text-primary">Ready to automate your marketing?</h2>
+      {/* Final CTA strip — pinstripe band at 8% opacity with a centered
+          radial accent glow per DESIGN_SYSTEM.md. The pinstripe gives
+          the section weight without making it heavy; the radial glow
+          pulls focus to the headline + CTA. */}
+      <section className="relative py-20 overflow-hidden border-t border-border-subtle">
+        <div
+          aria-hidden="true"
+          className="pinstripe absolute inset-0 opacity-80 pointer-events-none"
+        />
+        <div
+          aria-hidden="true"
+          className="radial-accent-glow absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[700px] rounded-full pointer-events-none"
+        />
+        <div className="relative mx-auto max-w-3xl px-6 text-center">
+          <h2 className="text-h1 text-text-primary">
+            Ready to automate your marketing?
+          </h2>
           <p className="mt-4 text-lg text-text-secondary">
             Join founders and marketers who are using AI to 10x their output.
           </p>
