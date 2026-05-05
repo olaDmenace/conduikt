@@ -21,34 +21,31 @@
   --text-secondary: #9B958C;
   --text-tertiary: #5E5A54;
 
-  /* --- Brand colour ladder (sampled from logo) --- */
-  --brand-teal-400: #2F8C85;
-  --brand-teal-500: #1F6B66;
-  --brand-teal-600: #144B47;
+  /* --- Brand colour ladder (sampled from logo, per DESIGN_SYSTEM.md) --- */
   --brand-orange-400: #E78457;
   --brand-orange-500: #D9663A;
   --brand-orange-600: #B24E27;
+  --brand-teal-400: #2F8C85;
+  --brand-teal-500: #1F6B66;
+  --brand-teal-600: #144B47;
   --brand-ink: #1E2A2E;
   --accent-cream: #F4E2C9;
 
-  /* --- Accent: brand teal (primary) ---
-     Dark mode uses teal-400 — sits at ~3.7:1 vs surface-0 cream text but
-     ~5.4:1 vs dark surface, AA for UI elements + buttons. */
-  --accent-primary: #2F8C85;
-  --accent-hover: #3FA09A;
-  --accent-muted: #2F8C851A;
-  --accent-glow: #2F8C8533;
-  /* Text color that sits on the accent button. Pure white reads sharper
-     on the teal fill than cream — teal-400 is dark enough that white
-     gives the cleaner CTA energy (Stripe / Linear feel) rather than the
-     muted enterprise look. */
+  /* --- Accent: brand orange (primary) ---
+     Per DESIGN_SYSTEM.md — orange-500 is the primary CTA + brand accent
+     in both modes. */
+  --accent-primary: #D9663A;
+  --accent-hover: #E78457;
+  --accent-muted: #D9663A1A;
+  --accent-glow: #D9663A33;
+  /* White text on the orange CTA gives the sharp brand energy. */
   --on-accent: #FFFFFF;
 
-  /* --- Secondary Accent: brand copper ---
-     Kept for charts, illustrative highlights, and the marketing
-     homepage's optional accents. Not used as a CTA primary. */
-  --accent-secondary: #D9663A;
-  --accent-secondary-hover: #E78457;
+  /* --- Secondary Accent: brand teal ---
+     Used for charts, illustrative highlights, and homepage accents.
+     Not a CTA primary. */
+  --accent-secondary: #2F8C85;
+  --accent-secondary-hover: #3FA09A;
 
   /* --- Semantic --- */
   --success: #6B9E78;
@@ -72,9 +69,12 @@
   --shadow-ambient: 0 0 0 1px var(--border-subtle), 0 2px 8px #00000040;
   --shadow-elevated: 0 0 0 1px var(--border-default), 0 8px 32px #00000060;
 
-  /* --- Typography --- */
-  --font-display: 'DM Serif Display', Georgia, serif;
-  --font-body: 'Outfit', system-ui, sans-serif;
+  /* --- Typography (per DESIGN_SYSTEM.md) ---
+     Display / Headings: Space Grotesk 600/700, fallback Inter.
+     Body: Inter 400/500.
+     Mono labels: JetBrains Mono 500. */
+  --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
 
@@ -87,15 +87,15 @@
   --text-primary: #1A1917;
   --text-secondary: #4A453E;
   --text-tertiary: #6B665E;
-  /* Deeper teal for AA contrast on cream (~5.3:1 vs #F5F2ED). */
-  --accent-primary: #1F6B66;
-  --accent-hover: #144B47;
-  --accent-muted: #1F6B6614;
-  --accent-glow: #1F6B6626;
-  /* White on the deeper teal in light mode — same crisp CTA energy. */
+  /* Deeper orange for AA contrast on cream (~5.0:1 vs #F5F2ED). */
+  --accent-primary: #B24E27;
+  --accent-hover: #D9663A;
+  --accent-muted: #B24E2714;
+  --accent-glow: #B24E2726;
   --on-accent: #FFFFFF;
-  --accent-secondary: #B24E27;
-  --accent-secondary-hover: #D9663A;
+  /* Secondary teal goes deeper in light mode for the same reason. */
+  --accent-secondary: #1F6B66;
+  --accent-secondary-hover: #144B47;
   --success: #3F7A4F;
   --warning: #8A7530;
   --error: #9B3F3F;
@@ -157,13 +157,16 @@ body {
    TYPE SCALE
    =================================================== */
 
+/* Display tier uses Space Grotesk 700 with the tight -0.02em tracking
+   the spec calls for. h2/h3 also use the display family at 600 — Space
+   Grotesk reads cleaner at section/card heading sizes than Inter. */
 .text-hero    { font: 700 3.5rem/1.1 var(--font-display); letter-spacing: -0.02em; }
-.text-h1      { font: 700 2.25rem/1.2 var(--font-display); letter-spacing: -0.01em; }
-.text-h2      { font: 600 1.5rem/1.3 var(--font-body); }
-.text-h3      { font: 600 1.125rem/1.4 var(--font-body); }
+.text-h1      { font: 700 2.25rem/1.15 var(--font-display); letter-spacing: -0.02em; }
+.text-h2      { font: 600 1.5rem/1.25 var(--font-display); letter-spacing: -0.01em; }
+.text-h3      { font: 600 1.125rem/1.35 var(--font-display); letter-spacing: -0.01em; }
 .text-body    { font: 400 0.9375rem/1.6 var(--font-body); }
 .text-small   { font: 400 0.8125rem/1.5 var(--font-body); }
-.text-caption  { font: 500 0.6875rem/1.4 var(--font-body); letter-spacing: 0.05em; text-transform: uppercase; }
+.text-caption { font: 500 0.6875rem/1.4 var(--font-body); letter-spacing: 0.05em; text-transform: uppercase; }
 .text-data    { font: 500 0.875rem/1.4 var(--font-mono); }
 
 /* ===================================================

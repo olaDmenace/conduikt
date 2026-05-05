@@ -350,7 +350,7 @@ export function ensureUnsubscribeFooter(html: string): string {
   if (UNSUBSCRIBE_TOKEN_RE.test(html)) return html;
   const footer = `
 <div style="margin-top:32px;padding-top:16px;border-top:1px solid #e5e0db;color:#8a8176;font-size:12px;line-height:1.6;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-  <p style="margin:0;">You're receiving this because you subscribed to our list. <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#2F8C85;text-decoration:underline;">Unsubscribe</a>.</p>
+  <p style="margin:0;">You're receiving this because you subscribed to our list. <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#D9663A;text-decoration:underline;">Unsubscribe</a>.</p>
 </div>`;
   // If the html has a closing </body>, inject before it; otherwise append.
   if (/<\/body>/i.test(html)) {

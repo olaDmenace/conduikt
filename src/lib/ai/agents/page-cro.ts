@@ -9,7 +9,7 @@ export const pageCroSkill: SkillConfig = {
   maxTokens: 4000,
 
   buildSystemPrompt: (context: ProjectContext) => {
-    const accent = context.brandPrimaryColor ?? "#2F8C85";
+    const accent = context.brandPrimaryColor ?? "#D9663A";
     return `
 You are a conversion rate optimization expert analyzing a landing page.
 

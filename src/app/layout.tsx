@@ -1,19 +1,24 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { DM_Serif_Display, Outfit, JetBrains_Mono } from "next/font/google";
+import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
 import "@/src/styles/globals.css";
 import { softwareAppJsonLd, faqJsonLd } from "@/src/lib/seo/homepage-schema";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
-const dmSerif = DM_Serif_Display({
-  weight: "400",
+// Per DESIGN_SYSTEM.md:
+//   Display / Headings: Space Grotesk 600/700, fallback Inter
+//   Body: Inter 400/500
+//   Mono: JetBrains Mono 500
+const spaceGrotesk = Space_Grotesk({
+  weight: ["500", "600", "700"],
   subsets: ["latin"],
   variable: "--font-display",
   display: "swap",
 });
 
-const outfit = Outfit({
+const inter = Inter({
+  weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
   variable: "--font-body",
   display: "swap",
@@ -154,9 +159,13 @@ export default function RootLayout({
   return (
     <html lang="en-US" className="dark" data-theme="dark" suppressHydrationWarning>
       <head>
+        {/* Pre-hydration theme set per DESIGN_SYSTEM.md: read user
+            override from localStorage first, otherwise honour the OS
+            preference. Avoids the FOUC where a light-mode user briefly
+            sees dark surfaces before React hydrates. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=JSON.parse(localStorage.getItem('conduikt-ui')||'{}');var theme=(t.state&&t.state.theme)||'dark';document.documentElement.className=theme;document.documentElement.setAttribute('data-theme',theme)}catch(e){}})()`,
+            __html: `(function(){try{var t=JSON.parse(localStorage.getItem('conduikt-ui')||'{}');var saved=t.state&&t.state.theme;var sys=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';var theme=saved||sys;document.documentElement.className=theme;document.documentElement.setAttribute('data-theme',theme)}catch(e){}})()`,
           }}
         />
         <script
@@ -177,7 +186,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Conduikt" />
       </head>
       <body
-        className={`${dmSerif.variable} ${outfit.variable} ${jetbrainsMono.variable} font-sans antialiased grain`}
+        className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable} font-sans antialiased grain`}
       >
         {children}
         {GA_ID && (

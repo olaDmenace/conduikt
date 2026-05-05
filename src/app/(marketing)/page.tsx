@@ -19,7 +19,7 @@ import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { homepageFaqs as faqs } from "@/src/lib/seo/homepage-schema";
 import { TestimonialMarquee } from "@/src/components/marketing/testimonial-marquee";
-import { BrushstrokeBackplate } from "@/src/components/marketing/brushstroke-backplate";
+import { RevealOnScroll } from "@/src/components/marketing/reveal-on-scroll";
 
 const testimonials = [
   {
@@ -158,16 +158,36 @@ const tiers = [
 export default function LandingPage() {
   return (
     <>
-      {/* Hero Section */}
-      <section className="relative pt-16 pb-20 overflow-hidden">
+      {/* Hero Section — sized so it fits within 100vh on 1024×768 per
+          DESIGN_SYSTEM.md. Min-height pulls the hero up to (almost)
+          full viewport on roomier screens; max-height caps it at 920px
+          on huge displays so the next section is always partly visible.
+          The 72px subtraction accounts for the sticky nav. */}
+      <section
+        className="relative overflow-hidden flex items-center"
+        style={{
+          minHeight: "calc(100vh - 72px)",
+          maxHeight: "920px",
+          paddingTop: "clamp(48px, 6vw, 80px)",
+          paddingBottom: "clamp(48px, 6vw, 80px)",
+        }}
+      >
+        {/* Diagonal pinstripe across the full hero background. Sits at
+            a low opacity so the radial accent glow above can still
+            colour the headline column without the stripes feeling busy. */}
+        <div
+          aria-hidden="true"
+          className="pinstripe-faint pointer-events-none absolute inset-0 opacity-80"
+        />
         {/* Radial accent glow behind the headline column — 18% opacity
-            per DESIGN_SYSTEM.md. Sits well below the content so it
-            colours the section without competing with copy. */}
+            per DESIGN_SYSTEM.md. Sits above the pinstripe so the
+            headline area pops while the rest of the hero stays
+            textured. */}
         <div
           aria-hidden="true"
           className="radial-accent-glow pointer-events-none absolute -top-32 -left-24 h-[600px] w-[600px] rounded-full opacity-90"
         />
-        <div className="relative mx-auto max-w-6xl px-6">
+        <div className="relative mx-auto max-w-6xl px-6 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="animate-in">
               <Badge className="mb-6">Now in Beta</Badge>
@@ -219,14 +239,9 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Dashboard Preview — wrapped in a relative container so
-                the pinstripe overlay can sit behind it at 6% opacity
-                per DESIGN_SYSTEM.md. */}
+            {/* Dashboard Preview. The full-hero pinstripe sits behind
+                this; no extra local stripe overlay needed. */}
             <div className="animate-in relative" style={{ animationDelay: "120ms" }}>
-              <div
-                aria-hidden="true"
-                className="pinstripe pointer-events-none absolute -inset-6 rounded-2xl opacity-60"
-              />
               <Image
                 src="/images/conduikt-dashboard.png"
                 alt="Conduikt AI marketing dashboard showing SEO score 87, CRO score 92, and 24 generated marketing assets"
@@ -274,43 +289,35 @@ export default function LandingPage() {
       <section id="features" className="py-20">
         <div className="mx-auto max-w-6xl px-6">
           <div className="text-center mb-16">
-            <h2 className="text-h1 text-text-primary">
+            <RevealOnScroll as="h2" className="text-h1 text-text-primary">
               AI SEO Audits, Content Generation, and Multi-Channel Publishing &mdash; All in One Place
-            </h2>
+            </RevealOnScroll>
             <p className="mt-4 text-lg text-text-secondary max-w-2xl mx-auto">
               From SEO audits to social publishing, Conduikt handles the entire
               marketing workflow so you can focus on building.
             </p>
           </div>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {features.map((feature, i) => {
-              // Slight pseudo-random rotation per card so the painted
-              // plates don't read as 6 identical strokes. Stable across
-              // re-renders (deterministic by index).
-              const tilt = [-1.6, 1.2, -0.8, 1.8, -1.2, 0.6][i] ?? 0;
-              return (
-                <Card
-                  key={feature.title}
-                  hover
-                  className="animate-in transition-all duration-300 hover:-translate-y-1 hover:border-accent/40"
-                  style={{ animationDelay: `${i * 60}ms` }}
-                >
-                  <CardContent>
-                    <div className="mb-5 w-fit">
-                      <BrushstrokeBackplate rotate={tilt}>
-                        <feature.icon className="h-5 w-5" />
-                      </BrushstrokeBackplate>
-                    </div>
-                    <h3 className="text-h3 text-text-primary">
-                      <Link href={feature.href} className="hover:text-accent transition-colors">
-                        {feature.title}
-                      </Link>
-                    </h3>
-                    <p className="mt-2 text-body text-text-secondary">{feature.description}</p>
-                  </CardContent>
-                </Card>
-              );
-            })}
+            {features.map((feature, i) => (
+              <Card
+                key={feature.title}
+                hover
+                className="animate-in transition-all duration-300 hover:-translate-y-1 hover:border-accent/40"
+                style={{ animationDelay: `${i * 60}ms` }}
+              >
+                <CardContent>
+                  <div className="mb-4 rounded-lg bg-accent-muted p-3 w-fit">
+                    <feature.icon className="h-6 w-6 text-accent" />
+                  </div>
+                  <h3 className="text-h3 text-text-primary">
+                    <Link href={feature.href} className="hover:text-accent transition-colors">
+                      {feature.title}
+                    </Link>
+                  </h3>
+                  <p className="mt-2 text-body text-text-secondary">{feature.description}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
           <div className="mt-12 text-center">
             <Link
@@ -344,9 +351,9 @@ export default function LandingPage() {
         <div className="relative">
           <div className="mx-auto max-w-6xl px-6">
             <div className="text-center mb-12">
-              <h2 className="text-h1 text-text-primary">
+              <RevealOnScroll as="h2" className="text-h1 text-text-primary">
                 Founders and Marketers Are Already Building With Conduikt
-              </h2>
+              </RevealOnScroll>
               <p className="mt-4 text-lg text-text-secondary max-w-2xl mx-auto">
                 Real feedback from real users. Hover or click a card to pause.
               </p>
@@ -360,7 +367,9 @@ export default function LandingPage() {
       <section id="pricing" className="py-20 border-t border-border-subtle">
         <div className="mx-auto max-w-6xl px-6">
           <div className="text-center mb-16">
-            <h2 className="text-h1 text-text-primary">Simple Pricing That Scales With Your Business</h2>
+            <RevealOnScroll as="h2" className="text-h1 text-text-primary">
+              Simple Pricing That Scales With Your Business
+            </RevealOnScroll>
             <p className="mt-4 text-lg text-text-secondary">Start free. Scale as you grow.</p>
             <p className="mt-2 text-small text-text-tertiary">Annual plans coming soon &mdash; save up to 20%.</p>
           </div>
@@ -409,7 +418,9 @@ export default function LandingPage() {
       <section id="faq" className="py-20 border-t border-border-subtle">
         <div className="mx-auto max-w-3xl px-6">
           <div className="text-center mb-16">
-            <h2 className="text-h1 text-text-primary">Frequently Asked Questions</h2>
+            <RevealOnScroll as="h2" className="text-h1 text-text-primary">
+              Frequently Asked Questions
+            </RevealOnScroll>
             <p className="mt-4 text-lg text-text-secondary">
               Everything you need to know about Conduikt.
             </p>
@@ -461,9 +472,9 @@ export default function LandingPage() {
           className="radial-accent-glow absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[700px] rounded-full pointer-events-none"
         />
         <div className="relative mx-auto max-w-3xl px-6 text-center">
-          <h2 className="text-h1 text-text-primary">
+          <RevealOnScroll as="h2" className="text-h1 text-text-primary">
             Ready to automate your marketing?
-          </h2>
+          </RevealOnScroll>
           <p className="mt-4 text-lg text-text-secondary">
             Join founders and marketers who are using AI to 10x their output.
           </p>

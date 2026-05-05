@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     .eq("id", user.id)
     .single();
 
-  const primary = profile?.brand_primary_color ?? "#2F8C85";
+  const primary = profile?.brand_primary_color ?? "#D9663A";
   const secondary = profile?.brand_secondary_color ?? "#1A1A1A";
   const logo = profile?.brand_logo_url ?? null;
 

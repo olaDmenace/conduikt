@@ -47,7 +47,7 @@ export default async function AdminDashboardPage() {
                 className="group relative flex-1 flex flex-col items-center justify-end"
               >
                 <div
-                  className="w-full rounded-t bg-gradient-to-t from-accent to-[#3FA09A] transition-all duration-200 hover:brightness-110 min-h-[2px]"
+                  className="w-full rounded-t bg-gradient-to-t from-accent to-[#E78457] transition-all duration-200 hover:brightness-110 min-h-[2px]"
                   style={{ height: `${Math.max(height, 1.5)}%` }}
                 />
                 {/* Tooltip */}
