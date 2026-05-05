@@ -318,24 +318,23 @@ export async function verifyDomain(domainId: string): Promise<ResendResult<true>
 // Defaults
 // ---------------------------------------------------------------------------
 
-// Conduikt's own marketing sender. Sends from the existing verified
-// `conduikt.com` domain (`mail@` mailbox) to avoid the second-domain
-// cost on Resend's free tier. Mixes marketing and transactional reputation
-// on the same domain — acceptable at current volume; revisit when we
-// upgrade Resend to Pro and split into a `mail.conduikt.com` subdomain.
+// Conduikt's own marketing sender. Sends from `contacts.conduikt.com`,
+// the subdomain that's verified in Resend. The root `conduikt.com`
+// domain is reserved for transactional / contact mailboxes (hello@,
+// support@) and isn't used as a Resend sender.
 //
 // Each user can override with their own verified domain (Pro+ feature,
 // gated behind a waitlist until Resend is upgraded). That override path
 // lives in the broadcast send route, not here.
-export const CONDUIKT_MARKETING_FROM = "Conduikt <mail@conduikt.com>";
-export const CONDUIKT_MARKETING_DOMAIN = "conduikt.com";
+export const CONDUIKT_MARKETING_FROM = "Conduikt <mail@contacts.conduikt.com>";
+export const CONDUIKT_MARKETING_DOMAIN = "contacts.conduikt.com";
 
 // Free-tier and Pro-tier-without-custom-domain users send through Conduikt's
 // shared sender. Their display name is set to the user's project/company
-// name so recipients see "Acme Corp <mail@conduikt.com>". Reply-to is set
-// to the user's own email. This sidesteps the cost of provisioning a
-// per-user subdomain on Resend.
-export const CONDUIKT_SHARED_FROM_EMAIL = "mail@conduikt.com";
+// name so recipients see "Acme Corp <mail@contacts.conduikt.com>". Reply-to
+// is set to the user's own email. This sidesteps the cost of provisioning
+// a per-user subdomain on Resend.
+export const CONDUIKT_SHARED_FROM_EMAIL = "mail@contacts.conduikt.com";
 
 // Resend rejects broadcasts that don't include an unsubscribe link, and
 // CAN-SPAM/GDPR require one anyway. Resend templates support a magic
