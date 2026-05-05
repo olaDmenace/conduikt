@@ -41,6 +41,7 @@ import {
   FileBarChart,
   Layers,
   Rocket,
+  Megaphone,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils/cn";
 import { useUIStore } from "@/src/stores/ui-store";
@@ -555,6 +556,14 @@ export function Sidebar() {
             icon={Play}
             label="Playground"
             active={pathname === "/playground"}
+            showLabel={showLabel}
+            onClick={handleNavClick}
+          />
+          <SidebarLink
+            href="/share"
+            icon={Megaphone}
+            label="Share Conduikt"
+            active={pathname === "/share"}
             showLabel={showLabel}
             onClick={handleNavClick}
           />

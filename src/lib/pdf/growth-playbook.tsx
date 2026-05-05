@@ -1,20 +1,16 @@
 import React from "react";
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { PDF_BRAND } from "./brand";
 
+// Local extension of PDF_BRAND with priority-tier aliases used by the
+// playbook's action badges. `bg` aliases surface0 because growth-playbook
+// pre-dates the unified token names.
 const C = {
-  bg: "#0C0C0E",
-  surface1: "#141418",
-  surface2: "#1C1C22",
-  accent: "#D9663A",
-  textPrimary: "#E8E4DE",
-  textSecondary: "#9B958C",
-  textTertiary: "#5E5A54",
-  success: "#6B9E78",
-  warning: "#C9A84C",
-  error: "#B85C5C",
-  critical: "#B85C5C",
-  high: "#C9A84C",
-  medium: "#6B8FAD",
+  ...PDF_BRAND,
+  bg: PDF_BRAND.surface0,
+  critical: PDF_BRAND.error,
+  high: PDF_BRAND.warning,
+  medium: PDF_BRAND.info,
 };
 
 const s = StyleSheet.create({

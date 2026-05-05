@@ -1,16 +1,8 @@
 import React from "react";
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { PDF_BRAND } from "./brand";
 
-const C = {
-  bg: "#0C0C0E",
-  surface1: "#141418",
-  surface2: "#1C1C22",
-  accent: "#D9663A",
-  textPrimary: "#E8E4DE",
-  textSecondary: "#9B958C",
-  textTertiary: "#5E5A54",
-  success: "#6B9E78",
-};
+const C = { ...PDF_BRAND, bg: PDF_BRAND.surface0 };
 
 const s = StyleSheet.create({
   page: { backgroundColor: C.bg, padding: 48, fontFamily: "Helvetica", color: C.textPrimary },

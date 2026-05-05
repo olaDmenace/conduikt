@@ -7,19 +7,9 @@ import {
   Image,
   StyleSheet,
 } from "@react-pdf/renderer";
+import { PDF_BRAND } from "./brand";
 
-const colors = {
-  surface0: "#0C0C0E",
-  surface1: "#141418",
-  surface2: "#1C1C22",
-  accent: "#D9663A",
-  textPrimary: "#E8E4DE",
-  textSecondary: "#9B958C",
-  textTertiary: "#5E5A54",
-  success: "#6B9E78",
-  warning: "#C9A84C",
-  white: "#FFFFFF",
-};
+const colors = PDF_BRAND;
 
 const styles = StyleSheet.create({
   page: {
