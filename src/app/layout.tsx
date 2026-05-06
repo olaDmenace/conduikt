@@ -3,6 +3,7 @@ import Script from "next/script";
 import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
 import "@/src/styles/globals.css";
 import { softwareAppJsonLd, faqJsonLd } from "@/src/lib/seo/homepage-schema";
+import { TawkChat } from "@/src/components/marketing/tawk-chat";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
@@ -200,6 +201,7 @@ export default function RootLayout({
             </Script>
           </>
         )}
+        <TawkChat />
       </body>
     </html>
   );
