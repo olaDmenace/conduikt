@@ -5,31 +5,34 @@ import Image from "next/image";
 import { Play } from "lucide-react";
 
 // Click-to-play "facade pattern" — show the dashboard preview image with a
-// play button until the user clicks. Only then do we mount the Loom iframe
-// and load its ~250KB of player JS. Faster paint + the preview image is a
-// natural fallback if the iframe ever fails to render.
-const LOOM_EMBED =
-  "https://www.loom.com/embed/6348cda048b24fa5be4ff14d15fd11d6" +
-  "?autoplay=1&muted=1&hide_owner=true&hide_share=true&hide_title=true&hideEmbedTopBar=true";
+// play button until the user clicks. Only then do we mount the YouTube
+// iframe and load its player JS. Faster paint + the preview image is a
+// natural fallback if the iframe ever fails to render. Uses the
+// youtube-nocookie.com domain so visitor data isn't sent to YouTube
+// until they actually click play.
+const YOUTUBE_EMBED =
+  "https://www.youtube-nocookie.com/embed/O0IfSeWfayg" +
+  "?autoplay=1&mute=1&rel=0&modestbranding=1&playsinline=1";
 
 export function HeroVideo() {
   const [playing, setPlaying] = useState(false);
 
   return (
     <div className="animate-in relative" style={{ animationDelay: "120ms" }}>
-      {/* Warm the connection to Loom in the background while the visitor is
-          still reading the hero — when they click play, the DNS+TCP+TLS
-          handshake is already done. Saves ~200–500ms with zero downside. */}
-      <link rel="preconnect" href="https://www.loom.com" />
-      <link rel="dns-prefetch" href="https://www.loom.com" />
+      {/* Warm the connection to YouTube in the background while the visitor
+          is reading the hero — when they click play, the DNS+TCP+TLS
+          handshake is already done. Saves ~200–500ms. */}
+      <link rel="preconnect" href="https://www.youtube-nocookie.com" />
+      <link rel="preconnect" href="https://i.ytimg.com" />
+      <link rel="dns-prefetch" href="https://www.youtube-nocookie.com" />
       <div
         className="relative rounded-xl border border-border-default shadow-[var(--shadow-elevated)] overflow-hidden transform rotate-1 hover:rotate-0 transition-transform duration-500 aspect-video"
       >
         {playing ? (
           <iframe
-            src={LOOM_EMBED}
+            src={YOUTUBE_EMBED}
             title="Conduikt product demo"
-            allow="autoplay; fullscreen; picture-in-picture"
+            allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
             allowFullScreen
             className="absolute inset-0 h-full w-full"
           />
