@@ -35,7 +35,7 @@ function welcomeHtml(name: string): string {
           <!-- Header -->
           <tr>
             <td style="background:#1a1714;padding:28px 40px;">
-              <p style="margin:0;font-size:20px;font-weight:700;color:#D9663A;letter-spacing:-0.5px;">Conduikt</p>
+              <p style="margin:0;font-size:20px;font-weight:700;color:#1F6B66;letter-spacing:-0.5px;">Conduikt</p>
               <p style="margin:4px 0 0;font-size:12px;color:#8a8176;letter-spacing:0.5px;text-transform:uppercase;">AI Marketing Automation</p>
             </td>
           </tr>
@@ -50,26 +50,26 @@ function welcomeHtml(name: string): string {
               <table cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:28px;width:100%;">
                 <tr>
                   <td style="padding:10px 0;border-bottom:1px solid #f0ebe5;">
-                    <p style="margin:0;font-size:14px;color:#1a1714;"><span style="color:#D9663A;font-weight:700;">01 /</span> &nbsp;Create a project</p>
+                    <p style="margin:0;font-size:14px;color:#1a1714;"><span style="color:#1F6B66;font-weight:700;">01 /</span> &nbsp;Create a project</p>
                     <p style="margin:4px 0 0 32px;font-size:13px;color:#6a6560;">Connect your website to unlock all AI tools</p>
                   </td>
                 </tr>
                 <tr>
                   <td style="padding:10px 0;border-bottom:1px solid #f0ebe5;">
-                    <p style="margin:0;font-size:14px;color:#1a1714;"><span style="color:#D9663A;font-weight:700;">02 /</span> &nbsp;Run an SEO audit</p>
+                    <p style="margin:0;font-size:14px;color:#1a1714;"><span style="color:#1F6B66;font-weight:700;">02 /</span> &nbsp;Run an SEO audit</p>
                     <p style="margin:4px 0 0 32px;font-size:13px;color:#6a6560;">Get a score and actionable findings in seconds</p>
                   </td>
                 </tr>
                 <tr>
                   <td style="padding:10px 0;">
-                    <p style="margin:0;font-size:14px;color:#1a1714;"><span style="color:#D9663A;font-weight:700;">03 /</span> &nbsp;Generate content</p>
+                    <p style="margin:0;font-size:14px;color:#1a1714;"><span style="color:#1F6B66;font-weight:700;">03 /</span> &nbsp;Generate content</p>
                     <p style="margin:4px 0 0 32px;font-size:13px;color:#6a6560;">Blog posts, social content, email sequences — powered by Claude AI</p>
                   </td>
                 </tr>
               </table>
               <table cellpadding="0" cellspacing="0" role="presentation">
                 <tr>
-                  <td style="background:#D9663A;border-radius:8px;">
+                  <td style="background:#1F6B66;border-radius:8px;">
                     <a href="${appUrl}/dashboard" style="display:block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;">Go to Dashboard &rarr;</a>
                   </td>
                 </tr>
@@ -80,7 +80,7 @@ function welcomeHtml(name: string): string {
           <tr>
             <td style="background:#f9f6f2;padding:20px 40px;border-top:1px solid #e5e0db;">
               <p style="margin:0;font-size:12px;color:#8a8176;line-height:1.6;">You received this because you created a Conduikt account. Questions? Reply to this email — we read every one.</p>
-              <p style="margin:8px 0 0;font-size:12px;"><a href="${appUrl}" style="color:#D9663A;text-decoration:none;">conduikt.com</a></p>
+              <p style="margin:8px 0 0;font-size:12px;"><a href="${appUrl}" style="color:#1F6B66;text-decoration:none;">conduikt.com</a></p>
             </td>
           </tr>
         </table>
@@ -116,14 +116,14 @@ function planUpgradeHtml(name: string, plan: string): string {
           <!-- Header -->
           <tr>
             <td style="background:#1a1714;padding:28px 40px;">
-              <p style="margin:0;font-size:20px;font-weight:700;color:#D9663A;letter-spacing:-0.5px;">Conduikt</p>
+              <p style="margin:0;font-size:20px;font-weight:700;color:#1F6B66;letter-spacing:-0.5px;">Conduikt</p>
               <p style="margin:4px 0 0;font-size:12px;color:#8a8176;letter-spacing:0.5px;text-transform:uppercase;">AI Marketing Automation</p>
             </td>
           </tr>
           <!-- Body -->
           <tr>
             <td style="padding:36px 40px;">
-              <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#D9663A;text-transform:uppercase;letter-spacing:1px;">Plan Activated</p>
+              <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#1F6B66;text-transform:uppercase;letter-spacing:1px;">Plan Activated</p>
               <h1 style="margin:0 0 16px;font-size:26px;font-weight:700;color:#1a1714;line-height:1.25;">You're now on ${planLabel}</h1>
               <p style="margin:0 0 20px;font-size:15px;color:#4a4540;line-height:1.7;">
                 ${greeting}'re all set. Your ${planLabel} plan is now active — your generation limits have been updated and your usage counter has been reset.
@@ -132,13 +132,13 @@ function planUpgradeHtml(name: string, plan: string): string {
                 <tr>
                   <td style="padding:20px 24px;">
                     <p style="margin:0 0 4px;font-size:12px;color:#8a8176;text-transform:uppercase;letter-spacing:0.5px;">Your active plan</p>
-                    <p style="margin:0;font-size:22px;font-weight:700;color:#D9663A;">Conduikt ${planLabel}</p>
+                    <p style="margin:0;font-size:22px;font-weight:700;color:#1F6B66;">Conduikt ${planLabel}</p>
                   </td>
                 </tr>
               </table>
               <table cellpadding="0" cellspacing="0" role="presentation">
                 <tr>
-                  <td style="background:#D9663A;border-radius:8px;">
+                  <td style="background:#1F6B66;border-radius:8px;">
                     <a href="${appUrl}/dashboard" style="display:block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;">Go to Dashboard &rarr;</a>
                   </td>
                 </tr>
@@ -149,7 +149,7 @@ function planUpgradeHtml(name: string, plan: string): string {
           <tr>
             <td style="background:#f9f6f2;padding:20px 40px;border-top:1px solid #e5e0db;">
               <p style="margin:0;font-size:12px;color:#8a8176;line-height:1.6;">
-                Manage your billing at <a href="${appUrl}/settings/billing" style="color:#D9663A;text-decoration:none;">Settings &rarr; Billing</a>. Questions? Reply to this email.
+                Manage your billing at <a href="${appUrl}/settings/billing" style="color:#1F6B66;text-decoration:none;">Settings &rarr; Billing</a>. Questions? Reply to this email.
               </p>
             </td>
           </tr>
