@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 import {
   ArrowRight,
   BarChart3,
@@ -21,6 +20,7 @@ import { TestimonialMarquee } from "@/src/components/marketing/testimonial-marqu
 import { RevealOnScroll } from "@/src/components/marketing/reveal-on-scroll";
 import { PricingGrid } from "@/src/components/marketing/pricing-card";
 import { FaqAccordion } from "@/src/components/marketing/faq-accordion";
+import { HeroVideo } from "@/src/components/marketing/hero-video";
 
 const testimonials = [
   {
@@ -208,8 +208,8 @@ export default function LandingPage() {
           aria-hidden="true"
           className="radial-accent-glow orb-drift-e pointer-events-none absolute bottom-1/4 left-1/3 h-[260px] w-[260px] rounded-full opacity-70"
         />
-        <div className="relative mx-auto max-w-6xl px-6 w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div className="relative mx-auto max-w-7xl px-6 w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-[5fr_7fr] gap-12 items-center">
             <div className="animate-in">
               <Badge className="mb-6">Now in Beta</Badge>
               <h1 className="text-hero text-text-primary leading-[1.1]">AI Marketing Automation for <span className="text-accent">SaaS Founders</span></h1>
@@ -257,21 +257,10 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Dashboard Preview. The full-hero pinstripe sits behind
-                this; no extra local stripe overlay needed. */}
-            <div className="animate-in relative" style={{ animationDelay: "120ms" }}>
-              <Image
-                src="/images/conduikt-dashboard.png"
-                alt="Conduikt AI marketing dashboard showing SEO score 87, CRO score 92, and 24 generated marketing assets"
-                width={600}
-                height={450}
-                priority
-                sizes="(max-width: 1024px) 100vw, 600px"
-                className="relative rounded-xl border border-border-default shadow-[var(--shadow-elevated)] transform rotate-1 hover:rotate-0 transition-transform duration-500 w-full h-auto"
-              />
-              <div className="absolute -bottom-8 -right-8 h-40 w-40 rounded-full bg-accent/10 blur-3xl" />
-              <div className="absolute -top-8 -left-8 h-32 w-32 rounded-full bg-accent-secondary/10 blur-3xl" />
-            </div>
+            {/* Click-to-play product demo. Preview image + play button until
+                the user clicks; iframe (Loom) loads on demand. The preview
+                image doubles as the fallback if the iframe ever fails. */}
+            <HeroVideo />
           </div>
         </div>
       </section>
