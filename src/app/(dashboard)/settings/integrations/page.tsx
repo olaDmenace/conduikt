@@ -332,6 +332,38 @@ function IntegrationsContent() {
                 Read-only connections. Conduikt pulls data from these services to power your dashboards and growth playbooks. It cannot post, modify, or delete anything on your behalf.
               </p>
             </div>
+            {/* Until Conduikt's GCP OAuth app finishes Google verification (4-8
+                weeks post-launch), users will see Google's "unverified app"
+                warning when they click Connect for any of the three Google
+                integrations below. The data Conduikt requests is read-only,
+                but the warning is scary if you don't know to expect it.
+                Remove this banner once verification lands. */}
+            <Card className="mb-4 border-warning/30 bg-warning/5">
+              <CardContent className="flex gap-3 py-4">
+                <AlertCircle className="h-5 w-5 shrink-0 text-warning mt-0.5" />
+                <div className="space-y-1.5">
+                  <p className="text-small font-medium text-text-primary">
+                    You may see a Google security warning
+                  </p>
+                  <p className="text-small text-text-secondary leading-relaxed">
+                    Google is reviewing Conduikt's verification — until that completes,
+                    connecting Search Console, Analytics, or YouTube will show a screen
+                    that says{" "}
+                    <span className="font-medium text-text-primary">
+                      &ldquo;Google hasn&rsquo;t verified this app.&rdquo;
+                    </span>{" "}
+                    To proceed, click{" "}
+                    <span className="font-medium text-text-primary">Advanced</span>,
+                    then{" "}
+                    <span className="font-medium text-text-primary">
+                      Go to conduikt.com (unsafe)
+                    </span>
+                    . This is normal during launch and your access is read-only —
+                    Conduikt cannot post or change anything on your behalf.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
             <div className="space-y-4">
               {analyticsIntegrations.map((integration, i) =>
                 renderIntegrationCard(integration, i)
