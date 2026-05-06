@@ -8,6 +8,7 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { useToast } from "@/src/components/ui/toast";
 import { Twitter, Linkedin, Mail, Eye, EyeOff } from "lucide-react";
+import { GoogleIcon } from "@/src/components/icons/google-icon";
 import {
   mapSupabaseAuthError,
   validateSignupFields,
@@ -134,6 +135,25 @@ export default function SignupPage() {
 
       {/* Social login */}
       <div className="mb-6 space-y-3">
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              const siteUrl = window.location.origin;
+              const { error } = await supabase.auth.signInWithOAuth({
+                provider: "google",
+                options: { redirectTo: `${siteUrl}/auth/confirm?next=/dashboard` },
+              });
+              if (error) toast(error.message === "Unsupported provider: provider is not enabled" ? "Google login is not available right now. Please use email and password." : error.message, "error");
+            } catch {
+              toast("Something went wrong. Please try again.", "error");
+            }
+          }}
+          className="flex w-full items-center justify-center gap-3 rounded-lg border border-surface-3 bg-surface-1 px-4 py-2.5 text-small font-medium text-text-primary hover:bg-surface-2 transition-colors"
+        >
+          <GoogleIcon className="h-4 w-4" />
+          Continue with Google
+        </button>
         <button
           type="button"
           onClick={async () => {
