@@ -302,7 +302,7 @@ export function MediaPicker({
       className="inline-flex items-center gap-1.5 rounded-md border border-border-default bg-surface-1 px-2.5 py-1.5 text-small text-text-secondary hover:text-text-primary hover:border-accent/50 transition-colors"
     >
       <ImageIcon className="h-3.5 w-3.5" />
-      {hasMedia(value) ? "Change image" : "Add image"}
+      {hasMedia(value) ? "Change media" : "Add media"}
     </button>
   ) : (
     <button
@@ -355,9 +355,11 @@ export function MediaPicker({
             <ImageIcon className="h-4 w-4" />
           </div>
           <div>
-            <p className="text-small font-medium">Add image</p>
+            <p className="text-small font-medium">Add image or video</p>
             <p className="text-xs text-text-tertiary">
-              Stock photo, upload, or text card
+              {projectId
+                ? "Stock photo, upload, video, generated, or text card"
+                : "Stock photo, image, video, or text card"}
             </p>
           </div>
         </div>
@@ -372,9 +374,12 @@ export function MediaPicker({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>Add media</DialogTitle>
+            <DialogTitle>Add media to your post</DialogTitle>
             <DialogDescription>
-              Choose a stock photo, upload your own, or generate a branded text card.
+              {projectId
+                ? "Pick a stock photo, upload an image, attach a video (MP4/MOV/WebM up to 200MB), choose an AI-generated video from this project, or generate a branded text card."
+                : "Pick a stock photo, upload an image, attach a video (MP4/MOV/WebM up to 200MB), or generate a branded text card."}
+              {" "}Videos auto-upload to X, LinkedIn, and Facebook when you publish or schedule the post.
             </DialogDescription>
           </DialogHeader>
 
