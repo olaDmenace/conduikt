@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 
-interface Ga4Property {
-  name: string; // e.g. "properties/12345"
+// GA4 Admin API returns each property summary with `property` as the
+// resource name (e.g. "properties/12345"), NOT `name` like most other
+// Google APIs. See accountSummaries.list response shape in:
+// https://developers.google.com/analytics/devguides/config/admin/v1/rest/v1beta/accountSummaries
+interface Ga4PropertySummary {
+  property: string;
   displayName: string;
 }
 
@@ -104,10 +108,10 @@ export async function GET(request: NextRequest) {
     if (listRes.ok) {
       const data = await listRes.json();
       const firstAccount = (data.accountSummaries ?? [])[0];
-      const firstProperty: Ga4Property | undefined =
+      const firstProperty: Ga4PropertySummary | undefined =
         firstAccount?.propertySummaries?.[0];
       if (firstProperty) {
-        propertyName = firstProperty.name;
+        propertyName = firstProperty.property;
         propertyDisplay = firstProperty.displayName;
       }
     }
