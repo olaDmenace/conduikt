@@ -148,9 +148,6 @@ function IntegrationsContent() {
   const xAccount = accounts.find((a) => a.platform === "x");
   const liAccount = accounts.find((a) => a.platform === "linkedin");
   const fbAccount = accounts.find((a) => a.platform === "facebook");
-  const gscAccount = accounts.find((a) => a.platform === "gsc");
-  const ga4Account = accounts.find((a) => a.platform === "ga4");
-  const ytAccount = accounts.find((a) => a.platform === "youtube");
 
   function isExpired(account: ConnectedAccount) {
     // If we still hold a refresh_token, the next API call to Google
@@ -194,38 +191,11 @@ function IntegrationsContent() {
     },
   ];
 
-  const analyticsIntegrations = [
-    {
-      key: "gsc",
-      name: "Google Search Console",
-      icon: Search,
-      description:
-        "Read-only. Pulls your keyword rankings and click data into the Growth Playbook. Conduikt cannot change anything in Search Console.",
-      connectHref: "/api/integrations/gsc/connect",
-      account: gscAccount,
-      comingSoon: false,
-    },
-    {
-      key: "ga4",
-      name: "Google Analytics 4",
-      icon: BarChart3,
-      description:
-        "Read-only. Pulls traffic, engagement, and conversion metrics into your analytics dashboard. Conduikt cannot modify your GA4 property.",
-      connectHref: "/api/integrations/ga4/connect",
-      account: ga4Account,
-      comingSoon: false,
-    },
-    {
-      key: "youtube",
-      name: "YouTube",
-      icon: Video,
-      description:
-        "Read-only. Pulls channel stats and recent video performance. Conduikt cannot post videos or comments on your channel.",
-      connectHref: "/api/integrations/youtube/connect",
-      account: ytAccount,
-      comingSoon: false,
-    },
-  ];
+  // Google integrations (GSC, GA4, YouTube) are now per-project rather
+  // than per-user, so they don't appear here — they're connected and
+  // managed inside each project's Analytics tab. The cards below are
+  // user-level only (one X / LinkedIn / Facebook account, used across
+  // all your projects).
 
   type Integration = (typeof publishingIntegrations)[number];
 
@@ -346,51 +316,50 @@ function IntegrationsContent() {
             </div>
           </section>
 
-          {/* Analytics & insights */}
+          {/* Analytics & insights — moved to per-project. */}
           <section>
             <div className="mb-4">
               <h2 className="text-h2 text-text-primary">Analytics & insights</h2>
               <p className="mt-1 text-small text-text-secondary">
-                Read-only connections. Conduikt pulls data from these services to power your dashboards and growth playbooks. It cannot post, modify, or delete anything on your behalf.
+                Google Search Console, Google Analytics 4, and YouTube are
+                now connected per project — different sites, properties, and
+                channels for each one.
               </p>
             </div>
-            {/* Until Conduikt's GCP OAuth app finishes Google verification (4-8
-                weeks post-launch), users will see Google's "unverified app"
-                warning when they click Connect for any of the three Google
-                integrations below. The data Conduikt requests is read-only,
-                but the warning is scary if you don't know to expect it.
-                Remove this banner once verification lands. */}
-            <Card className="mb-4 border-warning/30 bg-warning/5">
-              <CardContent className="flex gap-3 py-4">
-                <AlertCircle className="h-5 w-5 shrink-0 text-warning mt-0.5" />
-                <div className="space-y-1.5">
-                  <p className="text-small font-medium text-text-primary">
-                    You may see a Google security warning
-                  </p>
-                  <p className="text-small text-text-secondary leading-relaxed">
-                    Google is reviewing Conduikt's verification — until that completes,
-                    connecting Search Console, Analytics, or YouTube will show a screen
-                    that says{" "}
-                    <span className="font-medium text-text-primary">
-                      &ldquo;Google hasn&rsquo;t verified this app.&rdquo;
-                    </span>{" "}
-                    To proceed, click{" "}
-                    <span className="font-medium text-text-primary">Advanced</span>,
-                    then{" "}
-                    <span className="font-medium text-text-primary">
-                      Go to conduikt.com (unsafe)
-                    </span>
-                    . This is normal during launch and your access is read-only —
-                    Conduikt cannot post or change anything on your behalf.
-                  </p>
+            <Card className="animate-in">
+              <CardContent className="flex flex-col gap-3 py-6">
+                <div className="flex items-start gap-3">
+                  <Search className="h-5 w-5 shrink-0 text-accent mt-0.5" />
+                  <div>
+                    <p className="text-small font-medium text-text-primary">
+                      Connect inside each project
+                    </p>
+                    <p className="text-small text-text-secondary leading-relaxed mt-1">
+                      Open any project, head to the Analytics tab, and you&rsquo;ll
+                      see Connect buttons for GSC, GA4, and YouTube. Each project
+                      can use a different Google account or property &mdash;
+                      ideal for agencies juggling multiple client sites.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 border-t border-border-subtle pt-3">
+                  <AlertCircle className="h-5 w-5 shrink-0 text-warning mt-0.5" />
+                  <div>
+                    <p className="text-small font-medium text-text-primary">
+                      You may see a Google security warning
+                    </p>
+                    <p className="text-small text-text-secondary leading-relaxed mt-1">
+                      Until Conduikt&rsquo;s Google verification completes,
+                      OAuth shows an &ldquo;unverified app&rdquo; screen.
+                      Click <span className="font-medium text-text-primary">Advanced</span>
+                      {" "}then{" "}
+                      <span className="font-medium text-text-primary">Go to conduikt.com (unsafe)</span>
+                      {" "}to proceed. Your access is read-only.
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
-            <div className="space-y-4">
-              {analyticsIntegrations.map((integration, i) =>
-                renderIntegrationCard(integration, i)
-              )}
-            </div>
           </section>
 
           {/* Info card */}

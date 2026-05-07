@@ -62,11 +62,13 @@ export async function GET(
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
-  // Fetch analytics data
+  // Fetch analytics data. Token counts and model are no longer pulled
+  // — the PDF report (sent to clients) shouldn't expose internal pricing
+  // inputs.
   const [genResult, assetResult, gscResult] = await Promise.all([
     supabase
       .from("ai_generations")
-      .select("agent_used, input_tokens, output_tokens, created_at")
+      .select("agent_used, created_at")
       .eq("project_id", id)
       .order("created_at", { ascending: true }),
     supabase
@@ -83,10 +85,6 @@ export async function GET(
 
   const generations = genResult.data ?? [];
   const totalGenerations = generations.length;
-  const totalTokens = generations.reduce(
-    (sum, g) => sum + (g.input_tokens ?? 0) + (g.output_tokens ?? 0),
-    0
-  );
   const totalAssets = assetResult.data?.length ?? 0;
 
   // Agent breakdown
@@ -137,7 +135,6 @@ export async function GET(
       day: "numeric",
     }),
     totalGenerations,
-    totalTokens,
     totalAssets,
     agentBreakdown,
     gscKeywords,
