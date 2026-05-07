@@ -5,6 +5,7 @@ import { generateWithClaude } from "@/src/lib/ai/client";
 import { getAgent } from "@/src/lib/ai/agents";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
 import { buildPerformanceContext } from "@/src/lib/ai/performance-context";
+import { saveCampaignStepAssets } from "@/src/lib/ai/campaigns/save-step-assets";
 
 export async function POST(
   _request: NextRequest,
@@ -130,12 +131,36 @@ export async function POST(
         };
       }
 
+      // Auto-save publishable outputs into assets so users can find
+      // them in the Library and schedule from there. Research-only
+      // agents (keyword-research, audit, strategy, etc.) are skipped
+      // by saveCampaignStepAssets — only blog-post / social-content /
+      // email-sequence fan out into asset rows.
+      const savedAssets = await saveCampaignStepAssets({
+        supabase,
+        projectId: id,
+        campaignId,
+        agentId: agent.id,
+        // parsed.data is the agent-specific payload; .data is what the
+        // helper expects (it doesn't care about the type/usage wrapper).
+        data: (parsed as { data?: unknown }).data ?? parsed,
+      });
+
+      // Annotate the result wrapper so the UI can show "Saved N to
+      // Library" without needing a follow-up query. `_savedAssets` is
+      // metadata sibling to data/type/usage — safe to add and the
+      // existing CampaignRunner ignores fields it doesn't render.
+      const resultWithSaves = {
+        ...(parsed as unknown as Record<string, unknown>),
+        _savedAssets: savedAssets,
+      };
+
       // Save step result
       await supabase
         .from("campaign_steps")
         .update({
           status: "completed",
-          result: parsed,
+          result: resultWithSaves,
           completed_at: new Date().toISOString(),
         })
         .eq("id", step.id);
