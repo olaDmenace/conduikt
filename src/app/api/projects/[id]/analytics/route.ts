@@ -32,6 +32,8 @@ export async function GET(
     assetsRes,
     gscKeywordsRes,
     gscAccountRes,
+    ga4AccountRes,
+    youtubeAccountRes,
     postMetricsRes,
     keywordTrackingRes,
   ] = await Promise.all([
@@ -67,6 +69,18 @@ export async function GET(
       .eq("platform", "gsc")
       .maybeSingle(),
     supabase
+      .from("connected_accounts")
+      .select("id, platform_user_id")
+      .eq("user_id", user.id)
+      .eq("platform", "ga4")
+      .maybeSingle(),
+    supabase
+      .from("connected_accounts")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("platform", "youtube")
+      .maybeSingle(),
+    supabase
       .from("post_metrics")
       .select(
         "id, channel, impressions, likes, shares, comments, clicks, synced_at, created_at"
@@ -87,6 +101,11 @@ export async function GET(
     assets: assetsRes.data ?? [],
     gscKeywords: gscKeywordsRes.data ?? [],
     gscConnected: !!gscAccountRes.data,
+    // GA4 needs a property selected to be useful — flag both states so the
+    // client can show "connect a property" guidance vs "not connected at all".
+    ga4Connected: !!ga4AccountRes.data,
+    ga4HasProperty: !!ga4AccountRes.data?.platform_user_id,
+    youtubeConnected: !!youtubeAccountRes.data,
     postMetrics: postMetricsRes.data ?? [],
     keywordTracking: keywordTrackingRes.data ?? [],
   });
