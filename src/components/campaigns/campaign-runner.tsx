@@ -338,6 +338,15 @@ export function CampaignRunner({
               typeof step.result === "string"
                 ? step.result
                 : JSON.stringify(step.result, null, 2);
+            // _savedAssets is the auto-save metadata appended by the
+            // run handler when blog/social/email outputs land as
+            // assets in the user's Library. Surface as a small badge
+            // so users know where to find the publishable artifacts.
+            const savedAssets = Array.isArray(
+              (resultObj as { _savedAssets?: unknown })?._savedAssets
+            )
+              ? ((resultObj as { _savedAssets: Array<{ id: string; type: string; channel: string | null; title: string | null }> })._savedAssets)
+              : [];
 
             return (
               <div
@@ -389,6 +398,24 @@ export function CampaignRunner({
                 </button>
                 {isExpanded && hasResult && (
                   <div className="px-3 pb-3 border-t border-border-subtle">
+                    {savedAssets.length > 0 && (
+                      <div className="mt-2 rounded-md border border-success/30 bg-success/5 px-3 py-2">
+                        <p className="text-small text-text-primary font-medium">
+                          ✓ Saved {savedAssets.length}{" "}
+                          {savedAssets.length === 1 ? "item" : "items"} to Library
+                        </p>
+                        <p className="text-xs text-text-secondary mt-0.5">
+                          {savedAssets[0].type === "blog_post"
+                            ? "Blog post draft"
+                            : savedAssets[0].type === "social_post"
+                              ? `${savedAssets.length} social posts`
+                              : savedAssets[0].type === "email"
+                                ? `${savedAssets.length} emails`
+                                : "Drafts"}{" "}
+                          ready to review and schedule.
+                        </p>
+                      </div>
+                    )}
                     <div className="flex items-center justify-end mt-2 mb-1">
                       <CopyButton text={rawText} />
                     </div>
