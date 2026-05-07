@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 import { createServiceClient } from "@/src/lib/supabase/service";
 import { dispatchWebhooks } from "@/src/lib/integrations/webhook-dispatch";
-import { uploadMediaToLinkedIn } from "@/src/lib/integrations/media-upload";
-import { hasMedia, type PostMedia } from "@/src/lib/media/types";
+import { uploadMediaToLinkedIn, uploadVideoToLinkedIn } from "@/src/lib/integrations/media-upload";
+import { hasMedia, isVideoMedia, type PostMedia } from "@/src/lib/media/types";
 import { ensureValidLinkedInToken } from "@/src/lib/integrations/linkedin-token";
 
 function getServiceClient() {
@@ -42,21 +42,29 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "LinkedIn token expired. Please reconnect your account.", reconnect: true }, { status: 401 });
   }
 
-  // Upload media if present
-  let imageUrn: string | null = null;
+  // Upload media if present. The Posts API accepts either an image URN
+  // or a video URN in content.media.id — LinkedIn dispatches on URN type
+  // automatically, so the post body shape is identical for both kinds.
+  let mediaUrn: string | null = null;
   let mediaError: string | null = null;
   if (hasMedia(media)) {
     try {
-      imageUrn = await uploadMediaToLinkedIn(
-        freshToken,
-        account.platform_user_id,
-        media
-      );
+      mediaUrn = isVideoMedia(media)
+        ? await uploadVideoToLinkedIn(
+            freshToken,
+            account.platform_user_id,
+            media
+          )
+        : await uploadMediaToLinkedIn(
+            freshToken,
+            account.platform_user_id,
+            media
+          );
     } catch (err) {
       mediaError = err instanceof Error ? err.message : String(err);
       console.error("[publish/linkedin] media upload error:", err);
     }
-    if (!imageUrn) {
+    if (!mediaUrn) {
       return NextResponse.json(
         { error: mediaError ?? "Failed to upload media to LinkedIn." },
         { status: 400 }
@@ -77,10 +85,10 @@ export async function POST(request: NextRequest) {
     lifecycleState: "PUBLISHED",
     isReshareDisabledByAuthor: false,
   };
-  if (imageUrn) {
+  if (mediaUrn) {
     postBody.content = {
       media: {
-        id: imageUrn,
+        id: mediaUrn,
         altText: media?.overlay?.text?.slice(0, 120) ?? "",
       },
     };

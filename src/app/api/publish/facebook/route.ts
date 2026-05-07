@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 import { createServiceClient } from "@/src/lib/supabase/service";
 import { dispatchWebhooks } from "@/src/lib/integrations/webhook-dispatch";
-import { hasMedia, type PostMedia } from "@/src/lib/media/types";
+import { hasMedia, isVideoMedia, type PostMedia } from "@/src/lib/media/types";
+import { uploadVideoToFacebook } from "@/src/lib/integrations/media-upload";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -51,12 +52,22 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // When media is present, POST directly to /{page_id}/photos with
-  // caption + url. For text-only, POST to /{page_id}/feed.
+  // Three paths: video → /{page_id}/videos. Image → /{page_id}/photos
+  // with caption. Text-only → /{page_id}/feed.
   let externalId: string | null = null;
 
   try {
-    if (hasMedia(media) && media.url) {
+    if (isVideoMedia(media)) {
+      // Facebook auto-publishes a video post when uploaded with file_url
+      // and includes a description. Returns the video/post id directly.
+      externalId = await uploadVideoToFacebook(pageId, pageToken, media!, text);
+      if (!externalId) {
+        return NextResponse.json(
+          { error: "Facebook video upload failed" },
+          { status: 400 }
+        );
+      }
+    } else if (hasMedia(media) && media.url) {
       const res = await fetch(
         `https://graph.facebook.com/v21.0/${pageId}/photos`,
         {
