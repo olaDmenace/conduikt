@@ -20,6 +20,7 @@ import {
   Clock,
   Map,
   Calendar,
+  ListChecks,
   Crosshair,
   Send,
   CalendarClock,
@@ -143,14 +144,14 @@ const contentSkills = [
       "What are your content goals?\n\ne.g. Build a 30-day content plan to drive organic traffic and establish thought leadership in AI marketing",
   },
   {
-    id: "social-calendar",
-    name: "Social Calendar",
-    icon: Calendar,
+    id: "posting-plan",
+    name: "Posting Plan",
+    icon: ListChecks,
     assetType: "copy_block" as const,
     channel: "x" as const,
-    description: "Day-by-day X and LinkedIn posting plan with hooks and video briefs",
+    description: "AI-generated 30-day X and LinkedIn posting plan with hooks and video briefs",
     placeholder:
-      "What's the focus for this calendar?\n\ne.g. Post-launch content for Conduikt: build-in-public lessons, dog-food walkthroughs, tactical AI marketing playbooks. 30 days, mirror the @askokara style on X.",
+      "What's the angle for the next 30 days?\n\ne.g. Post-launch momentum for an AI marketing SaaS — mix of build-in-public lessons, walkthroughs of the platform's agents, and tactical playbooks for solo founders. Mirror the punchy lowercase style of @askokara on X.",
   },
   {
     id: "blog-post",
@@ -187,7 +188,7 @@ function extractJson(text: string): Record<string, unknown> | null {
 }
 
 /** Skills that return structured JSON we can parse and render */
-const jsonSkills = ["copywriting", "content-strategy", "social-calendar", "email-sequence", "competitor-analysis", "page-cro", "blog-post"];
+const jsonSkills = ["copywriting", "content-strategy", "posting-plan", "email-sequence", "competitor-analysis", "page-cro", "blog-post"];
 
 function buildSkillInput(
   skillId: string,
@@ -206,7 +207,7 @@ function buildSkillInput(
       return { url: prompt, context: prompt, html: "" };
     case "content-strategy":
       return { goal: prompt, context: prompt };
-    case "social-calendar":
+    case "posting-plan":
       return { goals: prompt, context: prompt, focus: prompt };
     case "competitor-analysis":
       return { competitors: prompt, context: prompt };
@@ -785,11 +786,11 @@ function ContentStrategyPreview({ data }: { data: Record<string, any> }) {
   );
 }
 
-// Preview for the social-calendar agent. Renders the day-by-day plan
+// Preview for the posting-plan agent. Renders the day-by-day plan
 // as a flat sortable list grouped by date, with platform / template /
 // video badges so the founder can scan the month at a glance.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function SocialCalendarPreview({ data }: { data: Record<string, any> }) {
+function PostingPlanPreview({ data }: { data: Record<string, any> }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const days: any[] = Array.isArray(data?.days) ? data.days : [];
   const platformBadge: Record<string, string> = {
@@ -2151,13 +2152,13 @@ function ContentPageInner({
                         <ParseFailureNotice text={result} truncationMessage={truncationNotice} />
                       </div>
                     )
-                  ) : selectedSkill === "social-calendar" ? (
+                  ) : selectedSkill === "posting-plan" ? (
                     generating && !parsedContent ? (
                       <div ref={outputRef}>
                         <GeneratingIndicator label="Planning 30 days of posts..." />
                       </div>
                     ) : parsedContent ? (
-                      <SocialCalendarPreview data={parsedContent} />
+                      <PostingPlanPreview data={parsedContent} />
                     ) : (
                       <div ref={outputRef}>
                         <ParseFailureNotice text={result} truncationMessage={truncationNotice} />
