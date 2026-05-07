@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import {
   ImageIcon,
@@ -12,6 +12,7 @@ import {
   Check,
   ExternalLink,
   Video as VideoIcon,
+  Sparkles,
 } from "lucide-react";
 import {
   Dialog,
@@ -38,6 +39,16 @@ interface UnsplashResult {
   attribution: { name: string; username: string; profileUrl: string };
 }
 
+interface GeneratedVideo {
+  id: string;
+  brief: string;
+  status: string;
+  video_url: string | null;
+  thumbnail_url: string | null;
+  duration_seconds: number | null;
+  created_at: string;
+}
+
 interface MediaPickerProps {
   value: PostMedia;
   onChange: (media: PostMedia) => void;
@@ -45,6 +56,12 @@ interface MediaPickerProps {
   defaultOverlayText?: string;
   /** Compact chip-style trigger vs. full card trigger */
   variant?: "chip" | "card";
+  /**
+   * Optional project context. When provided, the Generated tab shows
+   * AI-generated videos for this project (HeyGen pipeline). Without
+   * a projectId we have no scope to query, so the tab is hidden.
+   */
+  projectId?: string;
 }
 
 export function MediaPicker({
@@ -52,9 +69,12 @@ export function MediaPicker({
   onChange,
   defaultOverlayText = "",
   variant = "card",
+  projectId,
 }: MediaPickerProps) {
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<"unsplash" | "upload" | "video" | "overlay">("unsplash");
+  const [tab, setTab] = useState<
+    "unsplash" | "upload" | "video" | "generated" | "overlay"
+  >("unsplash");
 
   // Unsplash state
   const [query, setQuery] = useState("");
@@ -70,6 +90,12 @@ export function MediaPicker({
   // types and the size limit on the backend matches the larger 200MB cap.
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const videoFileRef = useRef<HTMLInputElement>(null);
+
+  // AI-generated video library state. Only fetched when the Generated
+  // tab is opened AND a projectId is in scope.
+  const [generatedVideos, setGeneratedVideos] = useState<GeneratedVideo[]>([]);
+  const [loadingGenerated, setLoadingGenerated] = useState(false);
+  const [generatedFetched, setGeneratedFetched] = useState(false);
 
   // Overlay state
   const [overlayText, setOverlayText] = useState(defaultOverlayText);
@@ -139,6 +165,64 @@ export function MediaPicker({
     } finally {
       setUploading(false);
     }
+  }
+
+  // Lazy-load the generated video library when the Generated tab opens
+  // for the first time. We don't fetch on mount because most picker
+  // sessions don't touch this tab.
+  useEffect(() => {
+    if (tab !== "generated" || !projectId || generatedFetched) return;
+    let cancelled = false;
+    async function load() {
+      setLoadingGenerated(true);
+      try {
+        const res = await fetch(
+          `/api/video/history?projectId=${encodeURIComponent(projectId!)}`
+        );
+        if (!res.ok) throw new Error(await res.text());
+        const data = (await res.json()) as GeneratedVideo[];
+        if (!cancelled) {
+          // Only show jobs that produced a playable video.
+          setGeneratedVideos(
+            (data ?? []).filter(
+              (v) => v.status === "succeeded" && Boolean(v.video_url)
+            )
+          );
+        }
+      } catch (err) {
+        if (!cancelled) {
+          toast(
+            err instanceof Error
+              ? err.message
+              : "Failed to load generated videos",
+            "error"
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingGenerated(false);
+          setGeneratedFetched(true);
+        }
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, projectId, generatedFetched, toast]);
+
+  function handlePickGenerated(video: GeneratedVideo) {
+    if (!video.video_url) return;
+    onChange({
+      source: "heygen",
+      kind: "video",
+      url: video.video_url,
+      thumb: video.thumbnail_url,
+      durationSeconds: video.duration_seconds ?? undefined,
+      attribution: null,
+      overlay: null,
+    });
+    setOpen(false);
   }
 
   async function handleVideoUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -308,6 +392,12 @@ export function MediaPicker({
                 <VideoIcon className="h-3.5 w-3.5 mr-1.5" />
                 Video
               </TabsTrigger>
+              {projectId ? (
+                <TabsTrigger value="generated">
+                  <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+                  Generated
+                </TabsTrigger>
+              ) : null}
               <TabsTrigger value="overlay">
                 <Type className="h-3.5 w-3.5 mr-1.5" />
                 Text Card
@@ -449,6 +539,62 @@ export function MediaPicker({
                   to X/LinkedIn/Facebook when you publish or schedule.
                 </p>
               </div>
+            </TabsContent>
+
+            <TabsContent value="generated" className="flex-1 mt-4 overflow-y-auto">
+              {loadingGenerated ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-5 w-5 animate-spin text-text-tertiary" />
+                </div>
+              ) : generatedVideos.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-border-default bg-surface-0 p-12 text-center">
+                  <Sparkles className="h-10 w-10 text-text-tertiary mx-auto mb-3" />
+                  <p className="text-body text-text-primary mb-1">
+                    No generated videos yet
+                  </p>
+                  <p className="text-small text-text-secondary">
+                    Generate a video from the project&rsquo;s Video page,
+                    then it&rsquo;ll show up here ready to attach to posts.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {generatedVideos.map((video) => (
+                    <button
+                      key={video.id}
+                      type="button"
+                      onClick={() => handlePickGenerated(video)}
+                      className="group relative rounded-md overflow-hidden border border-border-default hover:border-accent transition-colors text-left"
+                    >
+                      <div className="relative aspect-video bg-surface-2 flex items-center justify-center">
+                        {video.thumbnail_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={video.thumbnail_url}
+                            alt=""
+                            className="absolute inset-0 h-full w-full object-cover"
+                          />
+                        ) : (
+                          <VideoIcon className="h-8 w-8 text-text-tertiary" />
+                        )}
+                        {video.duration_seconds ? (
+                          <span className="absolute bottom-1.5 right-1.5 rounded bg-surface-0/80 px-1.5 py-0.5 text-xs text-text-primary backdrop-blur-sm">
+                            {Math.round(video.duration_seconds)}s
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="p-2.5">
+                        <p className="text-small text-text-primary line-clamp-2">
+                          {video.brief || "Untitled video"}
+                        </p>
+                        <p className="text-xs text-text-tertiary mt-1">
+                          {new Date(video.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="overlay" className="flex-1 mt-4 space-y-4">

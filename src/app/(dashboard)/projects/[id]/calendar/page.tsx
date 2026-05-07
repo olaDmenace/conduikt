@@ -503,6 +503,7 @@ export default function CalendarPage({
                         <p className="text-caption text-text-tertiary mb-1">Media</p>
                         <MediaPicker
                           value={media}
+                          projectId={projectId}
                           onChange={async (m) => {
                             const res = await fetch(
                               `/api/scheduled-posts/${selectedPost.id}`,
