@@ -113,26 +113,39 @@ export async function GET(request: NextRequest) {
     // Non-critical — user can select site later
   }
 
-  // Upsert into connected_accounts (project-scoped for Google).
-  const { error: upsertError } = await supabase
-    .from("connected_accounts")
-    .upsert(
-      {
-        user_id: user.id,
-        project_id: projectId,
-        platform: "gsc",
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token ?? null,
-        token_expires_at: expiresAt,
-        platform_user_id: null,
-        platform_username: siteUrl, // store primary site as "username" for display
-        scope: tokens.scope ?? null,
-      },
-      { onConflict: "project_id,platform" }
-    );
+  // Insert-or-update into connected_accounts. We don't use upsert with
+  // onConflict because the (project_id, platform) uniqueness for Google
+  // rows is a PARTIAL unique index — PostgREST's upsert can only target
+  // full unique constraints, not partial ones. Doing this in two steps
+  // is reliable across any Postgres version and any constraint shape.
+  const payload = {
+    user_id: user.id,
+    project_id: projectId,
+    platform: "gsc" as const,
+    access_token: tokens.access_token,
+    refresh_token: tokens.refresh_token ?? null,
+    token_expires_at: expiresAt,
+    platform_user_id: null,
+    platform_username: siteUrl,
+    scope: tokens.scope ?? null,
+  };
 
-  if (upsertError) {
-    console.error("GSC upsert error:", upsertError);
+  const { data: existing } = await supabase
+    .from("connected_accounts")
+    .select("id")
+    .eq("project_id", projectId)
+    .eq("platform", "gsc")
+    .maybeSingle();
+
+  const { error: writeError } = existing
+    ? await supabase
+        .from("connected_accounts")
+        .update({ ...payload, updated_at: new Date().toISOString() })
+        .eq("id", existing.id)
+    : await supabase.from("connected_accounts").insert(payload);
+
+  if (writeError) {
+    console.error("GSC connection write error:", writeError);
     return NextResponse.redirect(
       `${projectRedirect}?error=${encodeURIComponent("Failed to save Google connection")}`
     );

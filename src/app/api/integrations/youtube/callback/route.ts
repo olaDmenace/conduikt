@@ -113,23 +113,35 @@ export async function GET(request: NextRequest) {
     // Non-critical
   }
 
-  const { error: upsertError } = await supabase.from("connected_accounts").upsert(
-    {
-      user_id: user.id,
-      project_id: projectId,
-      platform: "youtube",
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token ?? null,
-      token_expires_at: expiresAt,
-      platform_user_id: channelId,
-      platform_username: channelTitle,
-      scope: tokens.scope ?? null,
-    },
-    { onConflict: "project_id,platform" }
-  );
+  // Insert-or-update — see GSC callback for why we don't use upsert.
+  const payload = {
+    user_id: user.id,
+    project_id: projectId,
+    platform: "youtube" as const,
+    access_token: tokens.access_token,
+    refresh_token: tokens.refresh_token ?? null,
+    token_expires_at: expiresAt,
+    platform_user_id: channelId,
+    platform_username: channelTitle,
+    scope: tokens.scope ?? null,
+  };
 
-  if (upsertError) {
-    console.error("YouTube upsert error:", upsertError);
+  const { data: existing } = await supabase
+    .from("connected_accounts")
+    .select("id")
+    .eq("project_id", projectId)
+    .eq("platform", "youtube")
+    .maybeSingle();
+
+  const { error: writeError } = existing
+    ? await supabase
+        .from("connected_accounts")
+        .update({ ...payload, updated_at: new Date().toISOString() })
+        .eq("id", existing.id)
+    : await supabase.from("connected_accounts").insert(payload);
+
+  if (writeError) {
+    console.error("YouTube connection write error:", writeError);
     return NextResponse.redirect(
       `${projectRedirect}?error=${encodeURIComponent("Failed to save YouTube connection")}`
     );
