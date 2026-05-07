@@ -281,6 +281,7 @@ function ThreadPreview({ text }: { text: string }) {
 type SocialPostCardProps = {
   post: SocialPost;
   index: number;
+  projectId: string;
   connectedPlatforms: string[];
   publishing: string | null;
   schedulingKey: string | null;
@@ -297,6 +298,7 @@ type SocialPostCardProps = {
 function SocialPostCard({
   post,
   index,
+  projectId,
   connectedPlatforms,
   publishing,
   schedulingKey,
@@ -444,6 +446,7 @@ function SocialPostCard({
         value={postMedia[publishKey] ?? EMPTY_MEDIA}
         onChange={(m) => onPostMediaChange(publishKey, m)}
         defaultOverlayText={post.hook || post.text.slice(0, 120)}
+        projectId={projectId}
       />
 
       {/* Metadata row */}
@@ -1956,6 +1959,7 @@ function ContentPageInner({
                             key={i}
                             post={post}
                             index={i}
+                            projectId={projectId}
                             connectedPlatforms={connectedPlatforms}
                             publishing={publishing}
                             schedulingKey={schedulingKey}
