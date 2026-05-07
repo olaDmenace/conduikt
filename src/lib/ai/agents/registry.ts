@@ -94,6 +94,20 @@ export const AGENT_REGISTRY: AgentDefinition[] = [
     projectPath: "content?skill=content-strategy",
   },
   {
+    id: "social-calendar",
+    name: "Social Calendar Agent",
+    shortName: "Social Calendar",
+    icon: "Calendar",
+    description:
+      "Day-by-day X and LinkedIn posting plan with hooks and video briefs",
+    status: "active",
+    tier: "pro",
+    category: "strategy",
+    ctaLabel: "Plan Calendar",
+    route: "social-calendar",
+    projectPath: "content?skill=social-calendar",
+  },
+  {
     id: "competitor-analysis",
     name: "Competitor Intel Agent",
     shortName: "Competitor Intel",
