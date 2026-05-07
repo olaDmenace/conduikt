@@ -44,7 +44,11 @@ function formatDuration(seconds: number): string {
   return m > 0 ? `${m}m ${s}s` : `${s}s`;
 }
 
-export function Ga4Widget() {
+interface Props {
+  projectId: string;
+}
+
+export function Ga4Widget({ projectId }: Props) {
   const [data, setData] = useState<Ga4Summary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +57,9 @@ export function Ga4Widget() {
     let cancelled = false;
     async function load() {
       try {
-        const res = await fetch("/api/integrations/ga4/summary?days=28");
+        const res = await fetch(
+          `/api/integrations/ga4/summary?projectId=${encodeURIComponent(projectId)}&days=28`
+        );
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
           throw new Error(body.error || `GA4 fetch failed (${res.status})`);
@@ -71,7 +77,7 @@ export function Ga4Widget() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [projectId]);
 
   if (loading) {
     return (

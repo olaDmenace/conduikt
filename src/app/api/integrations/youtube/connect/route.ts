@@ -27,6 +27,25 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // Per-project scoping (see GSC connect for rationale).
+  const projectId = new URL(request.url).searchParams.get("project_id");
+  if (!projectId) {
+    return NextResponse.redirect(
+      `${appUrl}/settings/integrations?error=${encodeURIComponent("Connect YouTube from inside a project's Analytics tab.")}`
+    );
+  }
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("id", projectId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!project) {
+    return NextResponse.redirect(
+      `${appUrl}/settings/integrations?error=${encodeURIComponent("Project not found.")}`
+    );
+  }
+
   const state = base64url(crypto.randomBytes(16));
   const callbackUrl = `${appUrl}/api/integrations/youtube/callback`;
 
@@ -47,12 +66,9 @@ export async function GET(request: NextRequest) {
   const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
 
   const response = NextResponse.redirect(authUrl);
-  response.cookies.set("youtube_oauth_state", state, {
-    httpOnly: true,
-    secure: true,
-    maxAge: 900,
-    path: "/",
-  });
+  const cookieOpts = { httpOnly: true, secure: true, maxAge: 900, path: "/" } as const;
+  response.cookies.set("youtube_oauth_state", state, cookieOpts);
+  response.cookies.set("youtube_oauth_project", projectId, cookieOpts);
 
   return response;
 }

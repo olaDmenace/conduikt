@@ -183,7 +183,6 @@ interface AnalyticsReportProps {
   url: string;
   date: string;
   totalGenerations: number;
-  totalTokens: number;
   totalAssets: number;
   agentBreakdown: AgentBreakdown[];
   gscKeywords: GscKeyword[];
@@ -196,7 +195,6 @@ export function AnalyticsReportDocument({
   url,
   date,
   totalGenerations,
-  totalTokens,
   totalAssets,
   agentBreakdown,
   gscKeywords,
@@ -256,12 +254,6 @@ export function AnalyticsReportDocument({
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>Generations</Text>
             <Text style={styles.statValue}>{totalGenerations}</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Total Tokens</Text>
-            <Text style={styles.statValue}>
-              {totalTokens > 1000 ? `${(totalTokens / 1000).toFixed(1)}k` : totalTokens}
-            </Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>Saved Assets</Text>
