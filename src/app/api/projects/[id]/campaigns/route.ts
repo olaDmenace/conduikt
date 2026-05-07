@@ -21,9 +21,16 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  // Pull step results + timing on the list endpoint too. Without these
+  // columns the campaigns page renders status badges but nothing else —
+  // users see "completed" but no generated output, since the result
+  // JSONB is what the CampaignRunner expands. Same shape as the detail
+  // endpoint to keep the two consistent.
   const { data: campaigns, error } = await supabase
     .from("campaigns")
-    .select("*, campaign_steps(id, step_order, agent_id, status)")
+    .select(
+      "*, campaign_steps(id, step_order, agent_id, status, config, result, started_at, completed_at)"
+    )
     .eq("project_id", id)
     .order("created_at", { ascending: false });
 
