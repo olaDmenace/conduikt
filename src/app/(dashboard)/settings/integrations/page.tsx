@@ -327,36 +327,18 @@ function IntegrationsContent() {
               </p>
             </div>
             <Card className="animate-in">
-              <CardContent className="flex flex-col gap-3 py-6">
-                <div className="flex items-start gap-3">
-                  <Search className="h-5 w-5 shrink-0 text-accent mt-0.5" />
-                  <div>
-                    <p className="text-small font-medium text-text-primary">
-                      Connect inside each project
-                    </p>
-                    <p className="text-small text-text-secondary leading-relaxed mt-1">
-                      Open any project, head to the Analytics tab, and you&rsquo;ll
-                      see Connect buttons for GSC, GA4, and YouTube. Each project
-                      can use a different Google account or property &mdash;
-                      ideal for agencies juggling multiple client sites.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 border-t border-border-subtle pt-3">
-                  <AlertCircle className="h-5 w-5 shrink-0 text-warning mt-0.5" />
-                  <div>
-                    <p className="text-small font-medium text-text-primary">
-                      You may see a Google security warning
-                    </p>
-                    <p className="text-small text-text-secondary leading-relaxed mt-1">
-                      Until Conduikt&rsquo;s Google verification completes,
-                      OAuth shows an &ldquo;unverified app&rdquo; screen.
-                      Click <span className="font-medium text-text-primary">Advanced</span>
-                      {" "}then{" "}
-                      <span className="font-medium text-text-primary">Go to conduikt.com (unsafe)</span>
-                      {" "}to proceed. Your access is read-only.
-                    </p>
-                  </div>
+              <CardContent className="flex items-start gap-3 py-6">
+                <Search className="h-5 w-5 shrink-0 text-accent mt-0.5" />
+                <div>
+                  <p className="text-small font-medium text-text-primary">
+                    Connect inside each project
+                  </p>
+                  <p className="text-small text-text-secondary leading-relaxed mt-1">
+                    Open any project, head to the Analytics tab, and you&rsquo;ll
+                    see Connect buttons for GSC, GA4, and YouTube. Each project
+                    can use a different Google account or property &mdash;
+                    ideal for agencies juggling multiple client sites.
+                  </p>
                 </div>
               </CardContent>
             </Card>
