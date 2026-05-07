@@ -11,6 +11,7 @@ import {
   Loader2,
   Check,
   ExternalLink,
+  Video as VideoIcon,
 } from "lucide-react";
 import {
   Dialog,
@@ -53,7 +54,7 @@ export function MediaPicker({
   variant = "card",
 }: MediaPickerProps) {
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<"unsplash" | "upload" | "overlay">("unsplash");
+  const [tab, setTab] = useState<"unsplash" | "upload" | "video" | "overlay">("unsplash");
 
   // Unsplash state
   const [query, setQuery] = useState("");
@@ -64,6 +65,11 @@ export function MediaPicker({
   // Upload state
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Video upload state — separate ref so the input only accepts video MIME
+  // types and the size limit on the backend matches the larger 200MB cap.
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const videoFileRef = useRef<HTMLInputElement>(null);
 
   // Overlay state
   const [overlayText, setOverlayText] = useState(defaultOverlayText);
@@ -121,6 +127,7 @@ export function MediaPicker({
       if (!res.ok) throw new Error(data.error ?? "Upload failed");
       onChange({
         source: "upload",
+        kind: "image",
         url: data.url,
         thumb: data.url,
         attribution: null,
@@ -131,6 +138,36 @@ export function MediaPicker({
       toast(err instanceof Error ? err.message : "Upload failed", "error");
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function handleVideoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingVideo(true);
+    const fd = new FormData();
+    fd.append("file", file);
+    try {
+      const res = await fetch("/api/media/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Upload failed");
+      onChange({
+        source: "upload",
+        kind: "video",
+        url: data.url,
+        // Browsers can't easily generate a video thumbnail without playback;
+        // the preview card uses an icon when thumb is null.
+        thumb: null,
+        sizeBytes: data.size,
+        mimeType: data.mimeType,
+        attribution: null,
+        overlay: null,
+      });
+      setOpen(false);
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Upload failed", "error");
+    } finally {
+      setUploadingVideo(false);
     }
   }
 
@@ -191,19 +228,23 @@ export function MediaPicker({
     >
       {hasMedia(value) ? (
         <div className="flex items-center gap-3">
-          <div className="relative h-14 w-14 rounded-md overflow-hidden flex-shrink-0 border border-border-default">
-            <Image
-              src={value.thumb ?? value.url ?? ""}
-              alt=""
-              fill
-              sizes="56px"
-              className="object-cover"
-              unoptimized
-            />
+          <div className="relative h-14 w-14 rounded-md overflow-hidden flex-shrink-0 border border-border-default bg-surface-2 flex items-center justify-center">
+            {value.kind === "video" ? (
+              <VideoIcon className="h-5 w-5 text-text-secondary" />
+            ) : (
+              <Image
+                src={value.thumb ?? value.url ?? ""}
+                alt=""
+                fill
+                sizes="56px"
+                className="object-cover"
+                unoptimized
+              />
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-small text-text-primary font-medium">
-              {labelForSource(value.source)}
+              {labelForSource(value.source, value.kind)}
             </p>
             {value.attribution ? (
               <p className="text-xs text-text-tertiary truncate">
@@ -262,6 +303,10 @@ export function MediaPicker({
               <TabsTrigger value="upload">
                 <Upload className="h-3.5 w-3.5 mr-1.5" />
                 Upload
+              </TabsTrigger>
+              <TabsTrigger value="video">
+                <VideoIcon className="h-3.5 w-3.5 mr-1.5" />
+                Video
               </TabsTrigger>
               <TabsTrigger value="overlay">
                 <Type className="h-3.5 w-3.5 mr-1.5" />
@@ -367,6 +412,45 @@ export function MediaPicker({
               </div>
             </TabsContent>
 
+            <TabsContent value="video" className="flex-1 mt-4">
+              <div className="rounded-lg border border-dashed border-border-default bg-surface-0 p-12 text-center">
+                <VideoIcon className="h-10 w-10 text-text-tertiary mx-auto mb-3" />
+                <p className="text-body text-text-primary mb-1">
+                  Upload a video
+                </p>
+                <p className="text-small text-text-secondary mb-1">
+                  MP4, MOV, or WebM &mdash; up to 200 MB
+                </p>
+                <p className="text-xs text-text-tertiary mb-4">
+                  Platform limits: X 2:20, LinkedIn 200MB, Facebook 20min
+                </p>
+                <input
+                  ref={videoFileRef}
+                  type="file"
+                  accept="video/mp4,video/quicktime,video/webm"
+                  onChange={handleVideoUpload}
+                  className="hidden"
+                />
+                <Button
+                  onClick={() => videoFileRef.current?.click()}
+                  disabled={uploadingVideo}
+                >
+                  {uploadingVideo ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    "Choose video"
+                  )}
+                </Button>
+                <p className="text-xs text-text-tertiary mt-4">
+                  After upload, the video attaches to your post and uploads
+                  to X/LinkedIn/Facebook when you publish or schedule.
+                </p>
+              </div>
+            </TabsContent>
+
             <TabsContent value="overlay" className="flex-1 mt-4 space-y-4">
               <div>
                 <label className="text-small text-text-secondary mb-1.5 block">
@@ -462,7 +546,8 @@ export function MediaPicker({
   );
 }
 
-function labelForSource(source: string): string {
+function labelForSource(source: string, kind?: string): string {
+  if (kind === "video") return "Uploaded video";
   switch (source) {
     case "unsplash":
       return "Stock photo";
@@ -470,6 +555,8 @@ function labelForSource(source: string): string {
       return "Uploaded image";
     case "overlay":
       return "Text card";
+    case "heygen":
+      return "Generated video";
     default:
       return "Image";
   }

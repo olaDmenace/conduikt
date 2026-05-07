@@ -3,8 +3,8 @@ import { createClient } from "@/src/lib/supabase/server";
 import { createServiceClient } from "@/src/lib/supabase/service";
 import { ensureValidXToken } from "@/src/lib/integrations/x-token";
 import { dispatchWebhooks } from "@/src/lib/integrations/webhook-dispatch";
-import { uploadMediaToX } from "@/src/lib/integrations/media-upload";
-import { hasMedia, type PostMedia } from "@/src/lib/media/types";
+import { uploadMediaToX, uploadVideoToX } from "@/src/lib/integrations/media-upload";
+import { hasMedia, isVideoMedia, type PostMedia } from "@/src/lib/media/types";
 import { splitForX } from "@/src/lib/integrations/x-thread";
 
 function getServiceClient() {
@@ -83,10 +83,13 @@ export async function POST(request: NextRequest) {
   }
 
   // Upload media if present — attached only to the first tweet of the thread.
+  // Video goes through chunked upload + status polling; image is single-call.
   let mediaId: string | null = null;
   if (hasMedia(media)) {
     try {
-      mediaId = await uploadMediaToX(accessToken, media);
+      mediaId = isVideoMedia(media)
+        ? await uploadVideoToX(accessToken, media)
+        : await uploadMediaToX(accessToken, media);
     } catch (err) {
       console.error("[publish/x] media upload error:", err);
     }
