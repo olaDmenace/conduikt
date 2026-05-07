@@ -21,6 +21,9 @@ interface ConnectedAccount {
   platform: string;
   platform_username: string | null;
   token_expires_at: string | null;
+  // We don't expose the refresh_token value to the client — only whether
+  // one exists. The DB select coerces this to a boolean below.
+  has_refresh_token: boolean;
   created_at: string;
 }
 
@@ -62,10 +65,22 @@ function IntegrationsContent() {
   }, []);
 
   async function fetchAccounts() {
+    // Pull refresh_token only to know if it EXISTS — never display it.
+    // The badge logic below uses presence of a refresh token to decide
+    // whether the connection is healthy (will silently rotate on use)
+    // or actually broken (no way to refresh, user must reconnect).
     const { data } = await supabase
       .from("connected_accounts")
-      .select("platform, platform_username, token_expires_at, created_at");
-    setAccounts(data ?? []);
+      .select("platform, platform_username, token_expires_at, refresh_token, created_at");
+    setAccounts(
+      (data ?? []).map((row) => ({
+        platform: row.platform,
+        platform_username: row.platform_username,
+        token_expires_at: row.token_expires_at,
+        has_refresh_token: Boolean(row.refresh_token),
+        created_at: row.created_at,
+      }))
+    );
     setLoading(false);
   }
 
@@ -138,6 +153,13 @@ function IntegrationsContent() {
   const ytAccount = accounts.find((a) => a.platform === "youtube");
 
   function isExpired(account: ConnectedAccount) {
+    // If we still hold a refresh_token, the next API call to Google
+    // (handled by getValidGoogleToken) silently rotates the access
+    // token before making the request — so a stale token_expires_at
+    // doesn't actually break anything. Only flag as expired when
+    // there's no refresh_token AND the access token is past its TTL,
+    // which means the user really does need to reconnect.
+    if (account.has_refresh_token) return false;
     if (!account.token_expires_at) return false;
     return new Date(account.token_expires_at) < new Date();
   }
