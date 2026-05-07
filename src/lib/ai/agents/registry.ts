@@ -94,18 +94,20 @@ export const AGENT_REGISTRY: AgentDefinition[] = [
     projectPath: "content?skill=content-strategy",
   },
   {
-    id: "social-calendar",
-    name: "Social Calendar Agent",
-    shortName: "Social Calendar",
-    icon: "Calendar",
+    id: "posting-plan",
+    name: "Posting Plan Agent",
+    shortName: "Posting Plan",
+    // Distinct icon from the Calendar Agent (which uses Calendar) so the
+    // two don't visually collide in the sidebar / agent picker.
+    icon: "ListChecks",
     description:
-      "Day-by-day X and LinkedIn posting plan with hooks and video briefs",
+      "AI-generated day-by-day X and LinkedIn plan with hooks and video briefs",
     status: "active",
     tier: "pro",
     category: "strategy",
-    ctaLabel: "Plan Calendar",
-    route: "social-calendar",
-    projectPath: "content?skill=social-calendar",
+    ctaLabel: "Plan Posts",
+    route: "posting-plan",
+    projectPath: "content?skill=posting-plan",
   },
   {
     id: "competitor-analysis",

@@ -25,6 +25,7 @@ import {
   Sparkles,
   Compass,
   Send,
+  ListChecks,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -48,6 +49,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   Zap,
   Calendar,
   GitBranch,
+  ListChecks,
 };
 
 interface Project {
