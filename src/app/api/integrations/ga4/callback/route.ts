@@ -115,23 +115,35 @@ export async function GET(request: NextRequest) {
     // Non-critical — user can pick later
   }
 
-  const { error: upsertError } = await supabase.from("connected_accounts").upsert(
-    {
-      user_id: user.id,
-      project_id: projectId,
-      platform: "ga4",
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token ?? null,
-      token_expires_at: expiresAt,
-      platform_user_id: propertyName,
-      platform_username: propertyDisplay,
-      scope: tokens.scope ?? null,
-    },
-    { onConflict: "project_id,platform" }
-  );
+  // Insert-or-update — see GSC callback for why we don't use upsert.
+  const payload = {
+    user_id: user.id,
+    project_id: projectId,
+    platform: "ga4" as const,
+    access_token: tokens.access_token,
+    refresh_token: tokens.refresh_token ?? null,
+    token_expires_at: expiresAt,
+    platform_user_id: propertyName,
+    platform_username: propertyDisplay,
+    scope: tokens.scope ?? null,
+  };
 
-  if (upsertError) {
-    console.error("GA4 upsert error:", upsertError);
+  const { data: existing } = await supabase
+    .from("connected_accounts")
+    .select("id")
+    .eq("project_id", projectId)
+    .eq("platform", "ga4")
+    .maybeSingle();
+
+  const { error: writeError } = existing
+    ? await supabase
+        .from("connected_accounts")
+        .update({ ...payload, updated_at: new Date().toISOString() })
+        .eq("id", existing.id)
+    : await supabase.from("connected_accounts").insert(payload);
+
+  if (writeError) {
+    console.error("GA4 connection write error:", writeError);
     return NextResponse.redirect(
       `${projectRedirect}?error=${encodeURIComponent("Failed to save GA4 connection")}`
     );
