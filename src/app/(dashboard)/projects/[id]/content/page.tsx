@@ -19,6 +19,7 @@ import {
   ArrowUpRight,
   Clock,
   Map,
+  Calendar,
   Crosshair,
   Send,
   CalendarClock,
@@ -142,6 +143,16 @@ const contentSkills = [
       "What are your content goals?\n\ne.g. Build a 30-day content plan to drive organic traffic and establish thought leadership in AI marketing",
   },
   {
+    id: "social-calendar",
+    name: "Social Calendar",
+    icon: Calendar,
+    assetType: "copy_block" as const,
+    channel: "x" as const,
+    description: "Day-by-day X and LinkedIn posting plan with hooks and video briefs",
+    placeholder:
+      "What's the focus for this calendar?\n\ne.g. Post-launch content for Conduikt: build-in-public lessons, dog-food walkthroughs, tactical AI marketing playbooks. 30 days, mirror the @askokara style on X.",
+  },
+  {
     id: "blog-post",
     name: "Blog Post",
     icon: Globe,
@@ -176,7 +187,7 @@ function extractJson(text: string): Record<string, unknown> | null {
 }
 
 /** Skills that return structured JSON we can parse and render */
-const jsonSkills = ["copywriting", "content-strategy", "email-sequence", "competitor-analysis", "page-cro", "blog-post"];
+const jsonSkills = ["copywriting", "content-strategy", "social-calendar", "email-sequence", "competitor-analysis", "page-cro", "blog-post"];
 
 function buildSkillInput(
   skillId: string,
@@ -195,6 +206,8 @@ function buildSkillInput(
       return { url: prompt, context: prompt, html: "" };
     case "content-strategy":
       return { goal: prompt, context: prompt };
+    case "social-calendar":
+      return { goals: prompt, context: prompt, focus: prompt };
     case "competitor-analysis":
       return { competitors: prompt, context: prompt };
     default:
@@ -768,6 +781,114 @@ function ContentStrategyPreview({ data }: { data: Record<string, any> }) {
           </ul>
         </div>
       )}
+    </div>
+  );
+}
+
+// Preview for the social-calendar agent. Renders the day-by-day plan
+// as a flat sortable list grouped by date, with platform / template /
+// video badges so the founder can scan the month at a glance.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function SocialCalendarPreview({ data }: { data: Record<string, any> }) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const days: any[] = Array.isArray(data?.days) ? data.days : [];
+  const platformBadge: Record<string, string> = {
+    x: "bg-surface-2 text-text-primary",
+    linkedin: "bg-accent/15 text-accent",
+    both: "bg-accent-secondary/15 text-accent-secondary",
+  };
+  const videoBadge: Record<string, string> = {
+    none: "text-text-tertiary",
+    screen_recording: "text-accent",
+    heygen_avatar: "text-accent-secondary",
+    either: "text-warning",
+  };
+
+  return (
+    <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
+      {data?.calendar_name && (
+        <div>
+          <p className="text-h3 text-text-primary">{data.calendar_name}</p>
+          {data?.starts_on && (
+            <p className="text-caption text-text-tertiary">
+              Starts {data.starts_on} · {days.length} entries
+            </p>
+          )}
+        </div>
+      )}
+
+      {data?.notes && (
+        <div className="rounded-lg border border-border-default bg-surface-1 p-4">
+          <p className="text-caption text-text-tertiary mb-1 uppercase tracking-wider">
+            Strategic bet
+          </p>
+          <p className="text-small text-text-secondary leading-relaxed">
+            {data.notes}
+          </p>
+        </div>
+      )}
+
+      <div className="space-y-3">
+        {days.map((day, i) => (
+          <div
+            key={i}
+            className="rounded-lg border border-border-default bg-surface-1 p-4"
+          >
+            <div className="flex items-center gap-2 flex-wrap mb-2">
+              <span className="text-small font-mono text-text-primary">
+                {day.date}
+              </span>
+              <span
+                className={`text-xs px-2 py-0.5 rounded font-mono ${
+                  platformBadge[day.platform] ?? "bg-surface-2"
+                }`}
+              >
+                {day.platform}
+              </span>
+              {day.template && (
+                <span className="text-xs px-2 py-0.5 rounded bg-surface-2 text-text-secondary font-mono">
+                  {day.template}
+                </span>
+              )}
+              {day.theme && (
+                <span className="text-xs text-text-tertiary">
+                  {day.theme}
+                </span>
+              )}
+              {day.video && day.video !== "none" && (
+                <span
+                  className={`text-xs ml-auto ${
+                    videoBadge[day.video] ?? "text-text-tertiary"
+                  }`}
+                >
+                  ▶ {day.video.replace("_", " ")}
+                </span>
+              )}
+            </div>
+            {day.hook && (
+              <p className="text-body text-text-primary whitespace-pre-line leading-relaxed mb-2 font-mono text-small">
+                {day.hook}
+              </p>
+            )}
+            {day.summary && (
+              <p className="text-small text-text-secondary leading-relaxed">
+                {day.summary}
+              </p>
+            )}
+            {day.video_brief && (
+              <p className="text-xs text-text-tertiary mt-2 italic">
+                Video: {day.video_brief}
+              </p>
+            )}
+            {day.why_this_week && (
+              <p className="text-xs text-text-tertiary mt-2">
+                <span className="text-text-secondary">Why now:</span>{" "}
+                {day.why_this_week}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -2025,6 +2146,18 @@ function ContentPageInner({
                       </div>
                     ) : parsedContent ? (
                       <ContentStrategyPreview data={parsedContent} />
+                    ) : (
+                      <div ref={outputRef}>
+                        <ParseFailureNotice text={result} truncationMessage={truncationNotice} />
+                      </div>
+                    )
+                  ) : selectedSkill === "social-calendar" ? (
+                    generating && !parsedContent ? (
+                      <div ref={outputRef}>
+                        <GeneratingIndicator label="Planning 30 days of posts..." />
+                      </div>
+                    ) : parsedContent ? (
+                      <SocialCalendarPreview data={parsedContent} />
                     ) : (
                       <div ref={outputRef}>
                         <ParseFailureNotice text={result} truncationMessage={truncationNotice} />
