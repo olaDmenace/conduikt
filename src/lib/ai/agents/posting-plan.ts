@@ -4,19 +4,24 @@ import { parseJsonResponse } from "../parse-json";
 // Day-by-day social media plan, sister to content-strategy.
 //
 // Where content-strategy outputs a strategic view (pillars + KPIs +
-// content_pieces grouped by topic), social-calendar outputs the tactical
+// content_pieces grouped by topic), posting-plan outputs the tactical
 // view: an array of dated entries, one per planned post, with hooks and
 // video briefs ready to be picked up by social-content the day each
 // entry is due.
 //
+// Named "posting-plan" rather than "social-calendar" so it doesn't
+// collide with the existing Calendar Agent (which is the scheduled-
+// posts publishing view, not an AI planner). Distinct name, distinct
+// icon, distinct mental model.
+//
 // Voice rules baked into the system prompt mirror the @askOkara playbook
 // (lowercase X, bullet-heavy, single-tweet default, imperative hooks)
 // because that's what's proven to convert for solo-founder indie SaaS.
-export const socialCalendarAgent: AgentConfig = {
-  id: "social-calendar",
-  name: "Social Calendar Agent",
+export const postingPlanAgent: AgentConfig = {
+  id: "posting-plan",
+  name: "Posting Plan Agent",
   description:
-    "Day-by-day X and LinkedIn posting plan with hooks, templates, and video briefs",
+    "AI-generated day-by-day X and LinkedIn posting plan with hooks, templates, and video briefs",
   model: "claude-sonnet-4-6",
   // 30 days × 2 platforms × ~6 fields per entry runs long; 8000 keeps
   // the schema fully populated without truncation pressure.

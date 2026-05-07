@@ -42,6 +42,7 @@ import {
   Layers,
   Rocket,
   Megaphone,
+  ListChecks,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils/cn";
 import { useUIStore } from "@/src/stores/ui-store";
@@ -79,6 +80,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   FileBarChart,
   Layers,
   Rocket,
+  ListChecks,
 };
 
 interface Project {
