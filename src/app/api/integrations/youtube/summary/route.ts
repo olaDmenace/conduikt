@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 import { createServiceClient } from "@/src/lib/supabase/service";
 import { getValidGoogleToken } from "@/src/lib/integrations/google-oauth";
@@ -7,7 +7,7 @@ import {
   fetchRecentVideos,
 } from "@/src/lib/integrations/youtube";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -16,17 +16,37 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // YouTube is project-scoped now — caller must pass projectId so we
+  // know which connection (which channel, owned by potentially-different
+  // Google accounts on different projects) to read from.
+  const projectId = new URL(request.url).searchParams.get("projectId");
+  if (!projectId) {
+    return NextResponse.json(
+      { error: "projectId is required" },
+      { status: 400 }
+    );
+  }
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("id", projectId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!project) {
+    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  }
+
   const db = createServiceClient();
   const { data: account } = await db
     .from("connected_accounts")
     .select("*")
-    .eq("user_id", user.id)
+    .eq("project_id", projectId)
     .eq("platform", "youtube")
     .single();
 
   if (!account) {
     return NextResponse.json(
-      { error: "YouTube not connected" },
+      { error: "YouTube not connected for this project" },
       { status: 400 }
     );
   }

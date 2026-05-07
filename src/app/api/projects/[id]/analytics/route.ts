@@ -39,9 +39,10 @@ export async function GET(
   ] = await Promise.all([
     supabase
       .from("ai_generations")
-      .select(
-        "id, agent_used, input_tokens, output_tokens, model, duration_ms, created_at"
-      )
+      // Token counts and model names intentionally NOT selected here —
+      // the analytics page is user-facing and shouldn't expose internal
+      // pricing inputs. Admin dashboard pulls those separately.
+      .select("id, agent_used, duration_ms, created_at")
       .eq("project_id", id)
       .order("created_at", { ascending: true }),
     supabase
@@ -62,22 +63,26 @@ export async function GET(
       .eq("source", "gsc")
       .order("clicks", { ascending: false })
       .limit(100),
+    // Google integrations are now scoped to the project, not the user.
+    // Each project carries its own OAuth tokens — agency users juggling
+    // multiple client sites can have one independent Google connection
+    // per project.
     supabase
       .from("connected_accounts")
       .select("id, platform_username")
-      .eq("user_id", user.id)
+      .eq("project_id", id)
       .eq("platform", "gsc")
       .maybeSingle(),
     supabase
       .from("connected_accounts")
       .select("id, platform_user_id")
-      .eq("user_id", user.id)
+      .eq("project_id", id)
       .eq("platform", "ga4")
       .maybeSingle(),
     supabase
       .from("connected_accounts")
       .select("id")
-      .eq("user_id", user.id)
+      .eq("project_id", id)
       .eq("platform", "youtube")
       .maybeSingle(),
     supabase

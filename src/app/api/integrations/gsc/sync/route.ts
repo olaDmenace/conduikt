@@ -45,17 +45,18 @@ export async function POST(request: NextRequest) {
 
   const db = getServiceClient();
 
-  // Get connected GSC account
+  // GSC is now project-scoped — pull the connection for THIS project,
+  // not the user's user-level connection (which no longer exists).
   const { data: account } = await db
     .from("connected_accounts")
     .select("*")
-    .eq("user_id", user.id)
+    .eq("project_id", projectId)
     .eq("platform", "gsc")
     .single();
 
   if (!account) {
     return NextResponse.json(
-      { error: "GSC not connected. Connect it in Settings." },
+      { error: "GSC not connected for this project. Connect it from the Analytics tab." },
       { status: 400 }
     );
   }

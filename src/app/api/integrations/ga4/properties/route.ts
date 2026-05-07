@@ -9,27 +9,46 @@ interface Ga4PropertySummary {
   accountDisplayName?: string;
 }
 
-async function requireGa4Account() {
+async function requireGa4Account(projectId: string | null) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" as const, status: 401 as const };
 
+  if (!projectId) {
+    return { error: "projectId is required" as const, status: 400 as const };
+  }
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("id", projectId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!project) {
+    return { error: "Project not found" as const, status: 404 as const };
+  }
+
   const db = createServiceClient();
   const { data: account } = await db
     .from("connected_accounts")
     .select("*")
-    .eq("user_id", user.id)
+    .eq("project_id", projectId)
     .eq("platform", "ga4")
     .single();
 
-  if (!account) return { error: "GA4 not connected" as const, status: 400 as const };
+  if (!account) {
+    return {
+      error: "GA4 not connected for this project" as const,
+      status: 400 as const,
+    };
+  }
   return { user, db, account };
 }
 
-export async function GET() {
-  const ctx = await requireGa4Account();
+export async function GET(request: NextRequest) {
+  const projectId = new URL(request.url).searchParams.get("projectId");
+  const ctx = await requireGa4Account(projectId);
   if ("error" in ctx) {
     return NextResponse.json({ error: ctx.error }, { status: ctx.status });
   }
@@ -75,13 +94,15 @@ export async function GET() {
 }
 
 export async function PATCH(request: NextRequest) {
-  const ctx = await requireGa4Account();
+  const body = await request.json().catch(() => ({}));
+  const projectId: string | undefined = body?.projectId;
+  const property: string | undefined = body?.property;
+
+  const ctx = await requireGa4Account(projectId ?? null);
   if ("error" in ctx) {
     return NextResponse.json({ error: ctx.error }, { status: ctx.status });
   }
 
-  const body = await request.json().catch(() => ({}));
-  const property: string | undefined = body?.property;
   if (!property || typeof property !== "string") {
     return NextResponse.json({ error: "property is required" }, { status: 400 });
   }

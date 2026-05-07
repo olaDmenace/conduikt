@@ -50,7 +50,11 @@ function timeAgo(iso: string): string {
   return `${Math.floor(mo / 12)}y ago`;
 }
 
-export function YoutubeWidget() {
+interface Props {
+  projectId: string;
+}
+
+export function YoutubeWidget({ projectId }: Props) {
   const [data, setData] = useState<YoutubeSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -59,7 +63,9 @@ export function YoutubeWidget() {
     let cancelled = false;
     async function load() {
       try {
-        const res = await fetch("/api/integrations/youtube/summary");
+        const res = await fetch(
+          `/api/integrations/youtube/summary?projectId=${encodeURIComponent(projectId)}`
+        );
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
           throw new Error(
@@ -79,7 +85,7 @@ export function YoutubeWidget() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [projectId]);
 
   if (loading) {
     return (
