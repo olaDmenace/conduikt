@@ -20,28 +20,50 @@ export async function GET(request: NextRequest) {
   const state = searchParams.get("state");
   const error = searchParams.get("error");
 
+  // Per-project: recover the project_id from the cookie set by /connect.
+  const projectId = request.cookies.get("youtube_oauth_project")?.value;
+  if (!projectId) {
+    return NextResponse.redirect(
+      `${appUrl}/dashboard?error=${encodeURIComponent(
+        "Connection context lost. Try connecting again from the project's Analytics tab."
+      )}`
+    );
+  }
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("id", projectId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!project) {
+    return NextResponse.redirect(
+      `${appUrl}/dashboard?error=${encodeURIComponent("Project not found.")}`
+    );
+  }
+  const projectRedirect = `${appUrl}/projects/${projectId}/analytics`;
+
   if (error) {
     return NextResponse.redirect(
-      `${appUrl}/settings/integrations?error=${encodeURIComponent("Google authorisation denied")}`
+      `${projectRedirect}?error=${encodeURIComponent("Google authorisation denied")}`
     );
   }
 
   const storedState = request.cookies.get("youtube_oauth_state")?.value;
   if (!state || state !== storedState) {
     return NextResponse.redirect(
-      `${appUrl}/settings/integrations?error=${encodeURIComponent("Invalid OAuth state. Please try again.")}`
+      `${projectRedirect}?error=${encodeURIComponent("Invalid OAuth state. Please try again.")}`
     );
   }
 
   if (!code) {
     return NextResponse.redirect(
-      `${appUrl}/settings/integrations?error=${encodeURIComponent("No authorisation code received")}`
+      `${projectRedirect}?error=${encodeURIComponent("No authorisation code received")}`
     );
   }
 
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
     return NextResponse.redirect(
-      `${appUrl}/settings/integrations?error=${encodeURIComponent("Google credentials not configured")}`
+      `${projectRedirect}?error=${encodeURIComponent("Google credentials not configured")}`
     );
   }
 
@@ -62,7 +84,7 @@ export async function GET(request: NextRequest) {
     const msg = await tokenRes.text();
     console.error("YouTube token exchange failed:", msg);
     return NextResponse.redirect(
-      `${appUrl}/settings/integrations?error=${encodeURIComponent("Failed to exchange Google authorisation code")}`
+      `${projectRedirect}?error=${encodeURIComponent("Failed to exchange Google authorisation code")}`
     );
   }
 
@@ -94,6 +116,7 @@ export async function GET(request: NextRequest) {
   const { error: upsertError } = await supabase.from("connected_accounts").upsert(
     {
       user_id: user.id,
+      project_id: projectId,
       platform: "youtube",
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token ?? null,
@@ -102,19 +125,20 @@ export async function GET(request: NextRequest) {
       platform_username: channelTitle,
       scope: tokens.scope ?? null,
     },
-    { onConflict: "user_id,platform" }
+    { onConflict: "project_id,platform" }
   );
 
   if (upsertError) {
     console.error("YouTube upsert error:", upsertError);
     return NextResponse.redirect(
-      `${appUrl}/settings/integrations?error=${encodeURIComponent("Failed to save YouTube connection")}`
+      `${projectRedirect}?error=${encodeURIComponent("Failed to save YouTube connection")}`
     );
   }
 
   const response = NextResponse.redirect(
-    `${appUrl}/settings/integrations?connected=youtube`
+    `${projectRedirect}?connected=youtube`
   );
   response.cookies.delete("youtube_oauth_state");
+  response.cookies.delete("youtube_oauth_project");
   return response;
 }

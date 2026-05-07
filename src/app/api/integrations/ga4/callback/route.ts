@@ -20,28 +20,50 @@ export async function GET(request: NextRequest) {
   const state = searchParams.get("state");
   const error = searchParams.get("error");
 
+  // Per-project: recover the project_id from the cookie set by /connect.
+  const projectId = request.cookies.get("ga4_oauth_project")?.value;
+  if (!projectId) {
+    return NextResponse.redirect(
+      `${appUrl}/dashboard?error=${encodeURIComponent(
+        "Connection context lost. Try connecting again from the project's Analytics tab."
+      )}`
+    );
+  }
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("id", projectId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!project) {
+    return NextResponse.redirect(
+      `${appUrl}/dashboard?error=${encodeURIComponent("Project not found.")}`
+    );
+  }
+  const projectRedirect = `${appUrl}/projects/${projectId}/analytics`;
+
   if (error) {
     return NextResponse.redirect(
-      `${appUrl}/settings/integrations?error=${encodeURIComponent("Google authorisation denied")}`
+      `${projectRedirect}?error=${encodeURIComponent("Google authorisation denied")}`
     );
   }
 
   const storedState = request.cookies.get("ga4_oauth_state")?.value;
   if (!state || state !== storedState) {
     return NextResponse.redirect(
-      `${appUrl}/settings/integrations?error=${encodeURIComponent("Invalid OAuth state. Please try again.")}`
+      `${projectRedirect}?error=${encodeURIComponent("Invalid OAuth state. Please try again.")}`
     );
   }
 
   if (!code) {
     return NextResponse.redirect(
-      `${appUrl}/settings/integrations?error=${encodeURIComponent("No authorisation code received")}`
+      `${projectRedirect}?error=${encodeURIComponent("No authorisation code received")}`
     );
   }
 
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
     return NextResponse.redirect(
-      `${appUrl}/settings/integrations?error=${encodeURIComponent("Google credentials not configured")}`
+      `${projectRedirect}?error=${encodeURIComponent("Google credentials not configured")}`
     );
   }
 
@@ -62,7 +84,7 @@ export async function GET(request: NextRequest) {
     const msg = await tokenRes.text();
     console.error("GA4 token exchange failed:", msg);
     return NextResponse.redirect(
-      `${appUrl}/settings/integrations?error=${encodeURIComponent("Failed to exchange Google authorisation code")}`
+      `${projectRedirect}?error=${encodeURIComponent("Failed to exchange Google authorisation code")}`
     );
   }
 
@@ -96,6 +118,7 @@ export async function GET(request: NextRequest) {
   const { error: upsertError } = await supabase.from("connected_accounts").upsert(
     {
       user_id: user.id,
+      project_id: projectId,
       platform: "ga4",
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token ?? null,
@@ -104,17 +127,18 @@ export async function GET(request: NextRequest) {
       platform_username: propertyDisplay,
       scope: tokens.scope ?? null,
     },
-    { onConflict: "user_id,platform" }
+    { onConflict: "project_id,platform" }
   );
 
   if (upsertError) {
     console.error("GA4 upsert error:", upsertError);
     return NextResponse.redirect(
-      `${appUrl}/settings/integrations?error=${encodeURIComponent("Failed to save GA4 connection")}`
+      `${projectRedirect}?error=${encodeURIComponent("Failed to save GA4 connection")}`
     );
   }
 
-  const response = NextResponse.redirect(`${appUrl}/settings/integrations?connected=ga4`);
+  const response = NextResponse.redirect(`${projectRedirect}?connected=ga4`);
   response.cookies.delete("ga4_oauth_state");
+  response.cookies.delete("ga4_oauth_project");
   return response;
 }

@@ -52,9 +52,9 @@ import { YoutubeWidget } from "@/src/components/analytics/youtube-widget";
 interface Generation {
   id: string;
   agent_used: string;
-  input_tokens: number | null;
-  output_tokens: number | null;
-  model: string | null;
+  // input_tokens / output_tokens / model deliberately removed from the
+  // user-facing analytics shape. The columns still exist in the DB for
+  // admin reporting and pricing — just not surfaced here.
   duration_ms: number | null;
   created_at: string;
 }
@@ -254,11 +254,15 @@ export default function AnalyticsPage() {
   // ---------- computed stats ----------
 
   const totalGenerations = generations.length;
-  const totalTokens = generations.reduce(
-    (sum, g) => sum + (g.input_tokens ?? 0) + (g.output_tokens ?? 0),
-    0
-  );
   const totalAssets = assets.length;
+  const avgRunTimeMs = generations.length
+    ? generations.reduce((s, g) => s + (g.duration_ms ?? 0), 0) /
+      generations.length
+    : 0;
+  const avgRunTime =
+    avgRunTimeMs >= 1000
+      ? `${(avgRunTimeMs / 1000).toFixed(1)}s`
+      : `${Math.round(avgRunTimeMs)}ms`;
 
   const agentCounts: Record<string, number> = {};
   for (const g of generations) {
@@ -310,10 +314,6 @@ export default function AnalyticsPage() {
     : null;
   const mostActiveCount = mostActiveWeek ? weekCounts[mostActiveWeek] : 0;
 
-  // Generation cost estimate (Sonnet 4 pricing)
-  const totalInputTokens = generations.reduce((s, g) => s + (g.input_tokens ?? 0), 0);
-  const totalOutputTokens = generations.reduce((s, g) => s + (g.output_tokens ?? 0), 0);
-  const estimatedCost = totalInputTokens * 0.000003 + totalOutputTokens * 0.000015;
 
   // Social performance — weekly impressions
   const socialWeekly: Record<string, number> = {};
@@ -407,17 +407,17 @@ export default function AnalyticsPage() {
                 delay: "60ms",
               },
               {
-                label: "Tokens Used",
-                value: totalTokens.toLocaleString(),
-                icon: Hash,
-                delay: "120ms",
-              },
-              {
                 label: "Top Agent",
                 value: mostUsedAgent ? (agentLabels[mostUsedAgent] ?? mostUsedAgent) : "—",
                 icon: Star,
-                delay: "180ms",
+                delay: "120ms",
                 small: true,
+              },
+              {
+                label: "Avg Run Time",
+                value: avgRunTime,
+                icon: Clock,
+                delay: "180ms",
               },
             ].map((stat) => (
               <Card
@@ -775,7 +775,36 @@ export default function AnalyticsPage() {
             </Card>
           )}
 
-          {/* Search Performance (GSC) */}
+          {/* Search Performance (GSC) — empty state CTA when not connected */}
+          {!gscConnected && (
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-h2 text-text-primary flex items-center gap-2">
+                  <Search className="h-5 w-5 text-accent" />
+                  Search Performance
+                </h2>
+              </div>
+              <Card className="animate-in">
+                <CardContent className="flex flex-col items-center py-12 text-center">
+                  <Search className="h-8 w-8 text-text-tertiary mb-3" />
+                  <p className="text-body text-text-secondary">
+                    Connect Google Search Console for this project
+                  </p>
+                  <p className="text-small text-text-tertiary mt-1 mb-4">
+                    See real keyword performance, clicks, impressions, and
+                    rank trends.
+                  </p>
+                  <Button size="sm" asChild>
+                    <a href={`/api/integrations/gsc/connect?project_id=${id}`}>
+                      Connect GSC
+                    </a>
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Search Performance — full widget when connected */}
           {gscConnected && (
             <div className="mb-6">
               <div className="flex items-center justify-between mb-4">
@@ -935,45 +964,82 @@ export default function AnalyticsPage() {
           )}
 
           {/* GA4 Traffic */}
-          {ga4Connected && (
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-h2 text-text-primary flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-accent" />
-                  Traffic & Engagement
-                </h2>
-              </div>
-              {ga4HasProperty ? (
-                <Ga4Widget />
-              ) : (
-                <Card className="animate-in">
-                  <CardContent className="flex flex-col items-center py-12 text-center">
-                    <BarChart3 className="h-8 w-8 text-text-tertiary mb-3" />
-                    <p className="text-body text-text-secondary">
-                      No GA4 property selected
-                    </p>
-                    <p className="text-small text-text-tertiary mt-1">
-                      Disconnect and reconnect GA4 in Settings &rarr;
-                      Integrations to pick a property.
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-h2 text-text-primary flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-accent" />
+                Traffic & Engagement
+              </h2>
             </div>
-          )}
+            {ga4Connected && ga4HasProperty ? (
+              <Ga4Widget projectId={id} />
+            ) : ga4Connected && !ga4HasProperty ? (
+              <Card className="animate-in">
+                <CardContent className="flex flex-col items-center py-12 text-center">
+                  <BarChart3 className="h-8 w-8 text-text-tertiary mb-3" />
+                  <p className="text-body text-text-secondary">
+                    No GA4 property selected
+                  </p>
+                  <p className="text-small text-text-tertiary mt-1 mb-4">
+                    Disconnect and reconnect GA4 to pick a property.
+                  </p>
+                  <Button size="sm" variant="secondary" asChild>
+                    <a href={`/api/integrations/ga4/connect?project_id=${id}`}>
+                      Reconnect GA4
+                    </a>
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="animate-in">
+                <CardContent className="flex flex-col items-center py-12 text-center">
+                  <BarChart3 className="h-8 w-8 text-text-tertiary mb-3" />
+                  <p className="text-body text-text-secondary">
+                    Connect Google Analytics 4 for this project
+                  </p>
+                  <p className="text-small text-text-tertiary mt-1 mb-4">
+                    See traffic, top pages, and traffic sources alongside
+                    your search performance.
+                  </p>
+                  <Button size="sm" asChild>
+                    <a href={`/api/integrations/ga4/connect?project_id=${id}`}>
+                      Connect GA4
+                    </a>
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
 
           {/* YouTube Channel */}
-          {youtubeConnected && (
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-h2 text-text-primary flex items-center gap-2">
-                  <Video className="h-5 w-5 text-accent" />
-                  YouTube Channel
-                </h2>
-              </div>
-              <YoutubeWidget />
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-h2 text-text-primary flex items-center gap-2">
+                <Video className="h-5 w-5 text-accent" />
+                YouTube Channel
+              </h2>
             </div>
-          )}
+            {youtubeConnected ? (
+              <YoutubeWidget projectId={id} />
+            ) : (
+              <Card className="animate-in">
+                <CardContent className="flex flex-col items-center py-12 text-center">
+                  <Video className="h-8 w-8 text-text-tertiary mb-3" />
+                  <p className="text-body text-text-secondary">
+                    Connect YouTube for this project
+                  </p>
+                  <p className="text-small text-text-tertiary mt-1 mb-4">
+                    See channel stats and recent video performance.
+                  </p>
+                  <Button size="sm" asChild>
+                    <a href={`/api/integrations/youtube/connect?project_id=${id}`}>
+                      Connect YouTube
+                    </a>
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
 
           {/* Generation History Table */}
           {generations.length === 0 ? (
@@ -1002,14 +1068,12 @@ export default function AnalyticsPage() {
                     <thead>
                       <tr className="border-b border-border-subtle">
                         <th className="px-6 py-3 text-caption text-text-tertiary font-medium">Agent</th>
-                        <th className="px-6 py-3 text-caption text-text-tertiary font-medium text-right">Tokens</th>
                         <th className="px-6 py-3 text-caption text-text-tertiary font-medium text-right">Duration</th>
                         <th className="px-6 py-3 text-caption text-text-tertiary font-medium text-right">Date</th>
                       </tr>
                     </thead>
                     <tbody>
                       {[...generations].reverse().map((gen) => {
-                        const tokens = (gen.input_tokens ?? 0) + (gen.output_tokens ?? 0);
                         return (
                           <tr
                             key={gen.id}
@@ -1019,9 +1083,6 @@ export default function AnalyticsPage() {
                               <Badge variant="secondary">
                                 {agentLabels[gen.agent_used as string] ?? gen.agent_used}
                               </Badge>
-                            </td>
-                            <td className="px-6 py-4 text-small text-text-secondary font-mono text-right">
-                              {tokens.toLocaleString()}
                             </td>
                             <td className="px-6 py-4 text-small text-text-secondary text-right">
                               {gen.duration_ms ? `${(gen.duration_ms / 1000).toFixed(1)}s` : "—"}
