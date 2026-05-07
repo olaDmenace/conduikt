@@ -4,6 +4,7 @@ import { copywritingSkill } from "./copywriting";
 import { socialContentSkill } from "./social-content";
 import { emailSequenceSkill } from "./email-sequence";
 import { contentStrategySkill } from "./content-strategy";
+import { socialCalendarAgent } from "./social-calendar";
 import { competitorAnalysisSkill } from "./competitor-analysis";
 import { blogPostSkill } from "./blog-post";
 import { keywordResearchSkill } from "./keyword-research";
@@ -23,6 +24,7 @@ export const agents: Record<string, AgentConfig> = {
   "social-content": socialContentSkill,
   "email-sequence": emailSequenceSkill,
   "content-strategy": contentStrategySkill,
+  "social-calendar": socialCalendarAgent,
   "competitor-analysis": competitorAnalysisSkill,
   "blog-post": blogPostSkill,
   "keyword-research": keywordResearchSkill,
