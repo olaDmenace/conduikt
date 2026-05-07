@@ -22,6 +22,7 @@ import {
   Heart,
   Share2,
   Download,
+  Video,
 } from "lucide-react";
 import { PdfDownloadButton } from "@/src/components/ui/pdf-download-button";
 import {
@@ -42,6 +43,8 @@ import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
 import { useToast } from "@/src/components/ui/toast";
+import { Ga4Widget } from "@/src/components/analytics/ga4-widget";
+import { YoutubeWidget } from "@/src/components/analytics/youtube-widget";
 
 
 // ---------- types ----------
@@ -159,6 +162,9 @@ export default function AnalyticsPage() {
   const [gscKeywords, setGscKeywords] = useState<GscKeyword[]>([]);
   const [gscConnected, setGscConnected] = useState(false);
   const [gscSyncing, setGscSyncing] = useState(false);
+  const [ga4Connected, setGa4Connected] = useState(false);
+  const [ga4HasProperty, setGa4HasProperty] = useState(false);
+  const [youtubeConnected, setYoutubeConnected] = useState(false);
   const [postMetrics, setPostMetrics] = useState<PostMetric[]>([]);
   const [keywordTracking, setKeywordTracking] = useState<KeywordTracking[]>([]);
   const [metricsSyncing, setMetricsSyncing] = useState(false);
@@ -174,6 +180,9 @@ export default function AnalyticsPage() {
         setAssets(data.assets ?? []);
         setGscKeywords(data.gscKeywords ?? []);
         setGscConnected(data.gscConnected ?? false);
+        setGa4Connected(data.ga4Connected ?? false);
+        setGa4HasProperty(data.ga4HasProperty ?? false);
+        setYoutubeConnected(data.youtubeConnected ?? false);
         setPostMetrics(data.postMetrics ?? []);
         setKeywordTracking(data.keywordTracking ?? []);
       }
@@ -922,6 +931,47 @@ export default function AnalyticsPage() {
                   </CardContent>
                 </Card>
               )}
+            </div>
+          )}
+
+          {/* GA4 Traffic */}
+          {ga4Connected && (
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-h2 text-text-primary flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-accent" />
+                  Traffic & Engagement
+                </h2>
+              </div>
+              {ga4HasProperty ? (
+                <Ga4Widget />
+              ) : (
+                <Card className="animate-in">
+                  <CardContent className="flex flex-col items-center py-12 text-center">
+                    <BarChart3 className="h-8 w-8 text-text-tertiary mb-3" />
+                    <p className="text-body text-text-secondary">
+                      No GA4 property selected
+                    </p>
+                    <p className="text-small text-text-tertiary mt-1">
+                      Disconnect and reconnect GA4 in Settings &rarr;
+                      Integrations to pick a property.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {/* YouTube Channel */}
+          {youtubeConnected && (
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-h2 text-text-primary flex items-center gap-2">
+                  <Video className="h-5 w-5 text-accent" />
+                  YouTube Channel
+                </h2>
+              </div>
+              <YoutubeWidget />
             </div>
           )}
 
