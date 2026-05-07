@@ -23,6 +23,7 @@ import {
   Share2,
   Download,
   Video,
+  Unlink,
 } from "lucide-react";
 import { PdfDownloadButton } from "@/src/components/ui/pdf-download-button";
 import {
@@ -43,8 +44,10 @@ import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
 import { useToast } from "@/src/components/ui/toast";
+import { createClient } from "@/src/lib/supabase/client";
 import { Ga4Widget } from "@/src/components/analytics/ga4-widget";
 import { YoutubeWidget } from "@/src/components/analytics/youtube-widget";
+import { UnverifiedAppWarning } from "@/src/components/analytics/unverified-app-warning";
 
 
 // ---------- types ----------
@@ -214,6 +217,32 @@ export default function AnalyticsPage() {
     } finally {
       setGscSyncing(false);
     }
+  }
+
+  // Disconnect a per-project Google integration. Deletes the row from
+  // connected_accounts (RLS scopes the delete to rows the user owns)
+  // then resets the page state so the empty-state Connect CTA shows.
+  async function handleDisconnectGoogle(platform: "gsc" | "ga4" | "youtube") {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("connected_accounts")
+      .delete()
+      .eq("project_id", id)
+      .eq("platform", platform);
+    if (error) {
+      toast(`Failed to disconnect ${platform.toUpperCase()}`, "error");
+      return;
+    }
+    if (platform === "gsc") {
+      setGscConnected(false);
+      setGscKeywords([]);
+    } else if (platform === "ga4") {
+      setGa4Connected(false);
+      setGa4HasProperty(false);
+    } else {
+      setYoutubeConnected(false);
+    }
+    toast(`${platform.toUpperCase()} disconnected from this project`, "info");
   }
 
   async function handleSyncMetrics() {
@@ -799,6 +828,7 @@ export default function AnalyticsPage() {
                       Connect GSC
                     </a>
                   </Button>
+                  <UnverifiedAppWarning />
                 </CardContent>
               </Card>
             </div>
@@ -812,17 +842,27 @@ export default function AnalyticsPage() {
                   <Search className="h-5 w-5 text-accent" />
                   Search Performance
                 </h2>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={handleGscSync}
-                  disabled={gscSyncing}
-                >
-                  <RefreshCw
-                    className={`h-3.5 w-3.5 mr-1.5 ${gscSyncing ? "animate-spin" : ""}`}
-                  />
-                  {gscSyncing ? "Syncing..." : "Sync GSC Data"}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleGscSync}
+                    disabled={gscSyncing}
+                  >
+                    <RefreshCw
+                      className={`h-3.5 w-3.5 mr-1.5 ${gscSyncing ? "animate-spin" : ""}`}
+                    />
+                    {gscSyncing ? "Syncing..." : "Sync GSC Data"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleDisconnectGoogle("gsc")}
+                  >
+                    <Unlink className="h-3.5 w-3.5 mr-1.5" />
+                    Disconnect
+                  </Button>
+                </div>
               </div>
 
               {gscKeywords.length > 0 && (
@@ -970,6 +1010,16 @@ export default function AnalyticsPage() {
                 <BarChart3 className="h-5 w-5 text-accent" />
                 Traffic & Engagement
               </h2>
+              {ga4Connected && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => handleDisconnectGoogle("ga4")}
+                >
+                  <Unlink className="h-3.5 w-3.5 mr-1.5" />
+                  Disconnect
+                </Button>
+              )}
             </div>
             {ga4Connected && ga4HasProperty ? (
               <Ga4Widget projectId={id} />
@@ -1006,6 +1056,7 @@ export default function AnalyticsPage() {
                       Connect GA4
                     </a>
                   </Button>
+                  <UnverifiedAppWarning />
                 </CardContent>
               </Card>
             )}
@@ -1018,6 +1069,16 @@ export default function AnalyticsPage() {
                 <Video className="h-5 w-5 text-accent" />
                 YouTube Channel
               </h2>
+              {youtubeConnected && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => handleDisconnectGoogle("youtube")}
+                >
+                  <Unlink className="h-3.5 w-3.5 mr-1.5" />
+                  Disconnect
+                </Button>
+              )}
             </div>
             {youtubeConnected ? (
               <YoutubeWidget projectId={id} />
@@ -1036,6 +1097,7 @@ export default function AnalyticsPage() {
                       Connect YouTube
                     </a>
                   </Button>
+                  <UnverifiedAppWarning />
                 </CardContent>
               </Card>
             )}
