@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Link from "next/link";
 import {
   CheckCircle2,
   XCircle,
@@ -11,11 +12,22 @@ import {
   ChevronUp,
   Copy,
   Check,
+  CalendarPlus,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { AGENT_REGISTRY } from "@/src/lib/ai/agents/registry";
+import { useToast } from "@/src/components/ui/toast";
+
+interface SavedAsset {
+  id: string;
+  type: string;
+  channel: string | null;
+  title: string | null;
+  postText?: string;
+}
 
 interface CampaignStep {
   id: string;
@@ -243,6 +255,176 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
+// Inline action panel rendered for each step's auto-saved assets.
+// For social_posts: a Schedule button that opens a small inline date
+// picker and POSTs to /api/projects/[id]/schedule. For blog_post and
+// email: a link that takes the user to the asset detail page where
+// they can edit and publish.
+function SavedAssetsPanel({
+  assets,
+  projectId,
+}: {
+  assets: SavedAsset[];
+  projectId: string;
+}) {
+  const { toast } = useToast();
+  const [openSchedulerFor, setOpenSchedulerFor] = useState<string | null>(null);
+  const [scheduledAt, setScheduledAt] = useState<string>("");
+  const [submitting, setSubmitting] = useState(false);
+  const [scheduledIds, setScheduledIds] = useState<Set<string>>(new Set());
+
+  const minDateTime = new Date(Date.now() + 5 * 60 * 1000)
+    .toISOString()
+    .slice(0, 16);
+
+  async function handleSchedule(asset: SavedAsset) {
+    if (!asset.postText) {
+      toast("Post text missing — open the asset to schedule manually.", "error");
+      return;
+    }
+    if (!scheduledAt) {
+      toast("Pick a date and time first.", "error");
+      return;
+    }
+    const channel = asset.channel === "linkedin" ? "linkedin" : "x";
+    if (asset.channel !== "x" && asset.channel !== "linkedin") {
+      toast(
+        `Scheduling for ${asset.channel} isn't supported — only X and LinkedIn auto-publish via cron.`,
+        "error"
+      );
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/projects/${projectId}/schedule`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          assetId: asset.id,
+          channel,
+          scheduledFor: new Date(scheduledAt).toISOString(),
+          postText: asset.postText,
+        }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast(body.error || "Failed to schedule", "error");
+        return;
+      }
+      setScheduledIds((prev) => new Set(prev).add(asset.id));
+      setOpenSchedulerFor(null);
+      setScheduledAt("");
+      toast(
+        `Scheduled for ${new Date(scheduledAt).toLocaleString()}`,
+        "success"
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const heading =
+    assets[0]?.type === "blog_post"
+      ? "Blog post draft saved"
+      : assets[0]?.type === "social_post"
+        ? `${assets.length} social ${assets.length === 1 ? "post" : "posts"} saved`
+        : assets[0]?.type === "email"
+          ? `${assets.length} ${assets.length === 1 ? "email" : "emails"} saved`
+          : `${assets.length} drafts saved`;
+
+  return (
+    <div className="mt-2 rounded-md border border-success/30 bg-success/5 p-3 space-y-2">
+      <div className="flex items-center gap-2">
+        <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
+        <p className="text-small text-text-primary font-medium">{heading}</p>
+      </div>
+      <ul className="space-y-1.5">
+        {assets.map((asset) => {
+          const isScheduled = scheduledIds.has(asset.id);
+          const showScheduler = openSchedulerFor === asset.id;
+          const channelLabel =
+            asset.channel === "x"
+              ? "X"
+              : asset.channel === "linkedin"
+                ? "LinkedIn"
+                : asset.channel === "facebook"
+                  ? "Facebook"
+                  : asset.channel === "email"
+                    ? "Email"
+                    : asset.channel ?? "";
+
+          return (
+            <li
+              key={asset.id}
+              className="flex flex-col gap-2 rounded border border-border-subtle bg-surface-1 px-3 py-2"
+            >
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-small text-text-primary truncate flex-1 min-w-0">
+                  {asset.title || "Untitled"}
+                </span>
+                {channelLabel && (
+                  <span className="text-xs px-1.5 py-0.5 rounded bg-surface-2 text-text-secondary font-mono">
+                    {channelLabel}
+                  </span>
+                )}
+                {isScheduled ? (
+                  <span className="text-xs text-success font-medium flex items-center gap-1">
+                    <Check className="h-3 w-3" />
+                    Scheduled
+                  </span>
+                ) : asset.type === "social_post" ? (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() =>
+                      setOpenSchedulerFor(showScheduler ? null : asset.id)
+                    }
+                  >
+                    <CalendarPlus className="h-3.5 w-3.5 mr-1" />
+                    {showScheduler ? "Cancel" : "Schedule"}
+                  </Button>
+                ) : (
+                  <Button size="sm" variant="secondary" asChild>
+                    <Link
+                      href={`/projects/${projectId}/assets/${asset.id}`}
+                      target="_blank"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                      Open
+                    </Link>
+                  </Button>
+                )}
+              </div>
+              {showScheduler && !isScheduled && asset.type === "social_post" && (
+                <div className="flex items-center gap-2 pt-1 border-t border-border-subtle">
+                  <input
+                    type="datetime-local"
+                    min={minDateTime}
+                    value={scheduledAt}
+                    onChange={(e) => setScheduledAt(e.target.value)}
+                    className="flex-1 rounded border border-border-default bg-surface-0 px-2 py-1 text-small text-text-primary focus:border-accent focus:outline-none"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => handleSchedule(asset)}
+                    disabled={submitting || !scheduledAt}
+                  >
+                    {submitting ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      "Confirm"
+                    )}
+                  </Button>
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 export function CampaignRunner({
   campaign,
   projectId,
@@ -399,22 +581,10 @@ export function CampaignRunner({
                 {isExpanded && hasResult && (
                   <div className="px-3 pb-3 border-t border-border-subtle">
                     {savedAssets.length > 0 && (
-                      <div className="mt-2 rounded-md border border-success/30 bg-success/5 px-3 py-2">
-                        <p className="text-small text-text-primary font-medium">
-                          ✓ Saved {savedAssets.length}{" "}
-                          {savedAssets.length === 1 ? "item" : "items"} to Library
-                        </p>
-                        <p className="text-xs text-text-secondary mt-0.5">
-                          {savedAssets[0].type === "blog_post"
-                            ? "Blog post draft"
-                            : savedAssets[0].type === "social_post"
-                              ? `${savedAssets.length} social posts`
-                              : savedAssets[0].type === "email"
-                                ? `${savedAssets.length} emails`
-                                : "Drafts"}{" "}
-                          ready to review and schedule.
-                        </p>
-                      </div>
+                      <SavedAssetsPanel
+                        assets={savedAssets}
+                        projectId={projectId}
+                      />
                     )}
                     <div className="flex items-center justify-end mt-2 mb-1">
                       <CopyButton text={rawText} />
