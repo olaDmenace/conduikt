@@ -37,6 +37,10 @@ export interface SavedAssetSummary {
   type: string;
   channel: string | null;
   title: string | null;
+  // For social_post assets only — the actual post body. Lets the
+  // CampaignRunner render an inline Schedule button without a
+  // follow-up fetch.
+  postText?: string;
 }
 
 interface BlogPostData {
@@ -179,13 +183,25 @@ async function saveSocialPosts(
   const { data: inserted, error } = await supabase
     .from("assets")
     .insert(rows)
-    .select("id, type, channel, title");
+    .select("id, type, channel, title, content");
 
   if (error) {
     console.error("[campaign-auto-save] social-content insert failed:", error);
     return [];
   }
-  return (inserted ?? []) as SavedAssetSummary[];
+  // Surface the post body as `postText` so the runner can render an
+  // inline Schedule button without a follow-up fetch. The full
+  // content blob isn't sent to the client — just the text.
+  return (inserted ?? []).map((row) => {
+    const content = row.content as { text?: string } | null;
+    return {
+      id: row.id,
+      type: row.type,
+      channel: row.channel,
+      title: row.title,
+      postText: content?.text ?? undefined,
+    };
+  }) as SavedAssetSummary[];
 }
 
 async function saveEmailSequence(
