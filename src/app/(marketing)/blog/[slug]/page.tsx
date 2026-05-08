@@ -1,19 +1,28 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { ArrowRight, Calendar, Clock, User } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import {
-  BLOG_POSTS,
-  getBlogPost,
-  getRelatedPosts,
-} from "@/src/content/blog/posts";
+  getPublishedBlogPost,
+  getRelatedBlogPosts,
+  countWords,
+} from "@/src/lib/blog/queries";
 
-export function generateStaticParams() {
-  return BLOG_POSTS.map((p) => ({ slug: p.slug }));
-}
+// Page revalidates every 60s so newly published or edited posts surface
+// without a full Vercel rebuild. The list page uses the same window —
+// see ../page.tsx.
+export const revalidate = 60;
+
+// generateStaticParams was previously used to pre-render every static
+// post at build time. Now that posts come from the DB, we let Next.js
+// generate them on-demand and revalidate. Skipping generateStaticParams
+// means dynamicParams default applies (true) — unknown slugs render
+// the [slug] route, which calls notFound() if the post doesn't exist.
 
 export async function generateMetadata({
   params,
@@ -21,23 +30,23 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const post = getBlogPost(slug);
+  const post = await getPublishedBlogPost(slug);
   if (!post) return { title: "Post not found" };
 
   const url = `https://conduikt.com/blog/${slug}/`;
 
   return {
-    title: post.title,
-    description: post.description,
+    title: post.meta_title ?? post.title,
+    description: post.meta_description ?? post.description,
     authors: [{ name: post.author }],
     alternates: { canonical: url },
     openGraph: {
-      title: post.title,
-      description: post.description,
+      title: post.meta_title ?? post.title,
+      description: post.meta_description ?? post.description,
       url,
       type: "article",
-      publishedTime: post.datePublished,
-      modifiedTime: post.dateModified,
+      publishedTime: post.date_published,
+      modifiedTime: post.date_modified,
       authors: [post.author],
       tags: post.tags,
       images: [
@@ -51,8 +60,8 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: post.title,
-      description: post.description,
+      title: post.meta_title ?? post.title,
+      description: post.meta_description ?? post.description,
       images: ["/og-image.png"],
     },
   };
@@ -72,13 +81,14 @@ export default async function BlogPostPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const post = getBlogPost(slug);
+  const post = await getPublishedBlogPost(slug);
 
   if (!post) {
     notFound();
   }
 
   const url = `https://conduikt.com/blog/${post.slug}/`;
+  const wordCount = countWords(post);
 
   const articleJsonLd = {
     "@context": "https://schema.org",
@@ -87,8 +97,8 @@ export default async function BlogPostPage({
     headline: post.title,
     description: post.description,
     image: ["https://conduikt.com/og-image.png"],
-    datePublished: post.datePublished,
-    dateModified: post.dateModified,
+    datePublished: post.date_published,
+    dateModified: post.date_modified,
     author: {
       "@type": "Person",
       name: post.author,
@@ -109,10 +119,7 @@ export default async function BlogPostPage({
       "@id": url,
     },
     keywords: post.tags.join(", "),
-    wordCount: post.sections.reduce(
-      (sum, s) => sum + s.body.join(" ").split(/\s+/).length,
-      0
-    ),
+    wordCount,
     articleSection: post.tags[0] ?? "Marketing",
     inLanguage: "en-US",
   };
@@ -121,28 +128,13 @@ export default async function BlogPostPage({
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      {
-        "@type": "ListItem",
-        position: 1,
-        name: "Home",
-        item: "https://conduikt.com/",
-      },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name: "Blog",
-        item: "https://conduikt.com/blog/",
-      },
-      {
-        "@type": "ListItem",
-        position: 3,
-        name: post.title,
-        item: url,
-      },
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://conduikt.com/" },
+      { "@type": "ListItem", position: 2, name: "Blog", item: "https://conduikt.com/blog/" },
+      { "@type": "ListItem", position: 3, name: post.title, item: url },
     ],
   };
 
-  const related = getRelatedPosts(post.slug, 2);
+  const related = await getRelatedBlogPosts(post.slug, 2);
 
   return (
     <article>
@@ -196,43 +188,62 @@ export default async function BlogPostPage({
             </span>
             <span className="flex items-center gap-1.5">
               <Calendar className="h-3.5 w-3.5" />
-              <time dateTime={post.datePublished}>
-                {formatDate(post.datePublished)}
+              <time dateTime={post.date_published}>
+                {formatDate(post.date_published)}
               </time>
             </span>
-            <span className="flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5" />
-              {post.readingTimeMinutes} min read
-            </span>
+            {post.reading_time_minutes && (
+              <span className="flex items-center gap-1.5">
+                <Clock className="h-3.5 w-3.5" />
+                {post.reading_time_minutes} min read
+              </span>
+            )}
           </div>
         </div>
       </section>
 
       <section className="pb-16">
-        <div className="mx-auto max-w-3xl px-6 space-y-8">
-          {post.sections.map((section, i) => (
-            <Card
-              key={i}
-              className="animate-in"
-              style={{ animationDelay: `${i * 60}ms` }}
-            >
+        <div className="mx-auto max-w-3xl px-6">
+          {/* Two render paths: legacy hand-written posts use the
+              sections array; campaign-published posts ship with
+              content_markdown. Either renders correctly. */}
+          {post.content_markdown ? (
+            <Card className="animate-in">
               <CardContent>
-                <h2 className="text-h2 text-text-primary mb-4">
-                  {section.heading}
-                </h2>
-                <div className="space-y-4">
-                  {section.body.map((paragraph, j) => (
-                    <p
-                      key={j}
-                      className="text-body text-text-secondary leading-relaxed"
-                    >
-                      {paragraph}
-                    </p>
-                  ))}
+                <div className="prose-conduikt">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {post.content_markdown}
+                  </ReactMarkdown>
                 </div>
               </CardContent>
             </Card>
-          ))}
+          ) : post.sections ? (
+            <div className="space-y-8">
+              {post.sections.map((section, i) => (
+                <Card
+                  key={i}
+                  className="animate-in"
+                  style={{ animationDelay: `${i * 60}ms` }}
+                >
+                  <CardContent>
+                    <h2 className="text-h2 text-text-primary mb-4">
+                      {section.heading}
+                    </h2>
+                    <div className="space-y-4">
+                      {section.body.map((paragraph, j) => (
+                        <p
+                          key={j}
+                          className="text-body text-text-secondary leading-relaxed"
+                        >
+                          {paragraph}
+                        </p>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : null}
         </div>
       </section>
 
