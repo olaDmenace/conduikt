@@ -3,7 +3,12 @@ import { Metadata } from "next";
 import { ArrowRight, Calendar, Clock } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
-import { BLOG_POSTS } from "@/src/content/blog/posts";
+import { listPublishedBlogPosts } from "@/src/lib/blog/queries";
+
+// Re-render every minute. New posts published via the in-app
+// "Publish to blog" button surface within 60 seconds without a
+// full deploy. Detail pages also use this (see [slug]/page.tsx).
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "Blog — AI Marketing for SaaS Founders",
@@ -27,7 +32,9 @@ function formatDate(iso: string): string {
   });
 }
 
-export default function BlogIndexPage() {
+export default async function BlogIndexPage() {
+  const posts = await listPublishedBlogPosts();
+
   const blogJsonLd = {
     "@context": "https://schema.org",
     "@type": "Blog",
@@ -41,12 +48,12 @@ export default function BlogIndexPage() {
       name: "Conduikt",
       url: "https://conduikt.com/",
     },
-    blogPost: BLOG_POSTS.map((p) => ({
+    blogPost: posts.map((p) => ({
       "@type": "BlogPosting",
       headline: p.title,
       description: p.description,
-      datePublished: p.datePublished,
-      dateModified: p.dateModified,
+      datePublished: p.date_published,
+      dateModified: p.date_modified,
       author: { "@type": "Person", name: p.author },
       url: `https://conduikt.com/blog/${p.slug}/`,
     })),
@@ -72,15 +79,9 @@ export default function BlogIndexPage() {
       </section>
 
       <section className="pb-24">
-        {/* Wider canvas (6xl, matches homepage) + 2-column grid on
-            md+ — the previous single-column stack inside max-w-4xl
-            felt cramped for a listing page. Cards are h-full so the
-            shorter excerpts pad evenly with the longest one in each
-            row, and the grid uses gap-6 (24px) horizontally + gap-y-8
-            (32px) between rows for breathing room. */}
         <div className="mx-auto max-w-6xl px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
-            {BLOG_POSTS.map((post, i) => (
+            {posts.map((post, i) => (
               <Link
                 key={post.slug}
                 href={`/blog/${post.slug}`}
@@ -105,19 +106,18 @@ export default function BlogIndexPage() {
                     <p className="text-body text-text-secondary leading-relaxed mb-5 line-clamp-3">
                       {post.excerpt}
                     </p>
-                    {/* Footer pinned to the bottom so date/read time
-                        align across cards even when titles wrap to
-                        different line counts. */}
                     <div className="mt-auto flex items-center justify-between flex-wrap gap-3 pt-2">
                       <div className="flex items-center gap-4 text-small text-text-tertiary">
                         <span className="flex items-center gap-1.5">
                           <Calendar className="h-3.5 w-3.5" />
-                          {formatDate(post.datePublished)}
+                          {formatDate(post.date_published)}
                         </span>
-                        <span className="flex items-center gap-1.5">
-                          <Clock className="h-3.5 w-3.5" />
-                          {post.readingTimeMinutes} min read
-                        </span>
+                        {post.reading_time_minutes && (
+                          <span className="flex items-center gap-1.5">
+                            <Clock className="h-3.5 w-3.5" />
+                            {post.reading_time_minutes} min read
+                          </span>
+                        )}
                       </div>
                       <span className="inline-flex items-center gap-1.5 text-small font-medium text-accent">
                         Read post

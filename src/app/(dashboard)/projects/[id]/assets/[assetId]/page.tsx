@@ -19,6 +19,7 @@ import {
   ChevronDown,
   ChevronUp,
   Zap,
+  Send,
 } from "lucide-react";
 import { PdfDownloadButton } from "@/src/components/ui/pdf-download-button";
 import { Badge } from "@/src/components/ui/badge";
@@ -381,6 +382,35 @@ export default function AssetViewPage({
   const [asset, setAsset] = useState<Asset | null>(null);
   const [loading, setLoading] = useState(true);
   const [navigating, startNavigation] = useTransition();
+  // Tracks the in-flight POST to /api/blog-posts/publish so the button
+  // shows a spinner and disables itself. Successful publishes also
+  // bump asset.status to "published" optimistically so the badge
+  // updates without a re-fetch.
+  const [publishing, setPublishing] = useState(false);
+
+  async function handlePublishBlog() {
+    if (!asset) return;
+    setPublishing(true);
+    try {
+      const res = await fetch("/api/blog-posts/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assetId: asset.id }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast(body.error || "Failed to publish", "error");
+        return;
+      }
+      toast(`Live at conduikt.com/blog/${body.slug}/`, "success");
+      // Optimistic status flip + open the live URL in a new tab so the
+      // user can verify immediately.
+      setAsset({ ...asset, status: "published" });
+      window.open(body.url, "_blank", "noopener,noreferrer");
+    } finally {
+      setPublishing(false);
+    }
+  }
 
   useEffect(() => {
     fetch(`/api/projects/${projectId}/assets/${assetId}`)
@@ -459,6 +489,24 @@ export default function AssetViewPage({
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
+            {asset.type === "blog_post" && (
+              <Button
+                size="sm"
+                onClick={handlePublishBlog}
+                disabled={publishing}
+              >
+                {publishing ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Send className="h-3.5 w-3.5" />
+                )}
+                {publishing
+                  ? "Publishing…"
+                  : asset.status === "published"
+                    ? "Re-publish"
+                    : "Publish to blog"}
+              </Button>
+            )}
             {openIn && (
               <Button
                 variant="secondary"
