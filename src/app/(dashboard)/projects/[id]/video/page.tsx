@@ -202,6 +202,32 @@ export default function VideoAgentPage({
     }
   }
 
+  async function handleRetry(jobId: string) {
+    const res = await fetch(`/api/video/${jobId}/retry`, { method: "POST" });
+    if (res.status === 402) {
+      setPlanGated(true);
+      return;
+    }
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      toast(err.error || "Failed to retry video generation", "error");
+      return;
+    }
+    toast("Retrying video generation...", "success");
+    setActiveJobId(jobId);
+    setJobStatus({
+      status: "scripting",
+      progressMessage: "Retrying video generation...",
+      videoUrl: null,
+      thumbnailUrl: null,
+      durationSeconds: null,
+      scriptData: null,
+      error: null,
+    });
+    setPhase("status");
+    fetchHistory();
+  }
+
   function handleNewVideo() {
     setPhase("style");
     setActiveJobId(null);
@@ -733,6 +759,14 @@ export default function VideoAgentPage({
                       ) : job.status === "failed" ? (
                         <>
                           <Badge variant="error">Failed</Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRetry(job.id)}
+                            title="Retry"
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                          </Button>
                         </>
                       ) : (
                         <>

@@ -1,5 +1,81 @@
 const HEYGEN_BASE = "https://api.heygen.com";
 
+export interface FormattedHeyGenError {
+  friendly: string;
+  isQuotaError: boolean;
+}
+
+// Maps known HeyGen failure shapes to user-readable text. The pipeline
+// stores the raw error in the console log; users only see `friendly`.
+export function formatHeyGenErrorForUser(rawError: string): FormattedHeyGenError {
+  let parsed: Record<string, unknown> | null = null;
+  try {
+    parsed = JSON.parse(rawError);
+  } catch {
+    const match = rawError.match(/\{[\s\S]*\}/);
+    if (match) {
+      try {
+        parsed = JSON.parse(match[0]);
+      } catch { /* not JSON */ }
+    }
+  }
+
+  const code = (parsed?.code as string) ?? "";
+  const detail = (parsed?.detail as string) ?? (parsed?.message as string) ?? "";
+
+  if (
+    code === "MOVIO_PAYMENT_INSUFFICIENT_CREDIT" ||
+    /insufficient credit/i.test(rawError)
+  ) {
+    return {
+      friendly:
+        "Your HeyGen account is out of API credits. Top up at heygen.com → Account → Subscription, then retry. Your Conduikt credit has been refunded.",
+      isQuotaError: true,
+    };
+  }
+
+  if (
+    /unauthorized|invalid.{0,10}api.{0,5}key|forbidden/i.test(rawError) ||
+    code === "401" ||
+    code === "403"
+  ) {
+    return {
+      friendly:
+        "HeyGen rejected our API key. Contact support — your Conduikt credit has been refunded.",
+      isQuotaError: false,
+    };
+  }
+
+  if (/rate.?limit|too.?many.?requests/i.test(rawError) || code === "429") {
+    return {
+      friendly:
+        "HeyGen is rate-limiting requests. Try again in a few minutes — your Conduikt credit has been refunded.",
+      isQuotaError: false,
+    };
+  }
+
+  if (/timed out|timeout/i.test(rawError)) {
+    return {
+      friendly:
+        "Video generation timed out after 10 minutes. HeyGen may be overloaded — try again later. Your Conduikt credit has been refunded.",
+      isQuotaError: false,
+    };
+  }
+
+  if (detail) {
+    return {
+      friendly: `Video generation failed: ${detail}. Your Conduikt credit has been refunded.`,
+      isQuotaError: false,
+    };
+  }
+
+  return {
+    friendly: `Video generation failed: ${rawError.slice(0, 180)}. Your Conduikt credit has been refunded.`,
+    isQuotaError: false,
+  };
+}
+
+
 // Default avatar/voice IDs — override via env vars if needed
 const DEFAULT_AVATAR_ID =
   process.env.HEYGEN_DEFAULT_AVATAR_ID ?? "Abigail_expressive_2024112501";

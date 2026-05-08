@@ -1,5 +1,10 @@
 import { createServiceClient } from "@/src/lib/supabase/service";
-import { createHeyGenVideo, pollHeyGenVideo, resolveUGCAvatar } from "@/src/lib/integrations/heygen";
+import {
+  createHeyGenVideo,
+  pollHeyGenVideo,
+  resolveUGCAvatar,
+  formatHeyGenErrorForUser,
+} from "@/src/lib/integrations/heygen";
 import type { BrandMatchContext } from "@/src/lib/integrations/heygen";
 import { searchUnsplash } from "@/src/lib/integrations/unsplash";
 import { createNotification } from "@/src/lib/notifications";
@@ -199,18 +204,36 @@ export async function runVideoPipeline(jobId: string) {
         errorMessage = String(err);
       }
     }
+
+    const { friendly } = formatHeyGenErrorForUser(errorMessage);
+
     await updateJob(jobId, {
       status: "failed",
-      error_message: errorMessage,
+      error_message: friendly,
       progress_message: "Video generation failed",
     });
 
-    // Notify user of failure
+    // Refund the generation_count we charged in /api/video/generate.
+    // The user didn't get a video, so they shouldn't be billed for one.
     if (jobUserId) {
+      const supabase = createServiceClient();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("generation_count")
+        .eq("id", jobUserId)
+        .single();
+      const current = profile?.generation_count ?? 0;
+      if (current > 0) {
+        await supabase
+          .from("profiles")
+          .update({ generation_count: current - 1 })
+          .eq("id", jobUserId);
+      }
+
       await createNotification(jobUserId, {
         type: "video_failed",
         title: "Video generation failed",
-        body: errorMessage.slice(0, 200),
+        body: friendly,
         projectId: jobProjectId ?? undefined,
         actionUrl: `/projects/${jobProjectId}/video`,
       });

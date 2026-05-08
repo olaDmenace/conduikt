@@ -1,6 +1,11 @@
 import { inngest } from "../client";
 import { createServiceClient } from "@/src/lib/supabase/service";
-import { createHeyGenVideo, pollHeyGenVideo, resolveUGCAvatar } from "@/src/lib/integrations/heygen";
+import {
+  createHeyGenVideo,
+  pollHeyGenVideo,
+  resolveUGCAvatar,
+  formatHeyGenErrorForUser,
+} from "@/src/lib/integrations/heygen";
 import type { BrandMatchContext } from "@/src/lib/integrations/heygen";
 import { searchUnsplash } from "@/src/lib/integrations/unsplash";
 import { createNotification } from "@/src/lib/notifications";
@@ -252,21 +257,43 @@ export const videoPipeline = inngest.createFunction(
         }
       }
 
-      await updateJob(jobId, {
-        status: "failed",
-        error_message: errorMessage,
-        progress_message: "Video generation failed",
-      });
+      // Wrapped in step.run so retries don't re-fire the notification or
+      // double-refund. Inngest memoizes successful step results across
+      // function retries.
+      await step.run("handle-failure", async () => {
+        const { friendly } = formatHeyGenErrorForUser(errorMessage);
 
-      if (jobUserId) {
-        await createNotification(jobUserId, {
-          type: "video_failed",
-          title: "Video generation failed",
-          body: errorMessage.slice(0, 200),
-          projectId: jobProjectId ?? undefined,
-          actionUrl: `/projects/${jobProjectId}/video`,
+        await updateJob(jobId, {
+          status: "failed",
+          error_message: friendly,
+          progress_message: "Video generation failed",
         });
-      }
+
+        if (jobUserId) {
+          // Refund the generation_count we charged in /api/video/generate.
+          const supabase = createServiceClient();
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("generation_count")
+            .eq("id", jobUserId)
+            .single();
+          const current = profile?.generation_count ?? 0;
+          if (current > 0) {
+            await supabase
+              .from("profiles")
+              .update({ generation_count: current - 1 })
+              .eq("id", jobUserId);
+          }
+
+          await createNotification(jobUserId, {
+            type: "video_failed",
+            title: "Video generation failed",
+            body: friendly,
+            projectId: jobProjectId ?? undefined,
+            actionUrl: `/projects/${jobProjectId}/video`,
+          });
+        }
+      });
 
       throw err;
     }
