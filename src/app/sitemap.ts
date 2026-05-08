@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
-import { BLOG_POSTS } from "@/src/content/blog/posts";
+import { listPublishedBlogPosts } from "@/src/lib/blog/queries";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://conduikt.com";
   const lastModified = new Date();
 
@@ -48,9 +48,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly" as const,
       priority: 0.6,
     })),
-    ...BLOG_POSTS.map((p) => ({
+    ...(await listPublishedBlogPosts()).map((p) => ({
       url: `${baseUrl}/blog/${p.slug}/`,
-      lastModified: new Date(p.dateModified),
+      lastModified: new Date(p.date_modified),
       changeFrequency: "monthly" as const,
       priority: 0.7,
     })),
