@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Twitter, Linkedin, Facebook, CheckCircle2, AlertCircle, Loader2, Link2, Unlink, Search, Clock, Pencil, BarChart3, Video } from "lucide-react";
+import { Twitter, Linkedin, Facebook, Music2, CheckCircle2, AlertCircle, Loader2, Link2, Unlink, Search, Clock, Pencil, BarChart3, Video } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
@@ -52,6 +52,7 @@ function IntegrationsContent() {
     if (connected === "x") toast("X account connected successfully!", "success");
     if (connected === "linkedin") toast("LinkedIn account connected successfully!", "success");
     if (connected === "facebook") toast("Facebook Page connected successfully!", "success");
+    if (connected === "tiktok") toast("TikTok account connected successfully!", "success");
     if (connected === "gsc") toast("Google Search Console connected!", "success");
     if (connected === "ga4") toast("Google Analytics 4 connected!", "success");
     if (connected === "youtube") toast("YouTube channel connected!", "success");
@@ -138,7 +139,7 @@ function IntegrationsContent() {
     if (error) {
       toast("Failed to disconnect account", "error");
     } else {
-      const names: Record<string, string> = { x: "X", linkedin: "LinkedIn", facebook: "Facebook", gsc: "Google Search Console", ga4: "Google Analytics 4", youtube: "YouTube" };
+      const names: Record<string, string> = { x: "X", linkedin: "LinkedIn", facebook: "Facebook", tiktok: "TikTok", gsc: "Google Search Console", ga4: "Google Analytics 4", youtube: "YouTube" };
       toast(`${names[platform] ?? platform} disconnected`, "info");
       setAccounts((prev) => prev.filter((a) => a.platform !== platform));
     }
@@ -148,6 +149,7 @@ function IntegrationsContent() {
   const xAccount = accounts.find((a) => a.platform === "x");
   const liAccount = accounts.find((a) => a.platform === "linkedin");
   const fbAccount = accounts.find((a) => a.platform === "facebook");
+  const ttAccount = accounts.find((a) => a.platform === "tiktok");
 
   function isExpired(account: ConnectedAccount) {
     // If we still hold a refresh_token, the next API call to Google
@@ -188,6 +190,15 @@ function IntegrationsContent() {
       connectHref: "/api/integrations/facebook/connect",
       account: fbAccount,
       comingSoon: process.env.NEXT_PUBLIC_ENABLE_FACEBOOK_INTEGRATION !== "true",
+    },
+    {
+      key: "tiktok",
+      name: "TikTok",
+      icon: Music2,
+      description: "Send AI-generated video ads to your TikTok inbox as drafts — review and publish in the TikTok app.",
+      connectHref: "/api/integrations/tiktok/connect",
+      account: ttAccount,
+      comingSoon: false,
     },
   ];
 

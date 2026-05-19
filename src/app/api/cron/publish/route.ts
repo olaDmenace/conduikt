@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/src/lib/supabase/service";
 import { ensureValidXToken } from "@/src/lib/integrations/x-token";
 import { ensureValidLinkedInToken } from "@/src/lib/integrations/linkedin-token";
+import { ensureValidTikTokToken } from "@/src/lib/integrations/tiktok-token";
+import { uploadVideoToTikTokInbox } from "@/src/lib/integrations/tiktok-publish";
 import {
   uploadMediaToX,
   uploadMediaToLinkedIn,
 } from "@/src/lib/integrations/media-upload";
-import { hasMedia, type PostMedia } from "@/src/lib/media/types";
+import { hasMedia, isVideoMedia, type PostMedia } from "@/src/lib/media/types";
 import { splitForX } from "@/src/lib/integrations/x-thread";
 import { decryptToken } from "@/src/lib/crypto/tokens";
 
@@ -133,9 +135,18 @@ export async function GET(request: NextRequest) {
     const text: string = asset?.content?.scheduled_text ?? asset?.content?.raw ?? "";
     const media: PostMedia | undefined = asset?.content?.media;
 
-    if (!text || !account?.access_token) {
-      const reason = !text
-        ? "Missing post text"
+    // TikTok requires a video URL but the caption is optional. Every other
+    // channel requires text. Compute the per-channel guard accordingly.
+    const missingContent =
+      post.channel === "tiktok"
+        ? !(isVideoMedia(media) && media?.url)
+        : !text;
+
+    if (missingContent || !account?.access_token) {
+      const reason = missingContent
+        ? post.channel === "tiktok"
+          ? "TikTok posts require a video — attach one before scheduling"
+          : "Missing post text"
         : `No connected ${post.channel} account for this user — reconnect in Settings`;
       await supabase
         .from("scheduled_posts")
@@ -174,6 +185,17 @@ export async function GET(request: NextRequest) {
         continue;
       }
       token = freshToken;
+    } else if (post.channel === "tiktok") {
+      const freshToken = await ensureValidTikTokToken(account as Parameters<typeof ensureValidTikTokToken>[0]);
+      if (!freshToken) {
+        await supabase
+          .from("scheduled_posts")
+          .update({ status: "failed", error_message: "TikTok session expired — user must reconnect" })
+          .eq("id", post.id);
+        results.push({ id: post.id, status: "failed", error: "TikTok token expired" });
+        continue;
+      }
+      token = freshToken;
     }
 
     try {
@@ -190,6 +212,8 @@ export async function GET(request: NextRequest) {
           token,
           media
         );
+      } else if (post.channel === "tiktok") {
+        publishResult = await publishToTikTok(token, media);
       } else {
         publishResult = { ok: false, error: "Unknown channel" };
       }
@@ -396,6 +420,23 @@ async function publishToLinkedIn(
   // LinkedIn returns the post URN in the x-restli-id response header.
   const externalId = postRes.headers.get("x-restli-id");
   return { ok: true, externalId: externalId ?? undefined };
+}
+
+async function publishToTikTok(
+  accessToken: string,
+  media: PostMedia | undefined
+): Promise<{ ok: boolean; error?: string; externalId?: string }> {
+  if (!isVideoMedia(media) || !media?.url) {
+    return { ok: false, error: "TikTok publish requires an attached video" };
+  }
+  const result = await uploadVideoToTikTokInbox(accessToken, media.url);
+  if (!result.ok) {
+    return { ok: false, error: result.error };
+  }
+  // publish_id is TikTok's handle for tracking the queued upload — store it
+  // as the external_post_id so we can correlate the eventual post if/when we
+  // wire the status webhook.
+  return { ok: true, externalId: result.publishId };
 }
 
 async function publishToFacebook(
