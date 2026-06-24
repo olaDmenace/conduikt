@@ -24,11 +24,12 @@ interface BracketTemplate {
   humanFields: { name: string; label: string; hint?: string }[];
   windowDays?: number;
   text: string;
+  fallback?: string;
 }
 
 interface FillResult {
   ref: string;
-  status: "queued" | "skipped" | "failed";
+  status: "queued" | "fallback" | "skipped" | "failed";
   reason?: string;
 }
 
@@ -317,12 +318,21 @@ async function handleGet(request: NextRequest) {
       }
     }
 
+    // If anything required is missing, use the template's fallback text so the
+    // slot still posts something. Only skip when there's no fallback configured.
+    let filled: string;
+    let usedFallback = false;
     if (missing) {
-      results.push({ ref: tmpl.ref, status: "skipped", reason: missing });
-      continue;
+      if (tmpl.fallback) {
+        filled = tmpl.fallback;
+        usedFallback = true;
+      } else {
+        results.push({ ref: tmpl.ref, status: "skipped", reason: missing });
+        continue;
+      }
+    } else {
+      filled = applyTemplate(tmpl.text, subs);
     }
-
-    const filled = applyTemplate(tmpl.text, subs);
 
     // Compute scheduled_for: today's slot time in UTC.
     const slotUtc = (brackets.slotUtc as Record<string, string>)[tmpl.slot];
@@ -340,14 +350,15 @@ async function handleGet(request: NextRequest) {
         project_id: PROJECT_ID,
         type: "social_post",
         channel: "x",
-        title: `X ${tmpl.ref}`,
+        title: `X ${tmpl.ref}${usedFallback ? " (fallback)" : ""}`,
         status: "approved",
         content: {
           scheduled_text: filled,
           ref: tmpl.ref,
           pillar: "pitchodds",
-          kind: "bracket",
+          kind: usedFallback ? "bracket-fallback" : "bracket",
           filledFrom: subs,
+          ...(usedFallback ? { fallbackReason: missing } : {}),
         },
       })
       .select("id")
@@ -371,19 +382,25 @@ async function handleGet(request: NextRequest) {
       continue;
     }
 
-    results.push({ ref: tmpl.ref, status: "queued" });
+    results.push({
+      ref: tmpl.ref,
+      status: usedFallback ? "fallback" : "queued",
+      ...(usedFallback ? { reason: missing ?? undefined } : {}),
+    });
   }
 
   const queued = results.filter((r) => r.status === "queued").length;
+  const fallback = results.filter((r) => r.status === "fallback").length;
   const skipped = results.filter((r) => r.status === "skipped").length;
   const failed = results.filter((r) => r.status === "failed").length;
 
-  console.log(`[cron/fill-x-bracket] day=${dayN} (${todayLagos}) queued=${queued} skipped=${skipped} failed=${failed}`);
+  console.log(`[cron/fill-x-bracket] day=${dayN} (${todayLagos}) queued=${queued} fallback=${fallback} skipped=${skipped} failed=${failed}`);
 
   return NextResponse.json({
     day: dayN,
     date: todayLagos,
     queued,
+    fallback,
     skipped,
     failed,
     results,

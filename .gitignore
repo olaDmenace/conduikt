@@ -49,6 +49,7 @@ Prospect-Closing-Motion.md
 90-Day-X-Playbook-PitchOdds-First.md
 Conduikt-Automation-Handoff.md
 playbook.json
+linkedin-playbook.json
 
 # playwright MCP tool cache (console logs, page snapshots, screenshots)
 .playwright-mcp/

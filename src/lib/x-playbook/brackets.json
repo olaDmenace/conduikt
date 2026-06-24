@@ -7,14 +7,16 @@
       "day": 2, "slot": "A", "type": "single",
       "needs": ["pick"],
       "humanFields": [],
-      "text": "PitchOdds' standout call today: {HOME} vs {AWAY} — model gives {PROB_PCT}% {OUTCOME}. Here's the reasoning 👇 (free, no signup)\nhttps://pitch-odds.vercel.app/match/{MATCH_ID}"
+      "text": "PitchOdds' standout call today: {HOME} vs {AWAY} — model gives {PROB_PCT}% {OUTCOME}.\n\nReceipts every match. No signup, no paywall.\n\nhttps://pitch-odds.vercel.app/match/{MATCH_ID}",
+      "fallback": "The hard part of a football model isn't the prediction. It's publishing every call — including the ones you'd rather hide. That's where most \"tipster\" accounts quietly fold."
     },
     {
       "ref": "d4-a-result-honesty",
       "day": 4, "slot": "A", "type": "single",
       "needs": ["pick", "yesterday"],
       "humanFields": [],
-      "text": "Yesterday PitchOdds said {YDAY_TEAM} at {YDAY_PROB}% — result: {YDAY_OUTCOME}. Win or miss, I post it. A prediction tool that only shows its hits is just marketing.\n\nToday's pick: {HOME} vs {AWAY} ({PROB_PCT}%) 👇"
+      "text": "Yesterday PitchOdds said {YDAY_TEAM} at {YDAY_PROB}% — result: {YDAY_OUTCOME}. Win or miss, I post it. A prediction tool that only shows its hits is just marketing.\n\nToday's pick: {HOME} vs {AWAY} ({PROB_PCT}%) 👇",
+      "fallback": "Building a prediction tool in public means eating your losses on the timeline too. Calibration without honesty is theatre."
     },
     {
       "ref": "d5-a-shipped-feedback",
@@ -24,37 +26,42 @@
         { "name": "SHIPPED_FEATURE", "label": "What did you ship?", "hint": "e.g. 'a calibration chart per league'" },
         { "name": "REQUESTER", "label": "Who asked for it?", "hint": "first name or @handle" }
       ],
-      "text": "PitchOdds today: {HOME} vs {AWAY} — {PROB_PCT}% + reasoning. Also added {SHIPPED_FEATURE} because {REQUESTER} asked for it on Day 1. This is the loop: you ask, I ship."
+      "text": "PitchOdds today: {HOME} vs {AWAY} — {PROB_PCT}% + reasoning. Also added {SHIPPED_FEATURE} because {REQUESTER} asked for it on Day 1. This is the loop: you ask, I ship.",
+      "fallback": "The fastest feedback loop in software is shipping. The hardest is admitting what you should have built first. Building both into PitchOdds."
     },
     {
       "ref": "d7-c-calibration",
       "day": 7, "slot": "C", "type": "single",
       "needs": ["human"],
       "humanFields": [
-        { "name": "CALIB_STAT", "label": "Week's calibration stat", "hint": "e.g. 'predictions hit within ±4% of stated probability across 27 matches'" }
+        { "name": "CALIB_STAT", "label": "Week's calibration stat", "hint": "Real number from pitch-odds.vercel.app/calibration — RPS / Brier / hit-rate. e.g. 'Primeira Liga at 0.177 RPS, beating the naive base-rate (0.227).'" }
       ],
-      "text": "ICYMI this week's PitchOdds calibration: {CALIB_STAT}. Free, no signup 👇"
+      "text": "ICYMI this week's PitchOdds calibration: {CALIB_STAT}",
+      "fallback": "A prediction tool that doesn't publish its calibration is a tipster account in a lab coat. Show the receipts or stop selling the model."
     },
     {
       "ref": "d8-a-top-pick",
       "day": 8, "slot": "A", "type": "single",
       "needs": ["pick"],
       "humanFields": [],
-      "text": "PitchOdds top pick today: {HOME} vs {AWAY} — {PROB_PCT}% {OUTCOME} 👇\nhttps://pitch-odds.vercel.app/match/{MATCH_ID}"
+      "text": "PitchOdds top pick today: {HOME} vs {AWAY} — {PROB_PCT}% {OUTCOME}. Heatmap + reasoning on the page.\n\nhttps://pitch-odds.vercel.app/match/{MATCH_ID}",
+      "fallback": "Most \"AI-powered\" prediction tools confuse confidence for accuracy. PitchOdds publishes both — the model's call AND how often it's been right at that confidence level."
     },
     {
       "ref": "d9-a-result-recap",
       "day": 9, "slot": "A", "type": "single",
       "needs": ["pick", "yesterday"],
       "humanFields": [],
-      "text": "PitchOdds today + yesterday's honesty: said {YDAY_TEAM} at {YDAY_PROB}%, got {YDAY_OUTCOME}.\n\nToday: {HOME} vs {AWAY} ({PROB_PCT}%) 👇"
+      "text": "PitchOdds today + yesterday's honesty: said {YDAY_TEAM} at {YDAY_PROB}%, got {YDAY_OUTCOME}.\n\nToday: {HOME} vs {AWAY} ({PROB_PCT}%) 👇",
+      "fallback": "Yesterday's results, today's calls, tomorrow's calibration check. Building a transparent football model means none of those three get hidden."
     },
     {
       "ref": "d11-a-pick",
       "day": 11, "slot": "A", "type": "single",
       "needs": ["pick"],
       "humanFields": [],
-      "text": "PitchOdds: {HOME} vs {AWAY} — {PROB_PCT}% + reasoning 👇\nhttps://pitch-odds.vercel.app/match/{MATCH_ID}"
+      "text": "PitchOdds: {HOME} vs {AWAY} — {PROB_PCT}% + reasoning.\n\nhttps://pitch-odds.vercel.app/match/{MATCH_ID}",
+      "fallback": "One thing I've learned building PitchOdds: the model's confidence matters more than its prediction. A 60% call is a different bet than a 95% call."
     },
     {
       "ref": "d11-b-mistake",
@@ -65,7 +72,8 @@
         { "name": "COST", "label": "What it cost", "hint": "Time, money, embarrassment. Be concrete." },
         { "name": "LESSON", "label": "Lesson", "hint": "What you'd do differently next time" }
       ],
-      "text": "Mistake this week: I {MISTAKE}. Cost me {COST}. Lesson: {LESSON}. Building in public means posting these too, not just the wins."
+      "text": "Mistake this week: I {MISTAKE}. Cost me {COST}. Lesson: {LESSON}. Building in public means posting these too, not just the wins.",
+      "fallback": "Building in public means the mistake posts have to land too — not just the wins. Hard to write, harder to skip."
     },
     {
       "ref": "d12-a-shipped-from-feedback",
@@ -74,7 +82,8 @@
       "humanFields": [
         { "name": "SHIPPED_FEATURE", "label": "What did you ship from feedback?", "hint": "e.g. 'a shareable match-prediction card'" }
       ],
-      "text": "PitchOdds today + a {SHIPPED_FEATURE} I just shipped from your feedback 👇\n{HOME} vs {AWAY} — {PROB_PCT}%"
+      "text": "PitchOdds today + a {SHIPPED_FEATURE} I just shipped from your feedback 👇\n{HOME} vs {AWAY} — {PROB_PCT}%",
+      "fallback": "The compounding loop: ship, get feedback, ship again. Two weeks in, the features users actually requested are outperforming the ones I thought were obvious."
     },
     {
       "ref": "d7-a-week-recap",
@@ -84,7 +93,8 @@
       "humanFields": [
         { "name": "SHIPPED_FEATURE", "label": "What shipped this week?", "hint": "Top thing you actually shipped — Conduikt or PitchOdds" }
       ],
-      "text": "A week of building in public. {SHIPPED_FEATURE} shipped. Conduikt: {CD_SIGNUPS} new signups. Biggest lesson: people reward honesty about what doesn't work yet. Onward. 🌍"
+      "text": "A week of building in public. {SHIPPED_FEATURE} shipped. Conduikt: {CD_SIGNUPS} new signups. Biggest lesson: people reward honesty about what doesn't work yet. Onward. 🌍",
+      "fallback": "A week of building in public. Quieter than I'd like, louder than building in private. Onward. 🌍"
     },
     {
       "ref": "d14-a-two-weeks",
@@ -94,7 +104,8 @@
       "humanFields": [
         { "name": "CD_ONBOARDED", "label": "Free-access founders onboarded", "hint": "Count of founders who actually logged in + used Conduikt during the 2 weeks" }
       ],
-      "text": "Two weeks in public. {PO_FEATURES_SHIPPED} PitchOdds features shipped from your requests. Conduikt: {CD_SIGNUPS} signups, {CD_ONBOARDED} free-access founders onboarded. Followers: {FOLLOWERS_START} → {FOLLOWERS_NOW}. Same loop, louder. 🌍"
+      "text": "Two weeks in public. {PO_FEATURES_SHIPPED} PitchOdds features shipped from your requests. Conduikt: {CD_SIGNUPS} signups, {CD_ONBOARDED} free-access founders onboarded. Followers: {FOLLOWERS_START} → {FOLLOWERS_NOW}. Same loop, louder. 🌍",
+      "fallback": "Two weeks of building in public, on the record. The numbers will speak for themselves when they're ready to. Onward. 🌍"
     }
   ]
 }
