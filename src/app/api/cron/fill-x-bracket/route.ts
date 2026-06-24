@@ -184,6 +184,46 @@ async function handleGet(request: NextRequest) {
       .eq("pick_date", yday)
       .maybeSingle();
     yesterdayPick = data ?? null;
+
+    // If we have yesterday's pick but haven't settled the outcome yet, look
+    // it up via football-data.org and backfill. The "yesterday's result"
+    // bracket posts (d4-a, d9-a) depend on this; without a settled result
+    // they'll skip.
+    if (yesterdayPick && yesterdayPick.actual_outcome === null) {
+      try {
+        const { findYesterdaysResult } = await import(
+          "@/src/lib/integrations/football-data"
+        );
+        const result = await findYesterdaysResult(
+          yesterdayPick.home_team,
+          yesterdayPick.away_team,
+          yday
+        );
+        if (result && result.outcome !== "void") {
+          await db
+            .from("pitchodds_daily_picks")
+            .update({
+              actual_outcome: result.outcome,
+              settled_at: new Date().toISOString(),
+            })
+            .eq("pick_date", yday);
+          yesterdayPick = { ...yesterdayPick, actual_outcome: result.outcome };
+        } else if (result) {
+          // Match was postponed/cancelled — mark void so we stop polling.
+          await db
+            .from("pitchodds_daily_picks")
+            .update({
+              actual_outcome: "void",
+              settled_at: new Date().toISOString(),
+            })
+            .eq("pick_date", yday);
+          yesterdayPick = { ...yesterdayPick, actual_outcome: "void" };
+        }
+      } catch (err) {
+        console.error("[cron/fill-x-bracket] settle yesterday failed:", err);
+        // Leave actual_outcome null — tomorrow's cron tries again.
+      }
+    }
   }
 
   // Bulk-fetch any human-input values for today's templates.
