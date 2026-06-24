@@ -7,6 +7,8 @@ import { uploadVideoToTikTokInbox } from "@/src/lib/integrations/tiktok-publish"
 import {
   uploadMediaToX,
   uploadMediaToLinkedIn,
+  uploadVideoToX,
+  uploadVideoToLinkedIn,
 } from "@/src/lib/integrations/media-upload";
 import { hasMedia, isVideoMedia, type PostMedia } from "@/src/lib/media/types";
 import { splitForX } from "@/src/lib/integrations/x-thread";
@@ -281,7 +283,9 @@ async function publishToX(
   let mediaId: string | null = null;
   if (hasMedia(media)) {
     try {
-      mediaId = await uploadMediaToX(accessToken, media);
+      mediaId = isVideoMedia(media)
+        ? await uploadVideoToX(accessToken, media)
+        : await uploadMediaToX(accessToken, media);
     } catch (err) {
       return { ok: false, error: `X media upload error: ${err instanceof Error ? err.message : "unknown"}` };
     }
@@ -356,14 +360,16 @@ async function publishToLinkedIn(
   const authorId: string = me.sub;
   const authorUrn = `urn:li:person:${authorId}`;
 
-  let imageUrn: string | null = null;
+  let mediaUrn: string | null = null;
   if (hasMedia(media)) {
     try {
-      imageUrn = await uploadMediaToLinkedIn(accessToken, authorId, media);
+      mediaUrn = isVideoMedia(media)
+        ? await uploadVideoToLinkedIn(accessToken, authorId, media)
+        : await uploadMediaToLinkedIn(accessToken, authorId, media);
     } catch (err) {
       return { ok: false, error: `LinkedIn media upload error: ${err instanceof Error ? err.message : "unknown"}` };
     }
-    if (!imageUrn) {
+    if (!mediaUrn) {
       return { ok: false, error: "LinkedIn media upload failed" };
     }
   }
@@ -380,9 +386,9 @@ async function publishToLinkedIn(
     lifecycleState: "PUBLISHED",
     isReshareDisabledByAuthor: false,
   };
-  if (imageUrn) {
+  if (mediaUrn) {
     postBody.content = {
-      media: { id: imageUrn, altText: "" },
+      media: { id: mediaUrn, altText: "" },
     };
   }
 
