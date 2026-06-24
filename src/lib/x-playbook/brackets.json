@@ -1,0 +1,36 @@
+{
+  "startDate": "2026-06-25",
+  "slotUtc": { "A": "07:30", "B": "12:00", "C": "17:30" },
+  "templates": [
+    {
+      "ref": "d2-a-pitchodds-pick",
+      "day": 2, "slot": "A", "type": "single",
+      "needs": ["pick"],
+      "text": "PitchOdds' standout call today: {HOME} vs {AWAY} — model gives {PROB_PCT}% {OUTCOME}. Here's the reasoning 👇 (free, no signup)\nhttps://pitch-odds.vercel.app/match/{MATCH_ID}"
+    },
+    {
+      "ref": "d4-a-result-honesty",
+      "day": 4, "slot": "A", "type": "single",
+      "needs": ["pick", "yesterday"],
+      "text": "Yesterday PitchOdds said {YDAY_TEAM} at {YDAY_PROB}% — result: {YDAY_OUTCOME}. Win or miss, I post it. A prediction tool that only shows its hits is just marketing.\n\nToday's pick: {HOME} vs {AWAY} ({PROB_PCT}%) 👇"
+    },
+    {
+      "ref": "d8-a-top-pick",
+      "day": 8, "slot": "A", "type": "single",
+      "needs": ["pick"],
+      "text": "PitchOdds top pick today: {HOME} vs {AWAY} — {PROB_PCT}% {OUTCOME} 👇\nhttps://pitch-odds.vercel.app/match/{MATCH_ID}"
+    },
+    {
+      "ref": "d9-a-result-recap",
+      "day": 9, "slot": "A", "type": "single",
+      "needs": ["pick", "yesterday"],
+      "text": "PitchOdds today + yesterday's honesty: said {YDAY_TEAM} at {YDAY_PROB}%, got {YDAY_OUTCOME}.\n\nToday: {HOME} vs {AWAY} ({PROB_PCT}%) 👇"
+    },
+    {
+      "ref": "d11-a-pick",
+      "day": 11, "slot": "A", "type": "single",
+      "needs": ["pick"],
+      "text": "PitchOdds: {HOME} vs {AWAY} — {PROB_PCT}% + reasoning 👇\nhttps://pitch-odds.vercel.app/match/{MATCH_ID}"
+    }
+  ]
+}
