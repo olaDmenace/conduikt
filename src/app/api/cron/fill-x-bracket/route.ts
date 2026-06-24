@@ -10,7 +10,7 @@ import brackets from "@/src/lib/x-playbook/brackets.json";
 // Idempotent: if today's bracket asset (matched by content.ref) already exists,
 // we skip the insert.
 
-export const maxDuration = 60; // Playwright cold start can take ~10s
+export const maxDuration = 30; // fetch + parse only — no headless browser
 export const dynamic = "force-dynamic"; // never cache — every call must run fresh
 
 const PROJECT_ID = "22b2de3c-abf6-4b63-8989-be8da6500f78"; // Personal Brand (user A)

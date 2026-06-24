@@ -1,158 +1,158 @@
-// Scrapes pitch-odds.vercel.app for today's "standout" match — the one with
-// the highest single-outcome probability among matches kicking off today
-// (Africa/Lagos local date).
+// Scrapes pitch-odds.vercel.app's homepage for today's "standout" match —
+// the one with the highest single-outcome probability (home / draw / away)
+// among matches kicking off today (Africa/Lagos local date).
 //
-// Uses playwright-core + @sparticuz/chromium so it runs on Vercel Fluid Compute.
-// Locally, falls back to the system chromium if available.
-
-// Playwright + chromium are imported dynamically inside the function so this
-// module can be imported anywhere without triggering native-module load at
-// route cold start (Vercel was 500'ing on import).
+// No Playwright — the homepage is SSR'd Next.js and includes all match data,
+// including the 1X2 probabilities encoded as CSS bar widths
+// (`width:73.07%;background:var(--home)` etc).
 
 export interface PitchOddsPick {
-  matchId: string | null;
+  matchId: string;
   homeTeam: string;
   awayTeam: string;
   kickoffAt: Date | null;
-  predictedProb: number; // 0–100
+  kickoffRaw: string | null;
+  predictedProb: number; // 0–100, rounded
   predictedOutcome: "home" | "draw" | "away";
 }
 
 const PITCHODDS_URL = "https://pitch-odds.vercel.app/";
 
-async function launchBrowser() {
-  const { default: chromium } = await import("@sparticuz/chromium");
-  const { chromium: playwright } = await import("playwright-core");
-  // On Vercel, @sparticuz/chromium ships the binary. Locally it returns
-  // a path that may not exist; we let Playwright look for a system binary.
-  const executablePath = await chromium.executablePath().catch(() => undefined);
-  return playwright.launch({
-    args: chromium.args,
-    executablePath,
-    headless: true,
+export async function scrapeTodaysStandoutPick(now: Date = new Date()): Promise<PitchOddsPick | null> {
+  const res = await fetch(PITCHODDS_URL, {
+    headers: { "User-Agent": "ConduiktBracketFiller/1.0 (contact: hello@conduikt.com)" },
   });
+  if (!res.ok) {
+    throw new Error(`PitchOdds fetch failed: ${res.status}`);
+  }
+  const html = await res.text();
+  const picks = parseAllMatches(html);
+
+  const todayLagos = formatLagosDate(now);
+  const todays = picks.filter((p) => sameDayLagos(p.kickoffRaw, todayLagos));
+  if (todays.length === 0) return null;
+
+  // Sort descending by predicted prob and take the top one.
+  todays.sort((a, b) => b.predictedProb - a.predictedProb);
+  return todays[0];
+}
+
+interface RawPick {
+  matchId: string;
+  homeTeam: string;
+  awayTeam: string;
+  kickoffRaw: string | null; // e.g. "Wed, Jun 24 07:00 PM" — for same-day comparison
+  homeProb: number; // 0–100
+  drawProb: number;
+  awayProb: number;
+  predictedProb: number;
+  predictedOutcome: "home" | "draw" | "away";
 }
 
 /**
- * Scrape today's matches. Returns the highest-confidence pick or null if no
- * matches kick off today.
- *
- * @param now    The reference instant (defaults to actual now). Tests inject a fixed date.
+ * Parse every match card from the PitchOdds homepage HTML.
+ * Exported so the cron route can introspect raw data via ?dry=1.
  */
-export async function scrapeTodaysStandoutPick(now: Date = new Date()): Promise<PitchOddsPick | null> {
-  const browser = await launchBrowser();
-  try {
-    const page = await browser.newPage({ userAgent: "ConduiktBracketFiller/1.0" });
-    await page.goto(PITCHODDS_URL, { waitUntil: "networkidle", timeout: 30_000 });
+export function parseAllMatches(html: string): PitchOddsPick[] {
+  const cardRe = /<a[^>]+href="\/match\/(\d+)"[^>]*>([\s\S]*?)<\/a>/g;
+  const out: PitchOddsPick[] = [];
 
-    // The site is a Next.js app; wait for hydration so match cards are interactive.
-    await page.waitForSelector('a[href^="/match/"]', { timeout: 15_000 });
-
-    type RawMatch = {
-      matchId: string | null;
-      homeTeam: string;
-      awayTeam: string;
-      kickoffIso: string | null;
-      homeProb: number | null;
-      drawProb: number | null;
-      awayProb: number | null;
-    };
-
-    // Extract every match card the page has hydrated. We do the date filter
-    // and "highest probability" pick in TS so the logic is testable.
-    const matches: RawMatch[] = await page.$$eval(
-      'a[href^="/match/"]',
-      (anchors) =>
-        anchors.map((a) => {
-          const href = a.getAttribute("href") ?? "";
-          const matchId = href.split("/match/")[1]?.split(/[/?#]/)[0] ?? null;
-          const text = (a.textContent ?? "").replace(/\s+/g, " ").trim();
-          // <time> tags / data-iso attributes are the most reliable signal.
-          // Fall back to scanning the visible text for a date string.
-          const timeEl = a.querySelector("time");
-          const kickoffIso =
-            timeEl?.getAttribute("datetime") ??
-            a.getAttribute("data-kickoff") ??
-            null;
-
-          // Team names: assume the two `img + text` pairs hold home then away.
-          // Greedy parse — split the text on " vs " if present.
-          const vsMatch = text.match(/^(.+?)\s+vs\.?\s+(.+?)\s+/i);
-          const homeTeam = vsMatch?.[1] ?? "";
-          const awayTeam = vsMatch?.[2] ?? "";
-
-          // Win probability bars usually appear as "55%" / "60%" tokens.
-          // The first one tends to be home, then away, then markets (O2.5 / BTTS).
-          const pctTokens = [...text.matchAll(/(\d{1,3})\s*%/g)].map((m) =>
-            parseInt(m[1], 10)
-          );
-          const homeProb = pctTokens[0] ?? null;
-          const drawProb = pctTokens[1] ?? null;
-          const awayProb = pctTokens[2] ?? null;
-
-          return { matchId, homeTeam, awayTeam, kickoffIso, homeProb, drawProb, awayProb };
-        })
-    );
-
-    await browser.close();
-
-    // Filter to today (Africa/Lagos local date) — anything without a parseable
-    // kickoff is dropped rather than risk picking tomorrow's match.
-    const todayLagos = todayInLagos(now);
-    const todaysMatches = matches.filter((m) => {
-      if (!m.kickoffIso) return false;
-      const d = new Date(m.kickoffIso);
-      if (Number.isNaN(d.getTime())) return false;
-      return dateInLagos(d) === todayLagos;
-    });
-
-    if (todaysMatches.length === 0) {
-      return null;
+  for (const [, matchId, inner] of html.matchAll(cardRe)) {
+    const raw = parseCard(matchId, inner);
+    if (raw) {
+      out.push({
+        matchId: raw.matchId,
+        homeTeam: raw.homeTeam,
+        awayTeam: raw.awayTeam,
+        kickoffAt: parseKickoff(raw.kickoffRaw),
+        kickoffRaw: raw.kickoffRaw,
+        predictedProb: raw.predictedProb,
+        predictedOutcome: raw.predictedOutcome,
+      });
     }
-
-    // Pick the match whose single-best outcome has the highest probability —
-    // that's the playbook's "standout call."
-    let best: { match: RawMatch; prob: number; outcome: "home" | "draw" | "away" } | null = null;
-    for (const m of todaysMatches) {
-      const candidates: { prob: number; outcome: "home" | "draw" | "away" }[] = [];
-      if (typeof m.homeProb === "number") candidates.push({ prob: m.homeProb, outcome: "home" });
-      if (typeof m.drawProb === "number") candidates.push({ prob: m.drawProb, outcome: "draw" });
-      if (typeof m.awayProb === "number") candidates.push({ prob: m.awayProb, outcome: "away" });
-      const top = candidates.sort((a, b) => b.prob - a.prob)[0];
-      if (!top) continue;
-      if (!best || top.prob > best.prob) {
-        best = { match: m, prob: top.prob, outcome: top.outcome };
-      }
-    }
-
-    if (!best || !best.match.homeTeam || !best.match.awayTeam) {
-      return null;
-    }
-
-    return {
-      matchId: best.match.matchId,
-      homeTeam: best.match.homeTeam,
-      awayTeam: best.match.awayTeam,
-      kickoffAt: best.match.kickoffIso ? new Date(best.match.kickoffIso) : null,
-      predictedProb: best.prob,
-      predictedOutcome: best.outcome,
-    };
-  } catch (err) {
-    await browser.close().catch(() => {});
-    throw err;
   }
+  return out;
 }
 
-function todayInLagos(now: Date): string {
-  return dateInLagos(now);
+function parseCard(matchId: string, inner: string): RawPick | null {
+  // Date + time: <span>Wed, Jun 24</span><span>07:00 PM</span> at the top
+  const dateTimeMatch = inner.match(
+    /<span>([A-Z][a-z]+,\s*[A-Z][a-z]+\s+\d{1,2})<\/span>\s*<span>(\d{1,2}:\d{2}\s*[AP]M)<\/span>/i
+  );
+  const kickoffRaw = dateTimeMatch ? `${dateTimeMatch[1]} ${dateTimeMatch[2]}` : null;
+
+  // Team names: inside the second div block, each team is `<img.../> <!-- -->TEAM`.
+  // We pull every `--> NAME</span>` instance — the first is home, the second is away.
+  // The `<!-- -->` is React's empty-text-fragment marker, present in SSR output.
+  const teamMatches = [...inner.matchAll(/<!--\s*-->\s*([^<]+?)<\/span>/g)].map((m) =>
+    m[1].trim()
+  );
+  if (teamMatches.length < 2) return null;
+  const homeTeam = teamMatches[0];
+  const awayTeam = teamMatches[1];
+
+  // Bar widths encode the 1X2 probabilities precisely.
+  const home = matchBarWidth(inner, "home");
+  const draw = matchBarWidth(inner, "draw");
+  const away = matchBarWidth(inner, "away");
+  if (home == null || draw == null || away == null) return null;
+
+  // Pick highest-confidence outcome.
+  const ranked = (
+    [
+      { prob: home, outcome: "home" as const },
+      { prob: draw, outcome: "draw" as const },
+      { prob: away, outcome: "away" as const },
+    ]
+  ).sort((a, b) => b.prob - a.prob);
+
+  return {
+    matchId,
+    homeTeam,
+    awayTeam,
+    kickoffRaw,
+    homeProb: home,
+    drawProb: draw,
+    awayProb: away,
+    predictedProb: ranked[0].prob,
+    predictedOutcome: ranked[0].outcome,
+  };
 }
 
-function dateInLagos(d: Date): string {
-  // Africa/Lagos is UTC+1 year-round (no DST). Format as YYYY-MM-DD.
-  return new Intl.DateTimeFormat("en-CA", {
+function matchBarWidth(html: string, outcome: "home" | "draw" | "away"): number | null {
+  // <div style="width:73.07...%;background:var(--home);..."></div>
+  const re = new RegExp(
+    `width:\\s*([\\d.]+)%[^"]*background:\\s*var\\(--${outcome}\\)`,
+    "i"
+  );
+  const m = html.match(re);
+  if (!m) return null;
+  return Math.round(parseFloat(m[1]));
+}
+
+function parseKickoff(raw: string | null): Date | null {
+  if (!raw) return null;
+  // "Wed, Jun 24 07:00 PM" — assume current year, in Africa/Lagos.
+  // Use Date.parse which accepts "Jun 24 2026 07:00 PM" formats.
+  const year = new Date().getFullYear();
+  const cleaned = raw.replace(/^[A-Za-z]+,\s*/, ""); // drop "Wed, "
+  const parsed = Date.parse(`${cleaned} ${year} GMT+0100`); // WAT is UTC+1
+  if (Number.isNaN(parsed)) return null;
+  return new Date(parsed);
+}
+
+function formatLagosDate(d: Date): string {
+  // "Wed, Jun 24" format to match PitchOdds' display
+  return new Intl.DateTimeFormat("en-US", {
     timeZone: "Africa/Lagos",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
+    weekday: "short",
+    month: "short",
+    day: "numeric",
   }).format(d);
+}
+
+function sameDayLagos(kickoffRaw: string | null, todayLagosFormatted: string): boolean {
+  if (!kickoffRaw) return false;
+  // PitchOdds: "Wed, Jun 24 07:00 PM"; today: "Wed, Jun 24"
+  return kickoffRaw.startsWith(todayLagosFormatted);
 }
