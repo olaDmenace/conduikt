@@ -76,24 +76,17 @@ async function recordSession(): Promise<string> {
     });
     const page = await ctx.newPage();
 
-    // 1. Signup form fill (no submit — viewer sees the form, we cut to login)
+    // 1. Signup form fill (no submit — the user is pre-confirmed via admin API).
+    //    Selectors verified against src/app/(auth)/signup/page.tsx.
     await page.goto(`${BASE}/signup/`);
-    await page.waitForTimeout(1200);
+    await page.waitForTimeout(1500);
 
-    // Try the most common signup field shapes — adapt if Conduikt uses different placeholders.
-    const nameField = page
-      .getByPlaceholder(/full name|your name|name/i)
-      .or(page.getByLabel(/full name|your name|name/i))
-      .first();
-    if (await nameField.isVisible().catch(() => false)) {
-      await nameField.fill(TEST_NAME);
-      await page.waitForTimeout(400);
-    }
-
+    await page.getByPlaceholder("Michael Doe").fill(TEST_NAME);
+    await page.waitForTimeout(400);
     await page.getByPlaceholder("you@example.com").fill(TEST_EMAIL);
     await page.waitForTimeout(400);
-    await page.getByPlaceholder(/password/i).first().fill(TEST_PASSWORD);
-    await page.waitForTimeout(2000); // hold on filled form
+    await page.getByPlaceholder("Min 8 characters").fill(TEST_PASSWORD);
+    await page.waitForTimeout(2000); // hold on the filled form
 
     // 2. Login — the user was pre-confirmed via admin API.
     await page.goto(`${BASE}/login/`);
@@ -170,9 +163,18 @@ async function recordSession(): Promise<string> {
     await page.waitForTimeout(800);
     await page.getByRole("button", { name: /Create & Run Audit/i }).click();
 
-    // 5. Hero — audit gauge
-    await page.waitForURL("**/projects/**/audit/**", { timeout: 60_000 });
-    await page.waitForTimeout(5000); // let the score gauge animate + linger
+    // 5. Hero — audit gauge. The wizard sometimes lands on /projects/[id]/ and
+    //    sometimes on /projects/[id]/audit/ depending on the path through the
+    //    wizard. Wait for any project page then explicitly navigate to /audit.
+    await page.waitForURL(/\/projects\/[0-9a-f-]{8,}/, { timeout: 60_000 });
+    await page.waitForTimeout(1500);
+    const projectMatch = page.url().match(/\/projects\/([0-9a-f-]{8,})/);
+    if (projectMatch) {
+      await page.goto(`${BASE}/projects/${projectMatch[1]}/audit/`);
+      await page.waitForTimeout(5000); // let the score gauge animate + linger
+    } else {
+      await page.waitForTimeout(3000);
+    }
 
     await ctx.close();
   } finally {
