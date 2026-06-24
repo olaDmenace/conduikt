@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/src/lib/supabase/service";
-import { scrapeTodaysStandoutPick } from "@/src/lib/integrations/pitchodds-scrape";
 import brackets from "@/src/lib/x-playbook/brackets.json";
+// scrapeTodaysStandoutPick is dynamically imported below so Playwright/chromium
+// don't load unless actually used.
 
 // Daily filler for the X playbook's bracket posts.
 // Runs at 06:00 UTC (07:00 WAT) via pg_cron, 30 min before slot A's 07:30 UTC fire.
@@ -65,6 +66,17 @@ async function handleGet(request: NextRequest) {
   }
 
   const db = createServiceClient();
+  const url = new URL(request.url);
+  const dryRun = url.searchParams.get("dry") === "1";
+
+  // ?dry=1 — run only the scraper and return the pick (don't touch DB, don't
+  // require today to be in the playbook window). Useful to verify the scrape
+  // path works before Friday.
+  if (dryRun) {
+    const { scrapeTodaysStandoutPick } = await import("@/src/lib/integrations/pitchodds-scrape");
+    const pick = await scrapeTodaysStandoutPick(new Date());
+    return NextResponse.json({ dryRun: true, pick });
+  }
 
   // Compute today's playbook day (1-indexed) from the START_DATE in brackets.json.
   // Use Africa/Lagos calendar date so the day boundary matches the user's experience.
@@ -95,11 +107,20 @@ async function handleGet(request: NextRequest) {
   const needsPick = todayTemplates.some((t) => t.needs.includes("pick"));
   const needsYesterday = todayTemplates.some((t) => t.needs.includes("yesterday"));
 
-  let pick: Awaited<ReturnType<typeof scrapeTodaysStandoutPick>> = null;
+  type PickType = {
+    matchId: string | null;
+    homeTeam: string;
+    awayTeam: string;
+    kickoffAt: Date | null;
+    predictedProb: number;
+    predictedOutcome: "home" | "draw" | "away";
+  } | null;
+  let pick: PickType = null;
   let yesterdayPick: { home_team: string; away_team: string; predicted_prob: number; predicted_outcome: string; actual_outcome: string | null } | null = null;
 
   if (needsPick) {
     try {
+      const { scrapeTodaysStandoutPick } = await import("@/src/lib/integrations/pitchodds-scrape");
       pick = await scrapeTodaysStandoutPick(new Date());
     } catch (err) {
       console.error("[cron/fill-x-bracket] scrape failed:", err);
