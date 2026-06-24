@@ -20,8 +20,9 @@ interface BracketTemplate {
   day: number;
   slot: "A" | "B" | "C";
   type: "single" | "thread";
-  needs: ("pick" | "yesterday" | "human")[];
+  needs: ("pick" | "yesterday" | "human" | "metrics")[];
   humanFields: { name: string; label: string; hint?: string }[];
+  windowDays?: number;
   text: string;
 }
 
@@ -85,10 +86,32 @@ async function handleGet(request: NextRequest) {
   const startDate = brackets.startDate;
   const dayN = daysBetween(startDate, todayLagos) + 1;
 
+  // Always snapshot X metrics if we're in or before the window — Day 1's
+  // snapshot is the baseline that Day 14's recap looks up. Cheap (~1 API call).
+  let metricsSnapshotResult: "ok" | "skipped" | "failed" = "skipped";
+  if (dayN >= 1 && dayN <= 14) {
+    try {
+      const { fetchPlaybookXMetrics, snapshotXMetrics } = await import(
+        "@/src/lib/integrations/x-metrics"
+      );
+      const m = await fetchPlaybookXMetrics();
+      if (m) {
+        await snapshotXMetrics(m, todayLagos);
+        metricsSnapshotResult = "ok";
+      } else {
+        metricsSnapshotResult = "failed";
+      }
+    } catch (err) {
+      console.error("[cron/fill-x-bracket] metrics snapshot failed:", err);
+      metricsSnapshotResult = "failed";
+    }
+  }
+
   if (dayN < 1 || dayN > 14) {
     return NextResponse.json({
       message: `today=${todayLagos} is outside the 14-day playbook window (day=${dayN})`,
       queued: 0,
+      metricsSnapshot: metricsSnapshotResult,
     });
   }
 
@@ -101,6 +124,7 @@ async function handleGet(request: NextRequest) {
     return NextResponse.json({
       message: `no bracket templates for day ${dayN} (${todayLagos})`,
       queued: 0,
+      metricsSnapshot: metricsSnapshotResult,
     });
   }
 
@@ -226,6 +250,12 @@ async function handleGet(request: NextRequest) {
       }
     }
 
+    if (!missing && tmpl.needs.includes("metrics")) {
+      const m = await fillMetricsForTemplate(db, tmpl, todayLagos, startDate);
+      if (m.error) missing = m.error;
+      else Object.assign(subs, m.values);
+    }
+
     if (!missing && tmpl.needs.includes("yesterday")) {
       if (!yesterdayPick) {
         missing = "no pick recorded yesterday";
@@ -318,6 +348,92 @@ async function handleGet(request: NextRequest) {
     failed,
     results,
   });
+}
+
+// ---------- metric filler ----------
+
+async function fillMetricsForTemplate(
+  db: ReturnType<typeof createServiceClient>,
+  tmpl: BracketTemplate,
+  todayLagos: string,
+  startDate: string
+): Promise<{ values: Record<string, string>; error?: string }> {
+  const values: Record<string, string> = {};
+  const text = tmpl.text;
+  const windowDays = tmpl.windowDays ?? tmpl.day;
+
+  // {CD_SIGNUPS} — count auth.users created in the past windowDays.
+  if (text.includes("{CD_SIGNUPS}")) {
+    const since = new Date(Date.now() - windowDays * 86_400_000).toISOString();
+    const { count, error } = await db
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .gte("created_at", since);
+    if (error) return { values, error: `signup count failed: ${error.message}` };
+    values.CD_SIGNUPS = String(count ?? 0);
+  }
+
+  // {FOLLOWERS_NOW} — live fetch right now.
+  if (text.includes("{FOLLOWERS_NOW}")) {
+    const { fetchPlaybookXMetrics } = await import(
+      "@/src/lib/integrations/x-metrics"
+    );
+    const m = await fetchPlaybookXMetrics();
+    if (!m) return { values, error: "could not fetch live X metrics" };
+    values.FOLLOWERS_NOW = String(m.followersCount);
+  }
+
+  // {FOLLOWERS_START} — look up Day 1 (startDate) snapshot.
+  if (text.includes("{FOLLOWERS_START}")) {
+    const { data: account } = await db
+      .from("connected_accounts")
+      .select("platform_user_id")
+      .eq("user_id", "e2bb2edd-6d6c-4288-a386-145151c264ba")
+      .eq("platform", "x")
+      .maybeSingle();
+    const platformUserId = account?.platform_user_id;
+    if (!platformUserId) return { values, error: "no X account connected for FOLLOWERS_START lookup" };
+    const { data: snap } = await db
+      .from("x_account_metrics_snapshots")
+      .select("followers_count")
+      .eq("snapshot_date", startDate)
+      .eq("platform_user_id", platformUserId)
+      .maybeSingle();
+    if (!snap) return { values, error: `no Day-1 snapshot found for ${startDate}` };
+    values.FOLLOWERS_START = String(snap.followers_count);
+  }
+
+  // {PO_FEATURES_SHIPPED} — count feat commits in olaDmenace/bet-spur in window.
+  if (text.includes("{PO_FEATURES_SHIPPED}")) {
+    const since = new Date(Date.now() - windowDays * 86_400_000).toISOString();
+    try {
+      const res = await fetch(
+        `https://api.github.com/repos/olaDmenace/bet-spur/commits?since=${encodeURIComponent(since)}&per_page=100`,
+        {
+          headers: {
+            Accept: "application/vnd.github+json",
+            "User-Agent": "Conduikt-XPlaybook-Filler",
+          },
+          cache: "no-store",
+        }
+      );
+      if (!res.ok) {
+        return { values, error: `github commits fetch failed: ${res.status}` };
+      }
+      const commits = (await res.json()) as Array<{ commit: { message: string } }>;
+      const feats = commits.filter((c) =>
+        /^(feat|feature)[(:]/i.test(c.commit.message.split("\n")[0])
+      );
+      values.PO_FEATURES_SHIPPED = String(feats.length);
+    } catch (err) {
+      return {
+        values,
+        error: `github commits fetch failed: ${err instanceof Error ? err.message : "unknown"}`,
+      };
+    }
+  }
+
+  return { values };
 }
 
 // ---------- helpers ----------

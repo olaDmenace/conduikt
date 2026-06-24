@@ -75,6 +75,26 @@
         { "name": "SHIPPED_FEATURE", "label": "What did you ship from feedback?", "hint": "e.g. 'a shareable match-prediction card'" }
       ],
       "text": "PitchOdds today + a {SHIPPED_FEATURE} I just shipped from your feedback 👇\n{HOME} vs {AWAY} — {PROB_PCT}%"
+    },
+    {
+      "ref": "d7-a-week-recap",
+      "day": 7, "slot": "A", "type": "single",
+      "needs": ["human", "metrics"],
+      "windowDays": 7,
+      "humanFields": [
+        { "name": "SHIPPED_FEATURE", "label": "What shipped this week?", "hint": "Top thing you actually shipped — Conduikt or PitchOdds" }
+      ],
+      "text": "A week of building in public. {SHIPPED_FEATURE} shipped. Conduikt: {CD_SIGNUPS} new signups. Biggest lesson: people reward honesty about what doesn't work yet. Onward. 🌍"
+    },
+    {
+      "ref": "d14-a-two-weeks",
+      "day": 14, "slot": "A", "type": "single",
+      "needs": ["human", "metrics"],
+      "windowDays": 14,
+      "humanFields": [
+        { "name": "CD_ONBOARDED", "label": "Free-access founders onboarded", "hint": "Count of founders who actually logged in + used Conduikt during the 2 weeks" }
+      ],
+      "text": "Two weeks in public. {PO_FEATURES_SHIPPED} PitchOdds features shipped from your requests. Conduikt: {CD_SIGNUPS} signups, {CD_ONBOARDED} free-access founders onboarded. Followers: {FOLLOWERS_START} → {FOLLOWERS_NOW}. Same loop, louder. 🌍"
     }
   ]
 }
