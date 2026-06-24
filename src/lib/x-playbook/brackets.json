@@ -6,31 +6,75 @@
       "ref": "d2-a-pitchodds-pick",
       "day": 2, "slot": "A", "type": "single",
       "needs": ["pick"],
+      "humanFields": [],
       "text": "PitchOdds' standout call today: {HOME} vs {AWAY} — model gives {PROB_PCT}% {OUTCOME}. Here's the reasoning 👇 (free, no signup)\nhttps://pitch-odds.vercel.app/match/{MATCH_ID}"
     },
     {
       "ref": "d4-a-result-honesty",
       "day": 4, "slot": "A", "type": "single",
       "needs": ["pick", "yesterday"],
+      "humanFields": [],
       "text": "Yesterday PitchOdds said {YDAY_TEAM} at {YDAY_PROB}% — result: {YDAY_OUTCOME}. Win or miss, I post it. A prediction tool that only shows its hits is just marketing.\n\nToday's pick: {HOME} vs {AWAY} ({PROB_PCT}%) 👇"
+    },
+    {
+      "ref": "d5-a-shipped-feedback",
+      "day": 5, "slot": "A", "type": "single",
+      "needs": ["pick", "human"],
+      "humanFields": [
+        { "name": "SHIPPED_FEATURE", "label": "What did you ship?", "hint": "e.g. 'a calibration chart per league'" },
+        { "name": "REQUESTER", "label": "Who asked for it?", "hint": "first name or @handle" }
+      ],
+      "text": "PitchOdds today: {HOME} vs {AWAY} — {PROB_PCT}% + reasoning. Also added {SHIPPED_FEATURE} because {REQUESTER} asked for it on Day 1. This is the loop: you ask, I ship."
+    },
+    {
+      "ref": "d7-c-calibration",
+      "day": 7, "slot": "C", "type": "single",
+      "needs": ["human"],
+      "humanFields": [
+        { "name": "CALIB_STAT", "label": "Week's calibration stat", "hint": "e.g. 'predictions hit within ±4% of stated probability across 27 matches'" }
+      ],
+      "text": "ICYMI this week's PitchOdds calibration: {CALIB_STAT}. Free, no signup 👇"
     },
     {
       "ref": "d8-a-top-pick",
       "day": 8, "slot": "A", "type": "single",
       "needs": ["pick"],
+      "humanFields": [],
       "text": "PitchOdds top pick today: {HOME} vs {AWAY} — {PROB_PCT}% {OUTCOME} 👇\nhttps://pitch-odds.vercel.app/match/{MATCH_ID}"
     },
     {
       "ref": "d9-a-result-recap",
       "day": 9, "slot": "A", "type": "single",
       "needs": ["pick", "yesterday"],
+      "humanFields": [],
       "text": "PitchOdds today + yesterday's honesty: said {YDAY_TEAM} at {YDAY_PROB}%, got {YDAY_OUTCOME}.\n\nToday: {HOME} vs {AWAY} ({PROB_PCT}%) 👇"
     },
     {
       "ref": "d11-a-pick",
       "day": 11, "slot": "A", "type": "single",
       "needs": ["pick"],
+      "humanFields": [],
       "text": "PitchOdds: {HOME} vs {AWAY} — {PROB_PCT}% + reasoning 👇\nhttps://pitch-odds.vercel.app/match/{MATCH_ID}"
+    },
+    {
+      "ref": "d11-b-mistake",
+      "day": 11, "slot": "B", "type": "single",
+      "needs": ["human"],
+      "humanFields": [
+        { "name": "MISTAKE", "label": "Mistake this week", "hint": "Specific, honest. \"I shipped X without checking Y\"" },
+        { "name": "COST", "label": "What it cost", "hint": "Time, money, embarrassment. Be concrete." },
+        { "name": "LESSON", "label": "Lesson", "hint": "What you'd do differently next time" }
+      ],
+      "text": "Mistake this week: I {MISTAKE}. Cost me {COST}. Lesson: {LESSON}. Building in public means posting these too, not just the wins."
+    },
+    {
+      "ref": "d12-a-shipped-from-feedback",
+      "day": 12, "slot": "A", "type": "single",
+      "needs": ["pick", "human"],
+      "humanFields": [
+        { "name": "SHIPPED_FEATURE", "label": "What did you ship from feedback?", "hint": "e.g. 'a shareable match-prediction card'" }
+      ],
+      "text": "PitchOdds today + a {SHIPPED_FEATURE} I just shipped from your feedback 👇\n{HOME} vs {AWAY} — {PROB_PCT}%"
     }
   ]
 }

@@ -20,7 +20,8 @@ interface BracketTemplate {
   day: number;
   slot: "A" | "B" | "C";
   type: "single" | "thread";
-  needs: ("pick" | "yesterday")[];
+  needs: ("pick" | "yesterday" | "human")[];
+  humanFields: { name: string; label: string; hint?: string }[];
   text: string;
 }
 
@@ -161,6 +162,26 @@ async function handleGet(request: NextRequest) {
     yesterdayPick = data ?? null;
   }
 
+  // Bulk-fetch any human-input values for today's templates.
+  const refsNeedingHuman = todayTemplates
+    .filter((t) => t.needs.includes("human"))
+    .map((t) => t.ref);
+  const humanInputsByRef: Map<string, Map<string, string>> = new Map();
+  if (refsNeedingHuman.length > 0) {
+    const { data: inputs } = await db
+      .from("x_playbook_bracket_inputs")
+      .select("ref, field_name, value")
+      .in("ref", refsNeedingHuman);
+    for (const row of inputs ?? []) {
+      let map = humanInputsByRef.get(row.ref);
+      if (!map) {
+        map = new Map();
+        humanInputsByRef.set(row.ref, map);
+      }
+      map.set(row.field_name, row.value);
+    }
+  }
+
   const results: FillResult[] = [];
 
   for (const tmpl of todayTemplates) {
@@ -189,6 +210,19 @@ async function handleGet(request: NextRequest) {
         subs.PROB_PCT = String(pick.predictedProb);
         subs.OUTCOME = outcomeLabel(pick.predictedOutcome);
         subs.MATCH_ID = pick.matchId ?? "";
+      }
+    }
+
+    if (!missing && tmpl.needs.includes("human")) {
+      const inputs = humanInputsByRef.get(tmpl.ref);
+      const missingFields: string[] = [];
+      for (const field of tmpl.humanFields ?? []) {
+        const v = inputs?.get(field.name);
+        if (!v || v.trim() === "") missingFields.push(field.name);
+        else subs[field.name] = v;
+      }
+      if (missingFields.length > 0) {
+        missing = `human inputs not set: ${missingFields.join(", ")} — fill at /dashboard/x-playbook`;
       }
     }
 
