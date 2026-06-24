@@ -30,6 +30,24 @@ interface FillResult {
 }
 
 export async function GET(request: NextRequest) {
+  try {
+    return await handleGet(request);
+  } catch (err) {
+    // Surface the actual error so 500s aren't opaque — this route is only
+    // hit by pg_cron + manual debugging, no user PII concern.
+    console.error("[cron/fill-x-bracket] unhandled error:", err);
+    return NextResponse.json(
+      {
+        error: "Unhandled error",
+        message: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack?.split("\n").slice(0, 8) : undefined,
+      },
+      { status: 500 }
+    );
+  }
+}
+
+async function handleGet(request: NextRequest) {
   // Same auth pattern as /api/cron/publish — accepts header or query param secret.
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) {

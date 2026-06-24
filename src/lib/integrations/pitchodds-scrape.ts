@@ -5,8 +5,9 @@
 // Uses playwright-core + @sparticuz/chromium so it runs on Vercel Fluid Compute.
 // Locally, falls back to the system chromium if available.
 
-import chromium from "@sparticuz/chromium";
-import { chromium as playwright, type Browser } from "playwright-core";
+// Playwright + chromium are imported dynamically inside the function so this
+// module can be imported anywhere without triggering native-module load at
+// route cold start (Vercel was 500'ing on import).
 
 export interface PitchOddsPick {
   matchId: string | null;
@@ -19,9 +20,11 @@ export interface PitchOddsPick {
 
 const PITCHODDS_URL = "https://pitch-odds.vercel.app/";
 
-async function launchBrowser(): Promise<Browser> {
-  // On Vercel, @sparticuz/chromium ships the binary. Locally, fall back to
-  // whatever Playwright finds (developer must have run `npx playwright install chromium`).
+async function launchBrowser() {
+  const { default: chromium } = await import("@sparticuz/chromium");
+  const { chromium: playwright } = await import("playwright-core");
+  // On Vercel, @sparticuz/chromium ships the binary. Locally it returns
+  // a path that may not exist; we let Playwright look for a system binary.
   const executablePath = await chromium.executablePath().catch(() => undefined);
   return playwright.launch({
     args: chromium.args,
