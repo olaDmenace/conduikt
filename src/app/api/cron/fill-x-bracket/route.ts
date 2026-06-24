@@ -359,6 +359,12 @@ async function handleGet(request: NextRequest) {
           kind: usedFallback ? "bracket-fallback" : "bracket",
           filledFrom: subs,
           ...(usedFallback ? { fallbackReason: missing } : {}),
+          // Attach the template's media hint if it has one — fallback posts
+          // also get the clip (better to ship the bracket fallback with a
+          // visual than text-only).
+          ...((tmpl as BracketTemplate & { media?: unknown }).media
+            ? { media: (tmpl as BracketTemplate & { media?: unknown }).media }
+            : {}),
         },
       })
       .select("id")

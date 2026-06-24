@@ -29,8 +29,14 @@ interface FeatureSuggestion {
   repo: string;
   sha: string;
   subject: string;
-  url: string;
+  clean: string;
   date: string;
+  weekKey: string;
+}
+
+interface SuggestionGroup {
+  weekKey: string;
+  items: FeatureSuggestion[];
 }
 
 export default function XPlaybookPage() {
@@ -40,6 +46,8 @@ export default function XPlaybookPage() {
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<FeatureSuggestion[] | null>(null);
+  const [suggestionGroups, setSuggestionGroups] = useState<SuggestionGroup[] | null>(null);
+  const [suggestionsGeneratedAt, setSuggestionsGeneratedAt] = useState<string | null>(null);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
 
   const fetchItems = useCallback(async () => {
@@ -91,16 +99,22 @@ export default function XPlaybookPage() {
       return;
     }
     const data = await res.json();
-    setSuggestions(data.suggestions);
+    setSuggestions(data.items);
+    setSuggestionGroups(data.groups);
+    setSuggestionsGeneratedAt(data.generatedAt);
     setSuggestionsLoading(false);
   }
 
-  function applySuggestion(itemRef: string, fieldName: string, subject: string) {
-    // Strip the conventional-commit prefix so the user gets the human bit.
-    const cleaned = subject.replace(/^feat(\([^)]*\))?:\s*/i, "");
+  function applySuggestion(itemRef: string, fieldName: string, cleanText: string) {
     const key = `${itemRef}|${fieldName}`;
-    setDraft((d) => ({ ...d, [key]: cleaned }));
+    setDraft((d) => ({ ...d, [key]: cleanText }));
   }
+
+  // Auto-load on mount so the user sees suggestions without clicking.
+  useEffect(() => {
+    loadSuggestions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div>
@@ -128,9 +142,11 @@ export default function XPlaybookPage() {
               <CardContent className="space-y-3 p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-h3 text-text-primary">Recent feat commits</h2>
+                    <h2 className="text-h3 text-text-primary">Shipping digest</h2>
                     <p className="text-small text-text-secondary mt-1">
-                      Surfaces <code className="font-mono text-data">feat(...)</code> commits from Conduikt + PitchOdds. Click one to drop it into a SHIPPED_FEATURE field below.
+                      Tweet-worthy commits from Conduikt + PitchOdds, grouped by week. {suggestionsGeneratedAt && (
+                        <>Last refreshed {new Date(suggestionsGeneratedAt).toLocaleString()} — re-run <code className="font-mono text-data">node scripts/x-playbook/git-shipping-digest.mjs</code> to update.</>
+                      )}
                     </p>
                   </div>
                   <Button
@@ -144,32 +160,41 @@ export default function XPlaybookPage() {
                     ) : (
                       <Sparkles className="h-4 w-4" />
                     )}
-                    {suggestions ? "Refresh" : "Load suggestions"}
+                    Refresh
                   </Button>
                 </div>
-                {suggestions && suggestions.length > 0 && (
-                  <ul className="space-y-2 mt-3">
-                    {suggestions.slice(0, 8).map((s) => (
-                      <li
-                        key={`${s.repo}-${s.sha}`}
-                        className="flex items-start gap-2 rounded-lg border border-border-default bg-surface-2 p-3"
-                      >
-                        <Badge variant="secondary" className="shrink-0">
-                          {s.repo.split("/")[1]}
-                        </Badge>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-small text-text-primary truncate">{s.subject}</p>
-                          <p className="text-tiny text-text-tertiary mt-0.5">
-                            {new Date(s.date).toLocaleDateString()} · {s.sha}
-                          </p>
-                        </div>
-                      </li>
+                {suggestionGroups && suggestionGroups.length > 0 && (
+                  <div className="space-y-4 mt-3 max-h-[480px] overflow-y-auto">
+                    {suggestionGroups.slice(0, 4).map((group) => (
+                      <div key={group.weekKey}>
+                        <p className="text-tiny font-mono uppercase tracking-wider text-text-tertiary mb-2">
+                          {group.weekKey} · {group.items.length} shipped
+                        </p>
+                        <ul className="space-y-2">
+                          {group.items.map((s) => (
+                            <li
+                              key={`${s.repo}-${s.sha}`}
+                              className="flex items-start gap-2 rounded-lg border border-border-default bg-surface-2 p-3"
+                            >
+                              <Badge variant="secondary" className="shrink-0">
+                                {s.repo}
+                              </Badge>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-small text-text-primary">{s.clean}</p>
+                                <p className="text-tiny text-text-tertiary mt-0.5">
+                                  {new Date(s.date).toLocaleDateString()} · {s.sha}
+                                </p>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 )}
-                {suggestions && suggestions.length === 0 && (
+                {suggestionGroups && suggestionGroups.length === 0 && (
                   <p className="text-small text-text-tertiary mt-2">
-                    No matching feat commits found in either repo.
+                    No tweet-worthy commits found. Re-run the digest script.
                   </p>
                 )}
               </CardContent>
@@ -261,16 +286,16 @@ export default function XPlaybookPage() {
                                     onChange={(e) => {
                                       const idx = parseInt(e.target.value, 10);
                                       if (!Number.isNaN(idx) && suggestions[idx]) {
-                                        applySuggestion(item.ref, f.name, suggestions[idx].subject);
+                                        applySuggestion(item.ref, f.name, suggestions[idx].clean);
                                       }
                                       e.target.value = "";
                                     }}
                                     defaultValue=""
                                   >
                                     <option value="" disabled>Use commit…</option>
-                                    {suggestions.slice(0, 8).map((s, i) => (
+                                    {suggestions.slice(0, 12).map((s, i) => (
                                       <option key={`${s.repo}-${s.sha}`} value={i}>
-                                        {s.repo.split("/")[1]} · {s.subject.slice(0, 60)}
+                                        {s.repo} · {s.clean.slice(0, 60)}
                                       </option>
                                     ))}
                                   </select>

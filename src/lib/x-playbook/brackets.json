@@ -37,7 +37,8 @@
         { "name": "CALIB_STAT", "label": "Week's calibration stat", "hint": "Real number from pitch-odds.vercel.app/calibration — RPS / Brier / hit-rate. e.g. 'Primeira Liga at 0.177 RPS, beating the naive base-rate (0.227).'" }
       ],
       "text": "ICYMI this week's PitchOdds calibration: {CALIB_STAT}",
-      "fallback": "A prediction tool that doesn't publish its calibration is a tipster account in a lab coat. Show the receipts or stop selling the model."
+      "fallback": "A prediction tool that doesn't publish its calibration is a tipster account in a lab coat. Show the receipts or stop selling the model.",
+      "media": { "kind": "video", "source": "upload", "url": "https://yybpacultmaxqxjfsrvx.supabase.co/storage/v1/object/public/social-media-clips/clip-pitchodds-calibration.mp4", "ref": "clip-pitchodds-calibration" }
     },
     {
       "ref": "d8-a-top-pick",

@@ -1,0 +1,1718 @@
+{
+  "generatedAt": "2026-06-24T17:38:58.606Z",
+  "count": 214,
+  "items": [
+    {
+      "repo": "Conduikt",
+      "sha": "784d17d",
+      "subject": "fix(scripts/record-onboarding): correct signup selectors + audit fallback",
+      "clean": "Correct signup selectors + audit fallback",
+      "date": "2026-06-24 18:13:49 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "88ef55f",
+      "subject": "feat(scripts): record-pitchodds Playwright recorder",
+      "clean": "Record-pitchodds Playwright recorder",
+      "date": "2026-06-24 17:51:38 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "4397223",
+      "subject": "feat(x-playbook): clip recorder + uploader infra (Phase 5b)",
+      "clean": "Clip recorder + uploader infra (Phase 5b)",
+      "date": "2026-06-24 17:51:20 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "319a2ae",
+      "subject": "feat(x-playbook): apply launch-feedback pass + LinkedIn cross-posts",
+      "clean": "Apply launch-feedback pass + LinkedIn cross-posts",
+      "date": "2026-06-24 16:50:01 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "a75c7b9",
+      "subject": "fix(admin/x-playbook): wrap page in ToastProvider",
+      "clean": "Wrap page in ToastProvider",
+      "date": "2026-06-24 15:30:15 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "863d8fa",
+      "subject": "feat(web): plain-language deduction line on match cards + match header",
+      "clean": "Plain-language deduction line on match cards + match header",
+      "date": "2026-06-24 14:56:22 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "8995050",
+      "subject": "feat(x-playbook): settle yesterday's PitchOdds pick via football-data.org",
+      "clean": "Settle yesterday's PitchOdds pick via football-data.org",
+      "date": "2026-06-24 14:46:18 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "50cb91a",
+      "subject": "feat(x-playbook): recap brackets — X follower snapshots + signup/feat-commit counts",
+      "clean": "Recap brackets — X follower snapshots + signup/feat-commit counts",
+      "date": "2026-06-24 14:44:18 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "ded138c",
+      "subject": "fix(ingest): per-competition FBref season labels (Brazil is single-year)",
+      "clean": "Per-competition FBref season labels (Brazil is single-year)",
+      "date": "2026-06-24 14:37:04 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "53df0c0",
+      "subject": "feat(x-playbook): admin page + commit-log suggester for human-input brackets",
+      "clean": "Admin page + commit-log suggester for human-input brackets",
+      "date": "2026-06-24 14:36:05 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "e1724ee",
+      "subject": "feat(eval): xG per-competition decision rule + w-sweep experiment harness",
+      "clean": "XG per-competition decision rule + w-sweep experiment harness",
+      "date": "2026-06-24 14:23:27 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "8c9f4b6",
+      "subject": "feat(model): goals<->xG blend scoreline fitter (w=0 == Dixon-Coles)",
+      "clean": "Goals<->xG blend scoreline fitter (w=0 == Dixon-Coles)",
+      "date": "2026-06-24 14:20:25 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "b117d55",
+      "subject": "feat(eval): carry xG on MatchResult and attach it in backtest_competition(with_xg=)",
+      "clean": "Carry xG on MatchResult and attach it in backtest_competition(with_xg=)",
+      "date": "2026-06-24 14:15:07 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "affbc74",
+      "subject": "feat(ingest): FBref path templates + crosswalk-builder + xG ingest scripts",
+      "clean": "FBref path templates + crosswalk-builder + xG ingest scripts",
+      "date": "2026-06-24 14:13:35 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "e694f12",
+      "subject": "feat(ingest): pure FBref->matches xG join (team-pair + date +/-1d)",
+      "clean": "Pure FBref->matches xG join (team-pair + date +/-1d)",
+      "date": "2026-06-24 14:11:50 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "eb5e005",
+      "subject": "feat(ingest): fuzzy team crosswalk propose + CSV loader",
+      "clean": "Fuzzy team crosswalk propose + CSV loader",
+      "date": "2026-06-24 14:10:48 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "2a06a81",
+      "subject": "feat(ingest): FBref throttled client + match-log xG parser",
+      "clean": "FBref throttled client + match-log xG parser",
+      "date": "2026-06-24 14:07:59 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "3c21a32",
+      "subject": "feat(db): match_xg table for FBref expected-goals",
+      "clean": "Match_xg table for FBref expected-goals",
+      "date": "2026-06-24 14:05:59 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "dfedee3",
+      "subject": "feat(cron/fill-x-bracket): add ?dry=1 to test scrape without DB writes",
+      "clean": "Add ?dry=1 to test scrape without DB writes",
+      "date": "2026-06-24 13:46:54 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "e93190b",
+      "subject": "fix(cron/fill-x-bracket): lazy-load playwright + surface real errors",
+      "clean": "Lazy-load playwright + surface real errors",
+      "date": "2026-06-24 13:40:42 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "58b5cb8",
+      "subject": "fix(next): mark @sparticuz/chromium + playwright-core as serverExternalPackages",
+      "clean": "Mark @sparticuz/chromium + playwright-core as serverExternalPackages",
+      "date": "2026-06-24 13:32:16 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "2c9a817",
+      "subject": "feat(x-playbook): daily PitchOdds bracket-filler cron",
+      "clean": "Daily PitchOdds bracket-filler cron",
+      "date": "2026-06-24 13:17:39 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "dd6f8f2",
+      "subject": "fix(scoring): score the displayed 1X2 lean, not the raw argmax favourite",
+      "clean": "Score the displayed 1X2 lean, not the raw argmax favourite",
+      "date": "2026-06-24 12:58:47 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "d64ff6e",
+      "subject": "fix(integrations): unblock OAuth connect flow + route X/LinkedIn video uploads",
+      "clean": "Unblock OAuth connect flow + route X/LinkedIn video uploads",
+      "date": "2026-06-24 12:05:06 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "4e2b579",
+      "subject": "fix(web): closeness-aware 1X2 lean so near-even matches stop naming the home team",
+      "clean": "Closeness-aware 1X2 lean so near-even matches stop naming the home team",
+      "date": "2026-06-24 12:02:50 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "319a814",
+      "subject": "feat(model): goal-totals experiment harness + negative-result verdict",
+      "clean": "Goal-totals experiment harness + negative-result verdict",
+      "date": "2026-06-23 17:29:25 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "933b5e5",
+      "subject": "feat(model): negative-binomial scoreline model (experiment arm)",
+      "clean": "Negative-binomial scoreline model (experiment arm)",
+      "date": "2026-06-23 17:16:38 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "1dfe12b",
+      "subject": "feat(model): bivariate-Poisson scoreline model (experiment arm)",
+      "clean": "Bivariate-Poisson scoreline model (experiment arm)",
+      "date": "2026-06-23 13:47:32 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "cc9ff36",
+      "subject": "feat: crests in the knockout bracket + competition emblems",
+      "clean": "Crests in the knockout bracket + competition emblems",
+      "date": "2026-06-22 16:11:24 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "71fd556",
+      "subject": "feat(web): club logos / national-team badges across the UI",
+      "clean": "Club logos / national-team badges across the UI",
+      "date": "2026-06-22 15:29:31 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "95b2bed",
+      "subject": "fix(mix): OG Satori multi-child + client-only open-shared event",
+      "clean": "OG Satori multi-child + client-only open-shared event",
+      "date": "2026-06-22 15:20:09 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "ebc14cf",
+      "subject": "feat(mix): The Mix — shareable random fixtures with calibrated read",
+      "clean": "The Mix — shareable random fixtures with calibrated read",
+      "date": "2026-06-22 14:30:00 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "7e880fa",
+      "subject": "feat: Platt recalibration + leak-free OOF lift measurement",
+      "clean": "Platt recalibration + leak-free OOF lift measurement",
+      "date": "2026-06-22 12:56:43 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "95ebe8f",
+      "subject": "feat: totals diagnostic — Murphy decomposition of O/U + BTTS Brier",
+      "clean": "Totals diagnostic — Murphy decomposition of O/U + BTTS Brier",
+      "date": "2026-06-22 12:17:56 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "c4ed0df",
+      "subject": "fix: guard ranked-fill thirds against same-group knockout pairings",
+      "clean": "Guard ranked-fill thirds against same-group knockout pairings",
+      "date": "2026-06-22 11:37:21 +0100",
+      "weekKey": "2026-W26"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "bf8a554",
+      "subject": "feat: responsive pass, UX polish, and a custom 404",
+      "clean": "Responsive pass, UX polish, and a custom 404",
+      "date": "2026-06-20 23:01:51 +0100",
+      "weekKey": "2026-W25"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "6cf7f3f",
+      "subject": "feat: Euros bracket template + exact best-thirds allocation mechanism",
+      "clean": "Euros bracket template + exact best-thirds allocation mechanism",
+      "date": "2026-06-20 22:53:41 +0100",
+      "weekKey": "2026-W25"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "535ffa0",
+      "subject": "feat: real knockout bracket templates + projected-bracket UI (#1)",
+      "clean": "Real knockout bracket templates + projected-bracket UI (#1)",
+      "date": "2026-06-20 19:16:11 +0100",
+      "weekKey": "2026-W25"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "a839edf",
+      "subject": "feat: split Phase 2 gate (1X2 hard, totals informational) + bracket spec",
+      "clean": "Split Phase 2 gate (1X2 hard, totals informational) + bracket spec",
+      "date": "2026-06-20 18:56:18 +0100",
+      "weekKey": "2026-W25"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "80afa24",
+      "subject": "feat: extend Phase 2 backtest gate to Over/Under 2.5 and BTTS",
+      "clean": "Extend Phase 2 backtest gate to Over/Under 2.5 and BTTS",
+      "date": "2026-06-20 18:41:52 +0100",
+      "weekKey": "2026-W25"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "daf8c2a",
+      "subject": "feat: methodology page, live per-market metrics, SEO metadata",
+      "clean": "Methodology page, live per-market metrics, SEO metadata",
+      "date": "2026-06-20 18:28:15 +0100",
+      "weekKey": "2026-W25"
+    },
+    {
+      "repo": "PitchOdds",
+      "sha": "40b40d7",
+      "subject": "feat: live prediction-validation loop (public track record)",
+      "clean": "Live prediction-validation loop (public track record)",
+      "date": "2026-06-20 18:21:24 +0100",
+      "weekKey": "2026-W25"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "ca3241f",
+      "subject": "feat(tiktok): connect TikTok via OAuth + scheduled inbox publishing",
+      "clean": "Connect TikTok via OAuth + scheduled inbox publishing",
+      "date": "2026-05-19 16:52:53 +0100",
+      "weekKey": "2026-W21"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "3553957",
+      "subject": "fix(video): refund credit on failure, friendly errors, retry button",
+      "clean": "Refund credit on failure, friendly errors, retry button",
+      "date": "2026-05-08 13:59:41 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "818fb84",
+      "subject": "feat(blog): database-backed blog with one-click publish from campaigns",
+      "clean": "Database-backed blog with one-click publish from campaigns",
+      "date": "2026-05-08 12:45:56 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "d02edbc",
+      "subject": "feat(campaigns): inline Schedule + Open editor actions on saved assets",
+      "clean": "Inline Schedule + Open editor actions on saved assets",
+      "date": "2026-05-08 11:46:18 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "90c91ee",
+      "subject": "feat(campaigns): auto-save publishable step outputs as assets (Layer 1)",
+      "clean": "Auto-save publishable step outputs as assets (Layer 1)",
+      "date": "2026-05-07 17:12:53 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "2895d46",
+      "subject": "fix(campaigns): include step results in list endpoint response",
+      "clean": "Include step results in list endpoint response",
+      "date": "2026-05-07 17:00:29 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "a70eda2",
+      "subject": "feat(agents): social-calendar agent for day-by-day posting plans",
+      "clean": "Social-calendar agent for day-by-day posting plans",
+      "date": "2026-05-07 16:20:31 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "1822f2a",
+      "subject": "feat(analytics): wire Vercel Analytics into root layout",
+      "clean": "Wire Vercel Analytics into root layout",
+      "date": "2026-05-07 16:00:55 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "0212273",
+      "subject": "fix(media): picker copy mentions video, generated tab, platform reach",
+      "clean": "Picker copy mentions video, generated tab, platform reach",
+      "date": "2026-05-07 15:39:29 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "9aa5326",
+      "subject": "feat(media): pick AI-generated videos as post media",
+      "clean": "Pick AI-generated videos as post media",
+      "date": "2026-05-07 15:31:35 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "a123b8a",
+      "subject": "feat(media): video upload across X, LinkedIn, Facebook publishing",
+      "clean": "Video upload across X, LinkedIn, Facebook publishing",
+      "date": "2026-05-07 15:11:28 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "a66e1c9",
+      "subject": "fix(ga4): use 'property' (not 'name') as the property resource field",
+      "clean": "Use 'property' (not 'name') as the property resource field",
+      "date": "2026-05-07 12:16:26 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "125cb28",
+      "subject": "fix(settings): drop unverified-app warning from integrations explainer",
+      "clean": "Drop unverified-app warning from integrations explainer",
+      "date": "2026-05-07 11:57:53 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "18c7b42",
+      "subject": "fix(analytics): unverified-app warning + per-project disconnect button",
+      "clean": "Unverified-app warning + per-project disconnect button",
+      "date": "2026-05-07 11:41:55 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "bbed8dd",
+      "subject": "feat: hide AI token usage from user UI + retire Google cards from /settings",
+      "clean": "Hide AI token usage from user UI + retire Google cards from /settings",
+      "date": "2026-05-07 11:28:43 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "fe78f73",
+      "subject": "feat(integrations): per-project scope for Google integrations",
+      "clean": "Per-project scope for Google integrations",
+      "date": "2026-05-07 11:28:29 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "eb0309c",
+      "subject": "feat(analytics): GA4 traffic + YouTube channel widgets on project analytics",
+      "clean": "GA4 traffic + YouTube channel widgets on project analytics",
+      "date": "2026-05-07 10:57:41 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "c7aa328",
+      "subject": "fix: token-expired badge fidelity + admin dashboard mobile responsiveness",
+      "clean": "Token-expired badge fidelity + admin dashboard mobile responsiveness",
+      "date": "2026-05-07 10:45:34 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "3444b70",
+      "subject": "feat(email): teal-primary brand sweep across all email surfaces",
+      "clean": "Teal-primary brand sweep across all email surfaces",
+      "date": "2026-05-06 18:23:04 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "22c9966",
+      "subject": "feat(billing): Paystack auto-failover with env-driven primary",
+      "clean": "Paystack auto-failover with env-driven primary",
+      "date": "2026-05-06 18:22:47 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "3ca0e7a",
+      "subject": "fix(auth): outline Google icon to match X and LinkedIn glyphs",
+      "clean": "Outline Google icon to match X and LinkedIn glyphs",
+      "date": "2026-05-06 17:11:35 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "cbd0a9d",
+      "subject": "fix(db): allow ga4 and youtube as connected_accounts platforms",
+      "clean": "Allow ga4 and youtube as connected_accounts platforms",
+      "date": "2026-05-06 16:56:34 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "e726f57",
+      "subject": "feat(auth): Google sign-in button on login + signup",
+      "clean": "Google sign-in button on login + signup",
+      "date": "2026-05-06 16:55:56 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "b17374b",
+      "subject": "feat(launch): YouTube hero embed + unverified-app warning banner",
+      "clean": "YouTube hero embed + unverified-app warning banner",
+      "date": "2026-05-06 16:37:07 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "f86335a",
+      "subject": "feat(chat): wire Tawk.to live chat widget",
+      "clean": "Wire Tawk.to live chat widget",
+      "date": "2026-05-06 14:36:01 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "a72e5dd",
+      "subject": "feat(landing): click-to-play Loom hero video",
+      "clean": "Click-to-play Loom hero video",
+      "date": "2026-05-06 14:04:32 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "678f10f",
+      "subject": "fix(robots): block crawlers on preview deployments",
+      "clean": "Block crawlers on preview deployments",
+      "date": "2026-05-06 14:04:22 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "8c1196f",
+      "subject": "feat(share): downloadable marketing kit at /share",
+      "clean": "Downloadable marketing kit at /share",
+      "date": "2026-05-05 18:33:47 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "810e1f4",
+      "subject": "fix(email): use Resend-verified contacts.conduikt.com as sender domain",
+      "clean": "Use Resend-verified contacts.conduikt.com as sender domain",
+      "date": "2026-05-05 15:42:20 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "2c02052",
+      "subject": "fix(email): read brand logo from projects.client_logo_url first",
+      "clean": "Read brand logo from projects.client_logo_url first",
+      "date": "2026-05-05 15:22:56 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "b025190",
+      "subject": "fix(db): add missing per-project client branding columns",
+      "clean": "Add missing per-project client branding columns",
+      "date": "2026-05-05 14:44:28 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "8919bb2",
+      "subject": "feat(email): auto-prepend brand logo to drip emails when configured",
+      "clean": "Auto-prepend brand logo to drip emails when configured",
+      "date": "2026-05-05 14:26:24 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "613630e",
+      "subject": "feat(onboarding): auth-trigger for evergreen welcome drip",
+      "clean": "Auth-trigger for evergreen welcome drip",
+      "date": "2026-05-05 13:43:30 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "8f7fa0c",
+      "subject": "feat(ui): mobile responsiveness pass + single hero CTA",
+      "clean": "Mobile responsiveness pass + single hero CTA",
+      "date": "2026-05-05 13:36:23 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "a745231",
+      "subject": "feat(ui): UX polish round + missing storage buckets",
+      "clean": "UX polish round + missing storage buckets",
+      "date": "2026-05-05 12:58:32 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "691b33f",
+      "subject": "fix(ui): blog grid layout + agent-count copy \"10 → 15\" site-wide",
+      "clean": "Blog grid layout + agent-count copy \"10 → 15\" site-wide",
+      "date": "2026-05-05 12:37:07 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "b8a093a",
+      "subject": "feat(ui): pricing redesign + site-wide motion polish + glow + cursor-pointer",
+      "clean": "Pricing redesign + site-wide motion polish + glow + cursor-pointer",
+      "date": "2026-05-05 12:32:17 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "049df3b",
+      "subject": "feat(marketing): apply DESIGN_SYSTEM.md restyles to homepage",
+      "clean": "Apply DESIGN_SYSTEM.md restyles to homepage",
+      "date": "2026-05-05 11:47:24 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "0742b9a",
+      "subject": "fix(brand): white text on teal CTAs + categorize sidebar agent list",
+      "clean": "White text on teal CTAs + categorize sidebar agent list",
+      "date": "2026-05-05 11:40:21 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "25fa256",
+      "subject": "feat(email): wire AI generation through to scheduled drip",
+      "clean": "Wire AI generation through to scheduled drip",
+      "date": "2026-05-05 10:49:53 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "0c0a437",
+      "subject": "feat(email): plan-tier sequence count limits + universal 10-email cap",
+      "clean": "Plan-tier sequence count limits + universal 10-email cap",
+      "date": "2026-05-05 09:33:58 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "2f11e51",
+      "subject": "fix(email-sequence): tighten output budget + clarify timing + surface Send",
+      "clean": "Tighten output budget + clarify timing + surface Send",
+      "date": "2026-05-05 09:06:50 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "03eb0b2",
+      "subject": "fix(ai): bump email-sequence tokens + repair truncated JSON cleanly",
+      "clean": "Bump email-sequence tokens + repair truncated JSON cleanly",
+      "date": "2026-05-04 18:22:37 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "79c62bb",
+      "subject": "feat(automation): Growth Playbook auto-publish with trust gradient",
+      "clean": "Growth Playbook auto-publish with trust gradient",
+      "date": "2026-05-04 17:56:54 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "8fbe8fa",
+      "subject": "feat(forms): embeddable lead-capture forms with sequence trigger",
+      "clean": "Embeddable lead-capture forms with sequence trigger",
+      "date": "2026-05-04 17:42:17 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "e5a4c5f",
+      "subject": "feat(emails): \"Send to audience\" button enrols audience in sequence",
+      "clean": "\"Send to audience\" button enrols audience in sequence",
+      "date": "2026-05-04 17:28:36 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "da1cb7a",
+      "subject": "feat(email): per-contact sequence runner via scheduler",
+      "clean": "Per-contact sequence runner via scheduler",
+      "date": "2026-05-04 17:21:15 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "f9fad76",
+      "subject": "feat(scheduler): generic execution scheduler core",
+      "clean": "Generic execution scheduler core",
+      "date": "2026-05-04 17:05:29 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "ba00838",
+      "subject": "feat(agents): pass brand accent color through page-cro and copywriting prompts",
+      "clean": "Pass brand accent color through page-cro and copywriting prompts",
+      "date": "2026-05-04 16:29:36 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "d75ea54",
+      "subject": "feat(branding): brand color in generated emails + real fonts in OG image",
+      "clean": "Brand color in generated emails + real fonts in OG image",
+      "date": "2026-05-04 16:19:39 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "b73089e",
+      "subject": "feat(v1-polish): admin user export, growth checkbox persistence, custom-domain waitlist",
+      "clean": "Admin user export, growth checkbox persistence, custom-domain waitlist",
+      "date": "2026-05-04 15:55:58 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "786bb6f",
+      "subject": "feat(email): day 6 — sender info banner + .env.local.example update",
+      "clean": "Day 6 — sender info banner + .env.local.example update",
+      "date": "2026-05-04 15:12:40 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "3f7861b",
+      "subject": "feat(email): day 5 — audiences + broadcasts UI pages",
+      "clean": "Day 5 — audiences + broadcasts UI pages",
+      "date": "2026-05-04 14:25:27 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "d1c0fcb",
+      "subject": "feat(email): day 4 — unsubscribe handling + Send Broadcast UI",
+      "clean": "Day 4 — unsubscribe handling + Send Broadcast UI",
+      "date": "2026-05-04 14:14:32 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "d1639cb",
+      "subject": "feat(email): day 3 — broadcasts API + send + Resend webhook",
+      "clean": "Day 3 — broadcasts API + send + Resend webhook",
+      "date": "2026-05-04 14:04:15 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "1d92d99",
+      "subject": "feat(email): day 2 — audiences + contacts CRUD + CSV import",
+      "clean": "Day 2 — audiences + contacts CRUD + CSV import",
+      "date": "2026-05-04 13:54:25 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "358c635",
+      "subject": "feat(pricing): surface email marketing limits on pricing + billing pages",
+      "clean": "Surface email marketing limits on pricing + billing pages",
+      "date": "2026-05-04 13:21:38 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "b064537",
+      "subject": "feat(email): day 1 — schema + Resend wrapper + plan limits",
+      "clean": "Day 1 — schema + Resend wrapper + plan limits",
+      "date": "2026-05-04 13:18:21 +0100",
+      "weekKey": "2026-W19"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "9e4eafe",
+      "subject": "fix(campaigns): stable React keys for pipeline steps",
+      "clean": "Stable React keys for pipeline steps",
+      "date": "2026-05-02 19:14:59 +0100",
+      "weekKey": "2026-W18"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "1e9f82c",
+      "subject": "fix(security): fail closed on missing prod secrets, drop info disclosure",
+      "clean": "Fail closed on missing prod secrets, drop info disclosure",
+      "date": "2026-05-02 18:34:42 +0100",
+      "weekKey": "2026-W18"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "5c396ad",
+      "subject": "fix(content): extract EmailPreview to module scope, drop dead previews",
+      "clean": "Extract EmailPreview to module scope, drop dead previews",
+      "date": "2026-05-02 18:22:15 +0100",
+      "weekKey": "2026-W18"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "180e246",
+      "subject": "fix(ai): performance context queried phantom columns and wrong status",
+      "clean": "Performance context queried phantom columns and wrong status",
+      "date": "2026-05-02 18:22:02 +0100",
+      "weekKey": "2026-W18"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "998deb8",
+      "subject": "fix(content): scheduling UI no longer remounts on every keystroke",
+      "clean": "Scheduling UI no longer remounts on every keystroke",
+      "date": "2026-05-02 17:41:06 +0100",
+      "weekKey": "2026-W18"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "f312c14",
+      "subject": "fix(metrics): sync routes targeted a column that did not exist",
+      "clean": "Sync routes targeted a column that did not exist",
+      "date": "2026-05-02 17:40:54 +0100",
+      "weekKey": "2026-W18"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "5317bce",
+      "subject": "fix(cron): publish loop never reached scheduled posts",
+      "clean": "Publish loop never reached scheduled posts",
+      "date": "2026-05-02 17:40:44 +0100",
+      "weekKey": "2026-W18"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "0d0c8b1",
+      "subject": "fix(cron): migrate scheduled LinkedIn posts to /rest/posts",
+      "clean": "Migrate scheduled LinkedIn posts to /rest/posts",
+      "date": "2026-05-01 16:44:53 +0100",
+      "weekKey": "2026-W18"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "c54cc76",
+      "subject": "feat(content): inline thread preview for long X posts",
+      "clean": "Inline thread preview for long X posts",
+      "date": "2026-05-01 16:44:21 +0100",
+      "weekKey": "2026-W18"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "f61ac9b",
+      "subject": "feat(launch-strategy): reload saved plans from the library",
+      "clean": "Reload saved plans from the library",
+      "date": "2026-05-01 16:43:44 +0100",
+      "weekKey": "2026-W18"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "42a67ae",
+      "subject": "feat(team): add resend-invite button for pending invites",
+      "clean": "Add resend-invite button for pending invites",
+      "date": "2026-05-01 16:38:47 +0100",
+      "weekKey": "2026-W18"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "cfc1700",
+      "subject": "feat(security): encrypt OAuth tokens at rest + gate Facebook route",
+      "clean": "Encrypt OAuth tokens at rest + gate Facebook route",
+      "date": "2026-05-01 16:20:02 +0100",
+      "weekKey": "2026-W18"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "6624267",
+      "subject": "fix(linkedin): correct isReshareDisabledByAuthor field name",
+      "clean": "Correct isReshareDisabledByAuthor field name",
+      "date": "2026-04-30 13:39:49 +0100",
+      "weekKey": "2026-W18"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "efedc99",
+      "subject": "feat(x): auto-thread long posts on publish",
+      "clean": "Auto-thread long posts on publish",
+      "date": "2026-04-30 12:53:28 +0100",
+      "weekKey": "2026-W18"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "58c7244",
+      "subject": "fix(linkedin): bump API version to 202602 + surface real errors",
+      "clean": "Bump API version to 202602 + surface real errors",
+      "date": "2026-04-30 12:38:26 +0100",
+      "weekKey": "2026-W18"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "4d5c51b",
+      "subject": "fix(assets): allow saving launch plans",
+      "clean": "Allow saving launch plans",
+      "date": "2026-04-29 11:23:12 +0100",
+      "weekKey": "2026-W18"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "fee63d3",
+      "subject": "fix(email): send from verified contacts.conduikt.com subdomain",
+      "clean": "Send from verified contacts.conduikt.com subdomain",
+      "date": "2026-04-24 14:58:17 +0100",
+      "weekKey": "2026-W17"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "741ffbf",
+      "subject": "feat(team): surface invite email delivery status to the caller",
+      "clean": "Surface invite email delivery status to the caller",
+      "date": "2026-04-24 14:28:36 +0100",
+      "weekKey": "2026-W17"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "369d789",
+      "subject": "fix(team): disambiguate profiles FK in team list query",
+      "clean": "Disambiguate profiles FK in team list query",
+      "date": "2026-04-24 14:16:00 +0100",
+      "weekKey": "2026-W17"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "bcd93a7",
+      "subject": "fix(team): show pending invites immediately + no-cache team list API",
+      "clean": "Show pending invites immediately + no-cache team list API",
+      "date": "2026-04-24 12:52:25 +0100",
+      "weekKey": "2026-W17"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "e8156e5",
+      "subject": "fix(team): resolve RLS infinite recursion on team_members",
+      "clean": "Resolve RLS infinite recursion on team_members",
+      "date": "2026-04-24 12:39:48 +0100",
+      "weekKey": "2026-W17"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "6a89766",
+      "subject": "fix(team): introduce teams table, fix broken invite flow, plan-gate seats",
+      "clean": "Introduce teams table, fix broken invite flow, plan-gate seats",
+      "date": "2026-04-24 12:22:46 +0100",
+      "weekKey": "2026-W17"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "ffb5459",
+      "subject": "fix(ux): stop leaking raw JSON in AI outputs + clarify read-only analytics",
+      "clean": "Stop leaking raw JSON in AI outputs + clarify read-only analytics",
+      "date": "2026-04-24 10:18:38 +0100",
+      "weekKey": "2026-W17"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "c19039f",
+      "subject": "feat(integrations): add GA4 and YouTube, reusing the existing Google OAuth app",
+      "clean": "Add GA4 and YouTube, reusing the existing Google OAuth app",
+      "date": "2026-04-23 16:40:55 +0100",
+      "weekKey": "2026-W17"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "eecf0ae",
+      "subject": "feat(agents): programmatic-seo, launch-strategy, and rigorous A/B test planner",
+      "clean": "Programmatic-seo, launch-strategy, and rigorous A/B test planner",
+      "date": "2026-04-23 16:35:30 +0100",
+      "weekKey": "2026-W17"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "84d7169",
+      "subject": "feat(blog): public /blog index + /blog/[slug] with Article JSON-LD",
+      "clean": "Public /blog index + /blog/[slug] with Article JSON-LD",
+      "date": "2026-04-23 15:41:53 +0100",
+      "weekKey": "2026-W17"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "c87cc2d",
+      "subject": "fix(ui): light mode contrast pass — invariant accent text, deeper light accents",
+      "clean": "Light mode contrast pass — invariant accent text, deeper light accents",
+      "date": "2026-04-23 15:27:21 +0100",
+      "weekKey": "2026-W17"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "81a9686",
+      "subject": "feat(referrals): OG card for crawlers on /r/{code}, silent redirect for humans",
+      "clean": "OG card for crawlers on /r/{code}, silent redirect for humans",
+      "date": "2026-04-20 16:24:45 +0100",
+      "weekKey": "2026-W17"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "9fccee8",
+      "subject": "fix(perf): skip middleware auth on public routes + timeout supabase call",
+      "clean": "Skip middleware auth on public routes + timeout supabase call",
+      "date": "2026-04-20 13:49:19 +0100",
+      "weekKey": "2026-W17"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "13ddf37",
+      "subject": "fix(integrity): honest email channel + publish ownership + silent-failure UX",
+      "clean": "Honest email channel + publish ownership + silent-failure UX",
+      "date": "2026-04-19 18:32:31 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "0912fe1",
+      "subject": "fix(auth): harden logout against middleware bounce and SessionGuard race",
+      "clean": "Harden logout against middleware bounce and SessionGuard race",
+      "date": "2026-04-19 14:29:32 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "46cd7fd",
+      "subject": "feat(ui): paginate admin generations and dashboard projects listings",
+      "clean": "Paginate admin generations and dashboard projects listings",
+      "date": "2026-04-18 14:22:39 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "eb4eafc",
+      "subject": "feat(referrals): credit commission on first paid upgrade via flutterwave",
+      "clean": "Credit commission on first paid upgrade via flutterwave",
+      "date": "2026-04-18 13:24:59 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "ad4de22",
+      "subject": "fix(webhook): meta_data fallback + amount/currency guards",
+      "clean": "Meta_data fallback + amount/currency guards",
+      "date": "2026-04-18 12:33:38 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "f7cd3ef",
+      "subject": "fix(webhook): handle Flutterwave v4 payload format",
+      "clean": "Handle Flutterwave v4 payload format",
+      "date": "2026-04-17 20:21:14 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "b043cb5",
+      "subject": "fix(homepage): FAQ cards become real accordions, first item expanded",
+      "clean": "FAQ cards become real accordions, first item expanded",
+      "date": "2026-04-17 18:10:57 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "0b453e0",
+      "subject": "feat(homepage): testimonials marquee between Features and Pricing",
+      "clean": "Testimonials marquee between Features and Pricing",
+      "date": "2026-04-17 18:07:26 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "11adb16",
+      "subject": "fix(auth): inline field validation + friendly login error copy",
+      "clean": "Inline field validation + friendly login error copy",
+      "date": "2026-04-17 18:02:32 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "66011ff",
+      "subject": "fix(integrations): disable Facebook connect, show Coming Soon",
+      "clean": "Disable Facebook connect, show Coming Soon",
+      "date": "2026-04-17 17:46:30 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "01047f7",
+      "subject": "feat(billing): Flutterwave USD payments as primary provider",
+      "clean": "Flutterwave USD payments as primary provider",
+      "date": "2026-04-17 17:43:03 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "2f5a1e4",
+      "subject": "fix(ai): robust JSON parsing in AI streaming pages",
+      "clean": "Robust JSON parsing in AI streaming pages",
+      "date": "2026-04-17 17:34:37 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "cf77755",
+      "subject": "fix(admin): daily generations graph not rendering bar heights",
+      "clean": "Daily generations graph not rendering bar heights",
+      "date": "2026-04-17 12:45:42 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "5990e41",
+      "subject": "feat(security): rate limiting, settings fix, SVG removal, email cap",
+      "clean": "Rate limiting, settings fix, SVG removal, email cap",
+      "date": "2026-04-17 11:23:25 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "b585e66",
+      "subject": "fix(ux): hide Save button for free-tier users, show upgrade CTA instead",
+      "clean": "Hide Save button for free-tier users, show upgrade CTA instead",
+      "date": "2026-04-17 10:53:38 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "5a0b0c8",
+      "subject": "fix(audit): deterministic scoring — temperature:0 + point-deduction rubric",
+      "clean": "Deterministic scoring — temperature:0 + point-deduction rubric",
+      "date": "2026-04-16 20:18:10 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "f48f873",
+      "subject": "fix(seo): round 6 homepage fixes — PH badge lazy, keyword-blended H3s, logo 512, per-plan offers",
+      "clean": "Round 6 homepage fixes — PH badge lazy, keyword-blended H3s, logo 512, per-plan offers",
+      "date": "2026-04-16 20:10:17 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "0f78347",
+      "subject": "fix(seo): move SoftwareApplication + FAQPage JSON-LD to head, enrich Organization entity",
+      "clean": "Move SoftwareApplication + FAQPage JSON-LD to head, enrich Organization entity",
+      "date": "2026-04-16 19:46:14 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "b75ccc5",
+      "subject": "fix(seo): use confirmed LinkedIn company URL in Organization sameAs",
+      "clean": "Use confirmed LinkedIn company URL in Organization sameAs",
+      "date": "2026-04-16 18:08:34 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "74d1bbb",
+      "subject": "feat(seo): unique metadata per page, BreadcrumbList + WebSite schema, sitemap fixes",
+      "clean": "Unique metadata per page, BreadcrumbList + WebSite schema, sitemap fixes",
+      "date": "2026-04-16 17:53:08 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "6d0e17d",
+      "subject": "fix(security): comprehensive security hardening across all API routes",
+      "clean": "Comprehensive security hardening across all API routes",
+      "date": "2026-04-16 17:26:32 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "4a30c8c",
+      "subject": "fix: robust JSON parsing for all AI agents — fixes \"Failed to parse\" errors",
+      "clean": "Robust JSON parsing for all AI agents — fixes \"Failed to parse\" errors",
+      "date": "2026-04-16 17:09:47 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "56c907e",
+      "subject": "fix: session guard — add visibility check + heartbeat for expired sessions",
+      "clean": "Session guard — add visibility check + heartbeat for expired sessions",
+      "date": "2026-04-16 16:29:29 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "6da114a",
+      "subject": "feat: add GA4 analytics + session expiry toast guard",
+      "clean": "Add GA4 analytics + session expiry toast guard",
+      "date": "2026-04-16 14:22:59 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "a4a3e2b",
+      "subject": "feat: add Google Analytics 4 tracking",
+      "clean": "Add Google Analytics 4 tracking",
+      "date": "2026-04-16 13:53:35 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "9f19d67",
+      "subject": "feat(billing): Paystack billing page, pricing CTAs, remove Lemon Squeezy",
+      "clean": "Paystack billing page, pricing CTAs, remove Lemon Squeezy",
+      "date": "2026-04-16 13:23:43 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "7374362",
+      "subject": "feat(billing): Paystack integration — migration, SDK, init route, webhook",
+      "clean": "Paystack integration — migration, SDK, init route, webhook",
+      "date": "2026-04-16 12:46:27 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "4ce5313",
+      "subject": "feat: fix token refresh for X and LinkedIn — add LinkedIn refresh module",
+      "clean": "Fix token refresh for X and LinkedIn — add LinkedIn refresh module",
+      "date": "2026-04-16 10:53:15 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "8854996",
+      "subject": "feat: launch-prep hardening — auth, cron, ops, legal, marketing",
+      "clean": "Launch-prep hardening — auth, cron, ops, legal, marketing",
+      "date": "2026-04-15 18:33:24 +0100",
+      "weekKey": "2026-W16"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "1c785f6",
+      "subject": "feat(pricing): implement v2 tier structure and gating strategy",
+      "clean": "Implement v2 tier structure and gating strategy",
+      "date": "2026-04-11 16:55:31 +0100",
+      "weekKey": "2026-W15"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "c92caa2",
+      "subject": "feat: add Google PageSpeed Insights to SEO Audit Agent",
+      "clean": "Add Google PageSpeed Insights to SEO Audit Agent",
+      "date": "2026-04-11 12:55:55 +0100",
+      "weekKey": "2026-W15"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "5441d4c",
+      "subject": "feat(nav): pin Library & Settings to sidebar bottom; add social links",
+      "clean": "Pin Library & Settings to sidebar bottom; add social links",
+      "date": "2026-04-11 12:06:30 +0100",
+      "weekKey": "2026-W15"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "010d3da",
+      "subject": "fix: surface video pipeline DB errors + drop unusable Pick mode",
+      "clean": "Surface video pipeline DB errors + drop unusable Pick mode",
+      "date": "2026-04-10 19:40:14 +0100",
+      "weekKey": "2026-W15"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "4f28631",
+      "subject": "fix: route video generation through Inngest and drop ElevenLabs step",
+      "clean": "Route video generation through Inngest and drop ElevenLabs step",
+      "date": "2026-04-10 09:56:21 +0100",
+      "weekKey": "2026-W15"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "1ba8dc2",
+      "subject": "fix: correct Twitter/X handle from @conduiktHQ to @conduikt",
+      "clean": "Correct Twitter/X handle from @conduiktHQ to @conduikt",
+      "date": "2026-04-08 11:42:39 +0100",
+      "weekKey": "2026-W15"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "deabab2",
+      "subject": "fix: SEO audit round 3 — structured data, real hero image, clean H1",
+      "clean": "SEO audit round 3 — structured data, real hero image, clean H1",
+      "date": "2026-04-08 11:32:13 +0100",
+      "weekKey": "2026-W15"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "1032890",
+      "subject": "fix: configure favicon and icon link tags correctly",
+      "clean": "Configure favicon and icon link tags correctly",
+      "date": "2026-04-07 17:46:01 +0100",
+      "weekKey": "2026-W15"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "b10b959",
+      "subject": "feat: add dismissible expectation banners to all agent pages",
+      "clean": "Add dismissible expectation banners to all agent pages",
+      "date": "2026-04-07 17:39:53 +0100",
+      "weekKey": "2026-W15"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "9fdc6c9",
+      "subject": "feat: add favicons, apple-touch-icon, OG image, and web app manifest",
+      "clean": "Add favicons, apple-touch-icon, OG image, and web app manifest",
+      "date": "2026-04-07 17:35:02 +0100",
+      "weekKey": "2026-W15"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "8f68e6f",
+      "subject": "fix: SEO audit round 2 — structured data, trailing slash, H1, OG alignment",
+      "clean": "SEO audit round 2 — structured data, trailing slash, H1, OG alignment",
+      "date": "2026-04-07 17:27:34 +0100",
+      "weekKey": "2026-W15"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "9fefa30",
+      "subject": "feat: SEO fixes, structured data, sitemap, and dashboard re-render fix",
+      "clean": "SEO fixes, structured data, sitemap, and dashboard re-render fix",
+      "date": "2026-04-07 17:10:24 +0100",
+      "weekKey": "2026-W15"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "2618208",
+      "subject": "fix: correct Button size prop type in PdfDownloadButton",
+      "clean": "Correct Button size prop type in PdfDownloadButton",
+      "date": "2026-04-04 13:22:36 +0100",
+      "weekKey": "2026-W14"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "e18749d",
+      "subject": "feat: admin actions, saved asset views, PDF exports, and loading states",
+      "clean": "Admin actions, saved asset views, PDF exports, and loading states",
+      "date": "2026-04-03 18:21:23 +0100",
+      "weekKey": "2026-W14"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "0ceabe6",
+      "subject": "fix: use window.location.origin for all auth redirects",
+      "clean": "Use window.location.origin for all auth redirects",
+      "date": "2026-04-02 17:58:59 +0100",
+      "weekKey": "2026-W14"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "c1951e1",
+      "subject": "fix: add error handling to admin role check in middleware",
+      "clean": "Add error handling to admin role check in middleware",
+      "date": "2026-04-02 17:33:03 +0100",
+      "weekKey": "2026-W14"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "910caa4",
+      "subject": "feat: add admin dashboard with role-based access, usage tracking, and cost estimates",
+      "clean": "Add admin dashboard with role-based access, usage tracking, and cost estimates",
+      "date": "2026-04-02 17:04:05 +0100",
+      "weekKey": "2026-W14"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "b073002",
+      "subject": "feat: QA round 6 — calendar fix, project UX overhaul, campaign results",
+      "clean": "QA round 6 — calendar fix, project UX overhaul, campaign results",
+      "date": "2026-04-02 13:41:33 +0100",
+      "weekKey": "2026-W14"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "7f5a8eb",
+      "subject": "fix: QA round 5 — structured renderers, no-emoji rule, preserve usage on upgrade",
+      "clean": "QA round 5 — structured renderers, no-emoji rule, preserve usage on upgrade",
+      "date": "2026-04-02 13:00:16 +0100",
+      "weekKey": "2026-W14"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "037acf8",
+      "subject": "fix: wrap auth/confirm page in Suspense for useSearchParams",
+      "clean": "Wrap auth/confirm page in Suspense for useSearchParams",
+      "date": "2026-04-01 19:19:22 +0100",
+      "weekKey": "2026-W14"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "1ad50b2",
+      "subject": "fix: resolve type error in EmailPreview sequence_name check",
+      "clean": "Resolve type error in EmailPreview sequence_name check",
+      "date": "2026-04-01 19:17:07 +0100",
+      "weekKey": "2026-W14"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "b48102e",
+      "subject": "fix: QA round 4 — auth confirm, content rendering, analytics, and UX cleanup",
+      "clean": "QA round 4 — auth confirm, content rendering, analytics, and UX cleanup",
+      "date": "2026-04-01 19:12:55 +0100",
+      "weekKey": "2026-W14"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "792f25e",
+      "subject": "fix: resolve QA round 3 — audit, playground, nav, counter, and UX bugs",
+      "clean": "Resolve QA round 3 — audit, playground, nav, counter, and UX bugs",
+      "date": "2026-03-28 17:59:51 +0100",
+      "weekKey": "2026-W13"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "d598594",
+      "subject": "fix: resolve QA round 1+2 auth, audit, campaign, and playground bugs",
+      "clean": "Resolve QA round 1+2 auth, audit, campaign, and playground bugs",
+      "date": "2026-03-28 12:58:52 +0100",
+      "weekKey": "2026-W13"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "9ced09a",
+      "subject": "fix: resolve Map constructor type error in campaign flow editor",
+      "clean": "Resolve Map constructor type error in campaign flow editor",
+      "date": "2026-03-16 13:38:39 +0100",
+      "weekKey": "2026-W12"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "4a833fa",
+      "subject": "feat: activate A/B Test Agent, fix UGC video bugs, wire navigation, add Phase 3 features",
+      "clean": "Activate A/B Test Agent, fix UGC video bugs, wire navigation, add Phase 3 features",
+      "date": "2026-03-16 13:09:36 +0100",
+      "weekKey": "2026-W12"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "924e81f",
+      "subject": "feat: Video Ad Agent with HeyGen pipeline, fix service client imports, add env-aware email URLs",
+      "clean": "Video Ad Agent with HeyGen pipeline, fix service client imports, add env-aware email URLs",
+      "date": "2026-03-05 18:39:33 +0100",
+      "weekKey": "2026-W10"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "d56020e",
+      "subject": "feat: implement Phase 3 features — social metrics, DnD calendar, notifications, Cmd+K, competitors, A/B variants, bulk gen, webhooks, video agent, campaign templates",
+      "clean": "Implement Phase 3 features — social metrics, DnD calendar, notifications, Cmd+K, competitors, A/B variants, bulk gen, webhooks, video agent, campaign templates",
+      "date": "2026-03-05 11:18:32 +0100",
+      "weekKey": "2026-W10"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "f4c66a5",
+      "subject": "fix: wire anchor links and enable Team settings navigation",
+      "clean": "Wire anchor links and enable Team settings navigation",
+      "date": "2026-02-20 21:45:32 +0100",
+      "weekKey": "2026-W08"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "8047a82",
+      "subject": "fix: activate campaigns & calendar agents, wire all Phase 3 features into navigation",
+      "clean": "Activate campaigns & calendar agents, wire all Phase 3 features into navigation",
+      "date": "2026-02-20 21:29:40 +0100",
+      "weekKey": "2026-W08"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "17286ee",
+      "subject": "feat: implement Phase 3 — light mode, feedback loop, team RBAC, PDF reports, onboarding, campaigns, SEO pages, PH launch",
+      "clean": "Implement Phase 3 — light mode, feedback loop, team RBAC, PDF reports, onboarding, campaigns, SEO pages, PH launch",
+      "date": "2026-02-20 20:57:04 +0100",
+      "weekKey": "2026-W08"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "27b5b9a",
+      "subject": "feat: implement Phase 2B — pg_cron, GSC sync, email integration, calendar & library",
+      "clean": "Implement Phase 2B — pg_cron, GSC sync, email integration, calendar & library",
+      "date": "2026-02-20 17:19:41 +0100",
+      "weekKey": "2026-W08"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "82ca9ba",
+      "subject": "fix: downgrade cron schedule to daily for Vercel Hobby plan",
+      "clean": "Downgrade cron schedule to daily for Vercel Hobby plan",
+      "date": "2026-02-20 16:23:14 +0100",
+      "weekKey": "2026-W08"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "69f2131",
+      "subject": "fix: rename skill_used → agent_used in DB and all code references",
+      "clean": "Rename skill_used → agent_used in DB and all code references",
+      "date": "2026-02-20 12:38:40 +0100",
+      "weekKey": "2026-W08"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "6a42838",
+      "subject": "feat: per-agent pages, fix New Project button, update sidebar agent links",
+      "clean": "Per-agent pages, fix New Project button, update sidebar agent links",
+      "date": "2026-02-20 11:52:50 +0100",
+      "weekKey": "2026-W08"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "c73b978",
+      "subject": "feat: rename Playground to Agents with expandable dropdown in sidebar",
+      "clean": "Rename Playground to Agents with expandable dropdown in sidebar",
+      "date": "2026-02-20 11:18:08 +0100",
+      "weekKey": "2026-W08"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "b2e14ff",
+      "subject": "feat: implement Architecture Addendum v2.1 — Skills → Agents rebrand",
+      "clean": "Implement Architecture Addendum v2.1 — Skills → Agents rebrand",
+      "date": "2026-02-20 11:12:16 +0100",
+      "weekKey": "2026-W08"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "f4e98e7",
+      "subject": "feat: Phase 2B — email delivery, scheduled publishing, calendar",
+      "clean": "Phase 2B — email delivery, scheduled publishing, calendar",
+      "date": "2026-02-19 18:14:13 +0100",
+      "weekKey": "2026-W08"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "3c23a83",
+      "subject": "feat: add blog-post, keyword-research, growth-playbook to Playground",
+      "clean": "Add blog-post, keyword-research, growth-playbook to Playground",
+      "date": "2026-02-19 17:55:15 +0100",
+      "weekKey": "2026-W08"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "6e247a1",
+      "subject": "feat: wire Phase 2A features to dashboard UI and update docs",
+      "clean": "Wire Phase 2A features to dashboard UI and update docs",
+      "date": "2026-02-19 17:47:28 +0100",
+      "weekKey": "2026-W08"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "e55ed55",
+      "subject": "feat: Phase 2A S3+S4 — growth playbook, GSC, pipeline wiring, ProjectNav everywhere",
+      "clean": "Phase 2A S3+S4 — growth playbook, GSC, pipeline wiring, ProjectNav everywhere",
+      "date": "2026-02-19 17:33:42 +0100",
+      "weekKey": "2026-W08"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "39e1067",
+      "subject": "feat: Phase 2A S2 — keyword research, Unsplash images, shared project nav",
+      "clean": "Phase 2A S2 — keyword research, Unsplash images, shared project nav",
+      "date": "2026-02-19 17:05:11 +0100",
+      "weekKey": "2026-W08"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "d033e0d",
+      "subject": "feat: Phase 2A S1 — impact dashboard, blog post generator",
+      "clean": "Phase 2A S1 — impact dashboard, blog post generator",
+      "date": "2026-02-19 16:53:25 +0100",
+      "weekKey": "2026-W08"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "8af8136",
+      "subject": "feat: parse social posts JSON and render individual post cards",
+      "clean": "Parse social posts JSON and render individual post cards",
+      "date": "2026-02-19 13:51:45 +0100",
+      "weekKey": "2026-W08"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "63cc9dd",
+      "subject": "fix: wrap useSearchParams in Suspense boundary on billing and integrations pages",
+      "clean": "Wrap useSearchParams in Suspense boundary on billing and integrations pages",
+      "date": "2026-02-18 18:37:19 +0100",
+      "weekKey": "2026-W08"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "9cfaee9",
+      "subject": "fix: guard against missing OAuth env vars in connect routes",
+      "clean": "Guard against missing OAuth env vars in connect routes",
+      "date": "2026-02-18 18:29:51 +0100",
+      "weekKey": "2026-W08"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "a223c15",
+      "subject": "fix: remove Coming Soon gate from Integrations nav and settings sidebar",
+      "clean": "Remove Coming Soon gate from Integrations nav and settings sidebar",
+      "date": "2026-02-18 18:25:58 +0100",
+      "weekKey": "2026-W08"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "755c973",
+      "subject": "feat: social publishing — X and LinkedIn OAuth connect + publish routes",
+      "clean": "Social publishing — X and LinkedIn OAuth connect + publish routes",
+      "date": "2026-02-18 18:21:13 +0100",
+      "weekKey": "2026-W08"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "4ca1c40",
+      "subject": "feat: auto-refresh billing page after payment without manual reload",
+      "clean": "Auto-refresh billing page after payment without manual reload",
+      "date": "2026-02-18 18:08:56 +0100",
+      "weekKey": "2026-W08"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "4e5634d",
+      "subject": "feat: add X and LinkedIn social login buttons to auth pages",
+      "clean": "Add X and LinkedIn social login buttons to auth pages",
+      "date": "2026-02-18 17:36:04 +0100",
+      "weekKey": "2026-W08"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "609f5bb",
+      "subject": "feat: add Privacy Policy and Terms of Service pages",
+      "clean": "Add Privacy Policy and Terms of Service pages",
+      "date": "2026-02-18 17:22:36 +0100",
+      "weekKey": "2026-W08"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "ef93a01",
+      "subject": "fix: handle order_created webhook for one-time LS purchases",
+      "clean": "Handle order_created webhook for one-time LS purchases",
+      "date": "2026-02-18 16:27:30 +0100",
+      "weekKey": "2026-W08"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "a3829ff",
+      "subject": "fix: password reset hash flow, audit error handling, model upgrade",
+      "clean": "Password reset hash flow, audit error handling, model upgrade",
+      "date": "2026-02-18 15:27:23 +0100",
+      "weekKey": "2026-W08"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "d9c9db5",
+      "subject": "fix: complete auth email redirect flow",
+      "clean": "Complete auth email redirect flow",
+      "date": "2026-02-18 12:22:04 +0100",
+      "weekKey": "2026-W08"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "66957d0",
+      "subject": "fix: remove stale Create Next App files conflicting with src/app",
+      "clean": "Remove stale Create Next App files conflicting with src/app",
+      "date": "2026-02-18 11:55:10 +0100",
+      "weekKey": "2026-W08"
+    },
+    {
+      "repo": "Conduikt",
+      "sha": "9ae8700",
+      "subject": "feat: complete MVP build — Conduikt AI Marketing Automation SaaS",
+      "clean": "Complete MVP build — Conduikt AI Marketing Automation SaaS",
+      "date": "2026-02-18 10:16:31 +0100",
+      "weekKey": "2026-W08"
+    }
+  ]
+}
