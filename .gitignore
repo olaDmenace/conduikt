@@ -43,3 +43,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .gstack/
+
+# local strategy / playbook docs (keep out of repo)
+Prospect-Closing-Motion.md
+90-Day-X-Playbook-PitchOdds-First.md
+Conduikt-Automation-Handoff.md
+playbook.json
+
+# playwright MCP tool cache (console logs, page snapshots, screenshots)
+.playwright-mcp/
