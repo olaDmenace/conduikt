@@ -14,6 +14,7 @@ import {
   DollarSign,
   Share2,
   Wallet,
+  Twitter,
   X,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils/cn";
@@ -27,6 +28,7 @@ const NAV_ITEMS = [
   { href: "/admin/subscriptions", icon: CreditCard, label: "Subscriptions" },
   { href: "/admin/finance", icon: Wallet, label: "Finance" },
   { href: "/admin/referrals", icon: Share2, label: "Referrals" },
+  { href: "/admin/x-playbook", icon: Twitter, label: "X Playbook" },
   { href: "/admin/settings", icon: Settings, label: "Settings" },
 ];
 
