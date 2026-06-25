@@ -23,9 +23,10 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// 5 MB threshold — under this, X v2 single-shot handles the upload in one
-// call. Over this, we fall through to v1.1 chunked + OAuth 1.0a.
-const V2_SINGLE_SHOT_LIMIT = 5 * 1024 * 1024;
+// X's v2 single-shot endpoint only accepts image categories — confirmed via
+// a 400 with: $.media_category: does not have a value in the enumeration
+// [tweet_image, dm_image, subtitles]. Videos go through v1.1 chunked
+// regardless of size, which requires OAuth 1.0a signing.
 
 export type UploadResult =
   | { ok: true; mediaId: string }
@@ -37,12 +38,13 @@ export type UploadResult =
 
 /**
  * Upload any X media (image or video) and return the X media_id. Dispatches:
- *   - image any size → v2 single-shot with media_category=tweet_image
- *   - video < 5 MB    → v2 single-shot with media_category=tweet_video
- *   - video ≥ 5 MB    → v1.1 chunked + OAuth 1.0a signature
+ *   - image → v2 single-shot at /2/media/upload (OAuth 2.0 bearer)
+ *   - video → v1.1 chunked at upload.x.com  (OAuth 1.0a signed)
  *
- * The OAuth 2.0 bearer token (`accessToken`) is used for v2; v1.1 chunked
- * reads its OAuth 1.0a credentials from X_OAUTH1_* env vars.
+ * v2 single-shot only accepts image categories — video is rejected with a
+ * "does not have a value in the enumeration" error regardless of size. So
+ * all video flows through v1.1 chunked, which means it needs the X_OAUTH1_*
+ * env vars set.
  */
 export async function uploadXMedia(
   accessToken: string,
@@ -57,15 +59,11 @@ export async function uploadXMedia(
     return { ok: false, error: `fetch media bytes: ${err instanceof Error ? err.message : err}` };
   }
 
-  const isVideo = isVideoMedia(media);
-  const category = isVideo ? "tweet_video" : "tweet_image";
-
-  if (bytes.buffer.byteLength < V2_SINGLE_SHOT_LIMIT) {
-    return uploadXv2SingleShot(accessToken, bytes, category);
+  if (isVideoMedia(media)) {
+    return uploadXv11Chunked(bytes, media.mimeType ?? bytes.contentType, "tweet_video");
   }
 
-  // Large video → v1.1 chunked with OAuth 1.0a.
-  return uploadXv11Chunked(bytes, media.mimeType ?? bytes.contentType, category);
+  return uploadXv2SingleShot(accessToken, bytes, "tweet_image");
 }
 
 // ---------------------------------------------------------------------------
@@ -77,9 +75,9 @@ export async function uploadXMedia(
 async function uploadXv2SingleShot(
   accessToken: string,
   bytes: { buffer: Buffer; contentType: string },
-  category: "tweet_image" | "tweet_video"
+  category: "tweet_image"
 ): Promise<UploadResult> {
-  const filename = category === "tweet_video" ? "media.mp4" : "media.png";
+  const filename = "media.png";
 
   const form = new FormData();
   form.append(
