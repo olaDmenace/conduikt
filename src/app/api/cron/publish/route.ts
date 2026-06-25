@@ -5,9 +5,8 @@ import { ensureValidLinkedInToken } from "@/src/lib/integrations/linkedin-token"
 import { ensureValidTikTokToken } from "@/src/lib/integrations/tiktok-token";
 import { uploadVideoToTikTokInbox } from "@/src/lib/integrations/tiktok-publish";
 import {
-  uploadMediaToX,
+  uploadXMedia,
   uploadMediaToLinkedIn,
-  uploadVideoToX,
   uploadVideoToLinkedIn,
 } from "@/src/lib/integrations/media-upload";
 import { hasMedia, isVideoMedia, type PostMedia } from "@/src/lib/media/types";
@@ -283,14 +282,16 @@ async function publishToX(
   let mediaId: string | null = null;
   if (hasMedia(media)) {
     try {
-      mediaId = isVideoMedia(media)
-        ? await uploadVideoToX(accessToken, media)
-        : await uploadMediaToX(accessToken, media);
+      const r = await uploadXMedia(accessToken, media);
+      if (!r.ok) {
+        return { ok: false, error: `X media upload: ${r.error}` };
+      }
+      mediaId = r.mediaId;
     } catch (err) {
-      return { ok: false, error: `X media upload error: ${err instanceof Error ? err.message : "unknown"}` };
-    }
-    if (!mediaId) {
-      return { ok: false, error: "X media upload failed — scope may be missing" };
+      return {
+        ok: false,
+        error: `X media upload threw: ${err instanceof Error ? err.message : "unknown"}`,
+      };
     }
   }
 

@@ -5,6 +5,8 @@
 // async asset processing on LinkedIn, multi-step on Facebook.
 
 import type { PostMedia } from "@/src/lib/media/types";
+import { isVideoMedia } from "@/src/lib/media/types";
+import { buildOAuth1Header, getOAuth1CredsFromEnv } from "@/src/lib/integrations/x-oauth1";
 
 async function fetchMediaBytes(url: string): Promise<{ buffer: Buffer; contentType: string }> {
   const res = await fetch(url);
@@ -21,27 +23,71 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// 5 MB threshold — under this, X v2 single-shot handles the upload in one
+// call. Over this, we fall through to v1.1 chunked + OAuth 1.0a.
+const V2_SINGLE_SHOT_LIMIT = 5 * 1024 * 1024;
+
+export type UploadResult =
+  | { ok: true; mediaId: string }
+  | { ok: false; error: string };
+
 // ---------------------------------------------------------------------------
-// X (Twitter) — v2 media upload
-// Docs: https://docs.x.com/x-api/media/quickstart/media-upload-chunked
-// For images <5MB we can use the simple single-call upload.
+// X — top-level dispatch. Pick the right path based on media kind + size.
 // ---------------------------------------------------------------------------
 
-export async function uploadMediaToX(
+/**
+ * Upload any X media (image or video) and return the X media_id. Dispatches:
+ *   - image any size → v2 single-shot with media_category=tweet_image
+ *   - video < 5 MB    → v2 single-shot with media_category=tweet_video
+ *   - video ≥ 5 MB    → v1.1 chunked + OAuth 1.0a signature
+ *
+ * The OAuth 2.0 bearer token (`accessToken`) is used for v2; v1.1 chunked
+ * reads its OAuth 1.0a credentials from X_OAUTH1_* env vars.
+ */
+export async function uploadXMedia(
   accessToken: string,
   media: PostMedia
-): Promise<string | null> {
-  if (!media.url) return null;
+): Promise<UploadResult> {
+  if (!media.url) return { ok: false, error: "media has no url" };
 
-  const { buffer, contentType } = await fetchMediaBytes(media.url);
+  let bytes: { buffer: Buffer; contentType: string };
+  try {
+    bytes = await fetchMediaBytes(media.url);
+  } catch (err) {
+    return { ok: false, error: `fetch media bytes: ${err instanceof Error ? err.message : err}` };
+  }
+
+  const isVideo = isVideoMedia(media);
+  const category = isVideo ? "tweet_video" : "tweet_image";
+
+  if (bytes.buffer.byteLength < V2_SINGLE_SHOT_LIMIT) {
+    return uploadXv2SingleShot(accessToken, bytes, category);
+  }
+
+  // Large video → v1.1 chunked with OAuth 1.0a.
+  return uploadXv11Chunked(bytes, media.mimeType ?? bytes.contentType, category);
+}
+
+// ---------------------------------------------------------------------------
+// X v2 single-shot upload — POST /2/media/upload, multipart, OAuth 2.0 bearer.
+// Works for images of any reasonable size and for short videos (<5 MB).
+// Docs: https://docs.x.com/x-api/media/quickstart/media-upload-chunked
+// ---------------------------------------------------------------------------
+
+async function uploadXv2SingleShot(
+  accessToken: string,
+  bytes: { buffer: Buffer; contentType: string },
+  category: "tweet_image" | "tweet_video"
+): Promise<UploadResult> {
+  const filename = category === "tweet_video" ? "media.mp4" : "media.png";
 
   const form = new FormData();
   form.append(
     "media",
-    new Blob([new Uint8Array(buffer)], { type: contentType }),
-    "media.png"
+    new Blob([new Uint8Array(bytes.buffer)], { type: bytes.contentType }),
+    filename
   );
-  form.append("media_category", "tweet_image");
+  form.append("media_category", category);
 
   const res = await fetch("https://api.twitter.com/2/media/upload", {
     method: "POST",
@@ -51,11 +97,191 @@ export async function uploadMediaToX(
 
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
-    console.error("[x media upload] failed:", res.status, errText);
-    return null;
+    return {
+      ok: false,
+      error: `v2 single-shot ${res.status}: ${errText.slice(0, 200) || res.statusText}`,
+    };
   }
-  const data = await res.json();
-  return data?.data?.id ?? data?.media_id_string ?? data?.id ?? null;
+
+  const data = await res.json().catch(() => ({}));
+  const mediaId = data?.data?.id ?? data?.media_id_string ?? data?.id;
+  if (!mediaId) {
+    return { ok: false, error: `v2 single-shot returned no media_id: ${JSON.stringify(data).slice(0, 200)}` };
+  }
+  return { ok: true, mediaId };
+}
+
+// ---------------------------------------------------------------------------
+// X v1.1 chunked upload — INIT → APPEND → FINALIZE → STATUS, all signed with
+// OAuth 1.0a (consumer key/secret + access token/secret).
+// Docs: https://developer.x.com/en/docs/twitter-api/v1/media/upload-media/uploading-media/chunked-media-upload
+// ---------------------------------------------------------------------------
+
+const V11_UPLOAD_URL = "https://upload.x.com/1.1/media/upload.json";
+
+async function uploadXv11Chunked(
+  bytes: { buffer: Buffer; contentType: string },
+  mimeType: string,
+  category: "tweet_image" | "tweet_video"
+): Promise<UploadResult> {
+  const creds = getOAuth1CredsFromEnv();
+  if (!creds) {
+    return {
+      ok: false,
+      error:
+        "X_OAUTH1_* env vars not set — chunked video upload requires OAuth 1.0a credentials. " +
+        "See src/lib/integrations/x-oauth1.ts for env names.",
+    };
+  }
+
+  const totalBytes = bytes.buffer.byteLength;
+
+  // ---- INIT ----
+  const initBody: Record<string, string> = {
+    command: "INIT",
+    media_type: mimeType,
+    total_bytes: String(totalBytes),
+    media_category: category,
+  };
+  const initAuth = buildOAuth1Header("POST", V11_UPLOAD_URL, initBody, {}, creds);
+  const initForm = new URLSearchParams(initBody);
+  const initRes = await fetch(V11_UPLOAD_URL, {
+    method: "POST",
+    headers: {
+      Authorization: initAuth,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: initForm.toString(),
+  });
+  if (!initRes.ok) {
+    const err = await initRes.text().catch(() => "");
+    return { ok: false, error: `v1.1 INIT ${initRes.status}: ${err.slice(0, 200) || initRes.statusText}` };
+  }
+  const initData = await initRes.json().catch(() => ({}));
+  const mediaId: string | undefined =
+    initData?.media_id_string ?? initData?.media_id?.toString();
+  if (!mediaId) {
+    return { ok: false, error: `v1.1 INIT returned no media_id: ${JSON.stringify(initData).slice(0, 200)}` };
+  }
+
+  // ---- APPEND ----
+  // Multipart bodies don't include form fields in the OAuth signature
+  // base string (RFC 5849 §3.4.1.3.1) — only oauth_* and query params.
+  const CHUNK_SIZE = 4 * 1024 * 1024; // 4 MB per chunk, well under X's 5 MB cap
+  let segmentIndex = 0;
+  for (let offset = 0; offset < totalBytes; offset += CHUNK_SIZE) {
+    const end = Math.min(offset + CHUNK_SIZE, totalBytes);
+    const chunk = bytes.buffer.subarray(offset, end);
+    const appendQuery = {
+      command: "APPEND",
+      media_id: mediaId,
+      segment_index: String(segmentIndex),
+    };
+    const appendUrlWithQuery = `${V11_UPLOAD_URL}?${new URLSearchParams(appendQuery).toString()}`;
+    const appendAuth = buildOAuth1Header("POST", V11_UPLOAD_URL, {}, appendQuery, creds);
+
+    const appendForm = new FormData();
+    appendForm.append(
+      "media",
+      new Blob([new Uint8Array(chunk)], { type: mimeType }),
+      `chunk-${segmentIndex}`
+    );
+
+    const appendRes = await fetch(appendUrlWithQuery, {
+      method: "POST",
+      headers: { Authorization: appendAuth },
+      body: appendForm,
+    });
+    if (!appendRes.ok) {
+      const err = await appendRes.text().catch(() => "");
+      return {
+        ok: false,
+        error: `v1.1 APPEND seg=${segmentIndex} ${appendRes.status}: ${err.slice(0, 200) || appendRes.statusText}`,
+      };
+    }
+    segmentIndex++;
+  }
+
+  // ---- FINALIZE ----
+  const finalizeBody: Record<string, string> = {
+    command: "FINALIZE",
+    media_id: mediaId,
+  };
+  const finalizeAuth = buildOAuth1Header("POST", V11_UPLOAD_URL, finalizeBody, {}, creds);
+  const finalizeRes = await fetch(V11_UPLOAD_URL, {
+    method: "POST",
+    headers: {
+      Authorization: finalizeAuth,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams(finalizeBody).toString(),
+  });
+  if (!finalizeRes.ok) {
+    const err = await finalizeRes.text().catch(() => "");
+    return {
+      ok: false,
+      error: `v1.1 FINALIZE ${finalizeRes.status}: ${err.slice(0, 200) || finalizeRes.statusText}`,
+    };
+  }
+  const finalizeData = await finalizeRes.json().catch(() => ({}));
+
+  // ---- STATUS polling — only needed if X says async processing pending ----
+  let processingInfo = finalizeData?.processing_info;
+  let attempts = 0;
+  const MAX_ATTEMPTS = 30; // ~2.5 min upper bound
+  while (
+    processingInfo?.state &&
+    processingInfo.state !== "succeeded" &&
+    processingInfo.state !== "failed" &&
+    attempts < MAX_ATTEMPTS
+  ) {
+    const wait = Math.max(2000, (processingInfo.check_after_secs ?? 5) * 1000);
+    await sleep(wait);
+    const statusQuery = { command: "STATUS", media_id: mediaId };
+    const statusUrlWithQuery = `${V11_UPLOAD_URL}?${new URLSearchParams(statusQuery).toString()}`;
+    const statusAuth = buildOAuth1Header("GET", V11_UPLOAD_URL, {}, statusQuery, creds);
+    const statusRes = await fetch(statusUrlWithQuery, {
+      headers: { Authorization: statusAuth },
+    });
+    if (!statusRes.ok) {
+      const err = await statusRes.text().catch(() => "");
+      return {
+        ok: false,
+        error: `v1.1 STATUS ${statusRes.status}: ${err.slice(0, 200) || statusRes.statusText}`,
+      };
+    }
+    const statusData = await statusRes.json().catch(() => ({}));
+    processingInfo = statusData?.processing_info;
+    attempts++;
+  }
+
+  if (processingInfo?.state === "failed") {
+    return {
+      ok: false,
+      error: `v1.1 STATUS processing failed: ${JSON.stringify(processingInfo.error ?? {}).slice(0, 200)}`,
+    };
+  }
+  if (processingInfo && processingInfo.state !== "succeeded" && attempts >= MAX_ATTEMPTS) {
+    return {
+      ok: false,
+      error: `v1.1 STATUS timed out after ${attempts} polls (still ${processingInfo.state})`,
+    };
+  }
+
+  return { ok: true, mediaId };
+}
+
+// ---------------------------------------------------------------------------
+// Legacy thin wrappers — kept so callers that haven't migrated keep working,
+// but they should be replaced with `uploadXMedia()` over time.
+// ---------------------------------------------------------------------------
+
+export async function uploadMediaToX(
+  accessToken: string,
+  media: PostMedia
+): Promise<string | null> {
+  const r = await uploadXMedia(accessToken, media);
+  return r.ok ? r.mediaId : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -167,130 +393,17 @@ export async function uploadMediaToFacebook(
 // ===========================================================================
 
 // ---------------------------------------------------------------------------
-// X (Twitter) — chunked v1.1 media upload (still the supported path for video)
-// Flow: INIT (returns media_id) → APPEND chunks (≤5MB each) → FINALIZE →
-// poll STATUS until processing succeeds, then return the media_id.
-// Docs: https://developer.x.com/en/docs/twitter-api/v1/media/upload-media/uploading-media/chunked-media-upload
+// X (Twitter) video — legacy wrapper. The new code dispatches through
+// uploadXMedia() above (v2 single-shot for <5MB, OAuth-1.0a + v1.1 chunked
+// for ≥5MB). Callers should switch to uploadXMedia().
 // ---------------------------------------------------------------------------
 
 export async function uploadVideoToX(
   accessToken: string,
   media: PostMedia
 ): Promise<string | null> {
-  if (!media.url) return null;
-
-  const { buffer, contentType } = await fetchMediaBytes(media.url);
-  const totalBytes = buffer.byteLength;
-  const mimeType = media.mimeType ?? contentType ?? "video/mp4";
-
-  const headers = {
-    Authorization: `Bearer ${accessToken}`,
-  };
-
-  // X chunked endpoints live at upload.x.com (formerly upload.twitter.com).
-  const UPLOAD_URL = "https://upload.x.com/1.1/media/upload.json";
-
-  // Step 1: INIT
-  const initForm = new FormData();
-  initForm.append("command", "INIT");
-  initForm.append("media_type", mimeType);
-  initForm.append("total_bytes", String(totalBytes));
-  initForm.append("media_category", "tweet_video");
-
-  const initRes = await fetch(UPLOAD_URL, {
-    method: "POST",
-    headers,
-    body: initForm,
-  });
-  if (!initRes.ok) {
-    const err = await initRes.text().catch(() => "");
-    console.error("[x video init] failed:", initRes.status, err);
-    return null;
-  }
-  const initData = await initRes.json();
-  const mediaId: string | undefined =
-    initData?.media_id_string ?? initData?.media_id?.toString();
-  if (!mediaId) {
-    console.error("[x video init] no media_id in response");
-    return null;
-  }
-
-  // Step 2: APPEND chunks (≤5MB each — X's documented limit per chunk).
-  const CHUNK_SIZE = 4 * 1024 * 1024; // 4MB to stay safely under 5MB
-  let segmentIndex = 0;
-  for (let offset = 0; offset < totalBytes; offset += CHUNK_SIZE) {
-    const end = Math.min(offset + CHUNK_SIZE, totalBytes);
-    const chunk = buffer.subarray(offset, end);
-    const appendForm = new FormData();
-    appendForm.append("command", "APPEND");
-    appendForm.append("media_id", mediaId);
-    appendForm.append("segment_index", String(segmentIndex));
-    appendForm.append(
-      "media",
-      new Blob([new Uint8Array(chunk)], { type: mimeType }),
-      `chunk-${segmentIndex}`
-    );
-
-    const appendRes = await fetch(UPLOAD_URL, {
-      method: "POST",
-      headers,
-      body: appendForm,
-    });
-    if (!appendRes.ok) {
-      const err = await appendRes.text().catch(() => "");
-      console.error("[x video append] failed:", appendRes.status, err);
-      return null;
-    }
-    segmentIndex++;
-  }
-
-  // Step 3: FINALIZE
-  const finalizeForm = new FormData();
-  finalizeForm.append("command", "FINALIZE");
-  finalizeForm.append("media_id", mediaId);
-
-  const finalizeRes = await fetch(UPLOAD_URL, {
-    method: "POST",
-    headers,
-    body: finalizeForm,
-  });
-  if (!finalizeRes.ok) {
-    const err = await finalizeRes.text().catch(() => "");
-    console.error("[x video finalize] failed:", finalizeRes.status, err);
-    return null;
-  }
-  const finalizeData = await finalizeRes.json();
-
-  // Step 4: poll STATUS if FINALIZE indicates async processing.
-  let processingInfo = finalizeData?.processing_info;
-  let attempts = 0;
-  const MAX_ATTEMPTS = 30; // ~2.5 min upper bound
-  while (
-    processingInfo?.state &&
-    processingInfo.state !== "succeeded" &&
-    processingInfo.state !== "failed" &&
-    attempts < MAX_ATTEMPTS
-  ) {
-    const wait = Math.max(2000, (processingInfo.check_after_secs ?? 5) * 1000);
-    await sleep(wait);
-    const statusUrl = `${UPLOAD_URL}?command=STATUS&media_id=${mediaId}`;
-    const statusRes = await fetch(statusUrl, { headers });
-    if (!statusRes.ok) {
-      const err = await statusRes.text().catch(() => "");
-      console.error("[x video status] failed:", statusRes.status, err);
-      return null;
-    }
-    const statusData = await statusRes.json();
-    processingInfo = statusData?.processing_info;
-    attempts++;
-  }
-
-  if (processingInfo?.state === "failed") {
-    console.error("[x video] processing failed:", processingInfo.error);
-    return null;
-  }
-
-  return mediaId;
+  const r = await uploadXMedia(accessToken, media);
+  return r.ok ? r.mediaId : null;
 }
 
 // ---------------------------------------------------------------------------
