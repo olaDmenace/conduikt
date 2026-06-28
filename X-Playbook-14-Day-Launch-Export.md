@@ -19,6 +19,7 @@
 - **Manual touch points:**
   - **Day 1 morning:** pin the first tweet of the intro thread on x.com (X API doesn't allow third-party pinning)
   - **Day 5 / 11 / 12 / 7 / 14** brackets: fill SHIPPED_FEATURE / MISTAKE / CALIB_STAT / etc at `/admin/x-playbook` before 06:00 UTC of that day. Missing values → fallback fires.
+  - **After every LinkedIn post fires (Days 1, 5, 7, 12, 14 at 09:00 WAT):** drop a first comment with `https://pitch-odds.vercel.app` (or `https://conduikt.com` if the post is more Conduikt-focused). LinkedIn suppresses reach on posts with outbound links in the body, but first-comment links bypass that. Takes 10 sec per post.
 
 ---
 

@@ -46,6 +46,20 @@ const FIXES = [
     transform: () =>
       "Building AI marketing means resisting the urge to wrap ChatGPT in a nicer UI. The hard part — research → publish → measure → adjust — is what's worth building. Polish without the loop is theatre.",
   },
+
+  // PitchOdds link additions — append \n\n🔗 ... so splitForX turns each into
+  // a 2-tweet thread (main tweet stays clean, link rides on tweet 2 to avoid
+  // X reach suppression on outbound-link main tweets).
+  ...["d3-c-prob-poll", "d7-b-show-reasoning", "d12-b-free-no-signup", "d13-b-africa-thread"].map(
+    (ref) => ({
+      ref,
+      desc: `${ref}: append PitchOdds link as a follow-up tweet`,
+      transform: (text) =>
+        text.includes("pitch-odds.vercel.app")
+          ? text
+          : `${text}\n\n🔗 https://pitch-odds.vercel.app`,
+    })
+  ),
 ];
 
 const DRY_RUN = process.env.DRY_RUN !== "false";
