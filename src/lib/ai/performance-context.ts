@@ -146,6 +146,30 @@ export async function buildPerformanceContext(
     }
   }
 
+  // 6. Active learnings from the analyzer (post_learnings)
+  const { data: learnings } = await supabase
+    .from("post_learnings")
+    .select("channel, hypothesis, evidence, confidence")
+    .eq("project_id", projectId)
+    .eq("active", true)
+    .order("confidence", { ascending: false })
+    .limit(8);
+
+  if (learnings && learnings.length > 0) {
+    sections.push("### Active Learnings");
+    sections.push(
+      "These are patterns the analyzer has extracted from real performance. Apply them unless they conflict with the brief:"
+    );
+    for (const l of learnings) {
+      const ev = l.evidence as { lift?: number; sampleSize?: number } | null;
+      const meta =
+        ev?.lift && ev?.sampleSize
+          ? ` (${ev.lift}x lift, n=${ev.sampleSize}, confidence=${l.confidence})`
+          : ` (confidence=${l.confidence})`;
+      sections.push(`- [${l.channel}] ${l.hypothesis}${meta}`);
+    }
+  }
+
   if (sections.length === 0) return "";
 
   return (

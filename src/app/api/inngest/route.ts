@@ -3,6 +3,7 @@ import {
   inngest,
   videoPipeline,
   syncSocialMetrics,
+  analyzePostPerformance,
   refreshXTokens,
   refreshLinkedInTokens,
 } from "@/src/lib/inngest";
@@ -22,5 +23,11 @@ if (
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
-  functions: [videoPipeline, syncSocialMetrics, refreshXTokens, refreshLinkedInTokens],
+  functions: [
+    videoPipeline,
+    syncSocialMetrics,
+    analyzePostPerformance,
+    refreshXTokens,
+    refreshLinkedInTokens,
+  ],
 });

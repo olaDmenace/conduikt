@@ -43,6 +43,7 @@ import {
   Rocket,
   Megaphone,
   ListChecks,
+  Brain,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils/cn";
 import { useUIStore } from "@/src/stores/ui-store";
@@ -344,6 +345,7 @@ export function Sidebar() {
                       {/* Project tools (non-agent utility pages) */}
                       <ProjectSubLink href={`${projectBase}`} icon={BarChart3} label="Overview" pathname={pathname} exact onClick={handleNavClick} />
                       <ProjectSubLink href={`${projectBase}/analytics`} icon={TrendingUp} label="Analytics" pathname={pathname} onClick={handleNavClick} />
+                      <ProjectSubLink href={`${projectBase}/learnings`} icon={Brain} label="Learnings" pathname={pathname} onClick={handleNavClick} />
                       <ProjectSubLink href={`${projectBase}/competitors`} icon={Swords} label="Competitors" pathname={pathname} onClick={handleNavClick} />
                       <ProjectSubLink href={`${projectBase}/emails`} icon={Mail} label="Email Sequences" pathname={pathname} onClick={handleNavClick} />
                       <ProjectSubLink href={`${projectBase}/audiences`} icon={Users} label="Audiences" pathname={pathname} onClick={handleNavClick} />
