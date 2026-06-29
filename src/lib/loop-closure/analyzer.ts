@@ -184,7 +184,19 @@ export async function runAnalyzer(opts: AnalyzerOptions): Promise<AnalyzerResult
 
     const controlMean = mean(controlEngagements);
     const treatmentMean = mean(treatmentEngagements);
-    const lift = controlMean > 0 ? treatmentMean / controlMean : treatmentMean;
+
+    // Both groups must have non-zero engagement before we publish a
+    // multiplicative lift. Otherwise treatment/control is either undefined
+    // (control = 0) or non-meaningful (treatment = 0). The previous
+    // implementation reported treatmentMean as the "lift" when control was 0
+    // — mathematically wrong and misleading on the dashboard.
+    //
+    // Trade-off: patterns get held back until both arms have accumulated some
+    // engagement. The right answer for v1 — better to publish nothing than to
+    // publish "5.67x" when the truth is "control posts got literally zero".
+    if (controlMean <= 0 || treatmentMean <= 0) continue;
+
+    const lift = treatmentMean / controlMean;
 
     if (lift < 1.5) continue;
 

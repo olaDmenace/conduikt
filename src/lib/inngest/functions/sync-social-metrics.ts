@@ -124,8 +124,19 @@ export const syncSocialMetrics = inngest.createFunction(
             );
             synced++;
           } else if (post.channel === "linkedin") {
+            // LinkedIn engagement reads require Community Management API
+            // partner approval (developer.linkedin.com → Marketing Developer
+            // Platform). Our standard `w_member_social` consumer scope is
+            // write-only — every call here will 403 ACCESS_DENIED until that
+            // approval lands. Once it does, the code below already URL-encodes
+            // the URN correctly (colons must be %3A in the path).
+            //
+            // We still attempt the call so that the moment partner access is
+            // granted, metrics start flowing — but a 403 is the expected
+            // steady state today and is treated as "skip silently", not an
+            // error, to keep cron logs clean.
             const res = await fetch(
-              `https://api.linkedin.com/v2/socialActions/${post.external_post_id}`,
+              `https://api.linkedin.com/v2/socialActions/${encodeURIComponent(post.external_post_id)}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,
@@ -134,6 +145,11 @@ export const syncSocialMetrics = inngest.createFunction(
               }
             );
 
+            if (res.status === 403) {
+              // Expected until partner API approval — silent skip.
+              skipped++;
+              continue;
+            }
             if (!res.ok) {
               errors++;
               continue;
