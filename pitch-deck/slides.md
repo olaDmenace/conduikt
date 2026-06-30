@@ -128,7 +128,7 @@ layout: default
 
 # Market
 
-<div class="grid grid-cols-3 gap-8">
+<div class="grid grid-cols-3 gap-4">
 
 <div class="stat-card">
 <div class="stat">$15B+</div>
@@ -147,7 +147,7 @@ layout: default
 
 </div>
 
-<div class="lead mt-12">
+<div class="lead mt-6">
 
 HubSpot, Marketo, and Adobe sell **up-market**. The floor is open — and the SMB / agency segment is the fastest-growing AI marketing buyer cohort.
 
@@ -159,7 +159,7 @@ HubSpot, Marketo, and Adobe sell **up-market**. The floor is open — and the SM
 
 # Why now
 
-<div class="grid grid-cols-2 gap-8 mt-8">
+<div class="grid grid-cols-2 gap-3 mt-2">
 
 <div class="reason">
 <div class="reason-num brand">01</div>
@@ -195,7 +195,7 @@ HubSpot, Marketo, and Adobe sell **up-market**. The floor is open — and the SM
 
 </div>
 
-<div class="footnote mt-8">
+<div class="footnote mt-3">
 
 The window: <span class="brand">18–24 months</span> before enterprise vendors react.
 
@@ -207,7 +207,7 @@ The window: <span class="brand">18–24 months</span> before enterprise vendors 
 
 # Business model
 
-<div class="grid grid-cols-4 gap-4 mt-8">
+<div class="grid grid-cols-4 gap-4 mt-3">
 
 <div class="tier">
 <div class="tier-name">Free</div>
@@ -235,13 +235,13 @@ The window: <span class="brand">18–24 months</span> before enterprise vendors 
 
 </div>
 
-<div class="founding-member mt-8">
+<div class="founding-member mt-3">
 
 🌱 **Founding member**: first 50 Pro users at <span class="brand">$39/mo</span> forever
 
 </div>
 
-<div class="grid grid-cols-3 gap-8 mt-12">
+<div class="grid grid-cols-3 gap-3 mt-4">
 
 <div class="unit-stat">
 <div class="stat-small">CAC target</div>
@@ -268,7 +268,7 @@ The window: <span class="brand">18–24 months</span> before enterprise vendors 
 
 Launched public beta **April 2026**. Building in public — every commit, every shipped feature, every honest "this didn't work yet."
 
-<div class="grid grid-cols-2 gap-8 mt-10">
+<div class="grid grid-cols-2 gap-3 mt-3">
 
 <div class="traction-block">
 <h3 class="brand">Product</h3>
@@ -291,7 +291,7 @@ Launched public beta **April 2026**. Building in public — every commit, every 
 
 </div>
 
-<div class="footnote mt-8">
+<div class="footnote mt-3">
 
 Real numbers replace placeholders before final export — beta signups, paying customer count, X follower delta, agency conversations in flight.
 
@@ -314,15 +314,15 @@ Real numbers replace placeholders before final export — beta signups, paying c
 
 </div>
 
-<div class="wedge mt-12">
+<div class="wedge">
 
-<h3>Conduikt's wedge</h3>
+<h3>Conduikt's wedge:</h3>
 <div class="wedge-pills">
 <span class="pill brand">Multi-agent</span>
 <span class="pill brand">SMB-first</span>
 <span class="pill brand">Closed loop</span>
 </div>
-<p class="mt-4">Nobody else has all three. The closed-loop piece — performance data automatically feeding next week's generation — is genuinely novel today.</p>
+<p>Nobody else has all three. The closed-loop piece — performance data automatically feeding next week's generation — is genuinely novel today.</p>
 
 </div>
 
@@ -402,7 +402,7 @@ Real numbers replace placeholders before final export — beta signups, paying c
 
 # Why Estonia
 
-<div class="grid grid-cols-2 gap-8 mt-6">
+<div class="six-grid">
 
 <div class="reason-card">
 <h3 class="brand">OÜ structure</h3>
@@ -416,7 +416,7 @@ Real numbers replace placeholders before final export — beta signups, paying c
 
 <div class="reason-card">
 <h3 class="copper">GDPR-native</h3>
-<p>EU-incorporated SaaS is structurally easier to sell to EU enterprise than US-headquartered competitors. A positioning moat.</p>
+<p>EU-incorporated SaaS is structurally easier to sell to EU enterprise than US-HQ'd competitors. A positioning moat.</p>
 </div>
 
 <div class="reason-card">
@@ -426,7 +426,7 @@ Real numbers replace placeholders before final export — beta signups, paying c
 
 <div class="reason-card">
 <h3 class="brand">Geographic access</h3>
-<p>Direct flights to Berlin, Helsinki, Stockholm — three primary EU SMB markets — for repeated customer development.</p>
+<p>Direct flights to Berlin, Helsinki, Stockholm for repeated customer development.</p>
 </div>
 
 <div class="reason-card">
@@ -466,7 +466,7 @@ Real numbers replace placeholders before final export — beta signups, paying c
 
 </div>
 
-<div class="footnote mt-8">
+<div class="footnote mt-3">
 
 Conservative — assumes <strong>organic content marketing only</strong>, no paid ads, no significant hires before month 10. Upside scenarios with funded paid acquisition land materially higher.
 
@@ -478,7 +478,7 @@ Conservative — assumes <strong>organic content marketing only</strong>, no pai
 
 # Use of resources
 
-<div class="grid grid-cols-2 gap-6 mt-6">
+<div class="six-grid">
 
 <div class="resource">
 <h3 class="brand">Full-time founder focus</h3>
@@ -487,21 +487,21 @@ Conservative — assumes <strong>organic content marketing only</strong>, no pai
 
 <div class="resource">
 <h3 class="brand">EU customer development</h3>
-<p>Direct, repeated, in-person meetings with EU SMB operators. Berlin / Helsinki / Stockholm reachable in a single workday from Tallinn.</p>
+<p>Direct, repeated, in-person meetings with EU SMB operators. Berlin / Helsinki / Stockholm reachable in a single workday.</p>
 </div>
 
 <div class="resource">
-<h3 class="copper">First technical hire — month 10</h3>
-<p>Estonian or wider EU candidate. Specialisation: agent infrastructure or product engineering.</p>
+<h3 class="copper">First technical hire</h3>
+<p>Month 10. Estonian or wider EU candidate. Agent infrastructure or product engineering.</p>
 </div>
 
 <div class="resource">
 <h3 class="copper">OÜ incorporation</h3>
-<p>Clean cap table + tax structure ready for institutional funding round — Estonia is the cleanest EU jurisdiction for a SaaS exit.</p>
+<p>Clean cap table + tax structure ready for institutional funding. Estonia is the cleanest EU jurisdiction for a SaaS exit.</p>
 </div>
 
 <div class="resource">
-<h3 class="brand">GDPR-native sales positioning</h3>
+<h3 class="brand">GDPR-native sales</h3>
 <p>Unblocks EU enterprise deals US-incorporated competitors can't easily win.</p>
 </div>
 
