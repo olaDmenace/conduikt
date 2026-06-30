@@ -338,7 +338,7 @@ Real numbers replace placeholders before final export — beta signups, paying c
 <div class="phase-num brand">Phase 1 · now</div>
 <h3>Founder-led, build-in-public</h3>
 <ul>
-<li>14-day launch playbook on X + LinkedIn — Conduikt generating its own marketing</li>
+<li>14-day launch playbook on X + LinkedIn — Conduikt running its own marketing</li>
 <li>Direct DM outbound to solo SaaS founders (the ICP)</li>
 <li>Target: first 100 paying customers by month 6</li>
 </ul>
@@ -348,8 +348,8 @@ Real numbers replace placeholders before final export — beta signups, paying c
 <div class="phase-num brand">Phase 2 · months 6–12</div>
 <h3>Agency partnerships</h3>
 <ul>
-<li>White-label client reports + bulk content generation as the leverage angle</li>
-<li>Agencies become a force multiplier — one agency = 10–40 underlying SMB seats</li>
+<li>White-label reports + bulk content as the leverage angle</li>
+<li>One agency = 10–40 underlying SMB seats — force multiplier</li>
 <li>Target: 20 agency partners by month 12</li>
 </ul>
 </div>
@@ -359,8 +359,8 @@ Real numbers replace placeholders before final export — beta signups, paying c
 <h3>Product-led growth</h3>
 <ul>
 <li>Free tier → paid conversion via natural usage limits</li>
-<li>Organic SEO and content compound the audience built in Phase 1</li>
-<li>Add EU enterprise tier once GDPR-native positioning is testable in market</li>
+<li>Organic SEO compounds the audience built in Phase 1</li>
+<li>EU enterprise tier once GDPR-native positioning is market-tested</li>
 </ul>
 </div>
 
