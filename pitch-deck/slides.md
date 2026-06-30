@@ -98,28 +98,27 @@ layout: default
 
 # Product
 
-<div class="screens">
+<div class="screens-2x2">
 
 <div class="screen">
-<img src="/screenshots/homepage.png" alt="Conduikt homepage" />
-<p>Homepage — multi-agent positioning, agency-focused</p>
-</div>
-
-<div class="screen">
-<img src="/screenshots/features.png" alt="Features overview" />
-<p>Features — agent catalogue with concrete outputs</p>
+<img src="/screenshots/dashboard.jpg" alt="Conduikt agent dashboard" />
+<p>Agent dashboard — 18 specialised agents, organised by category</p>
 </div>
 
 <div class="screen">
-<img src="/screenshots/pricing.png" alt="Pricing tiers" />
-<p>Pricing — Free / Pro / Growth / Agency</p>
+<img src="/screenshots/seo-agent.jpg" alt="SEO Audit agent output" />
+<p>SEO Audit Agent — concrete fixes with code snippets, not generic advice</p>
 </div>
 
+<div class="screen">
+<img src="/screenshots/campaign-builder.jpg" alt="Campaign builder" />
+<p>Campaign Builder — chain audits, content, and publishing into one flow</p>
 </div>
 
-<div class="footnote">
-
-Live at <span class="brand">conduikt.com</span> · authenticated agent and dashboard screenshots added before final export.
+<div class="screen">
+<img src="/screenshots/analytics.jpg" alt="Performance analytics" />
+<p>Analytics — performance data feeds the closed loop back to the generator</p>
+</div>
 
 </div>
 
