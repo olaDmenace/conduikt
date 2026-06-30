@@ -368,6 +368,8 @@ Real numbers replace placeholders before final export — beta signups, paying c
 
 <Footer />
 
+---
+
 # Founder
 
 <div class="founder-grid">
