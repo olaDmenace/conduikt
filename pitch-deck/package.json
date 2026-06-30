@@ -1,0 +1,22 @@
+{
+  "name": "conduikt-pitch-deck",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Conduikt pitch deck for Estonian Startup Visa committee — Slidev source.",
+  "scripts": {
+    "dev": "slidev",
+    "build": "slidev build",
+    "export": "slidev export --output conduikt-pitch-deck.pdf --with-toc",
+    "export:dark": "slidev export --output conduikt-pitch-deck.pdf --dark --with-toc",
+    "screenshots": "node scripts/capture-screenshots.mjs"
+  },
+  "dependencies": {
+    "@slidev/cli": "^0.50.0",
+    "@slidev/theme-default": "^0.25.0",
+    "playwright-chromium": "^1.49.0",
+    "vue": "^3.4.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0"
+  }
+}
