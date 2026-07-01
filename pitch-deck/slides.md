@@ -250,7 +250,10 @@ The window: <span class="brand">18–24 months</span> before enterprise vendors 
 
 <div class="unit-stat">
 <div class="stat-small">LTV target</div>
-<div class="stat-value brand">$1,200+</div>
+<div class="stat-value brand ltv-segmented">
+  &gt;$800 <span class="ltv-tag">Pro</span><br/>
+  &gt;$1,800 <span class="ltv-tag">Agency</span>
+</div>
 </div>
 
 <div class="unit-stat">
@@ -266,34 +269,29 @@ The window: <span class="brand">18–24 months</span> before enterprise vendors 
 
 # Traction
 
-Launched public beta **April 2026**. Building in public — every commit, every shipped feature, every honest "this didn't work yet."
+Launched public beta **April 2026**. Early stage — current focus is validating the loop with the first 20 customers before opening broader acquisition.
 
 <div class="grid grid-cols-2 gap-3 mt-3">
 
 <div class="traction-block">
 <h3 class="brand">Product</h3>
 <ul>
-<li><strong>18 production agents</strong> shipped — SEO, content, publishing, analytics</li>
-<li><strong>Real users on free + paid tiers</strong></li>
-<li><strong>Live customer testimonials</strong> from SMB operators (Dara Sobayo, Adeola Owoade, Olatunbosun Olalekan, Oluwatobiloba Olajide)</li>
-<li>Dogfooded: Conduikt's own marketing runs through Conduikt</li>
+<li><strong>18 production agents</strong> shipped across audit, content, publishing, analytics</li>
+<li><strong>Closed feedback loop live in production</strong> — analyzer surfaces what works, feeds it into the next generation (no other SMB tool does this today)</li>
+<li><strong>4 live customer testimonials</strong> from SMB operators — Dara Sobayo, Adeola Owoade, Olatunbosun Olalekan, Oluwatobiloba Olajide (visible on conduikt.com)</li>
+<li>Dogfooded — Conduikt's own marketing runs through Conduikt</li>
 </ul>
 </div>
 
 <div class="traction-block">
-<h3 class="copper">Build-in-public</h3>
+<h3 class="copper">Build-in-public momentum</h3>
 <ul>
-<li><strong>14-day launch playbook</strong> currently running on @olayinkafag — Conduikt agents writing and scheduling the posts</li>
-<li><strong>Closed feedback loop</strong> live: analyzer extracts what works from real engagement data and feeds it back into the generator</li>
-<li>Daily commits to <code>olaDmenace/conduikt</code> — every fix, every learning visible</li>
+<li><strong>14-day launch playbook</strong> currently running on X (<span class="brand">@olaDmenace</span>) — Conduikt agents writing + scheduling every post</li>
+<li>Daily public commits to <code>olaDmenace/conduikt</code> — every fix, every learning visible</li>
+<li><strong>Free-access pilot</strong> open to select agencies (white-label reports + bulk content) as the wedge to 100 paying customers</li>
+<li>Committed to publishing calibration data — the honest signal a Startup Visa committee can actually verify</li>
 </ul>
 </div>
-
-</div>
-
-<div class="footnote mt-3">
-
-Real numbers replace placeholders before final export — beta signups, paying customer count, X follower delta, agency conversations in flight.
 
 </div>
 
@@ -392,7 +390,7 @@ Real numbers replace placeholders before final export — beta signups, paying c
 - Built Conduikt **solo** over 14 months — every agent, the full stack, the brand
 - Domain depth in **agentic AI workflows, MCP integration, marketing automation pipelines**
 - Operator background — has run marketing-as-the-founder before, knows the pain firsthand
-- Strong public-building track record on X (<span class="brand">@olayinkafag</span>) and conduikt.com
+- Strong public-building track record on X (<span class="brand">@olaDmenace</span>) and conduikt.com
 
 </div>
 
@@ -458,11 +456,11 @@ Real numbers replace placeholders before final export — beta signups, paying c
 
 <div class="projection">
 <div class="projection-period">36 months</div>
-<div class="projection-arr">$0 → <span class="brand">$2M ARR</span></div>
+<div class="projection-arr">Path to <span class="brand">$1.5–2M ARR</span></div>
 <ul>
-<li>1,500 paying customers</li>
-<li>~$120 blended ARPU (Agency mix grows)</li>
-<li>Cash-flow positive month 28</li>
+<li>Contingent on hitting agency acquisition targets</li>
+<li>1,000–1,500 paying customers</li>
+<li>Cash-flow positive month 28 in the base case</li>
 </ul>
 </div>
 
@@ -470,7 +468,7 @@ Real numbers replace placeholders before final export — beta signups, paying c
 
 <div class="footnote mt-3">
 
-Conservative — assumes <strong>organic content marketing only</strong>, no paid ads, no significant hires before month 10. Upside scenarios with funded paid acquisition land materially higher.
+Base case: <strong>organic content marketing only</strong>, no paid ads, no significant hires before month 10. Upside scenarios with funded paid acquisition land materially higher.
 
 </div>
 
@@ -540,7 +538,7 @@ Intent to incorporate **OÜ before arrival** and build long-term in Tallinn.
 **Olayinka Fagbenro**
 <a href="mailto:hello@conduikt.com" class="brand">hello@conduikt.com</a>
 <a href="https://conduikt.com" class="brand">conduikt.com</a>
-<a href="https://x.com/olayinkafag" class="brand">@olayinkafag</a>
+<a href="https://x.com/olaDmenace" class="brand">@olaDmenace</a>
 
 </div>
 

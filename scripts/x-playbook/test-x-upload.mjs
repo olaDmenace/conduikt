@@ -27,7 +27,7 @@ const db = createClient(
   { auth: { persistSession: false } }
 );
 
-// Find @olayinkafag's connected X account.
+// Find @olaDmenace's connected X account.
 const { data: account, error } = await db
   .from("connected_accounts")
   .select("id, user_id, access_token, refresh_token, token_expires_at, platform_username")

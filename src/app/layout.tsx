@@ -65,7 +65,7 @@ const organizationJsonLd = {
     url: "https://www.linkedin.com/in/olayinkafagbenro/",
     sameAs: [
       "https://www.linkedin.com/in/olayinkafagbenro/",
-      "https://x.com/olayinkafag",
+      "https://x.com/olaDmenace",
     ],
   },
   contactPoint: [
@@ -140,7 +140,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     site: "@conduikt",
-    creator: "@olayinkafag",
+    creator: "@olaDmenace",
     title: "Conduikt: AI Marketing Automation for SaaS Founders",
     description:
       "Conduikt audits your site, generates SEO content, publishes to LinkedIn and X, and produces ready-to-export email sequences. AI marketing automation built for SaaS founders.",

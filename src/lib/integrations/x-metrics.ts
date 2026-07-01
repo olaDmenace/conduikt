@@ -1,4 +1,4 @@
-// Fetches @olayinkafag's public X metrics for the playbook's recap brackets
+// Fetches @olaDmenace's public X metrics for the playbook's recap brackets
 // (Day 7 weekly recap, Day 14 final recap). Uses the existing connected_accounts
 // row for user A — same token + refresh path the publish cron uses.
 

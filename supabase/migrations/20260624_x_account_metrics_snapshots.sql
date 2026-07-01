@@ -1,4 +1,4 @@
--- Daily snapshot of @olayinkafag's public X metrics, captured by the
+-- Daily snapshot of @olaDmenace's public X metrics, captured by the
 -- bracket-filler cron at 06:00 UTC each day. The Day 1 row is the
 -- {FOLLOWERS_START} baseline referenced by Day 7 and Day 14 recap posts.
 

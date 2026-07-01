@@ -67,7 +67,7 @@ The opinions are the moat. Generic tools become commodities. Opinionated ones be
 
 ## 6. Proof points to build (in order)
 
-1. **Loop-closure demo** — before/after engagement chart from running the feedback loop on @olayinkafag for 14 days. *(In progress — internal prototype starting 2026-06-28.)*
+1. **Loop-closure demo** — before/after engagement chart from running the feedback loop on @olaDmenace for 14 days. *(In progress — internal prototype starting 2026-06-28.)*
 2. **First paying customer testimonial** — quote + their specific metric, not a vibe.
 3. **A signature workflow nobody else has** — pick one and make it undeniable, instead of advertising fifteen.
 4. **Public dogfooding** — Conduikt's own marketing visibly run by Conduikt. The product is the proof.

@@ -1,6 +1,6 @@
 # X + LinkedIn Playbook — 14-Day Launch Export
 
-**X account:** @olayinkafag · **LinkedIn:** Olayinka Fagbenro
+**X account:** @olaDmenace · **LinkedIn:** Olayinka Fagbenro
 **Start:** Thu 2026-06-25 (Day 1 fires 08:30 WAT = 07:30 UTC on X, 09:00 WAT on LinkedIn)
 **End:** Wed 2026-07-08 (Day 14 final post at 18:30 WAT)
 **Generated:** 2026-06-24 · **Last updated:** 2026-06-24 (after feedback pass)

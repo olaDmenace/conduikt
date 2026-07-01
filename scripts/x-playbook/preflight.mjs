@@ -31,7 +31,7 @@ if (aerr) {
   process.exit(1);
 }
 if (!accts?.length) {
-  console.error("No connected X account found. Connect @olayinkafag in Conduikt first (Settings → Connections).");
+  console.error("No connected X account found. Connect @olaDmenace in Conduikt first (Settings → Connections).");
   process.exit(1);
 }
 

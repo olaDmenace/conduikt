@@ -4,7 +4,7 @@
 // All four credentials must be set as env vars:
 //   X_OAUTH1_CONSUMER_KEY        — app-level (API Key in dev portal)
 //   X_OAUTH1_CONSUMER_SECRET     — app-level (API Key Secret)
-//   X_OAUTH1_ACCESS_TOKEN        — user-level for @olayinkafag
+//   X_OAUTH1_ACCESS_TOKEN        — user-level for @olaDmenace
 //   X_OAUTH1_ACCESS_TOKEN_SECRET — user-level
 //
 // Generate at https://developer.x.com → your app → Keys and tokens.

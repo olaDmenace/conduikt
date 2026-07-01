@@ -34,7 +34,7 @@ const CRAWLER_HTML = `<!DOCTYPE html>
 <meta property="og:image:alt" content="Conduikt AI marketing dashboard showing SEO audit, content generation, and multi-channel publishing">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@conduikt">
-<meta name="twitter:creator" content="@olayinkafag">
+<meta name="twitter:creator" content="@olaDmenace">
 <meta name="twitter:title" content="Conduikt: AI Marketing Automation for SaaS Founders">
 <meta name="twitter:description" content="Conduikt audits your site, generates SEO content, publishes to LinkedIn and X, and runs email marketing campaigns from one dashboard.">
 <meta name="twitter:image" content="https://conduikt.com/og-image.png">
