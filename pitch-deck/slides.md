@@ -387,7 +387,7 @@ Launched public beta **April 2026**. Early stage — current focus is validating
 
 - **8+ years** senior frontend engineer
 - Currently **leading frontend at BamBam Automation**
-- Built Conduikt **solo** over 14 months — every agent, the full stack, the brand
+- Built Conduikt **solo** since February 2026 — every agent, the full stack, the brand
 - Domain depth in **agentic AI workflows, MCP integration, marketing automation pipelines**
 - Operator background — has run marketing-as-the-founder before, knows the pain firsthand
 - Strong public-building track record on X (<span class="brand">@olaDmenace</span>) and conduikt.com
@@ -405,8 +405,8 @@ Launched public beta **April 2026**. Early stage — current focus is validating
 <div class="six-grid">
 
 <div class="reason-card">
-<h3 class="brand">UAB structure</h3>
-<p>Clean EU operations, founder-friendly tax, low admin overhead. Ready for institutional investment.</p>
+<h3 class="brand">MB structure</h3>
+<p>Right entity for a bootstrapping founder — no minimum capital requirement, low admin overhead, clean EU operations.</p>
 </div>
 
 <div class="reason-card">
@@ -496,8 +496,8 @@ Base case: <strong>organic content marketing only</strong>, no paid ads, no sign
 </div>
 
 <div class="resource">
-<h3 class="copper">UAB incorporation</h3>
-<p>Clean cap table + tax structure ready for institutional funding. Lithuania is a founder-friendly EU jurisdiction for a SaaS scale-up.</p>
+<h3 class="copper">MB incorporation</h3>
+<p>Established within the first 120 days of arrival, per Lithuania's TRP + e-signature process. Clean cap table for the first institutional round.</p>
 </div>
 
 <div class="resource">
@@ -529,7 +529,7 @@ class: ask
 
 12-month initial temporary residence permit, extendable up to 2 years.
 
-Intent to incorporate **UAB before arrival** and build long-term in Vilnius.
+Intent to establish an **MB within the first 120 days of arrival** and build long-term in Vilnius.
 
 </div>
 

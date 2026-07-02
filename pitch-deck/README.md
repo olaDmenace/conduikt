@@ -53,7 +53,7 @@ Captures public marketing pages from conduikt.com into `public/screenshots/`. Th
 9. **Competitive landscape** — vs Jasper, Copy.ai, HubSpot, Marketo
 10. **Go-to-market** — content + agency partnerships → PLG
 11. **Founder** — Olayinka Fagbenro background
-12. **Why Lithuania** — UAB, Startup Lithuania, EU customer access, alumni network
+12. **Why Lithuania** — MB, Startup Lithuania, EU customer access, alumni network
 13. **Financial projections** — 12 + 36 month ARR ramps
 14. **Use of resources** — what relocation unlocks
 15. **Ask** — Startup Visa to relocate to Vilnius
@@ -68,4 +68,4 @@ Captures public marketing pages from conduikt.com into `public/screenshots/`. Th
 
 ## Visa context (for the committee — not in deck)
 
-This deck is part of the Lithuanian Startup Visa application. Conduikt is an AI marketing automation SaaS, currently operated by Olayinka Fagbenro as sole founder from Lagos, Nigeria. The application requests relocation to Vilnius to build the company full-time, leveraging Lithuania's Startup Visa, UAB structure, and EU-adjacent customer base.
+This deck is part of the Lithuanian Startup Visa application. Conduikt is an AI marketing automation SaaS, currently operated by Olayinka Fagbenro as sole founder from Lagos, Nigeria. The application requests relocation to Vilnius to build the company full-time, leveraging Lithuania's Startup Visa, MB structure, and EU-adjacent customer base.
