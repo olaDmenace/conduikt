@@ -2,8 +2,8 @@
 theme: default
 title: Conduikt — Multi-Agent AI Marketing Automation
 info: |
-  Conduikt pitch deck for the Estonian Startup Visa committee.
-  Submitted via Dealum, June 2026.
+  Conduikt pitch deck for the Lithuanian Startup Visa committee.
+  Submitted via Dealum, July 2026.
 class: text-left
 highlighter: shiki
 lineNumbers: false
@@ -23,7 +23,7 @@ defaults:
 ---
 
 <!--
-  Conduikt pitch deck — Estonian Startup Visa committee.
+  Conduikt pitch deck — Lithuanian Startup Visa committee.
   Brand: teal primary (#2F8C85), copper secondary (#D9663A),
          obsidian background (#0C0C0E), warm off-white text (#E8E4DE).
   See style.css for global overrides. Per-slide tweaks inline.
@@ -44,7 +44,7 @@ defaults:
 <div class="cover-meta">
 
 **Olayinka Fagbenro** · Founder
-Estonian Startup Visa Application · June 2026
+Lithuanian Startup Visa Application · July 2026
 
 </div>
 
@@ -379,7 +379,7 @@ Launched public beta **April 2026**. Early stage — current focus is validating
 <h2>Olayinka Fagbenro</h2>
 
 <p class="founder-role">Founder · Conduikt</p>
-<p class="founder-loc">Lagos, Nigeria → Tallinn, Estonia</p>
+<p class="founder-loc">Lagos, Nigeria → Vilnius, Lithuania</p>
 
 </div>
 
@@ -400,18 +400,18 @@ Launched public beta **April 2026**. Early stage — current focus is validating
 
 ---
 
-# Why Estonia
+# Why Lithuania
 
 <div class="six-grid">
 
 <div class="reason-card">
-<h3 class="brand">OÜ structure</h3>
+<h3 class="brand">UAB structure</h3>
 <p>Clean EU operations, founder-friendly tax, low admin overhead. Ready for institutional investment.</p>
 </div>
 
 <div class="reason-card">
-<h3 class="brand">e-Residency</h3>
-<p>Application already in motion. Foundation for OÜ incorporation before relocation.</p>
+<h3 class="brand">Startup Lithuania</h3>
+<p>Government-backed Startup Visa programme for non-EU founders. Process pre-researched, application in flight.</p>
 </div>
 
 <div class="reason-card">
@@ -421,17 +421,17 @@ Launched public beta **April 2026**. Early stage — current focus is validating
 
 <div class="reason-card">
 <h3 class="copper">Alumni network</h3>
-<p>Bolt, Wise, Veriff. Operators who've built EU SaaS at scale. The right rooms to learn in.</p>
+<p>Vinted, Nord Security (NordVPN), TransferGo — operators who've scaled Baltic SaaS internationally.</p>
 </div>
 
 <div class="reason-card">
 <h3 class="brand">Geographic access</h3>
-<p>Direct flights to Berlin, Helsinki, Stockholm for repeated customer development.</p>
+<p>Vilnius direct to Berlin, Warsaw, Stockholm, Helsinki for repeated customer development.</p>
 </div>
 
 <div class="reason-card">
 <h3 class="copper">Talent pool</h3>
-<p>Estonia + wider EU hiring pipeline for the first technical hires in year 2.</p>
+<p>Vilnius University + VGTU engineering pipeline. Strong AI/ML research base for year 2 hiring.</p>
 </div>
 
 </div>
@@ -492,12 +492,12 @@ Base case: <strong>organic content marketing only</strong>, no paid ads, no sign
 
 <div class="resource">
 <h3 class="copper">First technical hire</h3>
-<p>Month 10. Estonian or wider EU candidate. Agent infrastructure or product engineering.</p>
+<p>Month 10. Lithuanian or wider EU candidate. Agent infrastructure or product engineering.</p>
 </div>
 
 <div class="resource">
-<h3 class="copper">OÜ incorporation</h3>
-<p>Clean cap table + tax structure ready for institutional funding. Estonia is the cleanest EU jurisdiction for a SaaS exit.</p>
+<h3 class="copper">UAB incorporation</h3>
+<p>Clean cap table + tax structure ready for institutional funding. Lithuania is a founder-friendly EU jurisdiction for a SaaS scale-up.</p>
 </div>
 
 <div class="resource">
@@ -507,7 +507,7 @@ Base case: <strong>organic content marketing only</strong>, no paid ads, no sign
 
 <div class="resource">
 <h3 class="copper">Community access</h3>
-<p>Garage48, Latitude59, Startup Estonia network — the founder and customer ecosystem to compound the next 18 months.</p>
+<p>Startup Lithuania, Rockit Vilnius, Vilnius Tech Park — the founder and customer ecosystem to compound the next 18 months.</p>
 </div>
 
 </div>
@@ -525,11 +525,11 @@ class: ask
 
 <div class="ask-body">
 
-**Estonian Startup Visa** to relocate to Tallinn full-time and build Conduikt from Estonia.
+**Lithuanian Startup Visa** to relocate to Vilnius full-time and build Conduikt from Lithuania.
 
-12-month initial relocation. **€800/month subsistence** covered per visa rules.
+12-month initial temporary residence permit, extendable up to 2 years.
 
-Intent to incorporate **OÜ before arrival** and build long-term in Tallinn.
+Intent to incorporate **UAB before arrival** and build long-term in Vilnius.
 
 </div>
 
