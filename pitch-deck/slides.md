@@ -2,8 +2,8 @@
 theme: default
 title: Conduikt — Multi-Agent AI Marketing Automation
 info: |
-  Conduikt pitch deck for the Lithuanian Startup Visa committee.
-  Submitted via Dealum, July 2026.
+  Conduikt pitch deck for Baltic Europe Startup Visa applications
+  (Estonia + Lithuania). Submitted via Dealum, July 2026.
 class: text-left
 highlighter: shiki
 lineNumbers: false
@@ -23,7 +23,7 @@ defaults:
 ---
 
 <!--
-  Conduikt pitch deck — Lithuanian Startup Visa committee.
+  Conduikt pitch deck — Baltic Europe Startup Visa (Estonia + Lithuania).
   Brand: teal primary (#2F8C85), copper secondary (#D9663A),
          obsidian background (#0C0C0E), warm off-white text (#E8E4DE).
   See style.css for global overrides. Per-slide tweaks inline.
@@ -44,7 +44,7 @@ defaults:
 <div class="cover-meta">
 
 **Olayinka Fagbenro** · Founder
-Lithuanian Startup Visa Application · July 2026
+Startup Visa Application · Baltic Europe · July 2026
 
 </div>
 
@@ -385,7 +385,7 @@ Olayinka + Segun · <strong>10-year working relationship, first company built to
 <div>
 <h3 class="team-name">Olayinka Fagbenro</h3>
 <p class="team-role">Founder & CEO · Engineering</p>
-<p class="team-loc">Lagos, Nigeria → Vilnius, Lithuania</p>
+<p class="team-loc">Lagos, Nigeria → Baltic Europe (Vilnius / Tallinn)</p>
 </div>
 </div>
 
@@ -404,9 +404,9 @@ Olayinka + Segun · <strong>10-year working relationship, first company built to
 <div class="member-header">
 <div class="team-avatar copper-avatar">SK</div>
 <div>
-<h3 class="team-name">Segun K.<!-- TODO: swap for full passport-spelling surname before submission --></h3>
+<h3 class="team-name">Segun Kadri</h3>
 <p class="team-role">Co-founder · Customer Success + Ops</p>
-<p class="team-loc">Lagos, Nigeria (remote — Vilnius HQ)</p>
+<p class="team-loc">Lagos, Nigeria (remote — Baltic Europe HQ)</p>
 </div>
 </div>
 
@@ -430,18 +430,18 @@ Cap table: <strong>Olayinka 85%</strong> · <strong>Segun 10%</strong> · Early 
 
 ---
 
-# Why Lithuania
+# Why Baltic Europe
 
 <div class="six-grid">
 
 <div class="reason-card">
-<h3 class="brand">MB structure</h3>
-<p>Right entity for a bootstrapping founder — no minimum capital requirement, low admin overhead, clean EU operations.</p>
+<h3 class="brand">Founder-friendly LLC</h3>
+<p>OÜ (Estonia) or MB (Lithuania) — both allow low-capital incorporation. Right entity for a bootstrapping founder, ready to convert as funding lands.</p>
 </div>
 
 <div class="reason-card">
-<h3 class="brand">Startup Lithuania</h3>
-<p>Government-backed Startup Visa programme for non-EU founders. Process pre-researched, application in flight.</p>
+<h3 class="brand">Startup Visa route</h3>
+<p>Both Estonia and Lithuania run active Startup Visa programmes for non-EU founders. Both applications in flight — first grant sets destination.</p>
 </div>
 
 <div class="reason-card">
@@ -450,18 +450,18 @@ Cap table: <strong>Olayinka 85%</strong> · <strong>Segun 10%</strong> · Early 
 </div>
 
 <div class="reason-card">
-<h3 class="copper">Alumni network</h3>
-<p>Vinted, Nord Security (NordVPN), TransferGo — operators who've scaled Baltic SaaS internationally.</p>
+<h3 class="copper">Baltic alumni</h3>
+<p>Bolt, Wise, Veriff (Estonia) · Vinted, Nord Security, TransferGo (Lithuania) — operators who've scaled Baltic SaaS globally.</p>
 </div>
 
 <div class="reason-card">
 <h3 class="brand">Geographic access</h3>
-<p>Vilnius direct to Berlin, Warsaw, Stockholm, Helsinki for repeated customer development.</p>
+<p>Vilnius / Tallinn direct to Berlin, Warsaw, Stockholm, Helsinki for repeated EU customer development.</p>
 </div>
 
 <div class="reason-card">
 <h3 class="copper">Talent pool</h3>
-<p>Vilnius University + VGTU engineering pipeline. Strong AI/ML research base for year 2 hiring.</p>
+<p>Strong engineering pipeline across Baltic universities (Vilnius, VGTU, Tartu, TalTech) for year 2 hiring.</p>
 </div>
 
 </div>
@@ -522,12 +522,12 @@ Base case: <strong>organic content marketing only</strong>, no paid ads, no sign
 
 <div class="resource">
 <h3 class="copper">First technical hire</h3>
-<p>Month 10. Lithuanian or wider EU candidate. Agent infrastructure or product engineering.</p>
+<p>Month 10. Baltic or wider EU candidate. Agent infrastructure or product engineering.</p>
 </div>
 
 <div class="resource">
-<h3 class="copper">MB incorporation</h3>
-<p>Established within the first 120 days of arrival, per Lithuania's TRP + e-signature process. Clean cap table for the first institutional round.</p>
+<h3 class="copper">Local LLC incorporation</h3>
+<p>OÜ (Estonia) or MB (Lithuania), established during the standard post-arrival window once TRP + e-signature land. Clean cap table for the first institutional round.</p>
 </div>
 
 <div class="resource">
@@ -537,7 +537,7 @@ Base case: <strong>organic content marketing only</strong>, no paid ads, no sign
 
 <div class="resource">
 <h3 class="copper">Community access</h3>
-<p>Startup Lithuania, Rockit Vilnius, Vilnius Tech Park — the founder and customer ecosystem to compound the next 18 months.</p>
+<p>Startup Lithuania, Startup Estonia, Rockit Vilnius, Latitude59 — the Baltic founder + customer ecosystem to compound the next 18 months.</p>
 </div>
 
 </div>
@@ -555,11 +555,11 @@ class: ask
 
 <div class="ask-body">
 
-**Lithuanian Startup Visa** to relocate to Vilnius full-time and build Conduikt from Lithuania.
+**Baltic Startup Visa** (Estonia or Lithuania) to relocate full-time — Tallinn or Vilnius — and build Conduikt from Baltic Europe.
 
 12-month initial temporary residence permit, extendable up to 2 years.
 
-Intent to establish an **MB within the first 120 days of arrival** and build long-term in Vilnius.
+Intent to establish a **local LLC (OÜ or MB) during the standard post-arrival window** and build long-term in the Baltics.
 
 </div>
 
