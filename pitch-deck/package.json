@@ -2,7 +2,7 @@
   "name": "conduikt-pitch-deck",
   "version": "1.0.0",
   "private": true,
-  "description": "Conduikt pitch deck for Baltic Europe Startup Visa (Estonia + Lithuania) — Slidev source.",
+  "description": "Conduikt pitch deck for Startup Visa Applications — Slidev source.",
   "scripts": {
     "dev": "slidev",
     "build": "slidev build",

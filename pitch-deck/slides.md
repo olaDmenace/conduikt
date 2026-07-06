@@ -2,8 +2,9 @@
 theme: default
 title: Conduikt — Multi-Agent AI Marketing Automation
 info: |
-  Conduikt pitch deck for Baltic Europe Startup Visa applications
-  (Estonia + Lithuania). Submitted via Dealum, July 2026.
+  Conduikt pitch deck. Country-neutral by design so the same PDF works
+  across every Startup Visa / accelerator submission via Dealum.
+  Submitted July 2026.
 class: text-left
 highlighter: shiki
 lineNumbers: false
@@ -23,7 +24,7 @@ defaults:
 ---
 
 <!--
-  Conduikt pitch deck — Baltic Europe Startup Visa (Estonia + Lithuania).
+  Conduikt pitch deck — country-neutral Dealum submission.
   Brand: teal primary (#2F8C85), copper secondary (#D9663A),
          obsidian background (#0C0C0E), warm off-white text (#E8E4DE).
   See style.css for global overrides. Per-slide tweaks inline.
@@ -44,7 +45,7 @@ defaults:
 <div class="cover-meta">
 
 **Olayinka Fagbenro** · Founder
-Startup Visa Application · Baltic Europe · July 2026
+Startup Visa Application · July 2026
 
 </div>
 
@@ -385,7 +386,7 @@ Olayinka + Segun · <strong>10-year working relationship, first company built to
 <div>
 <h3 class="team-name">Olayinka Fagbenro</h3>
 <p class="team-role">Founder & CEO · Engineering</p>
-<p class="team-loc">Lagos, Nigeria → Baltic Europe (Vilnius / Tallinn)</p>
+<p class="team-loc">Lagos, Nigeria — relocating for full-time build</p>
 </div>
 </div>
 
@@ -406,7 +407,7 @@ Olayinka + Segun · <strong>10-year working relationship, first company built to
 <div>
 <h3 class="team-name">Segun Kadri</h3>
 <p class="team-role">Co-founder · Customer Success + Ops</p>
-<p class="team-loc">Lagos, Nigeria (remote — Baltic Europe HQ)</p>
+<p class="team-loc">Lagos, Nigeria — remote co-founder</p>
 </div>
 </div>
 
@@ -430,38 +431,44 @@ Cap table: <strong>Olayinka 85%</strong> · <strong>Segun 10%</strong> · Early 
 
 ---
 
-# Why Baltic Europe
+# Vision · Year 3
+
+<div class="lead">
+
+Conduikt is the <strong>opinionated marketing operating system for SMB founders</strong> — the AI marketing team a solo operator hires before they hire a marketer.
+
+</div>
 
 <div class="six-grid">
 
 <div class="reason-card">
-<h3 class="brand">Founder-friendly LLC</h3>
-<p>OÜ (Estonia) or MB (Lithuania) — both allow low-capital incorporation. Right entity for a bootstrapping founder, ready to convert as funding lands.</p>
+<h3 class="brand">Product</h3>
+<p>Every SMB agent workflow — audit, generate, publish, analyse, improve — visibly self-improving from real performance data. Loop closes in every account, weekly.</p>
 </div>
 
 <div class="reason-card">
-<h3 class="brand">Startup Visa route</h3>
-<p>Both Estonia and Lithuania run active Startup Visa programmes for non-EU founders. Both applications in flight — first grant sets destination.</p>
+<h3 class="brand">Customers</h3>
+<p>1,500+ paying SMB accounts across SaaS + agency segments. Median customer runs 3+ channels through Conduikt from day one.</p>
 </div>
 
 <div class="reason-card">
-<h3 class="copper">GDPR-native</h3>
-<p>EU-incorporated SaaS is structurally easier to sell to EU enterprise than US-HQ'd competitors. A positioning moat.</p>
+<h3 class="copper">Revenue</h3>
+<p>$2M ARR run-rate, 75% gross margin, cash-flow positive. Funded predominantly by revenue and one strategic round on our terms.</p>
 </div>
 
 <div class="reason-card">
-<h3 class="copper">Baltic alumni</h3>
-<p>Bolt, Wise, Veriff (Estonia) · Vinted, Nord Security, TransferGo (Lithuania) — operators who've scaled Baltic SaaS globally.</p>
+<h3 class="copper">Team</h3>
+<p>Team of 8–12 — engineering, growth, customer success — across a founder-led HQ plus remote operators. Zero-agency, product-first culture.</p>
 </div>
 
 <div class="reason-card">
-<h3 class="brand">Geographic access</h3>
-<p>Vilnius / Tallinn direct to Berlin, Warsaw, Stockholm, Helsinki for repeated EU customer development.</p>
+<h3 class="brand">Category signal</h3>
+<p>"Closed-loop AI marketing" is the recognised alternative to generic AI writers. Conduikt is the reference implementation of the category.</p>
 </div>
 
 <div class="reason-card">
-<h3 class="copper">Talent pool</h3>
-<p>Strong engineering pipeline across Baltic universities (Vilnius, VGTU, Tartu, TalTech) for year 2 hiring.</p>
+<h3 class="copper">The bet</h3>
+<p>SMB marketing gets a productivity multiplier the enterprise never had — because the enterprise never needed one. That's the wedge, played to compound.</p>
 </div>
 
 </div>
@@ -516,28 +523,28 @@ Base case: <strong>organic content marketing only</strong>, no paid ads, no sign
 </div>
 
 <div class="resource">
-<h3 class="brand">EU customer development</h3>
-<p>Direct, repeated, in-person meetings with EU SMB operators. Berlin / Helsinki / Stockholm reachable in a single workday.</p>
+<h3 class="brand">Regional customer development</h3>
+<p>Direct, repeated, in-person meetings with SMB operators in the target market — reachable in a single workday from the visa destination.</p>
 </div>
 
 <div class="resource">
 <h3 class="copper">First technical hire</h3>
-<p>Month 10. Baltic or wider EU candidate. Agent infrastructure or product engineering.</p>
+<p>Month 10. Agent infrastructure or product engineering. Sourced from the local talent pool at the visa destination.</p>
 </div>
 
 <div class="resource">
 <h3 class="copper">Local LLC incorporation</h3>
-<p>OÜ (Estonia) or MB (Lithuania), established during the standard post-arrival window once TRP + e-signature land. Clean cap table for the first institutional round.</p>
+<p>Local LLC established during the standard post-arrival window once residence permit and e-signature land. Clean cap table for the first institutional round.</p>
 </div>
 
 <div class="resource">
-<h3 class="brand">GDPR-native sales</h3>
-<p>Unblocks EU enterprise deals US-incorporated competitors can't easily win.</p>
+<h3 class="brand">Data-regulation-native sales</h3>
+<p>A locally-incorporated SaaS unblocks enterprise deals US-headquartered competitors can't easily win.</p>
 </div>
 
 <div class="resource">
 <h3 class="copper">Community access</h3>
-<p>Startup Lithuania, Startup Estonia, Rockit Vilnius, Latitude59 — the Baltic founder + customer ecosystem to compound the next 18 months.</p>
+<p>Regional accelerator + startup community access — the founder and customer ecosystem to compound the next 18 months.</p>
 </div>
 
 </div>
@@ -555,11 +562,11 @@ class: ask
 
 <div class="ask-body">
 
-**Baltic Startup Visa** (Estonia or Lithuania) to relocate full-time — Tallinn or Vilnius — and build Conduikt from Baltic Europe.
+**Startup Visa** to relocate full-time and build Conduikt with the founder on the ground at the visa destination.
 
 12-month initial temporary residence permit, extendable up to 2 years.
 
-Intent to establish a **local LLC (OÜ or MB) during the standard post-arrival window** and build long-term in the Baltics.
+Intent to establish a **local LLC during the standard post-arrival window** and build long-term from the destination country.
 
 </div>
 
