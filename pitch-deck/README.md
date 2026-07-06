@@ -52,7 +52,7 @@ Captures public marketing pages from conduikt.com into `public/screenshots/`. Th
 8. **Traction** — beta cohort, signups, build-in-public momentum
 9. **Competitive landscape** — vs Jasper, Copy.ai, HubSpot, Marketo
 10. **Go-to-market** — content + agency partnerships → PLG
-11. **Founder** — Olayinka Fagbenro background
+11. **Team** — Olayinka + Segun, cap table (85/10/5)
 12. **Why Lithuania** — MB, Startup Lithuania, EU customer access, alumni network
 13. **Financial projections** — 12 + 36 month ARR ramps
 14. **Use of resources** — what relocation unlocks

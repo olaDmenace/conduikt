@@ -630,6 +630,127 @@
 }
 
 /* =============================
+   TEAM (slide 11)
+   Two team members side-by-side + cap-table strip below.
+   Preamble at top preempts the "co-founder of convenience" read.
+   ============================= */
+
+.team-preamble {
+  font-size: 0.88rem;
+  color: var(--text-secondary) !important;
+  margin: 0 0 0.7rem;
+  line-height: 1.5;
+}
+.team-preamble p {
+  color: var(--text-secondary) !important;
+  font-size: 0.88rem !important;
+  margin: 0 !important;
+  line-height: 1.5 !important;
+}
+.team-preamble strong {
+  color: var(--text-primary);
+}
+
+.team-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+  margin-bottom: 0.7rem;
+}
+
+.team-member {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.85rem 0.95rem 0.75rem;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.member-header {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 0.55rem;
+}
+
+.team-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--bg-0);
+  flex-shrink: 0;
+  letter-spacing: -0.01em;
+}
+.team-avatar.brand-avatar {
+  background: linear-gradient(135deg, var(--brand), #3DA39B);
+}
+.team-avatar.copper-avatar {
+  background: linear-gradient(135deg, var(--copper), #E88054);
+}
+
+.team-name {
+  margin: 0 !important;
+  font-size: 0.95rem !important;
+  color: var(--text-primary) !important;
+  line-height: 1.2;
+  font-weight: 700;
+}
+.team-role {
+  color: var(--brand) !important;
+  font-size: 0.68rem !important;
+  margin: 0.1rem 0 0 !important;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.team-member:nth-child(2) .team-role {
+  color: var(--copper) !important;
+}
+.team-loc {
+  color: var(--text-tertiary) !important;
+  font-size: 0.62rem !important;
+  margin: 0.05rem 0 0 !important;
+}
+
+.team-bullets {
+  margin: 0;
+  padding-left: 0.95rem;
+  list-style: disc;
+}
+.team-bullets li {
+  color: var(--text-secondary) !important;
+  font-size: 0.7rem !important;
+  margin-bottom: 0.15rem;
+  line-height: 1.4;
+}
+.team-bullets li::marker {
+  color: var(--brand);
+}
+.team-member:nth-child(2) .team-bullets li::marker {
+  color: var(--copper);
+}
+
+.cap-table {
+  background: linear-gradient(90deg, rgba(47, 140, 133, 0.09), rgba(217, 102, 58, 0.06));
+  border: 1px solid rgba(47, 140, 133, 0.28);
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  text-align: center;
+  letter-spacing: 0.01em;
+}
+.cap-table strong {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+/* =============================
    FINANCIAL PROJECTIONS
    ============================= */
 

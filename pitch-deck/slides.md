@@ -368,32 +368,62 @@ Launched public beta **April 2026**. Early stage — current focus is validating
 
 ---
 
-# Founder
+# Team
 
-<div class="founder-grid">
+<div class="team-preamble">
 
-<div class="founder-card">
-
-<div class="founder-avatar">OF</div>
-
-<h2>Olayinka Fagbenro</h2>
-
-<p class="founder-role">Founder · Conduikt</p>
-<p class="founder-loc">Lagos, Nigeria → Vilnius, Lithuania</p>
+Olayinka + Segun · <strong>10-year working relationship, first company built together</strong>
 
 </div>
 
-<div class="founder-bullets">
+<div class="team-grid">
 
-- **8+ years** senior frontend engineer
-- Currently **leading frontend at BamBam Automation**
-- Built Conduikt **solo** since February 2026 — every agent, the full stack, the brand
-- Domain depth in **agentic AI workflows, MCP integration, marketing automation pipelines**
-- Operator background — has run marketing-as-the-founder before, knows the pain firsthand
-- Strong public-building track record on X (<span class="brand">@olaDmenace</span>) and conduikt.com
+<div class="team-member">
+
+<div class="member-header">
+<div class="team-avatar brand-avatar">OF</div>
+<div>
+<h3 class="team-name">Olayinka Fagbenro</h3>
+<p class="team-role">Founder & CEO · Engineering</p>
+<p class="team-loc">Lagos, Nigeria → Vilnius, Lithuania</p>
+</div>
+</div>
+
+<ul class="team-bullets">
+<li><strong>8+ years</strong> senior frontend engineer</li>
+<li>Currently <strong>leading frontend at BamBam Automation</strong></li>
+<li>Domain depth in <strong>agentic AI workflows, MCP integration, marketing automation</strong></li>
+<li>Building Conduikt since February 2026 — every agent, the full stack, the brand</li>
+<li>Public track record on X (<span class="brand">@olaDmenace</span>) and conduikt.com</li>
+</ul>
 
 </div>
 
+<div class="team-member">
+
+<div class="member-header">
+<div class="team-avatar copper-avatar">SK</div>
+<div>
+<h3 class="team-name">Segun K.<!-- TODO: swap for full passport-spelling surname before submission --></h3>
+<p class="team-role">Co-founder · Customer Success + Ops</p>
+<p class="team-loc">Lagos, Nigeria (remote — Vilnius HQ)</p>
+</div>
+</div>
+
+<ul class="team-bullets">
+<li><strong>8–10 years</strong> in technical support & customer operations</li>
+<li>Currently at <strong>Mquid</strong></li>
+<li>Founded <strong>Computermindz Technologies</strong></li>
+<li>Owns customer success, QA, and technical operations at Conduikt</li>
+<li>10 years working alongside Olayinka — first company built together</li>
+</ul>
+
+</div>
+
+</div>
+
+<div class="cap-table">
+Cap table: <strong>Olayinka 85%</strong> · <strong>Segun 10%</strong> · Early hire pool <strong>5%</strong>
 </div>
 
 <Footer />
