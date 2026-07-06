@@ -117,10 +117,21 @@ export async function ensureValidTikTokToken(
     return decryptToken(recheck.access_token);
   }
 
+  // Refresh irrecoverable — clear tokens but KEEP the row so the OAuth
+  // callback can upsert on (user_id, platform) when the user reconnects.
+  // Silent deletion silently nuked customer connections. See x-token.ts.
   console.warn(
-    `[tiktok-token] refresh irrecoverable for account ${current.id} — deleting connection`
+    `[tiktok-token] refresh irrecoverable for account ${current.id} — marking as needs-reauth`
   );
-  await db.from("connected_accounts").delete().eq("id", current.id);
+  await db
+    .from("connected_accounts")
+    .update({
+      access_token: null,
+      refresh_token: null,
+      token_expires_at: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", current.id);
   if (opts?.onRefreshFailed) {
     await opts.onRefreshFailed({
       id: current.id,

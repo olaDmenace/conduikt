@@ -121,11 +121,22 @@ export async function ensureValidLinkedInToken(
     return refreshed.access_token;
   }
 
-  // Refresh failed — token is genuinely dead.
+  // Refresh failed — token is genuinely dead. Clear tokens but KEEP the
+  // row so the OAuth callback can upsert on (user_id, platform) when the
+  // user reconnects, and we don't silently nuke a customer's connection
+  // on a transient refresh failure. See x-token.ts for the same fix.
   console.warn(
-    `[linkedin-token] refresh failed for account ${current.id} — deleting connection`
+    `[linkedin-token] refresh failed for account ${current.id} — marking as needs-reauth`
   );
-  await db.from("connected_accounts").delete().eq("id", current.id);
+  await db
+    .from("connected_accounts")
+    .update({
+      access_token: null,
+      refresh_token: null,
+      token_expires_at: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", current.id);
   if (opts?.onRefreshFailed) {
     await opts.onRefreshFailed({
       id: current.id,

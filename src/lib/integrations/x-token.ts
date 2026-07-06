@@ -162,11 +162,26 @@ export async function ensureValidXToken(
     return decryptToken(recheck.access_token);
   }
 
-  // Genuinely revoked or permanently invalid. Clean up and notify.
+  // Genuinely revoked or permanently invalid. Clear the token columns so
+  // the account is treated as disconnected (the publish path checks
+  // `!account.access_token`), but KEEP the row. This lets the OAuth
+  // callback re-upsert on (user_id, platform) when the user reconnects,
+  // preserves history, and — critically — stops us silently deleting a
+  // customer's connected account when a refresh transiently fails.
+  // The previous `.delete()` here silently nuked the row and left every
+  // subsequent playbook post failing with "no connected account".
   console.warn(
-    `[x-token] refresh irrecoverable for account ${current.id} — deleting connection`
+    `[x-token] refresh irrecoverable for account ${current.id} — marking as needs-reauth`
   );
-  await db.from("connected_accounts").delete().eq("id", current.id);
+  await db
+    .from("connected_accounts")
+    .update({
+      access_token: null,
+      refresh_token: null,
+      token_expires_at: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", current.id);
   if (opts?.onRefreshFailed) {
     await opts.onRefreshFailed({
       id: current.id,

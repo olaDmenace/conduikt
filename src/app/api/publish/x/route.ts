@@ -118,7 +118,18 @@ export async function POST(request: NextRequest) {
     const result = await postOneTweet(accessToken, body);
     if (!result.ok) {
       if (result.status === 401) {
-        await db.from("connected_accounts").delete().eq("id", account.id);
+        // Clear tokens but KEEP the row so reconnect can upsert cleanly.
+        // Previously .delete() silently nuked the connection on a single
+        // 401 — one bad request would erase a customer's setup.
+        await db
+          .from("connected_accounts")
+          .update({
+            access_token: null,
+            refresh_token: null,
+            token_expires_at: null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", account.id);
         if (i === 0) {
           return NextResponse.json(
             { error: "X token expired. Please reconnect your account.", reconnect: true },
