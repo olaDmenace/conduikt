@@ -32,6 +32,10 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# .env.example is intentionally tracked — it's the template that
+# documents which env vars new team members / self-hosters need to
+# set. Contains no secrets, only variable names.
+!.env.example
 
 # Local tool configs
 ,mcp.json
