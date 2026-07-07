@@ -88,7 +88,7 @@ The result: founders running their own marketing burn hours on context-switching
 
 - **18 specialised agents** today — SEO audit, content strategy, copywriting, social, email sequences, campaigns, A/B tests, programmatic SEO, growth playbooks, more
 - Agents share research, brand voice, and performance data — no patchwork
-- The feedback loop is **live in production**: posts that worked teach the model what to write next week
+- The **closed-loop analytics layer** shipped in Week 2 — engagement data automatically informs next week's generation. The loop tightens as each channel accumulates signal
 - Built for the founder who is also their own marketer — the buyer enterprise tools ignore
 
 <Footer />
@@ -278,7 +278,7 @@ Launched public beta **April 2026**. Early stage — current focus is validating
 <h3 class="brand">Product</h3>
 <ul>
 <li><strong>18 production agents</strong> shipped across audit, content, publishing, analytics</li>
-<li><strong>Closed feedback loop live in production</strong> — analyzer surfaces what works, feeds it into the next generation (no other SMB tool does this today)</li>
+<li><strong>Closed-loop analytics layer</strong> shipped in Week 2 — automated engagement analysis feeds into next week's generation (novel in the SMB AI-marketing category)</li>
 <li><strong>4 live customer testimonials</strong> from SMB operators — Dara Sobayo, Adeola Owoade, Olatunbosun Olalekan, Oluwatobiloba Olajide (visible on conduikt.com)</li>
 <li>Dogfooded — Conduikt's own marketing runs through Conduikt</li>
 </ul>

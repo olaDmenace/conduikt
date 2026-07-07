@@ -69,10 +69,10 @@ const features = [
   },
   {
     icon: TrendingUp,
-    title: "Marketing Analytics That Improve Over Time",
+    title: "Closed-Loop Marketing Analytics",
     href: "/features#analytics",
     description:
-      "Performance data feeds back into AI to improve future generations. Your marketing gets smarter over time.",
+      "Engagement data from every post automatically feeds back into the AI's context. The loop tightens with every week of publishing — no manual prompt-tuning required.",
   },
   {
     icon: Mail,

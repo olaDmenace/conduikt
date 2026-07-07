@@ -5,14 +5,14 @@ import { Card, CardContent } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 
 export const metadata: Metadata = {
-  title: "Features — 15 AI Marketing Agents for SEO, Content & Publishing",
+  title: "Features — 18 AI Marketing Agents for SEO, Content & Publishing",
   description:
-    "Explore Conduikt's AI marketing features: SEO audits, CRO analysis, AI copywriting, social content, email marketing campaigns, campaign orchestration, and multi-channel publishing.",
+    "Explore Conduikt's AI marketing features: SEO audits, CRO analysis, AI copywriting, social content, email marketing campaigns, campaign orchestration, closed-loop analytics, and multi-channel publishing.",
   alternates: { canonical: "https://conduikt.com/features/" },
   openGraph: {
-    title: "Features — 15 AI Marketing Agents for SEO, Content & Publishing",
+    title: "Features — 18 AI Marketing Agents for SEO, Content & Publishing",
     description:
-      "Explore Conduikt's AI marketing features: SEO audits, CRO analysis, AI copywriting, social content, email marketing campaigns, campaign orchestration, and multi-channel publishing.",
+      "Explore Conduikt's AI marketing features: SEO audits, CRO analysis, AI copywriting, social content, email marketing campaigns, campaign orchestration, closed-loop analytics, and multi-channel publishing.",
     url: "https://conduikt.com/features/",
     type: "website",
   },
@@ -60,7 +60,7 @@ const featureGroups = [
     description: "Get smarter with every campaign",
     features: [
       { icon: TrendingUp, title: "Analytics Dashboard", detail: "Track impressions, clicks, and conversions across every channel in one unified view." },
-      { icon: Zap, title: "Feedback Loop", detail: "Performance data feeds back into AI context. Every generation is better than the last." },
+      { icon: Zap, title: "Closed-Loop Analytics", detail: "Engagement data from every post automatically feeds back into the AI's context. The loop tightens with every week of publishing — no manual prompt-tuning required." },
       { icon: Users, title: "Team Collaboration", detail: "Invite team members with role-based access. Perfect for agencies managing multiple clients." },
     ],
   },
