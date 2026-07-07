@@ -1,36 +1,38 @@
 import { inngest } from "../client";
 import { createServiceClient } from "@/src/lib/supabase/service";
 import {
-  ensureValidLinkedInToken,
-  isLinkedInTokenExpiringSoon,
-} from "@/src/lib/integrations/linkedin-token";
+  ensureValidTikTokToken,
+  isTikTokTokenExpiringSoon,
+} from "@/src/lib/integrations/tiktok-token";
 import {
   sendRefreshRunAdminAlert,
   type RefreshFailureRecord,
 } from "@/src/lib/integrations/reconnect-helpers";
 
 /**
- * Proactive refresh — runs every hour and refreshes all LinkedIn tokens
- * that will expire within the next 7 days. LinkedIn access tokens last
- * ~60 days and refresh tokens ~365 days, so this is less urgent than X,
- * but keeps things healthy.
+ * Proactive refresh — runs every hour and refreshes all TikTok tokens
+ * that will expire within the next 2 hours. TikTok access tokens last
+ * 24 hours by default and refresh tokens ~1 year, so anyone who doesn't
+ * publish daily needs this cron running to stay connected.
  *
- * Per-user notification and email happen inside ensureValidLinkedInToken
- * via notifyTokenDeath. This cron additionally sends ONE admin summary
+ * Per-user notification and email happen inside ensureValidTikTokToken
+ * -> notifyTokenDeath. This cron additionally sends ONE admin summary
  * email (via sendRefreshRunAdminAlert) if any accounts failed in the
  * run — that's the aggregate visibility layer.
  */
-export const refreshLinkedInTokens = inngest.createFunction(
-  { id: "refresh-linkedin-tokens", retries: 1 },
+export const refreshTiktokTokens = inngest.createFunction(
+  { id: "refresh-tiktok-tokens", retries: 1 },
   { cron: "0 * * * *" },
   async ({ step }) => {
     const supabase = createServiceClient();
 
-    const accounts = await step.run("fetch-linkedin-accounts", async () => {
+    const accounts = await step.run("fetch-tiktok-accounts", async () => {
       const { data } = await supabase
         .from("connected_accounts")
-        .select("id, user_id, access_token, refresh_token, token_expires_at, platform_username")
-        .eq("platform", "linkedin")
+        .select(
+          "id, user_id, access_token, refresh_token, token_expires_at, platform_username",
+        )
+        .eq("platform", "tiktok")
         .not("refresh_token", "is", null);
 
       return data ?? [];
@@ -43,8 +45,15 @@ export const refreshLinkedInTokens = inngest.createFunction(
       const failures: RefreshFailureRecord[] = [];
 
       for (const account of accounts) {
-        // Refresh tokens expiring within 7 days
-        if (!isLinkedInTokenExpiringSoon(account.token_expires_at, 7 * 24 * 60 * 60 * 1000)) {
+        // Refresh tokens expiring within the next 2 hours. TikTok access
+        // tokens are 24h — a 2h buffer means each account gets ~12 chances
+        // to refresh cleanly per day, well before publishers hit expiry.
+        if (
+          !isTikTokTokenExpiringSoon(
+            account.token_expires_at,
+            2 * 60 * 60 * 1000,
+          )
+        ) {
           skipped++;
           continue;
         }
@@ -52,7 +61,7 @@ export const refreshLinkedInTokens = inngest.createFunction(
         // Per-user notification + email fire from inside the helper via
         // notifyTokenDeath — don't pass onRefreshFailed here or the user
         // gets duplicated notifications.
-        const token = await ensureValidLinkedInToken(account);
+        const token = await ensureValidTikTokToken(account);
 
         if (token) {
           refreshed++;
@@ -76,13 +85,13 @@ export const refreshLinkedInTokens = inngest.createFunction(
     });
 
     console.log(
-      `[refresh-linkedin-tokens] Done: ${result.refreshed} refreshed, ${result.skipped} skipped, ${result.failed} failed out of ${result.total}`
+      `[refresh-tiktok-tokens] Done: ${result.refreshed} refreshed, ${result.skipped} skipped, ${result.failed} failed out of ${result.total}`,
     );
 
     // Admin visibility — one email per run, only when failures happened.
     // No-op if ADMIN_ALERT_EMAIL / RESEND_API_KEY aren't set.
     await sendRefreshRunAdminAlert(
-      "linkedin",
+      "tiktok",
       {
         total: result.total,
         refreshed: result.refreshed,
@@ -91,7 +100,10 @@ export const refreshLinkedInTokens = inngest.createFunction(
       },
       result.failures,
     ).catch((err) =>
-      console.error("[refresh-linkedin-tokens] Admin alert send failed:", err),
+      console.error(
+        "[refresh-tiktok-tokens] Admin alert send failed:",
+        err,
+      ),
     );
 
     return {
@@ -100,5 +112,5 @@ export const refreshLinkedInTokens = inngest.createFunction(
       skipped: result.skipped,
       failed: result.failed,
     };
-  }
+  },
 );

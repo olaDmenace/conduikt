@@ -6,6 +6,7 @@ import {
   analyzePostPerformance,
   refreshXTokens,
   refreshLinkedInTokens,
+  refreshTiktokTokens,
 } from "@/src/lib/inngest";
 
 // Inngest verifies request signatures using INNGEST_SIGNING_KEY. Without it
@@ -29,5 +30,6 @@ export const { GET, POST, PUT } = serve({
     analyzePostPerformance,
     refreshXTokens,
     refreshLinkedInTokens,
+    refreshTiktokTokens,
   ],
 });

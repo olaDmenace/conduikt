@@ -4,12 +4,21 @@ import {
   ensureValidXToken,
   isTokenExpiringSoon,
 } from "@/src/lib/integrations/x-token";
+import {
+  sendRefreshRunAdminAlert,
+  type RefreshFailureRecord,
+} from "@/src/lib/integrations/reconnect-helpers";
 
 /**
- * Proactive refresh — runs every 90 minutes and refreshes all X tokens
- * that will expire within the next 30 minutes. This keeps background
- * jobs (cron publisher, metrics sync) working even when the user isn't
+ * Proactive refresh — runs every hour and refreshes all X tokens that
+ * will expire within the next 30 minutes. This keeps background jobs
+ * (cron publisher, metrics sync) working even when the user isn't
  * actively publishing.
+ *
+ * Per-user notification and email happen inside ensureValidXToken via
+ * notifyTokenDeath. This cron additionally sends ONE admin summary
+ * email (via sendRefreshRunAdminAlert) if any accounts failed in the
+ * run — that's the aggregate visibility layer.
  */
 export const refreshXTokens = inngest.createFunction(
   { id: "refresh-x-tokens", retries: 1 },
@@ -31,6 +40,7 @@ export const refreshXTokens = inngest.createFunction(
       let refreshed = 0;
       let skipped = 0;
       let failed = 0;
+      const failures: RefreshFailureRecord[] = [];
 
       for (const account of accounts) {
         // Refresh tokens expiring within 30 minutes
@@ -39,34 +49,56 @@ export const refreshXTokens = inngest.createFunction(
           continue;
         }
 
-        const token = await ensureValidXToken(account, {
-          onRefreshFailed: async (acc) => {
-            // Insert notification for the user
-            await supabase.from("notifications").insert({
-              user_id: acc.user_id,
-              type: "integration_expired",
-              title: "X connection lost",
-              body: "Your X (Twitter) access has expired and could not be renewed. Reconnect to keep publishing.",
-              action_url: "/settings/integrations",
-              data: { platform: "x", username: acc.platform_username },
-            });
-          },
-        });
+        // Per-user notification + email fire from inside the helper via
+        // notifyTokenDeath — don't pass onRefreshFailed here or the user
+        // gets duplicated notifications.
+        const token = await ensureValidXToken(account);
 
         if (token) {
           refreshed++;
         } else {
           failed++;
+          failures.push({
+            accountId: account.id,
+            userId: account.user_id,
+            platformUsername: account.platform_username,
+          });
         }
       }
 
-      return { total: accounts.length, refreshed, skipped, failed };
+      return {
+        total: accounts.length,
+        refreshed,
+        skipped,
+        failed,
+        failures,
+      };
     });
 
     console.log(
       `[refresh-x-tokens] Done: ${result.refreshed} refreshed, ${result.skipped} skipped, ${result.failed} failed out of ${result.total}`
     );
 
-    return result;
+    // Admin visibility — one email per run, only when failures happened.
+    // No-op if ADMIN_ALERT_EMAIL / RESEND_API_KEY aren't set.
+    await sendRefreshRunAdminAlert(
+      "x",
+      {
+        total: result.total,
+        refreshed: result.refreshed,
+        skipped: result.skipped,
+        failed: result.failed,
+      },
+      result.failures,
+    ).catch((err) =>
+      console.error("[refresh-x-tokens] Admin alert send failed:", err),
+    );
+
+    return {
+      total: result.total,
+      refreshed: result.refreshed,
+      skipped: result.skipped,
+      failed: result.failed,
+    };
   }
 );

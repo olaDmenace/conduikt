@@ -20,6 +20,12 @@ const CHANNEL_LABELS: Record<string, string> = {
   facebook: "Facebook",
 };
 
+export interface RefreshFailureRecord {
+  accountId: string;
+  userId: string;
+  platformUsername: string | null;
+}
+
 /**
  * After a successful OAuth reconnect, flip token-related failed posts back
  * to `pending` so the publish cron picks them up on its next tick.
@@ -157,6 +163,103 @@ export async function notifyTokenDeath(
   } catch (err) {
     console.error(
       `[notify-token-death] Email send failed for ${userId}/${channel}:`,
+      err,
+    );
+  }
+}
+
+/**
+ * Admin visibility for aggregate refresh failures. Called once at the end
+ * of each hourly refresh cron run, ONLY when at least one account failed
+ * to refresh — so the founder / on-call finds out that failures are
+ * happening across the customer base, not just per-user notifications.
+ *
+ * Sends a single Resend email summarising which accounts failed and how
+ * many succeeded, to the address in ADMIN_ALERT_EMAIL. Skips cleanly if
+ * that env var isn't set (dev / preview) or Resend isn't configured, so
+ * this never blocks the refresh cron.
+ *
+ * Cap: at most 3 emails per hour (one per platform) regardless of scale,
+ * even if hundreds of accounts fail on a single platform run.
+ */
+export async function sendRefreshRunAdminAlert(
+  channel: string,
+  totals: { refreshed: number; skipped: number; failed: number; total: number },
+  failures: RefreshFailureRecord[],
+): Promise<void> {
+  if (failures.length === 0) return;
+  const adminEmail = process.env.ADMIN_ALERT_EMAIL;
+  if (!adminEmail) return;
+  if (!process.env.RESEND_API_KEY) return;
+
+  const channelLabel = CHANNEL_LABELS[channel] ?? channel;
+
+  try {
+    const failureRows = failures
+      .slice(0, 25)
+      .map(
+        (f) =>
+          `<tr>
+            <td style="padding:6px 12px;border-bottom:1px solid #e5e0db;font-family:monospace;font-size:12px;">${f.userId}</td>
+            <td style="padding:6px 12px;border-bottom:1px solid #e5e0db;">${f.platformUsername ? `@${f.platformUsername}` : "<em>unknown</em>"}</td>
+            <td style="padding:6px 12px;border-bottom:1px solid #e5e0db;font-family:monospace;font-size:12px;color:#8a8176;">${f.accountId}</td>
+          </tr>`,
+      )
+      .join("");
+
+    const overflow =
+      failures.length > 25
+        ? `<p style="margin:12px 0 0;font-size:13px;color:#8a8176;">…and ${failures.length - 25} more.</p>`
+        : "";
+
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    await resend.emails.send({
+      from: "Conduikt Alerts <hello@contacts.conduikt.com>",
+      to: adminEmail,
+      subject: `[${channelLabel}] ${failures.length} token refresh failure(s) in the last hour`,
+      html: `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f5f0eb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f5f0eb;padding:32px 20px;">
+    <tr><td align="center">
+      <table width="640" cellpadding="0" cellspacing="0" role="presentation" style="max-width:640px;background:#ffffff;border-radius:12px;border:1px solid #e5e0db;">
+        <tr><td style="background:#1a1714;padding:20px 32px;">
+          <p style="margin:0;font-size:16px;font-weight:700;color:#D9663A;letter-spacing:-0.3px;">Conduikt · Refresh Alert</p>
+        </td></tr>
+        <tr><td style="padding:28px 32px;">
+          <h1 style="margin:0 0 12px;font-size:18px;color:#1a1714;">${channelLabel} · ${failures.length} refresh failure${failures.length === 1 ? "" : "s"}</h1>
+          <p style="margin:0 0 20px;font-size:14px;line-height:1.55;color:#3a342e;">
+            The hourly proactive token-refresh cron for <strong>${channelLabel}</strong> could not renew ${failures.length} account${failures.length === 1 ? "" : "s"} in the most recent run. Affected users have been emailed and their scheduled posts are on hold until they reconnect.
+          </p>
+          <table style="margin:0 0 20px;font-size:13px;color:#3a342e;">
+            <tr><td style="padding:2px 12px 2px 0;">Total accounts scanned:</td><td><strong>${totals.total}</strong></td></tr>
+            <tr><td style="padding:2px 12px 2px 0;">Refreshed OK:</td><td><strong>${totals.refreshed}</strong></td></tr>
+            <tr><td style="padding:2px 12px 2px 0;">Skipped (not near expiry):</td><td><strong>${totals.skipped}</strong></td></tr>
+            <tr><td style="padding:2px 12px 2px 0;color:#B44C1E;">Failed:</td><td style="color:#B44C1E;"><strong>${totals.failed}</strong></td></tr>
+          </table>
+          <table cellpadding="0" cellspacing="0" style="width:100%;border:1px solid #e5e0db;border-collapse:collapse;border-radius:6px;overflow:hidden;">
+            <thead>
+              <tr style="background:#f5f0eb;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#8a8176;">
+                <th style="padding:8px 12px;">User ID</th>
+                <th style="padding:8px 12px;">Handle</th>
+                <th style="padding:8px 12px;">Account ID</th>
+              </tr>
+            </thead>
+            <tbody>${failureRows}</tbody>
+          </table>
+          ${overflow}
+          <p style="margin:24px 0 0;font-size:12px;color:#8a8176;">
+            Cron: <code>0 * * * *</code> · Function: <code>refresh-${channel}-tokens</code>
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`,
+    });
+  } catch (err) {
+    console.error(
+      `[sendRefreshRunAdminAlert] Failed to send admin alert for ${channel}:`,
       err,
     );
   }
