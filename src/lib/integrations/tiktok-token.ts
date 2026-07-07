@@ -132,6 +132,15 @@ export async function ensureValidTikTokToken(
       updated_at: new Date().toISOString(),
     })
     .eq("id", current.id);
+
+  const { notifyTokenDeath } = await import("./reconnect-helpers");
+  await notifyTokenDeath(
+    current.user_id,
+    "tiktok",
+    current.platform_username,
+  ).catch((err) =>
+    console.error("[tiktok-token] notifyTokenDeath failed:", err),
+  );
   if (opts?.onRefreshFailed) {
     await opts.onRefreshFailed({
       id: current.id,

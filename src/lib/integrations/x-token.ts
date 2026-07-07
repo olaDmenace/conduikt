@@ -182,6 +182,14 @@ export async function ensureValidXToken(
       updated_at: new Date().toISOString(),
     })
     .eq("id", current.id);
+
+  // Best-effort user notification (dashboard + email). Never throws — the
+  // primary failure signal is the null tokens on the row above; the
+  // notification is icing.
+  const { notifyTokenDeath } = await import("./reconnect-helpers");
+  await notifyTokenDeath(current.user_id, "x", current.platform_username).catch(
+    (err) => console.error("[x-token] notifyTokenDeath failed:", err),
+  );
   if (opts?.onRefreshFailed) {
     await opts.onRefreshFailed({
       id: current.id,

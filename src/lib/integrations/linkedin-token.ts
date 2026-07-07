@@ -137,6 +137,15 @@ export async function ensureValidLinkedInToken(
       updated_at: new Date().toISOString(),
     })
     .eq("id", current.id);
+
+  const { notifyTokenDeath } = await import("./reconnect-helpers");
+  await notifyTokenDeath(
+    current.user_id,
+    "linkedin",
+    current.platform_username,
+  ).catch((err) =>
+    console.error("[linkedin-token] notifyTokenDeath failed:", err),
+  );
   if (opts?.onRefreshFailed) {
     await opts.onRefreshFailed({
       id: current.id,

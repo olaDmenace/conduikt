@@ -72,6 +72,25 @@ export async function GET(request: NextRequest) {
     updated_at: new Date().toISOString(),
   }, { onConflict: "user_id,platform" });
 
+  const { retryFailedPostsAfterReconnect } = await import(
+    "@/src/lib/integrations/reconnect-helpers"
+  );
+  const retried = await retryFailedPostsAfterReconnect(
+    user.id,
+    "linkedin",
+  ).catch((err) => {
+    console.error(
+      "[linkedin/callback] retryFailedPostsAfterReconnect failed:",
+      err,
+    );
+    return 0;
+  });
+  if (retried > 0) {
+    console.log(
+      `[linkedin/callback] Re-queued ${retried} previously-failed LinkedIn posts.`,
+    );
+  }
+
   const response = NextResponse.redirect(`${appUrl}/settings/integrations?connected=linkedin`);
   response.cookies.delete("li_oauth_state");
   return response;

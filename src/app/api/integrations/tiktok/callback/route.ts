@@ -104,6 +104,24 @@ export async function GET(request: NextRequest) {
     return fail("Could not save the TikTok connection — please try again");
   }
 
+  const { retryFailedPostsAfterReconnect } = await import(
+    "@/src/lib/integrations/reconnect-helpers"
+  );
+  const retried = await retryFailedPostsAfterReconnect(user.id, "tiktok").catch(
+    (err) => {
+      console.error(
+        "[tiktok/callback] retryFailedPostsAfterReconnect failed:",
+        err,
+      );
+      return 0;
+    },
+  );
+  if (retried > 0) {
+    console.log(
+      `[tiktok/callback] Re-queued ${retried} previously-failed TikTok posts.`,
+    );
+  }
+
   const response = NextResponse.redirect(`${appUrl}/settings/integrations?connected=tiktok`);
   response.cookies.delete("tt_oauth_state");
   response.cookies.delete("tt_oauth_verifier");

@@ -80,6 +80,21 @@ export async function GET(request: NextRequest) {
     updated_at: new Date().toISOString(),
   }, { onConflict: "user_id,platform" });
 
+  // Auto-retry any scheduled posts that failed with token errors while the
+  // connection was down. Never blocks the reconnect success flow.
+  const { retryFailedPostsAfterReconnect } = await import(
+    "@/src/lib/integrations/reconnect-helpers"
+  );
+  const retried = await retryFailedPostsAfterReconnect(user.id, "x").catch(
+    (err) => {
+      console.error("[x/callback] retryFailedPostsAfterReconnect failed:", err);
+      return 0;
+    },
+  );
+  if (retried > 0) {
+    console.log(`[x/callback] Re-queued ${retried} previously-failed X posts.`);
+  }
+
   const response = NextResponse.redirect(`${appUrl}/settings/integrations?connected=x`);
   // Clear PKCE cookies
   response.cookies.delete("x_code_verifier");

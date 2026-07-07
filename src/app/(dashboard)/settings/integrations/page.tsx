@@ -21,8 +21,13 @@ interface ConnectedAccount {
   platform: string;
   platform_username: string | null;
   token_expires_at: string | null;
-  // We don't expose the refresh_token value to the client — only whether
-  // one exists. The DB select coerces this to a boolean below.
+  // We don't expose the raw tokens to the client — only whether they
+  // exist. The DB select coerces to booleans below.
+  //
+  // has_access_token = false is our "needs reconnect" signal: the row
+  // survives (so we know which handle it was), but the tokens have been
+  // nulled by the refresh helper after a permanent failure.
+  has_access_token: boolean;
   has_refresh_token: boolean;
   created_at: string;
 }
@@ -72,12 +77,15 @@ function IntegrationsContent() {
     // or actually broken (no way to refresh, user must reconnect).
     const { data } = await supabase
       .from("connected_accounts")
-      .select("platform, platform_username, token_expires_at, refresh_token, created_at");
+      .select(
+        "platform, platform_username, token_expires_at, access_token, refresh_token, created_at",
+      );
     setAccounts(
       (data ?? []).map((row) => ({
         platform: row.platform,
         platform_username: row.platform_username,
         token_expires_at: row.token_expires_at,
+        has_access_token: Boolean(row.access_token),
         has_refresh_token: Boolean(row.refresh_token),
         created_at: row.created_at,
       }))
@@ -152,6 +160,10 @@ function IntegrationsContent() {
   const ttAccount = accounts.find((a) => a.platform === "tiktok");
 
   function isExpired(account: ConnectedAccount) {
+    // The token-refresh helper nulls out access_token when a refresh
+    // permanently fails (rather than deleting the row). That's our
+    // authoritative "needs reconnect" signal — check it first.
+    if (!account.has_access_token) return true;
     // If we still hold a refresh_token, the next API call to Google
     // (handled by getValidGoogleToken) silently rotates the access
     // token before making the request — so a stale token_expires_at
@@ -236,7 +248,7 @@ function IntegrationsContent() {
                 ) : connected && expired ? (
                   <Badge variant="warning">
                     <AlertCircle className="h-3 w-3 mr-1" />
-                    Token expired
+                    Reconnect needed
                   </Badge>
                 ) : integration.comingSoon ? (
                   <Badge variant="secondary">
@@ -264,6 +276,20 @@ function IntegrationsContent() {
                   <Button variant="secondary" size="sm" onClick={openGscPicker}>
                     <Pencil className="h-4 w-4" />
                     Change site
+                  </Button>
+                )}
+                {/* Row exists but tokens have been nulled by the refresh
+                    helper — give the user a direct Reconnect action that
+                    reruns OAuth. The callback upserts on (user_id,
+                    platform) so the same row gets fresh tokens in place,
+                    AND any recently-failed scheduled posts on this
+                    channel auto-retry. */}
+                {expired && integration.connectHref && (
+                  <Button size="sm" asChild>
+                    <a href={integration.connectHref}>
+                      <Link2 className="h-4 w-4" />
+                      Reconnect
+                    </a>
                   </Button>
                 )}
                 <Button
