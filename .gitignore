@@ -37,6 +37,14 @@ yarn-error.log*
 # set. Contains no secrets, only variable names.
 !.env.example
 
+# Personal strategy / application working docs. Sources of truth
+# (POSITIONING.md, YC-APPLICATION-BRIEFING.md, pitch-deck/) stay
+# tracked; AI-generated drafts and personal analyses do not.
+CONDUIKT-VALIDATION-VERDICT.md
+YC-APPLICATION-DRAFT.md
+YC-APPLICATION-DRAFT-*.md
+*-DRAFT.md
+
 # Local tool configs
 ,mcp.json
 
