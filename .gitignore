@@ -44,6 +44,12 @@ CONDUIKT-VALIDATION-VERDICT.md
 YC-APPLICATION-DRAFT.md
 YC-APPLICATION-DRAFT-*.md
 *-DRAFT.md
+*-DRAFT.pdf
+Conduikt-Synopsis.pdf
+CONDUIKT-UI-UX-ANALYSIS-AND-IMPROVEMENT-REPORT.pdf
+
+# Local scratch directory for one-off scripts, notes, prototypes.
+scratch/
 
 # Local tool configs
 ,mcp.json

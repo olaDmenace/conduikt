@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  # Manual trigger — useful for re-running against main after a merge or
+  # for smoke-checking the pipeline after infra changes.
+  workflow_dispatch:
+
+# Cancel in-progress runs on the same branch when a newer commit lands.
+# Keeps the runner queue clean on rapid pushes.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # --------------------------------------------------------------------
+  # Fast lane — runs on every PR + push. Lint + typecheck + unit tests.
+  # Cheap enough (< 3 min) to gate merges on.
+  # --------------------------------------------------------------------
+  check:
+    name: Lint · Typecheck · Unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        # Next.js 16 exposes typecheck via tsc; run non-emitting.
+        run: npx tsc --noEmit
+
+      - name: Unit tests (Vitest)
+        run: npm run test:run
+
+  # --------------------------------------------------------------------
+  # E2E lane — Playwright. Slower (browser downloads + build). Runs on
+  # PR + main; if it becomes a bottleneck, gate to labels like `run-e2e`
+  # or move to a nightly cron.
+  # --------------------------------------------------------------------
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Playwright needs the built app; the build step is heavy, so skip
+    # this job on Dependabot bumps unless the workflow itself changed.
+    if: >
+      github.actor != 'dependabot[bot]' ||
+      contains(github.event.head_commit.modified, '.github/workflows/ci.yml')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Build
+        # Real env not required here — the e2e suite should stub external
+        # services or use fixtures. If a spec depends on production env,
+        # gate it with `test.skip(!process.env.CI_FULL)` or similar.
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+
+      - name: Run Playwright
+        run: npm run test:e2e
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
