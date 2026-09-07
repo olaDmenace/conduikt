@@ -197,6 +197,15 @@ export function Sidebar() {
   const usageUnlimited = isUnlimited(usageLimit);
   const usagePct = usageUnlimited ? 0 : Math.min((usageCount / usageLimit) * 100, 100);
 
+  // When the user is already inside a project, the per-project agent list
+  // (rendered inline under the project row) covers every agent — showing the
+  // same global "Agents" menu below it duplicates the entire list and creates
+  // the "which project does clicking this write for?" confusion the UX audit
+  // called out. Hide it in-project; keep it visible everywhere else so the
+  // user can still reach an agent from the dashboard or settings.
+  const inAnyProject =
+    pathname.startsWith("/projects/") && pathname !== "/projects/new";
+
   return (
     <>
       {/* Mobile overlay */}
@@ -453,8 +462,8 @@ export function Sidebar() {
           {/* Divider */}
           <div className="my-3 border-t border-border-subtle" />
 
-          {/* Global Agents menu */}
-          {showLabel ? (
+          {/* Global Agents menu — hidden when in-project (agents already listed under the project) */}
+          {!inAnyProject && (showLabel ? (
             <div>
               <button
                 onClick={() => setAgentsMenuOpen((o) => !o)}
@@ -554,7 +563,7 @@ export function Sidebar() {
             >
               <AgentsMenuIcon className="h-[18px] w-[18px]" />
             </Link>
-          )}
+          ))}
           <SidebarLink
             href="/playground"
             icon={Play}

@@ -47,6 +47,7 @@ import { useUsageLimitModal } from "@/src/components/usage/limit-modal";
 import { ExpectationBanner } from "@/src/components/ui/expectation-banner";
 import { VariantPanel } from "@/src/components/content/variant-panel";
 import { BulkGenerateDialog } from "@/src/components/content/bulk-generate-dialog";
+import { QuotaBadge } from "@/src/components/generation/quota-badge";
 import { SendToWebhook } from "@/src/components/content/send-to-webhook";
 import { MediaPicker } from "@/src/components/media/media-picker";
 import { SendBroadcastModal } from "@/src/components/email/send-broadcast-modal";
@@ -1855,6 +1856,8 @@ function ContentPageInner({
                     className="w-full rounded-lg border border-border-strong bg-surface-0 px-4 py-3 text-text-primary placeholder:text-text-tertiary font-sans text-[0.9375rem] transition-all duration-150 focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-glow)] resize-none"
                   />
                 </div>
+
+                <QuotaBadge />
 
                 <Button
                   type="submit"
