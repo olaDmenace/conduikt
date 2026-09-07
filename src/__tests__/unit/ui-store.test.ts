@@ -7,6 +7,7 @@ describe('UI Store (Zustand)', () => {
     useUIStore.setState({
       sidebarCollapsed: false,
       mobileMenuOpen: false,
+      commandPaletteOpen: false,
       expandedProjectIds: [],
       theme: 'dark',
     })
@@ -77,6 +78,28 @@ describe('UI Store (Zustand)', () => {
       useUIStore.getState().setProjectExpanded('proj-1', true)
       const ids = useUIStore.getState().expandedProjectIds.filter((id) => id === 'proj-1')
       expect(ids).toHaveLength(1)
+    })
+  })
+
+  describe('Command Palette', () => {
+    it('starts closed', () => {
+      expect(useUIStore.getState().commandPaletteOpen).toBe(false)
+    })
+
+    it('setCommandPaletteOpen sets the value directly', () => {
+      useUIStore.getState().setCommandPaletteOpen(true)
+      expect(useUIStore.getState().commandPaletteOpen).toBe(true)
+
+      useUIStore.getState().setCommandPaletteOpen(false)
+      expect(useUIStore.getState().commandPaletteOpen).toBe(false)
+    })
+
+    it('toggleCommandPalette flips the open state', () => {
+      useUIStore.getState().toggleCommandPalette()
+      expect(useUIStore.getState().commandPaletteOpen).toBe(true)
+
+      useUIStore.getState().toggleCommandPalette()
+      expect(useUIStore.getState().commandPaletteOpen).toBe(false)
     })
   })
 

@@ -4,6 +4,7 @@ import { persist } from "zustand/middleware";
 interface UIState {
   sidebarCollapsed: boolean;
   mobileMenuOpen: boolean;
+  commandPaletteOpen: boolean;
   expandedProjectIds: string[];
   theme: "dark" | "light";
 
@@ -11,6 +12,8 @@ interface UIState {
   setSidebarCollapsed: (collapsed: boolean) => void;
   setMobileMenuOpen: (open: boolean) => void;
   toggleMobileMenu: () => void;
+  setCommandPaletteOpen: (open: boolean) => void;
+  toggleCommandPalette: () => void;
   toggleProjectExpanded: (id: string) => void;
   setProjectExpanded: (id: string, expanded: boolean) => void;
   toggleTheme: () => void;
@@ -22,6 +25,7 @@ export const useUIStore = create<UIState>()(
     (set) => ({
       sidebarCollapsed: false,
       mobileMenuOpen: false,
+      commandPaletteOpen: false,
       expandedProjectIds: [],
       theme: "dark" as const,
 
@@ -31,6 +35,9 @@ export const useUIStore = create<UIState>()(
       setMobileMenuOpen: (open) => set({ mobileMenuOpen: open }),
       toggleMobileMenu: () =>
         set((state) => ({ mobileMenuOpen: !state.mobileMenuOpen })),
+      setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
+      toggleCommandPalette: () =>
+        set((state) => ({ commandPaletteOpen: !state.commandPaletteOpen })),
 
       toggleProjectExpanded: (id) =>
         set((state) => ({

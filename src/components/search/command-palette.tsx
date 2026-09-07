@@ -19,6 +19,7 @@ import {
   AlertTriangle,
   Calendar,
 } from "lucide-react";
+import { useUIStore } from "@/src/stores/ui-store";
 
 interface Project {
   id: string;
@@ -51,7 +52,9 @@ const PAGES = [
 ];
 
 export function CommandPalette() {
-  const [open, setOpen] = useState(false);
+  const open = useUIStore((s) => s.commandPaletteOpen);
+  const setOpen = useUIStore((s) => s.setCommandPaletteOpen);
+  const toggle = useUIStore((s) => s.toggleCommandPalette);
   const [projects, setProjects] = useState<Project[]>([]);
   const [assets, setAssets] = useState<Array<{ id: string; title: string; project_id: string }>>([]);
   const router = useRouter();
@@ -60,12 +63,12 @@ export function CommandPalette() {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        setOpen((prev) => !prev);
+        toggle();
       }
     };
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
-  }, []);
+  }, [toggle]);
 
   const fetchData = useCallback(async () => {
     if (!open) return;

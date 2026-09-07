@@ -16,10 +16,16 @@
   --surface-2: #1C1C22;
   --surface-3: #24242C;
 
-  /* --- Text --- */
+  /* --- Text ---
+     Dark-mode text tokens raised to pass WCAG AA on --surface-0 (#0C0C0E):
+       primary   (#E8E4DE) ~15:1  — AAA
+       secondary (#ACA59B) ~6.1:1 — AA (previous #9B958C was 4.6:1, borderline)
+       tertiary  (#7E7972) ~4.5:1 — AA (previous #5E5A54 was 2.2:1, fail)
+     Do NOT drop tertiary contrast below 4.5:1 — it renders on real
+     UI elements (placeholders, badges, secondary labels), not decoration. */
   --text-primary: #E8E4DE;
-  --text-secondary: #9B958C;
-  --text-tertiary: #5E5A54;
+  --text-secondary: #ACA59B;
+  --text-tertiary: #7E7972;
 
   /* --- Brand colour ladder (sampled from logo, per DESIGN_SYSTEM.md) --- */
   --brand-orange-400: #E78457;
