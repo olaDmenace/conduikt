@@ -438,13 +438,23 @@ unverified marketing.
 
 ## 7. Blockers + risks
 
-### 7.1 CSP header — deferred but should ship soon
+### 7.1 CSP header — SHIPPED in Report-Only mode
 
-Baseline security headers landed this session; CSP was deliberately
-deferred. Next step: ship in Report-Only mode with a `/api/csp-report`
-endpoint, monitor 7-14 days, tighten based on real violations, then
-switch to enforce. Full plan lives in the security-headers commit
-message. **Estimated: 1 dedicated day.**
+Baseline security headers landed in an earlier commit. CSP now ships
+in `Content-Security-Policy-Report-Only` mode with violations posted
+to `/api/csp-report` (logged to stdout, captured by Vercel logs).
+
+**Next step (~15 min after monitoring window):** watch the CSP report
+logs for 7-14 days of real traffic. Real violations will surface
+either legitimate sources we forgot (add them to the policy) or the
+proof that we're safe to flip. Once clean, edit `next.config.ts` and
+rename the header key from `Content-Security-Policy-Report-Only` to
+`Content-Security-Policy`. Done.
+
+**Rate-limiting note:** the `/api/csp-report` endpoint currently
+accepts unlimited POSTs. Fine while we're in Report-Only with a small
+audience. Before enforcing, add rate-limiting (compromised page can
+flood violations).
 
 ### 7.2 No error monitoring in production
 
@@ -473,13 +483,21 @@ Analytics-sync path (`sync-social-metrics.ts`) already has graceful
 fallback for missing `LINKEDIN_CM_*` env vars. When approval lands,
 add credentials in Vercel + verify sync begins.
 
-### 7.6 Payment provider consistency check
+### 7.6 Payment provider — RESOLVED (both, intentional)
 
-Package.json shows `@paystack/inline-js`. Prior session memory mentioned
-Flutterwave being live. **Verify which is actually processing payments
-in production** (check `NEXT_PUBLIC_*` env vars in Vercel dashboard).
-If both are wired, decide which is primary and remove the other's
-integration code.
+Investigated: **both Paystack and Flutterwave are wired on purpose**
+with runtime failover.
+
+- Entry point: `src/app/api/billing/initialize/route.ts`
+- Primary provider defaults to **Flutterwave**; setting
+  `PAYMENT_PRIMARY_PROVIDER=paystack` on Vercel flips it (no code
+  change needed)
+- On primary failure the request auto-falls through to the other
+  provider so a Flutterwave outage doesn't block checkout
+- Files: `src/lib/payments/{flutterwave,paystack}.ts`,
+  `src/app/api/webhooks/{flutterwave,paystack}/route.ts`
+
+Not a bug. No cleanup needed.
 
 ### 7.7 First 3 paying customers is the meta-blocker
 
