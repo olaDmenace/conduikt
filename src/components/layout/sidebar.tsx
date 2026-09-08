@@ -351,22 +351,37 @@ export function Sidebar() {
                   {/* Agent list — only visible when expanded + showLabel */}
                   {isExpanded && showLabel && (
                     <div className="ml-3 pl-3 border-l border-border-subtle mt-0.5 mb-1 space-y-0.5">
-                      {/* Project tools (non-agent utility pages) */}
+                      {/* Zone 1 · Pulse — the "what's happening" surfaces:
+                          system state, performance, competitive context. */}
+                      <p className="px-2.5 pt-1.5 pb-0.5 text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-text-tertiary/60">
+                        Pulse
+                      </p>
                       <ProjectSubLink href={`${projectBase}`} icon={BarChart3} label="Overview" pathname={pathname} exact onClick={handleNavClick} />
                       <ProjectSubLink href={`${projectBase}/analytics`} icon={TrendingUp} label="Analytics" pathname={pathname} onClick={handleNavClick} />
                       <ProjectSubLink href={`${projectBase}/learnings`} icon={Brain} label="Learnings" pathname={pathname} onClick={handleNavClick} />
                       <ProjectSubLink href={`${projectBase}/competitors`} icon={Swords} label="Competitors" pathname={pathname} onClick={handleNavClick} />
+
+                      {/* Zone 2 · Audience — inbox + outbound. Email + form
+                          + list management sit together. */}
+                      <p className="px-2.5 pt-2.5 pb-0.5 text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-text-tertiary/60">
+                        Audience
+                      </p>
                       <ProjectSubLink href={`${projectBase}/emails`} icon={Mail} label="Email Sequences" pathname={pathname} onClick={handleNavClick} />
                       <ProjectSubLink href={`${projectBase}/audiences`} icon={Users} label="Audiences" pathname={pathname} onClick={handleNavClick} />
                       <ProjectSubLink href={`${projectBase}/forms`} icon={FileText} label="Forms" pathname={pathname} onClick={handleNavClick} />
                       <ProjectSubLink href={`${projectBase}/broadcasts`} icon={Send} label="Broadcasts" pathname={pathname} onClick={handleNavClick} />
 
-                      {/* Divider between project tools and agents */}
+                      {/* Divider between Audience and Studio (agents) */}
                       <div className="my-1.5 border-t border-border-subtle/60" />
 
-                      {/* Agents (driven by registry) — grouped by category
-                          with quiet section captions so the sidebar isn't a
-                          17-item flat list. */}
+                      {/* Zone 3 · Studio — the agents themselves, still
+                          grouped by their existing capability categories.
+                          Uses the same low-emphasis caption styling as the
+                          zone labels above so the whole sidebar reads as
+                          three coherent tiers. */}
+                      <p className="px-2.5 pt-1 pb-0.5 text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-text-secondary/80">
+                        Studio · Agents
+                      </p>
                       {SIDEBAR_AGENT_CATEGORIES.map((cat) => {
                         const agentsInCat = SIDEBAR_AGENTS.filter(
                           (a) => a.category === cat.id

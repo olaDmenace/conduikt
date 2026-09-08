@@ -1160,12 +1160,30 @@ function CroReportPreview({ data }: { data: Record<string, any> }) {
 }
 
 function GeneratingIndicator({ label }: { label: string }) {
+  // Elapsed-time counter — no fake staged progress messages. Real signal:
+  // the AI is running, here's how long it's taken. Users trust real
+  // numbers over animated progress bars they know are choreographed.
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const start = Date.now();
+    const id = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - start) / 1000));
+    }, 500);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <div className="rounded-xl border border-border-default bg-surface-0 p-8 flex flex-col items-center text-center">
       <Loader2 className="h-8 w-8 animate-spin text-accent mb-4" />
       <p className="text-body text-text-primary font-medium">{label}</p>
       <p className="text-small text-text-tertiary mt-2">
-        We&apos;ll format the result as soon as it&apos;s ready.
+        Streaming in — most generations complete in 15–35 seconds.
+      </p>
+      <p
+        className="mt-3 font-mono text-caption text-text-tertiary tabular-nums"
+        aria-live="polite"
+      >
+        {elapsed}s elapsed
       </p>
     </div>
   );
