@@ -48,6 +48,7 @@ import { ExpectationBanner } from "@/src/components/ui/expectation-banner";
 import { VariantPanel } from "@/src/components/content/variant-panel";
 import { BulkGenerateDialog } from "@/src/components/content/bulk-generate-dialog";
 import { QuotaBadge } from "@/src/components/generation/quota-badge";
+import { PromptRecipePicker } from "@/src/components/generation/prompt-recipe-picker";
 import { TweetCard } from "@/src/components/social/tweet-card";
 import { LinkedInCard } from "@/src/components/social/linkedin-card";
 import { SendToWebhook } from "@/src/components/content/send-to-webhook";
@@ -1858,9 +1859,15 @@ function ContentPageInner({
 
               <form onSubmit={handleGenerate} className="space-y-4">
                 <div>
-                  <label className="text-small text-text-secondary block mb-1.5">
-                    Brief / Prompt
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-small text-text-secondary">
+                      Brief / Prompt
+                    </label>
+                    <PromptRecipePicker
+                      hasPrompt={prompt.trim().length > 0}
+                      onSelect={(recipe) => setPrompt(recipe.template)}
+                    />
+                  </div>
                   <textarea
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
