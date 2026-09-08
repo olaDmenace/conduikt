@@ -62,4 +62,67 @@ describe("LinkedInCard", () => {
     expect(screen.getByText("Media 4")).toBeInTheDocument();
     expect(screen.queryByText("Media 5")).not.toBeInTheDocument();
   });
+
+  // ────────────────────────────────────────────────────────────
+  // Edge cases hit by the Content Studio + Calendar integrations
+  // ────────────────────────────────────────────────────────────
+
+  it("preserves newlines in the post body (whitespace-pre-wrap)", () => {
+    // Users write multi-line LinkedIn posts by convention; parity with
+    // the previous plain-<p> renderer requires newlines to survive.
+    const multiline = "Big announcement\n\nWe just shipped X.\n\nHere's why:";
+    render(<LinkedInCard text={multiline} />);
+    // Target the <p> that actually holds the message body — the outer
+    // article's textContent also includes character-count + reaction
+    // labels, so we must be specific about the element type.
+    const body = screen.getByText((_, node) => {
+      return (
+        node?.tagName === "P" && node?.textContent === multiline
+      );
+    });
+    expect(body).toBeInTheDocument();
+    expect(body.className).toContain("whitespace-pre-wrap");
+  });
+
+  it("renders very long text (thousands of chars) without crashing", () => {
+    // LinkedIn's true hard limit is ~3000 chars but the fold at 210 is
+    // the more meaningful UI beat. Confirm long text folds AND the
+    // full char count reports correctly.
+    const huge = "a".repeat(2800);
+    render(<LinkedInCard text={huge} />);
+    expect(screen.getByRole("button", { name: /see more/i })).toBeInTheDocument();
+    expect(screen.getByText("2800 characters")).toBeInTheDocument();
+  });
+
+  it("expands to full text after clicking see-more", () => {
+    // Repeat of an earlier case but with an assertion on the expanded
+    // content length matching, not just the button vanishing.
+    const long = "hello world ".repeat(30); // ~360 chars
+    render(<LinkedInCard text={long} />);
+    fireEvent.click(screen.getByRole("button", { name: /see more/i }));
+    // Full text now visible somewhere in the DOM
+    const bodies = screen.getAllByText((_, node) =>
+      Boolean(node?.textContent?.includes(long.trim()))
+    );
+    expect(bodies.length).toBeGreaterThan(0);
+  });
+
+  it("handles an author with no headline gracefully", () => {
+    render(
+      <LinkedInCard text="hi" author={{ name: "Ada Lovelace" }} />
+    );
+    expect(screen.getByText("Ada Lovelace")).toBeInTheDocument();
+    // No default headline should be injected when caller omits it
+    expect(screen.queryByText("Founder · Conduikt")).not.toBeInTheDocument();
+  });
+
+  it("renders reaction bar buttons disabled (preview-only)", () => {
+    // Sanity check that the interaction row never accidentally becomes
+    // actionable — this component only previews.
+    render(<LinkedInCard text="hi" />);
+    for (const label of ["Like", "Comment", "Repost", "Send"]) {
+      const btn = screen.getByLabelText(new RegExp(`${label} .preview only.`, "i"));
+      expect(btn).toBeDisabled();
+    }
+  });
 });

@@ -48,6 +48,8 @@ import { ExpectationBanner } from "@/src/components/ui/expectation-banner";
 import { VariantPanel } from "@/src/components/content/variant-panel";
 import { BulkGenerateDialog } from "@/src/components/content/bulk-generate-dialog";
 import { QuotaBadge } from "@/src/components/generation/quota-badge";
+import { TweetCard } from "@/src/components/social/tweet-card";
+import { LinkedInCard } from "@/src/components/social/linkedin-card";
 import { SendToWebhook } from "@/src/components/content/send-to-webhook";
 import { MediaPicker } from "@/src/components/media/media-picker";
 import { SendBroadcastModal } from "@/src/components/email/send-broadcast-modal";
@@ -448,10 +450,21 @@ function SocialPostCard({
         </div>
       )}
 
-      {/* Text */}
-      <p className="text-body text-text-primary whitespace-pre-line leading-relaxed">
-        {post.text}
-      </p>
+      {/* Native platform preview — swapped in from the audit-driven upgrade.
+          The header + action buttons above stay operational; only the "what
+          this actually looks like on the platform" preview surface changed.
+          The card's built-in char counter matches the meta-row Badge below. */}
+      {isX ? (
+        <TweetCard
+          text={post.text}
+          mediaCount={hasMedia(postMedia[publishKey]) ? 1 : 0}
+        />
+      ) : (
+        <LinkedInCard
+          text={post.text}
+          mediaCount={hasMedia(postMedia[publishKey]) ? 1 : 0}
+        />
+      )}
 
       {/* Thread preview — only for X posts that will auto-thread */}
       {isX && charCount > charLimit && <ThreadPreview text={post.text} />}

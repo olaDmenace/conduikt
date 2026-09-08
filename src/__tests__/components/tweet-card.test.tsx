@@ -77,4 +77,81 @@ describe("TweetCard", () => {
     // 275 code points → 5 remaining → in warning band
     expect(screen.getByText("5")).toBeInTheDocument();
   });
+
+  // ────────────────────────────────────────────────────────────
+  // Edge cases hit by the Content Studio + Calendar integrations
+  // ────────────────────────────────────────────────────────────
+
+  it("preserves newlines in the tweet body (whitespace-pre-wrap)", () => {
+    // The SocialPostCard integration replaces a plain <p whitespace-pre-line>
+    // with the native card; parity requires newlines to render.
+    const multiline = "line one\n\nline three";
+    render(<TweetCard text={multiline} />);
+    // Match the specific <p> holding the body — the outer article's
+    // textContent will also include icon accessible labels, so the
+    // element-type gate is what makes the assertion robust.
+    const body = screen.getByText((_, node) => {
+      return node?.tagName === "P" && node?.textContent === multiline;
+    });
+    expect(body).toBeInTheDocument();
+    expect(body.className).toContain("whitespace-pre-wrap");
+  });
+
+  it("handles a URL-heavy tweet without truncating in the counter", () => {
+    const withUrl =
+      "Just shipped Conduikt v2 — check it out at https://conduikt.com/launch";
+    render(<TweetCard text={withUrl} />);
+    // Component counts every character (no url shortening). Well under
+    // limit — no counter shown.
+    expect(screen.queryByText(/^-?\d+$/)).not.toBeInTheDocument();
+    expect(screen.getByText(withUrl)).toBeInTheDocument();
+  });
+
+  it("renders way-over-limit tweets without crashing (thread-generating case)", () => {
+    // The Content Studio auto-threads X posts over 280 chars via
+    // ThreadPreview — TweetCard still renders the raw content in that
+    // state so users see what got over. Verify counter shows negative,
+    // ring visually saturated (not asserted; smoke render check).
+    const massive = "a".repeat(1500);
+    render(<TweetCard text={massive} />);
+    // Remaining = 280 - 1500 = -1220
+    expect(screen.getByText("-1220")).toBeInTheDocument();
+  });
+
+  it("shows correct media placeholder count for the [0, 1, 2, 3, 4] range", () => {
+    for (const n of [0, 1, 2, 3, 4]) {
+      const { unmount } = render(<TweetCard text="hi" mediaCount={n} />);
+      if (n === 0) {
+        expect(screen.queryByText(/^Media 1$/)).not.toBeInTheDocument();
+      } else {
+        expect(screen.getByText(`Media ${n}`)).toBeInTheDocument();
+      }
+      unmount();
+    }
+  });
+
+  it("does not render a verified badge unless author.verified is true", () => {
+    // Regression guard: earlier renderers sometimes leaked the icon on
+    // undefined-verified. Cover the both branches.
+    const { rerender } = render(
+      <TweetCard text="hi" author={{ name: "Ada", handle: "ada" }} />
+    );
+    expect(screen.queryByLabelText("Verified")).not.toBeInTheDocument();
+
+    rerender(
+      <TweetCard
+        text="hi"
+        author={{ name: "Ada", handle: "ada", verified: false }}
+      />
+    );
+    expect(screen.queryByLabelText("Verified")).not.toBeInTheDocument();
+
+    rerender(
+      <TweetCard
+        text="hi"
+        author={{ name: "Ada", handle: "ada", verified: true }}
+      />
+    );
+    expect(screen.getByLabelText("Verified")).toBeInTheDocument();
+  });
 });

@@ -27,6 +27,8 @@ import { CalendarGrid, type ScheduledPost } from "@/src/components/calendar/cale
 import { MediaPicker } from "@/src/components/media/media-picker";
 import type { PostMedia } from "@/src/lib/media/types";
 import { EMPTY_MEDIA, hasMedia } from "@/src/lib/media/types";
+import { TweetCard } from "@/src/components/social/tweet-card";
+import { LinkedInCard } from "@/src/components/social/linkedin-card";
 import Link from "next/link";
 
 function statusVariant(
@@ -488,14 +490,23 @@ export default function CalendarPage({
                       (contentObj.raw as string | undefined) ??
                       "");
                 const media = (contentObj.media as PostMedia | undefined) ?? EMPTY_MEDIA;
+                const mediaCount = hasMedia(media) ? 1 : 0;
                 return (
                   <>
                     {text && (
                       <div>
-                        <p className="text-caption text-text-tertiary mb-1">Content</p>
-                        <div className="rounded-lg bg-surface-1 p-3 text-body text-text-secondary whitespace-pre-wrap">
-                          {text}
-                        </div>
+                        <p className="text-caption text-text-tertiary mb-1">
+                          Preview
+                        </p>
+                        {/* Native platform preview replaces the plain text
+                            box. Users clicking a scheduled tile now see the
+                            post as it will actually render on the platform,
+                            not just its raw text. */}
+                        {selectedPost.channel === "linkedin" ? (
+                          <LinkedInCard text={text} mediaCount={mediaCount} />
+                        ) : (
+                          <TweetCard text={text} mediaCount={mediaCount} />
+                        )}
                       </div>
                     )}
                     {selectedPost.status === "pending" && (
