@@ -49,6 +49,7 @@ import { VariantPanel } from "@/src/components/content/variant-panel";
 import { BulkGenerateDialog } from "@/src/components/content/bulk-generate-dialog";
 import { QuotaBadge } from "@/src/components/generation/quota-badge";
 import { PromptRecipePicker } from "@/src/components/generation/prompt-recipe-picker";
+import { RevisionHistoryDrawer } from "@/src/components/generation/revision-history-drawer";
 import { TweetCard } from "@/src/components/social/tweet-card";
 import { LinkedInCard } from "@/src/components/social/linkedin-card";
 import { SendToWebhook } from "@/src/components/content/send-to-webhook";
@@ -1705,6 +1706,11 @@ function ContentPageInner({
     if (!result.trim()) return;
 
     setSaving(true);
+    const content = {
+      raw: result,
+      skill: selectedSkill,
+      prompt,
+    };
     const res = await fetch(`/api/projects/${projectId}/assets`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1712,15 +1718,25 @@ function ContentPageInner({
         type: skill.assetType,
         channel: skill.channel,
         title: prompt.slice(0, 100),
-        content: {
-          raw: result,
-          skill: selectedSkill,
-          prompt,
-        },
+        content,
       }),
     });
 
     if (res.ok) {
+      const saved = await res.json();
+      // Track the new asset id so the History drawer can mount and the
+      // subsequent revision snapshot can attach.
+      setSavedAssetId(saved.id);
+
+      // Best-effort revision snapshot — records the initial state
+      // (source=manual_edit) so a future regenerate has something to
+      // roll back to. Failure to snapshot never breaks the save.
+      fetch(`/api/assets/${saved.id}/revisions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content, source: "manual_edit" }),
+      }).catch(() => {});
+
       toast("Asset saved as draft!", "success");
       fetchAssets();
     } else {
@@ -2075,6 +2091,35 @@ function ContentPageInner({
                           <PdfDownloadButton
                             href={`/api/projects/${projectId}/assets/${savedAssetId}/pdf`}
                             filename="content-export.pdf"
+                          />
+                        )}
+                        {savedAssetId && (
+                          <RevisionHistoryDrawer
+                            assetId={savedAssetId}
+                            currentContent={{
+                              raw: result,
+                              skill: selectedSkill,
+                              prompt,
+                            }}
+                            onRestore={(content) => {
+                              // Restore the older revision into the
+                              // editor. Only `raw` is applied here — the
+                              // skill + prompt should stay locked to what
+                              // the user has selected in the sidebar.
+                              const c = content as
+                                | { raw?: string }
+                                | string
+                                | null;
+                              const restored =
+                                typeof c === "string"
+                                  ? c
+                                  : (c?.raw as string | undefined) ?? "";
+                              setResult(restored);
+                              toast(
+                                "Restored an earlier version. The current text was snapshotted first.",
+                                "success"
+                              );
+                            }}
                           />
                         )}
                       </>
