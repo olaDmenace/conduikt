@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Sparkles, Copy, Check, RotateCcw, Loader2, Zap, Save } from "lucide-react";
+import { QuotaBadge } from "@/src/components/generation/quota-badge";
 import {
   Card,
   CardContent,
@@ -431,6 +432,8 @@ function PlaygroundInner() {
                   </>
                 )}
               </Button>
+
+              <QuotaBadge />
             </form>
           </CardContent>
         </Card>

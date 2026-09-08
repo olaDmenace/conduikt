@@ -11,6 +11,7 @@ import {
   DialogDescription,
 } from "@/src/components/ui/dialog";
 import { useToast } from "@/src/components/ui/toast";
+import { QuotaBadge } from "@/src/components/generation/quota-badge";
 
 interface BulkGenerateDialogProps {
   open: boolean;
@@ -115,6 +116,11 @@ export function BulkGenerateDialog({
               placeholder={"social media marketing tips\nemail marketing best practices\nSEO for startups\n..."}
               className="w-full h-40 rounded-lg border border-border-default bg-surface-1 px-3 py-2 text-body text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-accent resize-none"
             />
+            {/* Cost = min(inputs, 30) — bulk jobs charge one generation per
+                processed item. Passing the accurate count lets QuotaBadge
+                render the "will exceed remaining" warning up-front. */}
+            <QuotaBadge cost={Math.max(1, Math.min(inputs.length, 30))} />
+
             <div className="flex items-center justify-between">
               <p className="text-small text-text-tertiary">
                 {inputs.length} item{inputs.length !== 1 ? "s" : ""} (max 30)

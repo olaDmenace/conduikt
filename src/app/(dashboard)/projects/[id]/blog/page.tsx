@@ -23,6 +23,7 @@ import {
   Download,
   Lock,
 } from "lucide-react";
+import { QuotaBadge } from "@/src/components/generation/quota-badge";
 import {
   Card,
   CardContent,
@@ -413,6 +414,8 @@ function BlogPageInner({
                     </>
                   )}
                 </Button>
+
+                <QuotaBadge />
               </form>
             </CardContent>
           </Card>
