@@ -14,6 +14,39 @@ part-time co-founder with zero paying customers.
 
 ---
 
+## 0. Session-2 update (Sept 2026)
+
+The plan has since been substantially executed. As of session 2:
+
+- **Sprint 1 · Complete** (Sep 2026) — all 4 items shipped + deployed
+- **Sprint 2 · Complete** — native social cards + wired into Content
+  Studio & Calendar; streaming AI was already implemented at
+  `/api/ai/stream` (only the elapsed-time signal was added);
+  sidebar 3-zone regroup landed as visual regrouping (Pulse / Audience
+  / Studio · Agents)
+- **Sprint 3 · Complete** — all three items shipped end-to-end:
+  - Prompt recipe library (6 frameworks, popover UI, 14 tests)
+  - Revision history (schema + API + drawer + Content Studio wiring, 6 tests)
+  - 60-Second Magic Audit onboarding (lib + API + full 3-stage UI, 19 tests)
+- **Feedback-loop verification harness · Partial** — the two stages
+  that are meaningful to verify in-process (Stage 3 · Prompt injection,
+  Stage 5 · Assembly) shipped with 4 tests; Stages 1, 2, 4 remain
+  documented but require Anthropic mocks or live LLM calls
+- **CSP · Report-Only shipped**, monitoring window running
+- **Payment provider dual-setup confirmed intentional** (memory updated)
+
+Remaining: CSP flip to enforce (after 7-14 day monitoring window),
+Sentry vs Vercel Observability decision, first paying customers.
+
+Total across both sessions: **~15 commits, ~3,000 lines of production
+code + tests, 900+ tests passing.**
+
+Everything below is preserved as the audit trail of what was planned +
+executed. Sections 3, 4, 5 are now largely historical; the SHIPPED
+markers throughout show what landed.
+
+---
+
 ## 1. What shipped in the Sprint 1 session (Sept 2026)
 
 All four Sprint 1 items landed, plus new social preview components,
