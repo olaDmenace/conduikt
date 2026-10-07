@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
+import { readPendingAudit } from "@/src/lib/onboarding/url";
 import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/src/lib/supabase/client";
@@ -26,6 +27,9 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [resending, setResending] = useState(false);
+  // Set by the homepage's "Check my site free" form. Read on the client
+  // only; the server render shows the default line.
+  const pendingSite = useSyncExternalStore(noSubscribe, pendingHost, () => null);
   const supabase = createClient();
   const { toast } = useToast();
 
@@ -129,7 +133,9 @@ export default function SignupPage() {
         </Link>
         <h1 className="text-h1">Create your account</h1>
         <p className="mt-2 text-body text-text-secondary">
-          Start automating your marketing with AI
+          {pendingSite
+            ? `We'll check ${pendingSite} as soon as you're in.`
+            : "Start automating your marketing with AI"}
         </p>
       </div>
 
@@ -282,4 +288,10 @@ export default function SignupPage() {
       </p>
     </div>
   );
+}
+
+const noSubscribe = () => () => {};
+function pendingHost(): string | null {
+  const url = readPendingAudit();
+  return url ? new URL(url).hostname.replace(/^www\./, "") : null;
 }

@@ -2,12 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { normalizeAuditUrl } from "@/src/lib/onboarding/url";
+import { normalizeAuditUrl, PENDING_AUDIT_KEY } from "@/src/lib/onboarding/url";
 
 // Final-CTA form (docs/DESIGN.md band 9): "Check my site free". The URL is
 // kept on this device and the visitor goes to sign up; the Magic Audit
 // page picks it up afterwards so they never retype it.
-export const PENDING_AUDIT_KEY = "conduikt:pending-audit-url";
 
 export function SiteCheckForm() {
   const router = useRouter();

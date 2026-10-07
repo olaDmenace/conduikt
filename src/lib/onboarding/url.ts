@@ -18,3 +18,25 @@ export function normalizeAuditUrl(input: string): string | null {
     return null;
   }
 }
+
+// "Check my site free" handoff (homepage band 9 → signup → Magic Audit).
+// The address lives on this device only; it is never sent anywhere until
+// the signed-in user's audit runs.
+export const PENDING_AUDIT_KEY = "conduikt:pending-audit-url";
+
+/** The waiting address, or null. Storage can throw in private mode. */
+export function readPendingAudit(): string | null {
+  try {
+    return normalizeAuditUrl(localStorage.getItem(PENDING_AUDIT_KEY) ?? "");
+  } catch {
+    return null;
+  }
+}
+
+export function clearPendingAudit(): void {
+  try {
+    localStorage.removeItem(PENDING_AUDIT_KEY);
+  } catch {
+    // Nothing to clear.
+  }
+}

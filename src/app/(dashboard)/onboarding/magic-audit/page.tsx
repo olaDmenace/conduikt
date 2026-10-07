@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { PENDING_AUDIT_KEY } from "@/src/components/marketing/site-check-form";
+import { useEffect, useRef, useState } from "react";
+import { clearPendingAudit, readPendingAudit } from "@/src/lib/onboarding/url";
 import Link from "next/link";
 import {
   Globe,
@@ -75,22 +75,9 @@ export default function MagicAuditPage() {
   const [data, setData] = useState<MagicAuditResponse | null>(null);
   const [elapsed, setElapsed] = useState(0);
 
-  // Prefill the address the visitor typed into the homepage's
-  // "Check my site free" form before signing up.
-  useEffect(() => {
-    try {
-      const pending = localStorage.getItem(PENDING_AUDIT_KEY);
-      if (pending) {
-        setUrl(pending);
-        localStorage.removeItem(PENDING_AUDIT_KEY);
-      }
-    } catch {
-      // Storage blocked: start empty.
-    }
-  }, []);
+  const started = useRef(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function run(target: string) {
     setError(null);
     setStage("running");
     setElapsed(0);
@@ -101,7 +88,7 @@ export default function MagicAuditPage() {
       const res = await fetch("/api/onboarding/magic-audit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url: target }),
       });
       const body = await res.json();
       if (!res.ok) {
@@ -117,6 +104,24 @@ export default function MagicAuditPage() {
     } finally {
       clearInterval(timer);
     }
+  }
+
+  // The visitor already typed their address into the homepage's "Check my
+  // site free" form before signing up: start their audit straight away.
+  // The ref keeps React's dev double-mount from running it twice.
+  useEffect(() => {
+    if (started.current) return;
+    const pending = readPendingAudit();
+    if (!pending) return;
+    started.current = true;
+    clearPendingAudit();
+    setUrl(pending);
+    run(pending);
+  }, []);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    run(url);
   }
 
   return (
