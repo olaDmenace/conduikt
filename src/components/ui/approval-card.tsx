@@ -15,6 +15,7 @@ export function ApprovalCard({
   onEdit,
   onTryAgain,
   busy,
+  tryAgainLabel = "Try again",
 }: {
   channel: string;
   when: string;
@@ -23,6 +24,8 @@ export function ApprovalCard({
   onEdit: () => void;
   onTryAgain: () => void;
   busy?: boolean;
+  /** The third action's label — "Skip" where it cancels rather than regenerates. */
+  tryAgainLabel?: string;
 }) {
   const btn = "h-10 text-xs md:h-[30px]";
   return (
@@ -40,7 +43,7 @@ export function ApprovalCard({
           Edit
         </Button>
         <Button size="sm" variant="quiet" className={btn} onClick={onTryAgain} disabled={busy}>
-          Try again
+          {tryAgainLabel}
         </Button>
       </div>
     </div>

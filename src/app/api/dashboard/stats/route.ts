@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
+import { getGenerationLimit, normalizePlan } from "@/src/lib/plans";
 
 export async function GET() {
   const supabase = await createClient();
@@ -54,15 +55,9 @@ export async function GET() {
     }
   }
 
-  const limits: Record<string, number> = {
-    free: 5,
-    pro: 100,
-    growth: 999999,
-    agency: 999999,
-  };
-  const plan = profile?.plan ?? "free";
+  const plan = normalizePlan(profile?.plan);
   const generationCount = profile?.generation_count ?? 0;
-  const generationLimit = limits[plan] ?? 5;
+  const generationLimit = getGenerationLimit(plan);
   const generationsLeft = Math.max(0, generationLimit - generationCount);
 
   // Most recently created project id (for dashboard action links)

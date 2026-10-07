@@ -9,6 +9,8 @@ interface UIState {
   currentProjectId: string | null;
   /** Agent group the picker opens on; null = picker closed. */
   agentPickerGroup: string | null;
+  /** Text typed into the Overview prompt bar, carried into the picked agent. */
+  agentPickerBrief: string | null;
   expandedProjectIds: string[];
   theme: "dark" | "light";
 
@@ -19,7 +21,7 @@ interface UIState {
   setCommandPaletteOpen: (open: boolean) => void;
   toggleCommandPalette: () => void;
   setCurrentProjectId: (id: string | null) => void;
-  openAgentPicker: (group: string) => void;
+  openAgentPicker: (group: string, brief?: string | null) => void;
   closeAgentPicker: () => void;
   toggleProjectExpanded: (id: string) => void;
   setProjectExpanded: (id: string, expanded: boolean) => void;
@@ -35,6 +37,7 @@ export const useUIStore = create<UIState>()(
       commandPaletteOpen: false,
       currentProjectId: null,
       agentPickerGroup: null,
+      agentPickerBrief: null,
       expandedProjectIds: [],
       theme: "dark" as const,
 
@@ -48,8 +51,13 @@ export const useUIStore = create<UIState>()(
       toggleCommandPalette: () =>
         set((state) => ({ commandPaletteOpen: !state.commandPaletteOpen })),
       setCurrentProjectId: (id) => set({ currentProjectId: id }),
-      openAgentPicker: (group) => set({ agentPickerGroup: group }),
-      closeAgentPicker: () => set({ agentPickerGroup: null }),
+      openAgentPicker: (group, brief) =>
+        set((state) => ({
+          agentPickerGroup: group,
+          // Switching tabs keeps the brief; a fresh open replaces it.
+          agentPickerBrief: brief === undefined ? state.agentPickerBrief : brief,
+        })),
+      closeAgentPicker: () => set({ agentPickerGroup: null, agentPickerBrief: null }),
 
       toggleProjectExpanded: (id) =>
         set((state) => ({

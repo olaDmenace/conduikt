@@ -19,22 +19,24 @@ export function KpiStrip({ cells, className }: { cells: KpiCell[]; className?: s
   return (
     <dl
       className={cn(
-        "grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-line bg-line min-[1000px]:grid-cols-5",
+        "grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-line bg-line rail:grid-cols-5",
         className
       )}
     >
-      {cells.map((c) => (
+      {cells.map((c, i) => (
         <div
           key={c.label}
           className={cn(
-            "flex flex-col gap-1.5 p-5",
+            "flex flex-col gap-1.5 p-4 md:p-5",
+            // An odd last cell fills the row in the 2-column layout.
+            cells.length % 2 === 1 && i === cells.length - 1 && "col-span-2 rail:col-span-1",
             c.ink ? "bg-ink text-ink-text" : "bg-surface"
           )}
         >
           <dt className={cn("text-label", c.ink ? "text-ink-text-3" : "text-text-3")}>
             {c.label}
           </dt>
-          <dd className="text-numeric text-[1.75rem]">{c.value}</dd>
+          <dd className="text-numeric text-[1.5rem] md:text-[1.75rem]">{c.value}</dd>
           {c.delta && (
             <dd
               className={cn(

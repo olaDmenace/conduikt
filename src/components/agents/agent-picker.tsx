@@ -13,7 +13,7 @@ import { isPlanAtLeast, normalizePlan, type PlanTier } from "@/src/lib/plans";
 import { cn } from "@/src/lib/utils/cn";
 import Link from "next/link";
 
-// docs/DESIGN.md §App architecture: the 18 agents are rendered by ONE
+// docs/DESIGN.md §App architecture: every agent is rendered by ONE
 // component. The rail's "Ask an agent to" groups, ⌘K and the prompt bar
 // all open this picker (via useUIStore.openAgentPicker(group)).
 export function AgentPicker() {
@@ -21,6 +21,7 @@ export function AgentPicker() {
   const open = useUIStore((s) => s.openAgentPicker);
   const close = useUIStore((s) => s.closeAgentPicker);
   const currentProjectId = useUIStore((s) => s.currentProjectId);
+  const brief = useUIStore((s) => s.agentPickerBrief);
   const pathname = usePathname();
   const [plan, setPlan] = React.useState<PlanTier>("free");
 
@@ -47,6 +48,12 @@ export function AgentPicker() {
   return (
     <Drawer open={group !== null} onClose={close} title="Ask an agent to">
       <div className="space-y-5">
+        {brief && (
+          <p className="rounded-md border border-line bg-ground px-3 py-2 text-body-s text-text-2">
+            <span className="text-label text-text-3">Your request · </span>
+            {brief}
+          </p>
+        )}
         <div role="tablist" aria-label="Agent groups" className="flex flex-wrap gap-1.5">
           {AGENT_GROUPS.map((g) => {
             const selected = g.category === active.category;
@@ -88,7 +95,7 @@ export function AgentPicker() {
                   key={agent.id}
                   agent={agent}
                   locked={locked}
-                  href={`/projects/${currentProjectId}/${agent.projectPath ?? agent.route}`}
+                  href={withBrief(`/projects/${currentProjectId}/${agent.projectPath ?? agent.route}`, brief)}
                 />
               );
             })}
@@ -97,4 +104,12 @@ export function AgentPicker() {
       </div>
     </Drawer>
   );
+}
+
+// Content Studio reads ?prompt=, the Blog agent reads ?topic=. Other agent
+// pages ignore the param, which is harmless.
+function withBrief(href: string, brief: string | null): string {
+  if (!brief) return href;
+  const key = /\/blog(\?|$)/.test(href) ? "topic" : "prompt";
+  return `${href}${href.includes("?") ? "&" : "?"}${key}=${encodeURIComponent(brief)}`;
 }

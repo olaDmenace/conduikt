@@ -1,400 +1,501 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  BarChart3,
-  TrendingUp,
-  Zap,
-  FileText,
-  ArrowUpRight,
-  Plus,
-  Globe,
-  Mail,
-  Twitter,
-  Loader2,
-  Search,
-  PenLine,
-  Rocket,
-  Sparkles,
-  Video,
-  Target,
-  Flag,
-  Calendar,
-  GitBranch,
-  User,
-} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { readPendingAudit } from "@/src/lib/onboarding/url";
 import { OnboardingTour } from "@/src/components/onboarding/onboarding-tour";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/ui/card";
+import { Card, InkCard } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
-import { PageHeader } from "@/src/components/layout/page-header";
+import { Input } from "@/src/components/ui/input";
+import { KpiStrip, type KpiCell } from "@/src/components/ui/kpi-strip";
+import { RunRow } from "@/src/components/ui/run-row";
+import { ApprovalCard } from "@/src/components/ui/approval-card";
+import { Sparkline } from "@/src/components/ui/sparkline";
+import { EmptyState } from "@/src/components/ui/empty-state";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { useUIStore } from "@/src/stores/ui-store";
+import { useToast } from "@/src/components/ui/toast";
+import {
+  formatCount,
+  percentDelta,
+  pointDelta,
+  statusLine,
+  whenLabel,
+} from "@/src/lib/dashboard/overview";
+import { cn } from "@/src/lib/utils/cn";
 
-interface DashboardStats {
-  projectCount: number;
-  assetCount: number;
-  publishedCount: number;
-  generationsLeft: number;
-  generationCount: number;
-  generationLimit: number;
-  latestAuditScore: number | null;
-  plan: string;
-  latestProjectId: string | null;
-  onboardingCompleted: boolean;
-  userEmail: string;
-  userName: string;
+// docs/DESIGN.md §Overview screen. The app home is a status surface:
+// what ran, what needs you, what was learned. Every number on it comes
+// from /api/dashboard/overview — no placeholders, no bare dashes.
+
+interface Overview {
+  empty: boolean;
+  user: { firstName: string | null; plan: string; generationsUsed: number; generationLimit: number; onboardingCompleted: boolean };
+  projects: Array<{ id: string; name: string; websiteUrl: string | null }>;
+  project: { id: string; name: string; websiteUrl: string | null } | null;
+  waitingCount: number;
+  nextApproval: { id: string; channel: string | null; scheduledFor: string; text: string; title: string | null } | null;
+  live: Array<{ id: string; type: string; label: string | null; startedAt: string }>;
+  kpis?: {
+    seo: { score: number; previous: number | null; at: string } | null;
+    impressions: { current: number; previous: number; posts: number };
+    openRate: { current: number | null; previous: number | null; delivered: number };
+    nextPublish: { id: string; channel: string; scheduledFor: string; title: string | null } | null;
+  };
+  upcoming?: Array<{ id: string; channel: string; scheduledFor: string; title: string | null }>;
+  history?: Array<{ id: string; title: string | null; type: string; status: string; created_at: string }>;
+  learning?: { id: string; channel: string; hypothesis: string; confidence: number; generated_at: string } | null;
+  channels?: Array<{ key: string; label: string; connected: boolean; handle: string | null; series: number[]; total: number }>;
+}
+
+const CHANNEL_LABEL: Record<string, string> = { x: "X", linkedin: "LinkedIn", facebook: "Facebook", email: "Email", tiktok: "TikTok" };
+const channelName = (c: string | null) => (c ? CHANNEL_LABEL[c] ?? c : "Post");
+
+const SUGGESTIONS = [
+  { text: "Check my homepage for problems", group: "analysis" },
+  { text: "Write three LinkedIn posts for this week", group: "creation" },
+  { text: "Plan next month's content", group: "strategy" },
+  { text: "Schedule what's ready", group: "distribution" },
+];
+
+/** Pick the picker tab a free-text request most likely belongs to. */
+function groupFor(text: string): string {
+  const t = text.toLowerCase();
+  if (/\b(audit|check|seo|speed|competitor|convert|conversion|broken|fix)\b/.test(t)) return "analysis";
+  if (/\b(plan|strategy|keyword|launch|growth|idea)\b/.test(t)) return "strategy";
+  if (/\b(schedule|calendar|post it|publish)\b/.test(t)) return "distribution";
+  return "creation";
+}
+
+function timeOfDay(): string {
+  const h = new Date().getHours();
+  return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+}
+
+function shortTime(iso: string): string {
+  return new Date(iso).toLocaleString("en-GB", { weekday: "short", hour: "2-digit", minute: "2-digit" });
 }
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const currentProjectId = useUIStore((s) => s.currentProjectId);
+  const setCurrentProjectId = useUIStore((s) => s.setCurrentProjectId);
+  const openAgentPicker = useUIStore((s) => s.openAgentPicker);
+  const { toast } = useToast();
+  const router = useRouter();
+  const [data, setData] = useState<Overview | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [prompt, setPrompt] = useState("");
+  const [tab, setTab] = useState<"active" | "scheduled" | "history">("active");
+  const [busy, setBusy] = useState(false);
+  const [showTour, setShowTour] = useState(false);
+
+  const load = useCallback(async () => {
+    // Every sign-in path lands here. If the visitor typed their site into
+    // "Check my site free" before signing up, finish that first.
+    if (readPendingAudit()) {
+      router.replace("/onboarding/magic-audit");
+      return;
+    }
+    setFailed(false);
+    const q = currentProjectId ? `?projectId=${currentProjectId}` : "";
+    const res = await fetch(`/api/dashboard/overview${q}`, { cache: "no-store" });
+    if (!res.ok) {
+      setFailed(true);
+      return;
+    }
+    const json = (await res.json()) as Overview;
+    setData(json);
+    if (!json.user.onboardingCompleted) setShowTour(true);
+    // Scope the rail to the project we are showing.
+    if (json.project && json.project.id !== currentProjectId) setCurrentProjectId(json.project.id);
+  }, [currentProjectId, setCurrentProjectId, router]);
 
   useEffect(() => {
-    async function fetchStats() {
-      const res = await fetch("/api/dashboard/stats");
-      if (res.ok) {
-        const data = await res.json();
-        setStats(data);
-        if (!data.onboardingCompleted) {
-          setShowOnboarding(true);
-        }
-      }
-      setLoading(false);
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    if (data && data.live.length === 0 && data.history && data.history.length > 0 && tab === "active") setTab("history");
+    // Only on first data arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.project?.id]);
+
+  async function act(action: "publish_now" | "cancel") {
+    if (!data?.nextApproval) return;
+    setBusy(true);
+    const res = await fetch(`/api/automation/queue/${data.nextApproval.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action }),
+    });
+    setBusy(false);
+    if (!res.ok) {
+      toast("That didn't go through. Try again.", "error");
+      return;
     }
-    fetchStats();
-  }, []);
+    toast(action === "publish_now" ? "Approved. Posting now." : "Skipped.", "success");
+    load();
+  }
 
-  const pid = stats?.latestProjectId;
+  function submitPrompt(text: string, group?: string) {
+    const brief = text.trim();
+    if (!brief) return;
+    openAgentPicker(group ?? groupFor(brief), brief);
+  }
 
-  const statCards = [
-    {
-      label: "Active Projects",
-      value: stats?.projectCount ?? "—",
-      icon: Globe,
-    },
-    {
-      label: "Content Generated",
-      value: stats?.assetCount ?? "—",
-      icon: FileText,
-    },
-    {
-      label: "AI Generations Used",
-      value:
-        stats != null
-          ? `${stats.generationCount}/${stats.generationLimit}`
-          : "—",
-      icon: TrendingUp,
-    },
-    {
-      label: "Generations Left",
-      value: stats?.generationsLeft ?? "—",
-      badge:
-        stats && stats.generationsLeft <= 1
-          ? { text: "Upgrade", variant: "warning" as const }
-          : stats && stats.plan !== "free"
-          ? { text: stats.plan, variant: "success" as const }
-          : null,
-      icon: Zap,
-    },
-  ];
+  if (failed) {
+    return (
+      <EmptyState
+        title="We couldn't load your overview."
+        action={<Button onClick={load}>Try again</Button>}
+      />
+    );
+  }
 
-  // Quick actions — project-aware when a project exists
-  const quickActions = pid
-    ? [
-        {
-          title: "Blog Post Generator",
-          description: "Write SEO-optimized long-form posts with meta tags and social snippets",
-          icon: PenLine,
-          href: `/projects/${pid}/blog`,
-          color: "text-accent",
-        },
-        {
-          title: "Keyword Research",
-          description: "Discover keyword clusters, long-tail opportunities, and content gaps",
-          icon: Search,
-          href: `/projects/${pid}/keywords`,
-          color: "text-info",
-        },
-        {
-          title: "Growth Playbook",
-          description: "Generate your 90-day AI-powered growth plan with prioritised actions",
-          icon: Rocket,
-          href: `/projects/${pid}/growth`,
-          color: "text-success",
-        },
-        {
-          title: "Content Studio",
-          description: "Create social posts, emails, copy, and more with 15 AI skills",
-          icon: Sparkles,
-          href: `/projects/${pid}/content`,
-          color: "text-warning",
-        },
-      ]
-    : [
-        {
-          title: "Create a Project",
-          description: "Connect your first website to unlock all AI marketing tools",
-          icon: Plus,
-          href: "/projects/new",
-          color: "text-accent",
-        },
-        {
-          title: "AI Playground",
-          description: "Try all AI skills without a project context",
-          icon: Sparkles,
-          href: "/playground",
-          color: "text-info",
-        },
-        {
-          title: "View Pricing",
-          description: "Upgrade your plan to unlock unlimited AI generations",
-          icon: Zap,
-          href: "/pricing",
-          color: "text-warning",
-        },
-        {
-          title: "Connect Integrations",
-          description: "Link X, LinkedIn, and Google Search Console",
-          icon: Globe,
-          href: "/settings/integrations",
-          color: "text-success",
-        },
-      ];
+  if (!data) return <OverviewSkeleton />;
 
-  // All platform tools — shown as a reference grid when projects exist
-  const allTools = pid
-    ? [
-        { name: "SEO Audit",         href: `/projects/${pid}/audit`,       icon: BarChart3,  desc: "Technical & on-page analysis"           },
-        { name: "CRO Analysis",     href: `/projects/${pid}/content?skill=page-cro`, icon: Target, desc: "Conversion rate optimization"     },
-        { name: "Content Studio",    href: `/projects/${pid}/content`,   icon: Sparkles,   desc: "15 AI skills for all channels"           },
-        { name: "Blog Generator",    href: `/projects/${pid}/blog`,      icon: PenLine,    desc: "SEO posts with meta & social snippets"   },
-        { name: "Keyword Research",  href: `/projects/${pid}/keywords`,  icon: Search,     desc: "Clusters, long-tail & question keywords" },
-        { name: "Growth Playbook",   href: `/projects/${pid}/growth`,    icon: Rocket,     desc: "90-day AI-powered growth plan"           },
-        { name: "Competitors",       href: `/projects/${pid}/competitors`, icon: Flag,     desc: "Analyze positioning & gaps"              },
-        { name: "Campaigns",         href: `/projects/${pid}/campaigns`, icon: Zap,        desc: "Multi-step marketing automation"         },
-        { name: "Calendar",          href: `/projects/${pid}/calendar`,  icon: Calendar,   desc: "Schedule & manage publishing"            },
-        { name: "Analytics",         href: `/projects/${pid}/analytics`, icon: TrendingUp, desc: "Impact dashboard & skill usage"          },
-        { name: "Email Sequence",    href: `/projects/${pid}/content?skill=email-sequence`, icon: Mail, desc: "AI-written drip campaigns"  },
-        { name: "Social Content",    href: `/projects/${pid}/content?skill=social-content`, icon: Twitter, desc: "X and LinkedIn post generation" },
-        { name: "Video Ads",         href: `/projects/${pid}/video`,     icon: Video,      desc: "AI presenter video ads via HeyGen"       },
-        { name: "A/B Tests",         href: `/projects/${pid}/ab-test`,   icon: GitBranch,  desc: "Compare content variants"                },
-      ]
-    : [];
+  const name = data.user.firstName;
+  const greeting = `${timeOfDay()}${name ? `, ${name}` : ""}.`;
 
-  return (
-    <div>
-      {showOnboarding && (
-        <OnboardingTour onComplete={() => setShowOnboarding(false)} />
-      )}
-      <PageHeader
-        title={stats?.userName ? `Welcome, ${stats.userName.split(" ")[0]}` : "Dashboard"}
-        description="Your AI marketing command center"
+  const promptBar = (
+    <div className="space-y-3">
+      <form
+        className="flex flex-col gap-2 sm:flex-row"
+        onSubmit={(e) => {
+          e.preventDefault();
+          submitPrompt(prompt);
+        }}
       >
-        <div className="flex items-center gap-3">
-          {stats && (
-            <div className="hidden sm:flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-1.5">
-              <User className="h-3.5 w-3.5 text-text-tertiary" />
-              <span className="text-small text-text-secondary">{stats.userEmail}</span>
-              <Badge variant={stats.plan === "free" ? "secondary" : "success"} className="ml-1">
-                {stats.plan}
-              </Badge>
-            </div>
-          )}
-          <Button asChild>
-            <Link href="/projects/new">
-              <Plus className="h-4 w-4" />
-              New Project
-            </Link>
-          </Button>
+        <div className="min-w-0 flex-1">
+          <Input
+            id="ask"
+            label="Ask an agent"
+            hideLabel
+            size="lg"
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="What should we do next? e.g. write a post about our new pricing"
+          />
         </div>
-      </PageHeader>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-        {statCards.map((stat, i) => (
-          <Card
-            key={stat.label}
-            className="animate-in"
-            style={{ animationDelay: `${i * 60}ms` }}
+        <Button type="submit" size="lg" disabled={!prompt.trim()}>
+          Ask an agent
+        </Button>
+      </form>
+      <div className="flex flex-wrap gap-2">
+        {suggestionsFor(data).map((s) => (
+          <button
+            key={s.text}
+            type="button"
+            onClick={() => submitPrompt(s.text, s.group)}
+            className="h-[30px] max-w-full truncate rounded-full border border-line bg-surface px-3 text-xs text-text-2 transition-colors delay-[var(--hover-delay)] duration-[var(--duration-fast)] hover:border-accent hover:text-text"
           >
-            <CardContent className="flex items-start justify-between">
-              <div>
-                <p className="text-caption text-text-tertiary">{stat.label}</p>
-                {loading ? (
-                  <div className="mt-2">
-                    <div className="h-7 w-12 rounded bg-surface-2 animate-pulse" />
-                  </div>
-                ) : (
-                  <p className="mt-1 text-2xl font-semibold text-text-primary font-mono">
-                    {stat.value}
-                  </p>
-                )}
-                {stat.badge && (
-                  <Badge variant={stat.badge.variant} className="mt-2">
-                    {stat.badge.text}
-                  </Badge>
-                )}
-              </div>
-              <div className="rounded-lg bg-surface-2 p-2">
-                <stat.icon className="h-5 w-5 text-accent" />
-              </div>
-            </CardContent>
-          </Card>
+            {s.text}
+          </button>
         ))}
       </div>
+    </div>
+  );
 
-      {/* Latest Audit Score */}
-      {stats?.latestAuditScore != null && (
-        <Card className="mb-8 animate-in" style={{ animationDelay: "240ms" }}>
-          <CardContent className="flex items-center gap-6 py-6">
-            <div
-              className={`flex h-14 w-14 items-center justify-center rounded-full border-2 ${
-                stats.latestAuditScore >= 80
-                  ? "bg-success/10 border-success/30"
-                  : stats.latestAuditScore >= 50
-                  ? "bg-warning/10 border-warning/30"
-                  : "bg-error/10 border-error/30"
-              }`}
-            >
-              <span
-                className={`text-xl font-mono font-bold ${
-                  stats.latestAuditScore >= 80
-                    ? "text-success"
-                    : stats.latestAuditScore >= 50
-                    ? "text-warning"
-                    : "text-error"
-                }`}
-              >
-                {stats.latestAuditScore}
-              </span>
-            </div>
-            <div>
-              <p className="text-body font-medium text-text-primary">
-                Latest SEO Audit Score
-              </p>
-              <p className="text-small text-text-secondary">
-                {stats.latestAuditScore >= 80
-                  ? "Great job! Your site is well optimized."
-                  : stats.latestAuditScore >= 50
-                  ? "Room for improvement — check your audit for details."
-                  : "Needs attention — several critical issues found."}
-              </p>
-            </div>
-            {pid && (
-              <Button variant="secondary" size="sm" className="ml-auto" asChild>
-                <Link href={`/projects/${pid}/audit`}>View Audit</Link>
-              </Button>
-            )}
-          </CardContent>
+  // First run: prompt bar and "Run your first audit" only.
+  if (data.empty || !data.project || !data.kpis) {
+    return (
+      <div className="mx-auto max-w-[1200px] space-y-8">
+        {showTour && <OnboardingTour onComplete={() => setShowTour(false)} />}
+        <header className="space-y-2">
+          <h1 className="text-display-s text-text">{greeting}</h1>
+          <p className="text-body text-text-2">Add your website and we&apos;ll check it, then plan your first week.</p>
+        </header>
+        <Card className="space-y-4">
+          <p className="text-title text-text">Run your first audit</p>
+          <p className="text-body-s text-text-2">It takes about a minute and tells us what to write about.</p>
+          <Button asChild>
+            <Link href="/onboarding/magic-audit">Check my site</Link>
+          </Button>
         </Card>
-      )}
+      </div>
+    );
+  }
 
-      {/* Quick Actions */}
-      <div className="mb-8">
-        <h2 className="text-h2 mb-4">
-          {loading ? "Quick Actions" : pid ? "Jump Back In" : "Get Started"}
-        </h2>
-        {loading ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="h-24 rounded-xl bg-surface-2 animate-pulse" />
+  const { kpis } = data;
+  const pid = data.project.id;
+
+  const cells: KpiCell[] = [];
+  if (kpis.seo) {
+    const d = kpis.seo.previous != null ? pointDelta(kpis.seo.score, kpis.seo.previous, "since last audit") : null;
+    cells.push({
+      label: "Site score",
+      value: `${kpis.seo.score} / 100`,
+      delta: d?.text,
+      deltaTone: d?.tone,
+      context: d ? undefined : "First audit",
+    });
+  } else {
+    cells.push({ label: "Site score", value: "Not checked", context: "Run an audit to get a score" });
+  }
+
+  const imp = percentDelta(kpis.impressions.current, kpis.impressions.previous, "last week");
+  cells.push({
+    label: "Views · 7 days",
+    value: formatCount(kpis.impressions.current),
+    delta: imp?.text,
+    deltaTone: imp?.tone,
+    context:
+      kpis.impressions.posts === 0
+        ? "Nothing posted in the last 2 weeks"
+        : `From ${kpis.impressions.posts} ${kpis.impressions.posts === 1 ? "post" : "posts"} in 14 days`,
+  });
+
+  if (kpis.openRate.current != null) {
+    const d = kpis.openRate.previous != null ? pointDelta(kpis.openRate.current, kpis.openRate.previous, "vs last month") : null;
+    cells.push({
+      label: "Emails opened",
+      value: `${kpis.openRate.current}%`,
+      delta: d?.text,
+      deltaTone: d?.tone,
+      context: `Of ${formatCount(kpis.openRate.delivered)} delivered · 30 days`,
+    });
+  } else {
+    cells.push({ label: "Emails opened", value: "No sends yet", context: "Nothing sent in 30 days" });
+  }
+
+  cells.push(
+    kpis.nextPublish
+      ? {
+          label: "Next post",
+          value: whenLabel(kpis.nextPublish.scheduledFor, Date.now()),
+          context: `${channelName(kpis.nextPublish.channel)} · ${shortTime(kpis.nextPublish.scheduledFor)}`,
+        }
+      : { label: "Next post", value: "Nothing booked", context: "Your calendar is empty" }
+  );
+
+  cells.push({
+    label: "Waiting for you",
+    value: data.waitingCount === 0 ? "All clear" : `${data.waitingCount} ${data.waitingCount === 1 ? "draft" : "drafts"}`,
+    context: data.waitingCount === 0 ? "Nothing to approve" : "Approve, edit or skip",
+    ink: true,
+  });
+
+  const tabs = [
+    { key: "active" as const, label: "Active", count: data.live.length },
+    { key: "scheduled" as const, label: "Scheduled", count: data.upcoming?.length ?? 0 },
+    { key: "history" as const, label: "History", count: data.history?.length ?? 0 },
+  ];
+
+  return (
+    <div className="mx-auto max-w-[1200px] space-y-8">
+      {showTour && <OnboardingTour onComplete={() => setShowTour(false)} />}
+
+      <header className="space-y-5">
+        <div className="space-y-2">
+          <h1 className="text-display-s text-text">{greeting}</h1>
+          <p className="text-body text-text-2">
+            {statusLine(data.live.length, data.waitingCount)}{" "}
+            <span className="text-text-3">· {data.project.name}</span>
+          </p>
+        </div>
+        {promptBar}
+      </header>
+
+      <KpiStrip cells={cells} />
+
+      <div className="grid gap-6 rail:grid-cols-[3fr_2fr]">
+        {/* Runs */}
+        <Card className="self-start p-0 md:p-0">
+          <div role="tablist" aria-label="Runs" className="flex gap-1 px-4 pt-4">
+            {tabs.map((t) => (
+              <button
+                key={t.key}
+                role="tab"
+                aria-selected={tab === t.key}
+                onClick={() => setTab(t.key)}
+                className={cn(
+                  "h-8 rounded-md px-3 text-[13px] transition-colors delay-[var(--hover-delay)] duration-[var(--duration-fast)]",
+                  tab === t.key ? "bg-ink text-ink-text" : "text-text-2 hover:bg-surface-2"
+                )}
+              >
+                {t.label} · {t.count}
+              </button>
             ))}
           </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {quickActions.map((action, i) => (
-              <Link key={action.title} href={action.href}>
-                <Card
-                  hover
-                  className="animate-in"
-                  style={{ animationDelay: `${(i + 4) * 60}ms` }}
-                >
-                  <CardContent className="flex items-start gap-4">
-                    <div className="rounded-lg bg-surface-2 p-3 shrink-0">
-                      <action.icon className={`h-5 w-5 ${action.color}`} />
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="text-h3 text-text-primary">{action.title}</h3>
-                      <p className="mt-1 text-small text-text-secondary">
-                        {action.description}
-                      </p>
-                    </div>
-                    <ArrowUpRight className="h-4 w-4 text-text-tertiary shrink-0 mt-1 ml-auto" />
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+          <div role="tabpanel" className="mt-4">
+            {tab === "active" &&
+              (data.live.length > 0 ? (
+                data.live.map((r) => (
+                  <RunRow key={r.id} live time="" title={r.label ?? runTypeLabel(r.type)} sub={`Started ${shortTime(r.startedAt)}`} />
+                ))
+              ) : (
+                <p className="border-t border-line px-4 py-6 text-body-s text-text-3">Nothing running right now.</p>
+              ))}
+            {tab === "scheduled" &&
+              ((data.upcoming?.length ?? 0) > 0 ? (
+                data.upcoming!.map((p) => (
+                  <RunRow
+                    key={p.id}
+                    time={shortTime(p.scheduledFor)}
+                    title={p.title ?? `${channelName(p.channel)} post`}
+                    sub={`${channelName(p.channel)} · ${whenLabel(p.scheduledFor, Date.now())}`}
+                    action={
+                      <Button size="sm" variant="quiet" asChild>
+                        <Link href={`/projects/${pid}/calendar`}>Open</Link>
+                      </Button>
+                    }
+                  />
+                ))
+              ) : (
+                <p className="border-t border-line px-4 py-6 text-body-s text-text-3">
+                  Nothing scheduled.{" "}
+                  <Link href={`/projects/${pid}/calendar`} className="hover-link text-accent hover:text-accent-hover">
+                    Open the calendar
+                  </Link>
+                </p>
+              ))}
+            {tab === "history" &&
+              ((data.history?.length ?? 0) > 0 ? (
+                data.history!.map((a) => (
+                  <RunRow
+                    key={a.id}
+                    time={shortTime(a.created_at)}
+                    title={a.title ?? a.type.replace(/_/g, " ")}
+                    sub={`${a.type.replace(/_/g, " ")} · ${a.status}`}
+                    action={
+                      <Button size="sm" variant="quiet" asChild>
+                        <Link href={`/projects/${pid}/assets`}>View</Link>
+                      </Button>
+                    }
+                  />
+                ))
+              ) : (
+                <p className="border-t border-line px-4 py-6 text-body-s text-text-3">Nothing made yet. Ask an agent above.</p>
+              ))}
           </div>
-        )}
+        </Card>
+
+        {/* Next approval + latest learning */}
+        <div className="space-y-6">
+          <Card className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-title text-text">Next for your OK</h2>
+              {data.waitingCount > 1 && (
+                <Link href="/automation/queue" className="hover-link text-body-s text-text-2 hover:text-text">
+                  All {data.waitingCount}
+                </Link>
+              )}
+            </div>
+            {data.nextApproval ? (
+              <ApprovalCard
+                channel={channelName(data.nextApproval.channel)}
+                when={whenLabel(data.nextApproval.scheduledFor, Date.now())}
+                text={data.nextApproval.text || data.nextApproval.title || "(This draft has no text yet.)"}
+                busy={busy}
+                onApprove={() => act("publish_now")}
+                onEdit={() => (window.location.href = "/automation/queue")}
+                onTryAgain={() => act("cancel")}
+                tryAgainLabel="Skip"
+              />
+            ) : (
+              <p className="text-body-s text-text-3">Nothing is waiting for you.</p>
+            )}
+          </Card>
+
+          {data.learning ? (
+            <InkCard className="space-y-2">
+              <p className="text-label text-ink-text-3">
+                What we learned · {channelName(data.learning.channel)}
+              </p>
+              <p className="text-body text-ink-text">{data.learning.hypothesis}</p>
+              <p className="text-caption text-ink-text-3">
+                {Math.round(Number(data.learning.confidence) * 100)}% sure ·{" "}
+                <Link href={`/projects/${pid}/learnings`} className="hover-link underline-offset-2 hover:text-ink-text hover:underline">
+                  See all
+                </Link>
+              </p>
+            </InkCard>
+          ) : (
+            <InkCard className="space-y-2">
+              <p className="text-label text-ink-text-3">What we learned</p>
+              <p className="text-body-s text-ink-text-2">
+                After a few posts go out we compare what worked and tell you here.
+              </p>
+            </InkCard>
+          )}
+        </div>
       </div>
 
-      {/* All Tools grid — only when a project exists */}
-      {!loading && allTools.length > 0 && (
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-h2">All Tools</h2>
-            <Button variant="secondary" size="sm" asChild>
-              <Link href="/projects">
-                All Projects <ArrowUpRight className="h-3.5 w-3.5" />
-              </Link>
-            </Button>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {allTools.map((tool, i) => (
-              <Link key={tool.name} href={tool.href}>
-                <Card
-                  hover
-                  className="animate-in h-full"
-                  style={{ animationDelay: `${(i + 8) * 40}ms` }}
+      {/* Channel health */}
+      <section aria-labelledby="channels" className="space-y-3">
+        <h2 id="channels" className="text-label text-text-3">
+          Channels
+        </h2>
+        <div className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-2 rail:grid-cols-4">
+          {(data.channels ?? []).map((c) => (
+            <div key={c.key} className="flex min-h-[112px] flex-col justify-between gap-3 bg-surface p-4">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-title text-text">{c.label}</span>
+                <Badge variant={c.connected ? "success" : "secondary"}>{c.connected ? "Connected" : "Not connected"}</Badge>
+              </div>
+              {c.connected ? (
+                c.series.length > 1 && c.total > 0 ? (
+                  <div className="flex items-end justify-between gap-2">
+                    <span className="text-caption text-text-3">{formatCount(c.total)} views · 14 days</span>
+                    <Sparkline values={c.series} width={96} label={`${c.label}: ${c.total} views over 14 days`} />
+                  </div>
+                ) : (
+                  <span className="text-caption text-text-3">
+                    {c.handle ? `@${c.handle.replace(/^@/, "")} · ` : ""}
+                    {c.key === "email" ? `${formatCount(c.total)} delivered · 30 days` : c.key === "gsc" ? "Search data syncs daily" : "No views in 14 days"}
+                  </span>
+                )
+              ) : (
+                <Link
+                  href={c.key === "email" ? `/projects/${pid}/audiences` : "/settings/integrations"}
+                  className="hover-link text-body-s text-accent hover:text-accent-hover"
                 >
-                  <CardContent className="py-4 flex flex-col items-start gap-2">
-                    <div className="rounded-lg bg-surface-2 p-2">
-                      <tool.icon className="h-4 w-4 text-accent" />
-                    </div>
-                    <div>
-                      <p className="text-small font-medium text-text-primary leading-tight">{tool.name}</p>
-                      <p className="text-caption text-text-tertiary mt-0.5 leading-snug">{tool.desc}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Empty State — only show if no projects */}
-      {!loading && stats && stats.projectCount === 0 && (
-        <Card
-          className="animate-in border-dashed border-border-strong"
-          style={{ animationDelay: "480ms" }}
-        >
-          <CardContent className="flex flex-col items-center py-12 text-center">
-            <div className="mb-4 rounded-xl bg-accent-muted p-4">
-              <Zap className="h-8 w-8 text-accent" />
+                  {c.key === "email" ? "Start an email list" : "Connect"}
+                </Link>
+              )}
             </div>
-            <h3 className="text-h2 text-text-primary">
-              Get started with Conduikt
-            </h3>
-            <p className="mt-2 max-w-md text-body text-text-secondary">
-              Connect your first website to unlock AI-powered SEO audits,
-              blog generation, keyword research, growth playbooks, and multi-channel publishing.
-            </p>
-            <Button className="mt-6" asChild>
-              <Link href="/projects/new">
-                <Plus className="h-4 w-4" />
-                Create Your First Project
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function runTypeLabel(type: string): string {
+  if (type === "playbook_action") return "Posting from your plan";
+  if (type.startsWith("email")) return "Email sequence step";
+  return type.replace(/_/g, " ");
+}
+
+/** Chips: lead with the latest learning when there is one. */
+function suggestionsFor(data: Overview) {
+  const list = [...SUGGESTIONS];
+  if (data.learning) {
+    list.unshift({ text: `Write a post that uses: ${truncate(data.learning.hypothesis, 48)}`, group: "creation" });
+    list.pop();
+  }
+  return list;
+}
+
+function truncate(s: string, n: number) {
+  return s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s;
+}
+
+function OverviewSkeleton() {
+  return (
+    <div className="mx-auto max-w-[1200px] space-y-8" aria-busy="true" aria-label="Loading your overview">
+      <div className="space-y-3">
+        <Skeleton className="h-11 w-80" />
+        <Skeleton className="h-5 w-64" />
+        <Skeleton className="h-12 w-full" />
+      </div>
+      <Skeleton className="h-[132px] w-full" />
+      <div className="grid gap-6 rail:grid-cols-[3fr_2fr]">
+        <Skeleton className="h-72" />
+        <Skeleton className="h-72" />
+      </div>
     </div>
   );
 }
