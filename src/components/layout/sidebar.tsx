@@ -27,7 +27,7 @@ import {
   Close,
   MenuFoldOne,
   MenuUnfoldOne,
-} from "@icon-park/react";
+} from "@/src/components/ui/icons";
 import { cn } from "@/src/lib/utils/cn";
 import { useUIStore } from "@/src/stores/ui-store";
 import { createClient } from "@/src/lib/supabase/client";

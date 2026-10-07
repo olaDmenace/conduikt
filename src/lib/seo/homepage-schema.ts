@@ -1,33 +1,35 @@
+// Plain-words FAQ (docs/DESIGN.md §Voice). Shown on the homepage and
+// /pricing, and emitted as FAQPage JSON-LD.
 export const homepageFaqs = [
   {
-    question: "What is Conduikt?",
+    question: "What does Conduikt actually do?",
     answer:
-      "Conduikt is an AI-powered marketing automation platform that audits your site, generates content, publishes directly to X and LinkedIn, and produces email sequences you can export to your own ESP — all from a single dashboard.",
+      "It checks your website and tells you what to fix, writes your blog posts, social posts and emails, posts them to X and LinkedIn for you, and writes email series you can send from your own email tool. All from one screen.",
   },
   {
-    question: "How does the AI SEO audit work?",
+    question: "How does the website check work?",
     answer:
-      "Conduikt crawls your website and runs a comprehensive technical and on-page SEO analysis. It identifies issues, scores your site, and provides specific, actionable fixes — not generic best practices.",
+      "Conduikt reads every page of your site the way Google does, gives it a score out of 100, and lists the exact things to fix, with the code ready to paste. No generic tips.",
   },
   {
-    question: "Can Conduikt publish directly to LinkedIn and X?",
+    question: "Does it really post to X and LinkedIn for me?",
     answer:
-      "Yes. Conduikt connects to your X (Twitter) and LinkedIn accounts so you can generate and publish posts directly from the platform without switching tools.",
+      "Yes. Connect your X and LinkedIn accounts once. After that Conduikt can write a post and publish it without you leaving the app. You choose whether it asks you first.",
   },
   {
-    question: "Do I need technical knowledge to use Conduikt?",
+    question: "Do I need to be technical?",
     answer:
-      "No. Conduikt is built for founders, marketers, and agencies who want results without hiring a full marketing team. The interface is designed to be intuitive with AI handling the heavy lifting.",
+      "No. Conduikt is made for founders and small business owners who don't have a marketing team. If you can paste a web address, you can use it.",
   },
   {
     question: "What happens after the free plan?",
     answer:
-      "The free plan includes 1 project and 5 AI generations per month. When you're ready to scale, Pro starts at $49/month with 250 generations, multi-channel publishing, and email sequences.",
+      "Free gives you 1 website and 5 pieces of content a month, for as long as you like. When you want more, Pro is $49 a month for 250 pieces of content, posting to every channel, and email series.",
   },
   {
-    question: "Is my data secure?",
+    question: "Is my data safe?",
     answer:
-      "Yes. Conduikt uses Supabase with row-level security, encrypted connections, and never shares your data with third parties. Your content and analytics stay private.",
+      "Yes. Your data is stored with Supabase, protected so only your account can read it, and sent over encrypted connections. We never share or sell it. You can delete it any time.",
   },
 ];
 

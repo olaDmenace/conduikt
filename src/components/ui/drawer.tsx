@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Close } from "@icon-park/react";
+import { Close } from "@/src/components/ui/icons";
 import { IconButton } from "@/src/components/ui/button";
 
 // docs/DESIGN.md §Components · Drawer. 480px right slide-over; the one

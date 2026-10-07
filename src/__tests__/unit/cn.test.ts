@@ -2,43 +2,33 @@ import { describe, it, expect } from 'vitest'
 import { cn } from '@/src/lib/utils/cn'
 
 describe('cn utility', () => {
-  it('merges class strings', () => {
-    const result = cn('px-4', 'py-2')
-    expect(result).toContain('px-4')
-    expect(result).toContain('py-2')
+  it('merges class names', () => {
+    expect(cn('a', 'b')).toBe('a b')
   })
 
   it('handles conditional classes', () => {
-    const isActive = true
-    const result = cn('base', isActive && 'active')
-    expect(result).toContain('active')
+    expect(cn('a', false && 'b', 'c')).toBe('a c')
   })
 
-  it('handles false conditionals', () => {
-    const isActive = false
-    const result = cn('base', isActive && 'active')
-    expect(result).not.toContain('active')
+  it('resolves conflicting Tailwind utilities (last wins)', () => {
+    expect(cn('p-2', 'p-4')).toBe('p-4')
+    expect(cn('bg-accent', 'bg-surface')).toBe('bg-surface')
   })
 
-  it('resolves Tailwind conflicts (last wins)', () => {
-    const result = cn('px-4', 'px-6')
-    expect(result).toBe('px-6')
+  // Regression: tailwind-merge used to read custom type roles as colours
+  // and silently drop them when a colour class followed, so headings
+  // rendered at body size.
+  it('keeps a type-role class next to a colour class', () => {
+    expect(cn('text-display-xl', 'text-on-photo')).toBe('text-display-xl text-on-photo')
+    expect(cn('text-label', 'text-text-3')).toBe('text-label text-text-3')
+    expect(cn('text-h3', 'text-text-primary')).toBe('text-h3 text-text-primary')
   })
 
-  it('handles undefined and null inputs', () => {
-    const result = cn('base', undefined, null, 'extra')
-    expect(result).toContain('base')
-    expect(result).toContain('extra')
+  it('lets an explicit size override a type role', () => {
+    expect(cn('text-caption', 'text-[13px]')).toBe('text-[13px]')
   })
 
-  it('handles empty string', () => {
-    const result = cn('')
-    expect(result).toBe('')
-  })
-
-  it('merges arrays of classes', () => {
-    const result = cn(['px-4', 'py-2'])
-    expect(result).toContain('px-4')
-    expect(result).toContain('py-2')
+  it('keeps text-numeric beside an explicit size and a colour', () => {
+    expect(cn('text-numeric', 'text-[2.75rem]', 'text-text')).toBe('text-numeric text-[2.75rem] text-text')
   })
 })

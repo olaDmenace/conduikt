@@ -45,6 +45,16 @@
   --danger: #8E2F2F;
   --info-raw: #4A5559;
 
+  /* --- Type families ---
+     Real custom properties: `@theme inline` does not emit runtime vars,
+     so the type-role classes below (font: … var(--font-display)) need
+     these. next/font sets the --font-space-grotesk/geist/jetbrains-mono
+     inputs on <html>, i.e. :root. */
+  --font-display: var(--font-space-grotesk), "Space Grotesk", system-ui, sans-serif;
+  --font-sans: var(--font-geist), "Geist", system-ui, sans-serif;
+  --font-body: var(--font-geist), "Geist", system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace, monospace;
+
   /* --- Photo overlay + text on photography --- */
   --overlay: #14181A;
   --on-photo: #F4EFE4;
@@ -279,8 +289,10 @@ body {
 .animate-in:nth-child(4) { animation-delay: 240ms; }
 .animate-in:nth-child(n+5) { animation-delay: 320ms; }
 
-/* Applied by <Reveal> when the element crosses 15% visibility. */
-.reveal { opacity: 0; transform: translateY(10px); }
+/* Applied by <Reveal> when the element crosses 15% visibility. Hidden
+   only under `.js` (set inline in <head>) so content stays readable
+   without JavaScript and to crawlers that don't run it. */
+.js .reveal:not(.is-visible) { opacity: 0; transform: translateY(10px); }
 .reveal.is-visible {
   opacity: 1;
   transform: none;
@@ -299,9 +311,36 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .reveal { opacity: 1; transform: none; }
+  .js .reveal:not(.is-visible) { opacity: 1; transform: none; }
   .live-dot { animation: none; }
 }
+
+/* ===================================================
+   PHOTO OVERLAYS — docs/DESIGN.md §Photography
+   Ink-black scrims that buy text contrast on photographs. Not a
+   decorative wash: if a photo fails 4.5:1, raise the alpha here.
+   =================================================== */
+.photo-shade-hero {
+  background: linear-gradient(180deg, rgba(20, 24, 26, 0.55) 0%, rgba(20, 24, 26, 0.35) 35%, rgba(20, 24, 26, 0.82) 100%);
+}
+.photo-shade-hero-side {
+  background: linear-gradient(90deg, rgba(20, 24, 26, 0.55) 0%, rgba(20, 24, 26, 0) 60%);
+}
+.photo-shade-cta {
+  background: linear-gradient(90deg, rgba(20, 24, 26, 0.88) 0%, rgba(20, 24, 26, 0.6) 55%, rgba(20, 24, 26, 0.3) 100%);
+}
+
+/* FAQ: native <details> with a rotating + and a short fade on open. */
+.faq-item summary { list-style: none; }
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary::after {
+  content: "+";
+  font: 300 1.75rem/1 var(--font-display);
+  color: var(--accent);
+  transition: transform var(--duration-base) var(--ease-out-soft);
+}
+.faq-item[open] summary::after { transform: rotate(45deg); }
+.faq-item[open] > div { animation: fadeUp 350ms var(--ease-out-soft) both; }
 
 /* Skeleton: surface-2 block with a gentle pulse. */
 .skeleton {

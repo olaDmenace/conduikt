@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { PENDING_AUDIT_KEY } from "@/src/components/marketing/site-check-form";
 import Link from "next/link";
 import {
   Globe,
@@ -73,6 +74,20 @@ export default function MagicAuditPage() {
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<MagicAuditResponse | null>(null);
   const [elapsed, setElapsed] = useState(0);
+
+  // Prefill the address the visitor typed into the homepage's
+  // "Check my site free" form before signing up.
+  useEffect(() => {
+    try {
+      const pending = localStorage.getItem(PENDING_AUDIT_KEY);
+      if (pending) {
+        setUrl(pending);
+        localStorage.removeItem(PENDING_AUDIT_KEY);
+      }
+    } catch {
+      // Storage blocked: start empty.
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

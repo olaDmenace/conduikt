@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Search, HamburgerButton } from "@icon-park/react";
+import { Search, HamburgerButton } from "@/src/components/ui/icons";
 import { IconButton } from "@/src/components/ui/button";
 import { NotificationPanel } from "@/src/components/notifications/notification-panel";
 import { useUIStore } from "@/src/stores/ui-store";

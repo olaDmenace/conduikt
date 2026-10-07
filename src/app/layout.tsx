@@ -164,6 +164,9 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        {/* Marks JS as available before first paint so scroll reveals
+            hide content only when they can also show it again. */}
+        <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}

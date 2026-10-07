@@ -1,80 +1,58 @@
-import Image from "next/image";
 import Link from "next/link";
-import { Facebook, Twitter } from "lucide-react";
 import { MarketingNav } from "@/src/components/marketing/marketing-nav";
 
-export default function MarketingLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+// docs/DESIGN.md §Marketing site structure · band 10. Sand footer with a
+// top line: copyright, Compare, Blog, Guides, Privacy, Terms, Delete my
+// data. The Product Hunt badge lives here now, not in the hero.
+const FOOTER_LINKS = [
+  { href: "/compare", label: "Compare" },
+  { href: "/blog", label: "Blog" },
+  { href: "/guides", label: "Guides" },
+  { href: "/privacy", label: "Privacy" },
+  { href: "/terms", label: "Terms" },
+  { href: "/data-deletion", label: "Delete my data" },
+];
+
+export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-surface-0">
+    <div className="min-h-screen bg-ground text-text">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-ink focus:px-3 focus:py-2 focus:text-ink-text"
+      >
+        Skip to content
+      </a>
       <MarketingNav />
+      <main id="main" className="pt-[72px]">
+        {children}
+      </main>
 
-      {/* Content — top padding matches the nav height (72px per spec). */}
-      <main className="pt-[72px]">{children}</main>
-
-      {/* Footer */}
-      <footer className="border-t border-border-subtle py-10 sm:py-12">
-        <div className="mx-auto max-w-6xl px-6 flex flex-col items-center gap-6 sm:gap-4 lg:flex-row lg:justify-between">
-          <div className="flex items-center gap-3">
-            <Image
-              src="/conduikt-horizontal.png"
-              alt="Conduikt"
-              width={144}
-              height={36}
-              className="h-9 w-auto opacity-90"
+      <footer className="border-t border-line">
+        <div className="mx-auto flex max-w-[1280px] flex-wrap items-center justify-between gap-x-6 gap-y-4 px-4 py-7 text-[13px] text-text-3 md:px-10">
+          <span>© {new Date().getFullYear()} Conduikt · Technicity Digital</span>
+          <nav aria-label="Footer" className="flex flex-wrap gap-x-5 gap-y-2">
+            {FOOTER_LINKS.map((l) => (
+              <Link key={l.href} href={l.href} className="transition-colors duration-[var(--duration-fast)] hover:text-text">
+                {l.label}
+              </Link>
+            ))}
+          </nav>
+          <a
+            href="https://www.producthunt.com/products/conduikt?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-conduikt"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1119957&theme=light"
+              alt="Conduikt on Product Hunt"
+              width={200}
+              height={43}
+              loading="lazy"
+              decoding="async"
             />
-            <span className="text-small text-text-tertiary">
-              by Technicity Digital
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-small text-text-tertiary">
-            <Link href="/compare" className="hover:text-text-secondary transition-colors">
-              Compare
-            </Link>
-            <Link href="/blog" className="hover:text-text-secondary transition-colors">
-              Blog
-            </Link>
-            <Link href="/guides" className="hover:text-text-secondary transition-colors">
-              Guides
-            </Link>
-            <Link href="/launch" className="hover:text-text-secondary transition-colors">
-              Launch
-            </Link>
-          </div>
-          <div className="flex items-center gap-3">
-            <a
-              href="https://x.com/conduikt"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Follow Conduikt on X"
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-border-subtle text-text-tertiary hover:text-text-primary hover:border-border-strong transition-colors"
-            >
-              <Twitter className="h-4 w-4" />
-            </a>
-            <a
-              href="https://www.facebook.com/conduikt"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Follow Conduikt on Facebook"
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-border-subtle text-text-tertiary hover:text-text-primary hover:border-border-strong transition-colors"
-            >
-              <Facebook className="h-4 w-4" />
-            </a>
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-small text-text-tertiary">
-            <Link href="/privacy" className="hover:text-text-secondary transition-colors">
-              Privacy
-            </Link>
-            <Link href="/terms" className="hover:text-text-secondary transition-colors">
-              Terms
-            </Link>
-            <Link href="/data-deletion" className="hover:text-text-secondary transition-colors">
-              Data Deletion
-            </Link>
-          </div>
+          </a>
         </div>
       </footer>
     </div>
