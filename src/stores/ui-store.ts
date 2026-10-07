@@ -5,6 +5,10 @@ interface UIState {
   sidebarCollapsed: boolean;
   mobileMenuOpen: boolean;
   commandPaletteOpen: boolean;
+  /** Project the rail is scoped to (docs/DESIGN.md §Navigation model). */
+  currentProjectId: string | null;
+  /** Agent group the picker opens on; null = picker closed. */
+  agentPickerGroup: string | null;
   expandedProjectIds: string[];
   theme: "dark" | "light";
 
@@ -14,6 +18,9 @@ interface UIState {
   toggleMobileMenu: () => void;
   setCommandPaletteOpen: (open: boolean) => void;
   toggleCommandPalette: () => void;
+  setCurrentProjectId: (id: string | null) => void;
+  openAgentPicker: (group: string) => void;
+  closeAgentPicker: () => void;
   toggleProjectExpanded: (id: string) => void;
   setProjectExpanded: (id: string, expanded: boolean) => void;
   toggleTheme: () => void;
@@ -26,6 +33,8 @@ export const useUIStore = create<UIState>()(
       sidebarCollapsed: false,
       mobileMenuOpen: false,
       commandPaletteOpen: false,
+      currentProjectId: null,
+      agentPickerGroup: null,
       expandedProjectIds: [],
       theme: "dark" as const,
 
@@ -38,6 +47,9 @@ export const useUIStore = create<UIState>()(
       setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
       toggleCommandPalette: () =>
         set((state) => ({ commandPaletteOpen: !state.commandPaletteOpen })),
+      setCurrentProjectId: (id) => set({ currentProjectId: id }),
+      openAgentPicker: (group) => set({ agentPickerGroup: group }),
+      closeAgentPicker: () => set({ agentPickerGroup: null }),
 
       toggleProjectExpanded: (id) =>
         set((state) => ({
@@ -72,6 +84,7 @@ export const useUIStore = create<UIState>()(
       name: "conduikt-ui",
       partialize: (state) => ({
         sidebarCollapsed: state.sidebarCollapsed,
+        currentProjectId: state.currentProjectId,
         expandedProjectIds: state.expandedProjectIds,
         theme: state.theme,
       }),

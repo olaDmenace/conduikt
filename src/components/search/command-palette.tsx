@@ -20,27 +20,14 @@ import {
   Calendar,
 } from "lucide-react";
 import { useUIStore } from "@/src/stores/ui-store";
+import { AGENT_REGISTRY } from "@/src/lib/ai/agents/registry";
+import { agentDisplay } from "@/src/lib/ai/agents/display";
 
 interface Project {
   id: string;
   name: string;
   website_url: string | null;
 }
-
-// Project-scoped destinations. `path` is appended to /projects/{id}/ and may
-// include a query string (e.g. "content?skill=page-cro").
-const AGENT_ITEMS = [
-  { name: "SEO Audit", path: "audit", icon: AlertTriangle },
-  { name: "Content Studio", path: "content", icon: Sparkles },
-  { name: "Blog Writer", path: "blog", icon: Globe },
-  { name: "Keywords", path: "keywords", icon: Search },
-  { name: "Growth Playbook", path: "growth", icon: Rocket },
-  { name: "CRO Agent", path: "content?skill=page-cro", icon: Target },
-  { name: "Campaigns", path: "campaigns", icon: Megaphone },
-  { name: "Calendar", path: "calendar", icon: Calendar },
-  { name: "Emails", path: "emails", icon: Mail },
-  { name: "Analytics", path: "analytics", icon: BarChart3 },
-];
 
 const PAGES = [
   { name: "Dashboard", href: "/dashboard", icon: BarChart3 },
@@ -55,6 +42,7 @@ export function CommandPalette() {
   const open = useUIStore((s) => s.commandPaletteOpen);
   const setOpen = useUIStore((s) => s.setCommandPaletteOpen);
   const toggle = useUIStore((s) => s.toggleCommandPalette);
+  const currentProjectId = useUIStore((s) => s.currentProjectId);
   const [projects, setProjects] = useState<Project[]>([]);
   const [assets, setAssets] = useState<Array<{ id: string; title: string; project_id: string }>>([]);
   const router = useRouter();
@@ -97,7 +85,8 @@ export function CommandPalette() {
 
   if (!open) return null;
 
-  const firstProject = projects[0];
+  // Agents run against the project the rail is scoped to.
+  const agentProjectId = currentProjectId ?? projects[0]?.id ?? null;
 
   return (
     <div className="fixed inset-0 z-50">
@@ -153,27 +142,31 @@ export function CommandPalette() {
             <Command.Group
               heading={
                 <span className="text-caption text-text-tertiary font-medium px-2">
-                  Agents
+                  Ask an agent to
                 </span>
               }
             >
-              {AGENT_ITEMS.map((agent) => (
-                <Command.Item
-                  key={agent.path}
-                  value={`agent ${agent.name}`}
-                  onSelect={() =>
-                    navigate(
-                      firstProject
-                        ? `/projects/${firstProject.id}/${agent.path}`
-                        : "/dashboard"
-                    )
-                  }
-                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-small text-text-secondary cursor-pointer data-[selected=true]:bg-surface-2 data-[selected=true]:text-text-primary"
-                >
-                  <agent.icon className="h-4 w-4 text-text-tertiary shrink-0" />
-                  <span>{agent.name}</span>
-                </Command.Item>
-              ))}
+              {AGENT_REGISTRY.map((agent) => {
+                const d = agentDisplay(agent);
+                return (
+                  <Command.Item
+                    key={agent.id}
+                    value={`agent ${d.name} ${d.job} ${agent.shortName}`}
+                    onSelect={() =>
+                      navigate(
+                        agentProjectId
+                          ? `/projects/${agentProjectId}/${agent.projectPath ?? agent.route}`
+                          : "/projects/new"
+                      )
+                    }
+                    className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm text-text-2 cursor-pointer data-[selected=true]:bg-surface-2 data-[selected=true]:text-text"
+                  >
+                    <Sparkles className="h-4 w-4 text-text-3 shrink-0" aria-hidden />
+                    <span className="truncate">{d.name}</span>
+                    <span className="ml-auto truncate text-caption text-text-3">{d.job}</span>
+                  </Command.Item>
+                );
+              })}
             </Command.Group>
 
             <Command.Group

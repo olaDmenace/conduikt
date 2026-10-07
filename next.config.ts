@@ -37,8 +37,9 @@ const CSP_REPORT_ONLY = [
   "form-action 'self' https://checkout.flutterwave.com https://checkout.paystack.com",
   "base-uri 'self'",
   "object-src 'none'",
-  "upgrade-insecure-requests",
-  "report-uri /api/csp-report",
+  // Trailing slash matters: trailingSlash:true 308s the bare path and
+  // browsers never follow redirects when sending reports.
+  "report-uri /api/csp-report/",
 ].join("; ");
 
 const securityHeaders = [
@@ -68,7 +69,16 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   trailingSlash: true,
   experimental: {
-    optimizePackageImports: ["lucide-react"],
+    optimizePackageImports: ["lucide-react", "@icon-park/react"],
+  },
+  // docs/DESIGN.md §Navigation model: the global agents menu and the
+  // Playground are retired. Their routes open the agent picker instead.
+  async redirects() {
+    return [
+      { source: "/playground", destination: "/dashboard?pick=creation", permanent: false },
+      { source: "/agents", destination: "/dashboard?pick=analysis", permanent: false },
+      { source: "/agents/:path*", destination: "/dashboard?pick=analysis", permanent: false },
+    ];
   },
   async headers() {
     return [
