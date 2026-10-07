@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
-import { getAnthropicClient } from "@/src/lib/ai/client";
+import { continuationMessages, getAnthropicClient } from "@/src/lib/ai/client";
 import { getAgent } from "@/src/lib/ai/agents";
 import type { ProjectContext } from "@/src/lib/ai/agents/types";
 import {
@@ -88,9 +88,8 @@ export async function POST(request: NextRequest) {
   const anthropic = getAnthropicClient();
   const start = Date.now();
 
-  // How many times we'll try to continue from a prefill if Claude keeps
-  // hitting max_tokens. Each round reuses the accumulated text as an
-  // assistant prefill, so no tokens are regenerated.
+  // How many times we'll ask Claude to continue if it keeps hitting
+  // max_tokens. Each round sends the text so far and asks for the rest.
   const MAX_CONTINUATIONS = 2;
 
   const encoder = new TextEncoder();
@@ -110,13 +109,9 @@ export async function POST(request: NextRequest) {
 
       try {
         for (let attempt = 0; attempt <= MAX_CONTINUATIONS; attempt++) {
-          const messages: Array<{
-            role: "user" | "assistant";
-            content: string;
-          }> = [{ role: "user", content: userPrompt }];
-          if (fullText) {
-            messages.push({ role: "assistant", content: fullText });
-          }
+          // Continue a cut-off answer with a normal turn; current models
+          // reject assistant prefill. See continuationMessages.
+          const messages = continuationMessages(userPrompt, fullText);
 
           const stream = anthropic.messages.stream({
             model: skill.model,
@@ -139,8 +134,8 @@ export async function POST(request: NextRequest) {
             break;
           }
 
-          // Hit max_tokens. If we have budget for another round, loop with
-          // prefill. Otherwise flag truncated and bail.
+          // Hit max_tokens. If we have budget for another round, ask for
+          // the rest. Otherwise flag truncated and bail.
           if (attempt === MAX_CONTINUATIONS) {
             truncated = true;
             console.error(

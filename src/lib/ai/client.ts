@@ -42,6 +42,37 @@ export class TruncatedResponseError extends Error {
   }
 }
 
+const STREAM_ABOVE_TOKENS = 16_000;
+
+type Turn = { role: "user" | "assistant"; content: string };
+
+// Current models reject assistant-message prefill ("The conversation must
+// end with a user message"), so a cut-off answer is continued with a
+// normal turn: the partial answer as the assistant's message, then a user
+// message asking for the rest.
+export const CONTINUE_PROMPT =
+  "Your previous reply was cut off by the length limit. Continue it from exactly where it stopped. " +
+  "Output only the continuation: do not repeat anything already written, do not add a preface, and do not start over.";
+
+export function continuationMessages(userPrompt: string, soFar: string): Turn[] {
+  if (!soFar) return [{ role: "user", content: userPrompt }];
+  return [
+    { role: "user", content: userPrompt },
+    { role: "assistant", content: soFar.trimEnd() },
+    { role: "user", content: CONTINUE_PROMPT },
+  ];
+}
+
+/** Append a continuation, dropping any text the model repeated at the seam. */
+export function joinContinuation(soFar: string, next: string): string {
+  const base = soFar.trimEnd();
+  const max = Math.min(300, base.length, next.length);
+  for (let k = max; k >= 12; k--) {
+    if (base.endsWith(next.slice(0, k))) return base + next.slice(k);
+  }
+  return base + next;
+}
+
 export async function generateWithClaude({
   systemPrompt,
   userPrompt,
@@ -60,20 +91,23 @@ export async function generateWithClaude({
   const anthropic = getAnthropicClient();
   const start = Date.now();
 
-  const messages: Array<{ role: "user" | "assistant"; content: string }> = [
-    { role: "user", content: userPrompt },
-  ];
-  if (prefill) {
-    messages.push({ role: "assistant", content: prefill });
-  }
+  // `prefill` is the cut-off answer so far; see continuationMessages.
+  const messages = continuationMessages(userPrompt, prefill ?? "");
 
-  const response = await anthropic.messages.create({
+  const params = {
     model,
     max_tokens: maxTokens,
     temperature: temperature ?? 1,
     system: systemPrompt,
     messages,
-  });
+  };
+  // The SDK refuses non-streaming requests that could run past 10 minutes
+  // (large max_tokens, e.g. the 24k-token Growth Plan). Stream those and
+  // wait for the final message — same result shape, no timeout.
+  const response =
+    maxTokens > STREAM_ABOVE_TOKENS
+      ? await anthropic.messages.stream(params).finalMessage()
+      : await anthropic.messages.create(params);
 
   const durationMs = Date.now() - start;
   const textBlock = response.content.find((b) => b.type === "text");
@@ -91,9 +125,9 @@ export async function generateWithClaude({
 /**
  * Like generateWithClaude but keeps going until Claude actually finishes.
  *
- * If the first call hits max_tokens, we prefill a second call with everything
- * Claude already wrote. Claude resumes from the exact character it stopped at,
- * so no tokens are regenerated. Up to maxContinuations extra attempts. After
+ * If the first call hits max_tokens, we send what Claude already wrote back
+ * and ask for the rest (continuationMessages), then stitch the pieces
+ * together, trimming any overlap at the seam. Up to maxContinuations extra attempts. After
  * that we throw TruncatedResponseError with the accumulated partial content.
  */
 export async function generateWithClaudeCompletion(opts: {
@@ -129,7 +163,7 @@ export async function generateWithClaudeCompletion(opts: {
       prefill: accumulated || undefined,
     });
 
-    accumulated += chunk.content;
+    accumulated = accumulated ? joinContinuation(accumulated, chunk.content) : chunk.content;
     totalInputTokens += chunk.inputTokens;
     totalOutputTokens += chunk.outputTokens;
     totalDuration += chunk.durationMs;

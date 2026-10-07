@@ -77,9 +77,8 @@ export async function POST(request: NextRequest) {
   const systemPrompt = skill.buildSystemPrompt(context);
   const userPrompt = skill.buildUserPrompt(input);
 
-  // Generate (with automatic continuation on truncation — reuses any partial
-  // output as an assistant prefill so Claude resumes from the exact character
-  // it stopped at, no tokens regenerated).
+  // Generate (with automatic continuation on truncation — the partial output
+  // is sent back and Claude is asked for the rest; see continuationMessages).
   let result;
   try {
     result = await generateWithClaudeCompletion({
