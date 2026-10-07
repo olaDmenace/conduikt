@@ -20,6 +20,12 @@ import type { NextConfig } from "next";
 //   connect-src: Supabase (data plane + realtime WSS), Anthropic (server-
 //     initiated; the browser rarely needs this but streaming responses may).
 //   frame-src: payment iframes.
+//   Google Analytics (gtag): script from googletagmanager.com, beacons to
+//     *.google-analytics.com / *.analytics.google.com.
+//   Tawk chat: scripts, styles, fonts, XHR and a websocket on *.tawk.to,
+//     plus its widget iframes.
+//   Cloudflare Turnstile: the anonymous "Check my site" bot check (script
+//     + challenge iframe on challenges.cloudflare.com).
 //   frame-ancestors 'self': mirrors X-Frame-Options SAMEORIGIN so modern
 //     browsers use CSP semantics.
 //
@@ -27,12 +33,12 @@ import type { NextConfig } from "next";
 // to `https:` unless the source is genuinely unlimited.
 const CSP_REPORT_ONLY = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.flutterwave.com https://js.paystack.co https://cdn.jsdelivr.net https://va.vercel-scripts.com",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.flutterwave.com https://js.paystack.co https://cdn.jsdelivr.net https://va.vercel-scripts.com https://www.googletagmanager.com https://embed.tawk.to https://*.tawk.to https://challenges.cloudflare.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://embed.tawk.to",
   "img-src 'self' data: blob: https:",
-  "font-src 'self' data: https://fonts.gstatic.com",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://checkout.flutterwave.com https://api.paystack.co https://vitals.vercel-insights.com",
-  "frame-src 'self' https://checkout.flutterwave.com https://checkout.paystack.com",
+  "font-src 'self' data: https://fonts.gstatic.com https://embed.tawk.to",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://checkout.flutterwave.com https://api.paystack.co https://vitals.vercel-insights.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://*.tawk.to wss://*.tawk.to",
+  "frame-src 'self' https://checkout.flutterwave.com https://checkout.paystack.com https://*.tawk.to https://challenges.cloudflare.com",
   "frame-ancestors 'self'",
   "form-action 'self' https://checkout.flutterwave.com https://checkout.paystack.com",
   "base-uri 'self'",
