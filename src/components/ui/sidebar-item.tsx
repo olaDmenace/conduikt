@@ -8,7 +8,7 @@ import { cn } from "@/src/lib/utils/cn";
 // on hover / keyboard focus — not a `title` attribute.
 //
 // `labelClassName` carries the responsive hiding rule from the rail, e.g.
-// "md:max-[999px]:sr-only" — the same class decides the tooltip.
+// "md:max-rail:sr-only" — the same class decides the tooltip.
 export function SidebarItem({
   href,
   icon,
@@ -17,6 +17,7 @@ export function SidebarItem({
   count,
   onClick,
   labelClassName,
+  collapsed = false,
 }: {
   href: string;
   icon: React.ReactNode;
@@ -25,6 +26,8 @@ export function SidebarItem({
   count?: number;
   onClick?: () => void;
   labelClassName?: string;
+  /** The user collapsed the rail at wide widths: show tooltips there too. */
+  collapsed?: boolean;
 }) {
   return (
     <Link
@@ -32,7 +35,7 @@ export function SidebarItem({
       onClick={onClick}
       aria-current={current ? "page" : undefined}
       className={cn(
-        "group relative flex h-9 items-center gap-2.5 rounded-md px-2.5 text-sm transition-colors duration-[var(--duration-fast)]",
+        "group relative flex h-9 items-center gap-2.5 rounded-md px-2.5 text-sm transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out-soft)] delay-[var(--hover-delay)]",
         "text-text-2 hover:bg-surface-2 hover:text-text",
         "aria-[current=page]:bg-ink aria-[current=page]:text-ink-text"
       )}
@@ -55,7 +58,7 @@ export function SidebarItem({
           {count}
         </span>
       )}
-      <RailTooltip label={count ? `${label} (${count})` : label} />
+      <RailTooltip label={count ? `${label} (${count})` : label} collapsed={collapsed} />
     </Link>
   );
 }
@@ -65,13 +68,14 @@ export function SidebarItem({
  * hidden; at other widths the `hidden` default wins. Shown on hover and
  * on keyboard focus.
  */
-export function RailTooltip({ label }: { label: string }) {
+export function RailTooltip({ label, collapsed = false }: { label: string; collapsed?: boolean }) {
   return (
     <span
       role="tooltip"
       className={cn(
         "pointer-events-none absolute left-full top-1/2 z-50 ml-2 hidden -translate-y-1/2 whitespace-nowrap rounded-sm bg-ink px-2 py-1 text-caption text-ink-text",
-        "md:max-[999px]:group-hover:block md:max-[999px]:group-focus-visible:block"
+        "md:max-rail:group-hover:block md:max-rail:group-focus-visible:block",
+        collapsed && "rail:group-hover:block rail:group-focus-visible:block"
       )}
     >
       {label}

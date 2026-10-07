@@ -9,6 +9,7 @@ import { extendTailwindMerge } from "tailwind-merge";
 // with the TYPE SCALE section of src/styles/globals.css.
 const TYPE_ROLES = [
   "display-xl",
+  "hero-line",
   "display-l",
   "display-m",
   "display-s",

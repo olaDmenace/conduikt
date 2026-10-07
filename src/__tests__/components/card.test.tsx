@@ -13,7 +13,7 @@ describe('Card Component', () => {
     render(<Card hover data-testid="card">Hover card</Card>)
     const card = screen.getByTestId('card')
     // v2: emphasis is an accent border, never a shadow or scale
-    expect(card.className).toContain('hover:border-accent')
+    expect(card.className).toContain('hover-card')
     expect(card.className).toContain('cursor-pointer')
     expect(card.className).not.toContain('shadow')
     expect(card.className).not.toContain('scale')

@@ -39,7 +39,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <Comp
         className={cn(
           "inline-flex items-center justify-center gap-2 rounded-md font-sans font-medium whitespace-nowrap",
-          "transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out-soft)]",
+          "transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out-soft)] delay-[var(--hover-delay)]",
           "disabled:opacity-50 disabled:pointer-events-none",
           buttonVariants[variant],
           buttonSizes[size],
@@ -71,7 +71,7 @@ const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
       type={type}
       aria-label={label}
       className={cn(
-        "inline-flex shrink-0 items-center justify-center rounded-md transition-colors duration-[var(--duration-fast)]",
+        "inline-flex shrink-0 items-center justify-center rounded-md transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out-soft)] delay-[var(--hover-delay)]",
         size === "sm" ? "h-8 w-8" : "h-9 w-9",
         buttonVariants[variant],
         className

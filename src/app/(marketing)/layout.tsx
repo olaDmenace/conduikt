@@ -32,7 +32,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
           <span>© {new Date().getFullYear()} Conduikt · Technicity Digital</span>
           <nav aria-label="Footer" className="flex flex-wrap gap-x-5 gap-y-2">
             {FOOTER_LINKS.map((l) => (
-              <Link key={l.href} href={l.href} className="transition-colors duration-[var(--duration-fast)] hover:text-text">
+              <Link key={l.href} href={l.href} className="hover-link hover:text-text">
                 {l.label}
               </Link>
             ))}

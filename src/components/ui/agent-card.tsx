@@ -29,7 +29,7 @@ export function AgentCard({
   return (
     <Link
       href={locked ? "/settings/billing" : href}
-      className="flex flex-col gap-2 rounded-md border border-line bg-surface p-3.5 text-sm transition-colors duration-[var(--duration-fast)] hover:border-accent"
+      className="hover-card hover-card-quiet flex flex-col gap-2 rounded-md border border-line bg-surface p-3.5 text-sm"
     >
       <span className="flex items-center justify-between gap-2">
         <Badge variant={agent.tier}>{TIER_LABEL[agent.tier]}</Badge>

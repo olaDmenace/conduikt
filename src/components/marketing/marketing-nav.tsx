@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { HamburgerButton, Close } from "@/src/components/ui/icons";
 import { Button, IconButton } from "@/src/components/ui/button";
 
-// docs/DESIGN.md §Marketing site structure · band 0. One nav component on
-// every marketing page (Compare included). Sand ground, six links, Sign
-// in (outline) and Start free (primary). Under 1000px the links move into
-// a sheet; both buttons stay visible down to 375px.
+// docs/DESIGN.md §Marketing site structure · band 0. One nav on every
+// marketing page. At ≥1000px: links inline, Sign in + Start free on the
+// right. Below that the links (and, on phones, both buttons) live in a
+// full-screen sheet whose items animate in, staggered.
 const LINKS = [
   { href: "/#loop", label: "How it works" },
   { href: "/#agents", label: "What it does" },
@@ -18,19 +19,43 @@ const LINKS = [
   { href: "/#faq", label: "Questions" },
 ];
 
+const CLOSE_MS = 200;
+
 export function MarketingNav() {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+
+  const close = useCallback(() => {
+    if (!open || closing) return;
+    setClosing(true);
+    window.setTimeout(() => {
+      setOpen(false);
+      setClosing(false);
+      toggleRef.current?.focus();
+    }, CLOSE_MS);
+  }, [open, closing]);
+
+  // Close on navigation.
+  useEffect(() => {
+    setOpen(false);
+    setClosing(false);
+  }, [pathname]);
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
+    const onResize = () => window.innerWidth >= 1000 && setOpen(false);
     document.addEventListener("keydown", onKey);
+    window.addEventListener("resize", onResize);
     document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
+      window.removeEventListener("resize", onResize);
       document.body.style.overflow = "";
     };
-  }, [open]);
+  }, [open, close]);
 
   return (
     <header className="fixed inset-x-0 top-0 z-40 border-b border-line bg-ground">
@@ -40,57 +65,82 @@ export function MarketingNav() {
           <span className="font-display text-lg font-medium tracking-tight text-text">Conduikt</span>
         </Link>
 
-        <nav aria-label="Primary" className="hidden items-center gap-7 min-[1000px]:flex">
+        <nav aria-label="Primary" className="hidden items-center gap-7 rail:flex">
           {LINKS.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className="text-sm text-text-2 transition-colors duration-[var(--duration-fast)] hover:text-text"
-            >
+            <Link key={l.href} href={l.href} className="hover-link text-sm text-text-2 hover:text-text">
               {l.label}
             </Link>
           ))}
         </nav>
 
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" asChild className="h-[38px] px-4 text-sm">
+          {/* On phones these move into the menu sheet. */}
+          <Button variant="outline" size="sm" asChild className="hidden h-[38px] px-4 text-sm md:inline-flex">
             <Link href="/login">Sign in</Link>
           </Button>
-          <Button size="sm" asChild className="h-[38px] px-4 text-sm">
+          <Button size="sm" asChild className="hidden h-[38px] px-4 text-sm md:inline-flex">
             <Link href="/signup">Start free</Link>
           </Button>
           <IconButton
+            ref={toggleRef}
             label={open ? "Close menu" : "Open menu"}
             aria-expanded={open}
             aria-controls="marketing-sheet"
-            onClick={() => setOpen((v) => !v)}
-            className="min-[1000px]:hidden"
+            onClick={() => (open ? close() : setOpen(true))}
+            className="rail:hidden"
           >
-            {open ? <Close size={20} fill="currentColor" /> : <HamburgerButton size={20} fill="currentColor" />}
+            {open && !closing ? <Close size={22} fill="currentColor" /> : <HamburgerButton size={22} fill="currentColor" />}
           </IconButton>
         </div>
       </div>
 
       {open && (
-        <nav
+        <div
           id="marketing-sheet"
-          aria-label="Primary"
-          className="border-t border-line bg-ground px-4 pb-6 pt-2 min-[1000px]:hidden"
+          data-hide-chat
+          data-state={closing ? "closing" : "open"}
+          className="menu-sheet fixed inset-x-0 bottom-0 top-[72px] z-40 flex flex-col overflow-y-auto bg-ground px-4 pb-8 pt-4 md:px-10 rail:hidden"
         >
-          <ul className="flex flex-col">
-            {LINKS.map((l) => (
-              <li key={l.href}>
-                <Link
-                  href={l.href}
-                  onClick={() => setOpen(false)}
-                  className="flex h-12 items-center border-b border-line text-base text-text"
+          <nav aria-label="Primary" className="flex-1">
+            <ul className="flex flex-col">
+              {LINKS.map((l, i) => (
+                <li
+                  key={l.href}
+                  className="menu-item-left border-b border-line"
+                  style={{ "--i": i } as React.CSSProperties}
                 >
-                  {l.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+                  <Link
+                    href={l.href}
+                    onClick={close}
+                    className="hover-link flex h-16 items-center justify-between font-display text-2xl font-light tracking-tight text-text hover:text-accent-hover"
+                  >
+                    {l.label}
+                    <span aria-hidden className="text-xl text-text-3">→</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          <div className="mt-8 flex flex-col gap-3 md:hidden">
+            <div className="menu-item-up" style={{ "--i": LINKS.length } as React.CSSProperties}>
+              <Button size="lg" asChild className="w-full">
+                <Link href="/signup" onClick={close}>Start free</Link>
+              </Button>
+            </div>
+            <div className="menu-item-up" style={{ "--i": LINKS.length + 1 } as React.CSSProperties}>
+              <Button variant="outline" size="lg" asChild className="w-full">
+                <Link href="/login" onClick={close}>Sign in</Link>
+              </Button>
+            </div>
+            <p
+              className="menu-item-up text-center text-caption text-text-3"
+              style={{ "--i": LINKS.length + 2 } as React.CSSProperties}
+            >
+              No card needed · Set up in 2 minutes
+            </p>
+          </div>
+        </div>
       )}
     </header>
   );

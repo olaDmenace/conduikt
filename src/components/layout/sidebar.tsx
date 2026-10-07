@@ -161,7 +161,7 @@ export function Sidebar() {
 
   // Label visibility: hidden in the 64px rail (768–999px always, ≥1000px
   // when the user collapsed it). The mobile drawer always shows labels.
-  const compactLabel = cn("md:max-[999px]:sr-only", collapsed && "min-[1000px]:sr-only");
+  const compactLabel = cn("md:max-rail:sr-only", collapsed && "rail:sr-only");
   const projectHref = (suffix: string) => (base ? `${base}${suffix}` : "/projects/new");
 
   return (
@@ -176,7 +176,7 @@ export function Sidebar() {
           "fixed left-0 top-0 z-50 flex h-screen w-60 flex-col border-r border-line bg-ground transition-[transform,width] duration-[var(--duration-base)] ease-[var(--ease-out-soft)]",
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full",
           "md:w-16 md:translate-x-0",
-          collapsed ? "min-[1000px]:w-16" : "min-[1000px]:w-60"
+          collapsed ? "rail:w-16" : "rail:w-60"
         )}
       >
         {/* Logo */}
@@ -256,6 +256,7 @@ export function Sidebar() {
               current={base ? at(base, true) : at("/dashboard", true)}
               onClick={close}
               labelClassName={compactLabel}
+              collapsed={collapsed}
             />
             <SidebarItem
               href="/automation/queue"
@@ -265,6 +266,7 @@ export function Sidebar() {
               current={at("/automation/queue")}
               onClick={close}
               labelClassName={compactLabel}
+              collapsed={collapsed}
             />
             <SidebarItem
               href={projectHref("/calendar")}
@@ -273,6 +275,7 @@ export function Sidebar() {
               current={!!base && at(`${base}/calendar`)}
               onClick={close}
               labelClassName={compactLabel}
+              collapsed={collapsed}
             />
             <SidebarItem
               href={projectHref("/analytics")}
@@ -281,6 +284,7 @@ export function Sidebar() {
               current={!!base && at(`${base}/analytics`)}
               onClick={close}
               labelClassName={compactLabel}
+              collapsed={collapsed}
             />
             <SidebarItem
               href={projectHref("/learnings")}
@@ -289,6 +293,7 @@ export function Sidebar() {
               current={!!base && at(`${base}/learnings`)}
               onClick={close}
               labelClassName={compactLabel}
+              collapsed={collapsed}
             />
           </div>
 
@@ -306,24 +311,24 @@ export function Sidebar() {
                 <span className={cn("font-mono text-xs text-text-3", compactLabel)}>
                   {agentsInGroup(g.category).length}
                 </span>
-                <RailTooltip label={g.label} />
+                <RailTooltip label={g.label} collapsed={collapsed} />
               </button>
             ))}
           </SidebarSection>
 
           {/* Your email list */}
           <SidebarSection label="Your email list" labelClassName={compactLabel}>
-            <SidebarItem href={projectHref("/emails")} icon={<Mail size={20} fill="currentColor" />} label="Email series" current={!!base && at(`${base}/emails`)} onClick={close} labelClassName={compactLabel} />
-            <SidebarItem href={projectHref("/audiences")} icon={<Peoples size={20} fill="currentColor" />} label="Subscribers & sign-up forms" current={!!base && (at(`${base}/audiences`) || at(`${base}/forms`))} onClick={close} labelClassName={compactLabel} />
-            <SidebarItem href={projectHref("/broadcasts")} icon={<SendEmail size={20} fill="currentColor" />} label="One-off emails" current={!!base && at(`${base}/broadcasts`)} onClick={close} labelClassName={compactLabel} />
+            <SidebarItem href={projectHref("/emails")} icon={<Mail size={20} fill="currentColor" />} label="Email series" current={!!base && at(`${base}/emails`)} onClick={close} labelClassName={compactLabel} collapsed={collapsed} />
+            <SidebarItem href={projectHref("/audiences")} icon={<Peoples size={20} fill="currentColor" />} label="Subscribers & sign-up forms" current={!!base && (at(`${base}/audiences`) || at(`${base}/forms`))} onClick={close} labelClassName={compactLabel} collapsed={collapsed} />
+            <SidebarItem href={projectHref("/broadcasts")} icon={<SendEmail size={20} fill="currentColor" />} label="One-off emails" current={!!base && at(`${base}/broadcasts`)} onClick={close} labelClassName={compactLabel} collapsed={collapsed} />
           </SidebarSection>
 
           {/* Settings */}
           <SidebarSection label="Settings" labelClassName={compactLabel}>
-            <SidebarItem href={projectHref("/library")} icon={<FolderOpen size={20} fill="currentColor" />} label="Everything we made" current={!!base && at(`${base}/library`)} onClick={close} labelClassName={compactLabel} />
-            <SidebarItem href="/settings/brand" icon={<Voice size={20} fill="currentColor" />} label="How you sound" current={at("/settings/brand")} onClick={close} labelClassName={compactLabel} />
-            <SidebarItem href="/settings/integrations" icon={<LinkIcon size={20} fill="currentColor" />} label="Connected accounts" current={at("/settings/integrations")} onClick={close} labelClassName={compactLabel} />
-            <SidebarItem href="/settings" icon={<SettingTwo size={20} fill="currentColor" />} label="Account" current={pathname === "/settings" || at("/settings/billing") || at("/settings/team")} onClick={close} labelClassName={compactLabel} />
+            <SidebarItem href={projectHref("/library")} icon={<FolderOpen size={20} fill="currentColor" />} label="Everything we made" current={!!base && at(`${base}/library`)} onClick={close} labelClassName={compactLabel} collapsed={collapsed} />
+            <SidebarItem href="/settings/brand" icon={<Voice size={20} fill="currentColor" />} label="How you sound" current={at("/settings/brand")} onClick={close} labelClassName={compactLabel} collapsed={collapsed} />
+            <SidebarItem href="/settings/integrations" icon={<LinkIcon size={20} fill="currentColor" />} label="Connected accounts" current={at("/settings/integrations")} onClick={close} labelClassName={compactLabel} collapsed={collapsed} />
+            <SidebarItem href="/settings" icon={<SettingTwo size={20} fill="currentColor" />} label="Account" current={pathname === "/settings" || at("/settings/billing") || at("/settings/team")} onClick={close} labelClassName={compactLabel} collapsed={collapsed} />
           </SidebarSection>
         </nav>
 
@@ -384,7 +389,7 @@ export function Sidebar() {
           <IconButton
             label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             onClick={toggleSidebar}
-            className="hidden w-full min-[1000px]:inline-flex"
+            className="hidden w-full rail:inline-flex"
           >
             {collapsed ? <MenuUnfoldOne size={20} fill="currentColor" /> : <MenuFoldOne size={20} fill="currentColor" />}
           </IconButton>
