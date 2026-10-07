@@ -37,11 +37,13 @@ export function MarketingNav() {
     }, CLOSE_MS);
   }, [open, closing]);
 
-  // Close on navigation.
-  useEffect(() => {
+  // Close on navigation (adjusting state during render, not in an effect).
+  const [navPath, setNavPath] = useState(pathname);
+  if (pathname !== navPath) {
+    setNavPath(pathname);
     setOpen(false);
     setClosing(false);
-  }, [pathname]);
+  }
 
   useEffect(() => {
     if (!open) return;
