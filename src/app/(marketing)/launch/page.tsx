@@ -22,16 +22,17 @@ import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { AGENT_REGISTRY } from "@/src/lib/ai/agents/registry";
+import { AI_AGENT_COUNT } from "@/src/lib/ai/agents/display";
 
 export const metadata: Metadata = {
-  title: "Conduikt Launch — 15 AI Marketing Agents",
+  title: `Conduikt Launch — ${AI_AGENT_COUNT} AI Marketing Agents`,
   description:
-    "Conduikt connects to your website, runs SEO audits, and deploys 15 AI agents to generate, publish, and optimize your marketing. Built for founders who'd rather build than write copy.",
+    `Conduikt connects to your website, runs SEO audits, and deploys ${AI_AGENT_COUNT} AI agents to generate, publish, and optimize your marketing. Built for founders who'd rather build than write copy.`,
   alternates: { canonical: "https://conduikt.com/launch/" },
   openGraph: {
-    title: "Conduikt Launch — 15 AI Marketing Agents",
+    title: `Conduikt Launch — ${AI_AGENT_COUNT} AI Marketing Agents`,
     description:
-      "Conduikt connects to your website, runs SEO audits, and deploys 15 AI agents to generate, publish, and optimize your marketing. Built for founders who'd rather build than write copy.",
+      `Conduikt connects to your website, runs SEO audits, and deploys ${AI_AGENT_COUNT} AI agents to generate, publish, and optimize your marketing. Built for founders who'd rather build than write copy.`,
     url: "https://conduikt.com/launch/",
     type: "website",
   },
@@ -71,7 +72,7 @@ const valueProps = [
     icon: Sparkles,
     title: "Generate",
     description:
-      "10 specialized AI agents create blog posts, social content, email sequences, copy, and strategy.",
+      `${AI_AGENT_COUNT} specialized AI agents create blog posts, social content, email sequences, copy, and strategy.`,
   },
   {
     icon: Rocket,
@@ -95,7 +96,7 @@ export default function LaunchPage() {
         <div className="mx-auto max-w-4xl px-6 text-center">
           <Badge className="mb-6 animate-in">Launching on Product Hunt</Badge>
           <h1 className="text-hero text-text-primary leading-[1.1] animate-in" style={{ animationDelay: "60ms" }}>
-            15 AI Marketing Agents.
+            {AI_AGENT_COUNT} AI Marketing Agents.
             <br />
             <span className="text-accent">One Platform.</span>
             <br />
@@ -166,7 +167,7 @@ export default function LaunchPage() {
               Meet Your AI Marketing Team
             </h2>
             <p className="mt-4 text-lg text-text-secondary">
-              10 specialized agents — each trained for a specific marketing task.
+              {AI_AGENT_COUNT} specialized agents — each trained for a specific marketing task.
             </p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -228,7 +229,7 @@ export default function LaunchPage() {
                 — without hiring a marketing team.
               </p>
               <p className="text-body text-text-secondary leading-relaxed mt-3">
-                Conduikt replaces all of that with 10 specialized AI agents
+                Conduikt replaces all of that with {AI_AGENT_COUNT} specialized AI agents
                 that work together. The secret sauce is the feedback loop:
                 performance data from published content feeds back into the
                 AI, so every generation is smarter than the last. Built

@@ -4,6 +4,7 @@ import { ArrowRight, BookOpen, Clock } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
+import { AI_AGENT_COUNT } from "@/src/lib/ai/agents/display";
 
 export const metadata: Metadata = {
   title: "AI Marketing Guides — Conduikt",
@@ -144,7 +145,7 @@ export default function GuidesIndexPage() {
             Stop reading. Start automating.
           </h2>
           <p className="text-body text-text-secondary mb-8">
-            Conduikt puts all of these strategies into practice with 15 AI agents.
+            Conduikt puts all of these strategies into practice with {AI_AGENT_COUNT} AI agents.
             Start free — no credit card required.
           </p>
           <Link href="/signup">

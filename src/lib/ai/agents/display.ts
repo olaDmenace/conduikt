@@ -42,6 +42,43 @@ export const AGENT_GROUPS: Array<{
   { category: "distribution", label: "Post and schedule" },
 ];
 
+// ---------------------------------------------------------------------
+// The real agent count (audited Oct 2026).
+// Every registry entry opens something, but two of them are tools, not
+// AI agents: Calendar is a scheduler over scheduled_posts and Client
+// Reports renders PDFs from existing audit data — neither calls a model.
+// Campaign IS an agent: it runs other agents in sequence through Claude.
+// Every public claim ("16 AI agents") must come from here, never a
+// hard-coded number.
+// ---------------------------------------------------------------------
+const TOOL_IDS = new Set(["calendar", "client-reports"]);
+
+export const AI_AGENTS: AgentDefinition[] = AGENT_REGISTRY.filter((a) => !TOOL_IDS.has(a.id));
+export const TOOLS: AgentDefinition[] = AGENT_REGISTRY.filter((a) => TOOL_IDS.has(a.id));
+export const AI_AGENT_COUNT = AI_AGENTS.length;
+
+export function isTool(id: string): boolean {
+  return TOOL_IDS.has(id);
+}
+
+const TIER_RANK = { free: 0, pro: 1, growth: 2, agency: 3 } as const;
+
+/** AI agents unlocked at a plan tier (tools excluded). */
+export function aiAgentCountForTier(tier: AgentDefinition["tier"]): number {
+  return AI_AGENTS.filter((a) => TIER_RANK[a.tier] <= TIER_RANK[tier]).length;
+}
+
+/** Tools unlocked at a plan tier, as display names. */
+export function toolsForTier(tier: AgentDefinition["tier"]): string[] {
+  return TOOLS.filter((a) => TIER_RANK[a.tier] <= TIER_RANK[tier]).map((a) => agentDisplay(a).name);
+}
+
+const WORDS = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen", "Twenty"];
+/** "Sixteen" for headline copy; falls back to digits past twenty. */
+export function countWord(n: number): string {
+  return WORDS[n] ?? String(n);
+}
+
 export function agentDisplay(agent: Pick<AgentDefinition, "id" | "shortName" | "description">): AgentDisplay {
   return AGENT_DISPLAY[agent.id] ?? { name: agent.shortName, job: agent.description };
 }

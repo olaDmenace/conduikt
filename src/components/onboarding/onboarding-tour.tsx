@@ -14,6 +14,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import { AI_AGENT_COUNT } from "@/src/lib/ai/agents/display";
 
 const steps = [
   {
@@ -41,7 +42,7 @@ const steps = [
     icon: PenLine,
     title: "Generate Content",
     description:
-      "Use 15 AI agents to create blog posts, social content, email sequences, copywriting, keyword research, and more — all tailored to your brand voice.",
+      `Use ${AI_AGENT_COUNT} AI agents to create blog posts, social content, email sequences, copywriting, keyword research, and more — all tailored to your brand voice.`,
     hint: "Project > Content Studio",
   },
   {

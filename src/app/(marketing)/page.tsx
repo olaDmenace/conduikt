@@ -6,13 +6,22 @@ import { Badge } from "@/src/components/ui/badge";
 import { Reveal } from "@/src/components/ui/reveal";
 import { SiteCheckForm } from "@/src/components/marketing/site-check-form";
 import { homepageFaqs as faqs } from "@/src/lib/seo/homepage-schema";
-import { AGENT_REGISTRY, type AgentDefinition } from "@/src/lib/ai/agents/registry";
-import { AGENT_DISPLAY, agentDisplay, agentsInGroup } from "@/src/lib/ai/agents/display";
+import type { AgentDefinition } from "@/src/lib/ai/agents/registry";
+import {
+  AGENT_DISPLAY,
+  AI_AGENTS,
+  AI_AGENT_COUNT,
+  TOOLS,
+  agentDisplay,
+  agentsInGroup,
+  aiAgentCountForTier,
+  countWord,
+  toolsForTier,
+} from "@/src/lib/ai/agents/display";
 import {
   PLAN_PRICING,
   getGenerationLimit,
   getProjectLimit,
-  isPlanAtLeast,
   isUnlimited,
   type PlanTier,
 } from "@/src/lib/plans";
@@ -71,9 +80,6 @@ const initials = (name: string) =>
     .slice(0, 2)
     .join("");
 
-const agentCount = (tier: PlanTier) =>
-  AGENT_REGISTRY.filter((a) => isPlanAtLeast(tier, a.tier as PlanTier)).length;
-
 const names = (cat: AgentDefinition["category"]) =>
   agentsInGroup(cat)
     .map((a) => agentDisplay(a).name)
@@ -88,8 +94,10 @@ const PRICING: Array<{
   const sites = getProjectLimit(tier);
   const pieces = isUnlimited(limit) ? "No monthly limit" : `${limit} pieces of content a month`;
   const websites = isUnlimited(sites) ? "Unlimited websites" : `${sites} website${sites === 1 ? "" : "s"}`;
-  const n = agentCount(tier);
-  const agents = n === AGENT_REGISTRY.length ? `All ${n} agents` : `${n} agents`;
+  const n = aiAgentCountForTier(tier);
+  const tools = toolsForTier(tier);
+  const agents =
+    (n === AI_AGENT_COUNT ? `All ${n} AI agents` : `${n} AI agents`) + (tools.length ? ` + ${tools.join(" and ")}` : "");
   const extra: Record<PlanTier, string> = {
     free: "Site check and social posts",
     pro: "Posts to X and LinkedIn for you",
@@ -218,37 +226,38 @@ export default function LandingPage() {
         />
         <div className="photo-shade-hero absolute inset-0" aria-hidden />
         <div className="photo-shade-hero-side absolute inset-0" aria-hidden />
-        <div className={cn(wrap, "relative flex flex-col gap-10 pb-16 pt-28 md:pb-[72px]")}>
-          <div className="flex flex-wrap items-end justify-between gap-8">
-            <div className="flex max-w-[800px] flex-col gap-6">
-              <Reveal step={1}>
-                <p className="text-label text-ink-accent">For founders without a marketing team</p>
-              </Reveal>
-              <Reveal step={2} as="h1" className="text-display-xl text-on-photo">
-                Your marketing,
-                <br />
-                done every week.
-                <br />
-                <span className="font-normal text-ink-accent">Better every time.</span>
-              </Reveal>
-              <Reveal step={3} as="p" className="max-w-[560px] text-[1.1875rem] leading-normal text-ink-text-2">
-                Conduikt checks your website, writes your posts and emails, publishes them for you, then watches what
-                worked and uses it next week.
-              </Reveal>
-            </div>
-            <Reveal step={4} className="flex w-full flex-col gap-3 sm:w-auto sm:min-w-[260px]">
-              <Button size="lg" asChild className="h-[54px] text-base">
-                <Link href="/signup">Start free</Link>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline-ink"
-                asChild
-                className="h-[54px] border-on-photo text-base text-on-photo hover:bg-overlay/40"
-              >
-                <Link href="#loop">See it work</Link>
-              </Button>
-              <p className="text-center text-[13px] text-ink-text-2">
+        <div className={cn(wrap, "relative flex flex-col gap-8 pb-16 pt-28 md:pb-[72px]")}>
+          <Reveal step={1}>
+            <p className="text-label text-ink-accent">For founders without a marketing team</p>
+          </Reveal>
+          {/* Two lines, full width: line 1 is sized so it holds on one
+              line inside the 1200px container at desktop widths and
+              wraps naturally on smaller screens. */}
+          <Reveal step={2} as="h1" className="text-hero-line text-on-photo">
+            Your marketing, done every week.
+            <br />
+            <span className="font-normal text-ink-accent">Better every time.</span>
+          </Reveal>
+          <div className="flex flex-col gap-8 rail:flex-row rail:items-end rail:justify-between">
+            <Reveal step={3} as="p" className="max-w-[560px] text-[1.1875rem] leading-normal text-ink-text-2">
+              Conduikt checks your website, writes your posts and emails, publishes them for you, then watches what
+              worked and uses it next week.
+            </Reveal>
+            <Reveal step={4} className="flex flex-col gap-3">
+              <div className="flex flex-row gap-3">
+                <Button size="lg" asChild className="h-[54px] flex-1 px-7 text-base sm:flex-none">
+                  <Link href="/signup">Start free</Link>
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline-ink"
+                  asChild
+                  className="h-[54px] flex-1 border-on-photo px-7 text-base text-on-photo hover:bg-overlay/40 sm:flex-none"
+                >
+                  <Link href="#loop">See it work</Link>
+                </Button>
+              </div>
+              <p className="text-[13px] text-ink-text-2">
                 No card needed · Set up in 2 minutes · Paid plans from {PLAN_PRICING.pro.label} a month
               </p>
             </Reveal>
@@ -261,20 +270,19 @@ export default function LandingPage() {
         <p className="mb-3 text-caption text-text-3">An example week, from a sample account.</p>
         <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {STRIP.map((s, i) => (
-            <Reveal
-              key={s.step}
-              as="li"
-              step={i}
-              className={cn(
-                "flex flex-col gap-2.5 rounded-lg border bg-surface p-[18px]",
-                s.emphasis ? "border-accent" : "border-line"
-              )}
-            >
-              <div className="flex items-center gap-2 text-accent">
-                <span aria-hidden>{s.icon}</span>
-                <span className={cn("text-label", s.emphasis ? "text-accent" : "text-text-3")}>{s.step}</span>
+            <Reveal key={s.step} as="li" step={i} className="flex">
+              <div
+                className={cn(
+                  "hover-card hover-card-quiet flex w-full flex-col gap-2.5 rounded-lg border bg-surface p-[18px]",
+                  s.emphasis ? "border-accent" : "border-line"
+                )}
+              >
+                <div className="flex items-center gap-2 text-accent">
+                  <span aria-hidden>{s.icon}</span>
+                  <span className={cn("text-label", s.emphasis ? "text-accent" : "text-text-3")}>{s.step}</span>
+                </div>
+                {s.body}
               </div>
-              {s.body}
             </Reveal>
           ))}
         </ol>
@@ -282,7 +290,7 @@ export default function LandingPage() {
 
       {/* 2 · Why — statement, photo, comparison (sand) */}
       <section aria-labelledby="why-title" className={cn(wrap, "flex flex-col gap-12 pb-24 pt-[88px]")}>
-        <div className="grid items-center gap-12 min-[1000px]:grid-cols-[5fr_7fr]">
+        <div className="grid items-center gap-12 rail:grid-cols-[5fr_7fr]">
           <Reveal className="flex flex-col gap-5">
             <p className="text-label text-accent">Why Conduikt</p>
             <h2 id="why-title" className="text-display-m text-text">
@@ -305,12 +313,12 @@ export default function LandingPage() {
             />
           </Reveal>
         </div>
-        <Reveal className="grid gap-px overflow-hidden rounded-lg border border-line bg-line min-[1000px]:grid-cols-3" step={2}>
+        <Reveal className="grid gap-px overflow-hidden rounded-lg border border-line bg-line rail:grid-cols-3" step={2}>
           {[
             { head: "AI writing tools", items: ["You type every request", "You copy, paste and post it yourself", "No idea what worked"] },
             { head: "Freelancers and agencies", items: ["A monthly retainer", "Weekly calls to stay on the same page", "Reports when they get to it"] },
           ].map((c) => (
-            <div key={c.head} className="flex flex-col gap-3.5 bg-ground p-7">
+            <div key={c.head} className="hover-link flex flex-col gap-3.5 bg-ground p-7 transition-colors duration-[var(--duration-base)] delay-[var(--hover-delay)] hover:bg-surface">
               <p className="text-label text-text-3">{c.head}</p>
               <ul className="flex flex-col gap-2.5 text-[15px] text-text-2">
                 {c.items.map((i) => (
@@ -319,10 +327,10 @@ export default function LandingPage() {
               </ul>
             </div>
           ))}
-          <div className="band-ink flex flex-col gap-3.5 p-7">
+          <div className="band-ink flex flex-col gap-3.5 p-7 transition-colors duration-[var(--duration-base)] delay-[var(--hover-delay)] hover:bg-ink-surface">
             <p className="text-label text-ink-accent">Conduikt</p>
             <ul className="flex flex-col gap-2.5 text-[15px] text-ink-text">
-              <li>One request, {AGENT_REGISTRY.length} agents on the job</li>
+              <li>One request, {AI_AGENT_COUNT} agents on the job</li>
               <li>Posts to X and LinkedIn, writes your blog and emails</li>
               <li>Tells you what worked and uses it next time</li>
               <li className="text-ink-text-3">Free to start · {PLAN_PRICING.pro.label} a month for Pro</li>
@@ -346,11 +354,9 @@ export default function LandingPage() {
                 key={row.n}
                 as="li"
                 step={i}
-                className={cn(
-                  "grid grid-cols-[64px_1fr] gap-x-6 gap-y-3 border-t border-ink-line py-9 md:grid-cols-[120px_1fr_1fr] md:gap-8",
-                  i === LOOP.length - 1 && "border-b"
-                )}
+                className={cn("border-t border-ink-line", i === LOOP.length - 1 && "border-b")}
               >
+                <div className="group grid grid-cols-[64px_1fr] gap-x-6 gap-y-3 py-9 transition-colors duration-[var(--duration-base)] delay-[var(--hover-delay)] hover:bg-ink-surface md:grid-cols-[120px_1fr_1fr] md:gap-8 md:px-4">
                 <span
                   className={cn("text-numeric text-5xl md:text-[4.5rem]", i === 3 ? "text-ink-accent-display" : "text-ink-teal")}
                   aria-hidden
@@ -362,6 +368,7 @@ export default function LandingPage() {
                   <p className="text-body text-ink-text-2">{row.body}</p>
                 </div>
                 <p className="col-start-2 text-sm leading-relaxed text-ink-text-3 md:col-start-3">{row.who}</p>
+                </div>
               </Reveal>
             ))}
           </ol>
@@ -374,36 +381,54 @@ export default function LandingPage() {
           <Reveal className="flex flex-wrap items-end justify-between gap-4">
             <div className="flex max-w-[760px] flex-col gap-3">
               <h2 id="agents-title" className="text-display-m text-text">
-                {AGENT_REGISTRY.length === 18 ? "Eighteen" : AGENT_REGISTRY.length} agents. Each one does one marketing job.
+                {countWord(AI_AGENT_COUNT)} agents. Each one does one marketing job.
               </h2>
               <p className="text-[17px] leading-normal text-text-2">
                 Think of them as a marketing team you hire in one click. They work together, and you only see the
                 results.
               </p>
             </div>
-            <Link href="/features" className="text-[15px] font-medium text-accent-hover hover:underline">
-              See all {AGENT_REGISTRY.length} →
+            <Link href="/features" className="hover-link text-[15px] font-medium text-accent-hover underline-offset-4 hover:text-accent hover:underline">
+              See all {AI_AGENT_COUNT} →
             </Link>
           </Reveal>
           <ul className="grid gap-2.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 min-[1280px]:grid-cols-6">
-            {[...AGENT_REGISTRY]
+            {[...AI_AGENTS]
               .sort((a, b) => TIER_ORDER.indexOf(a.tier as PlanTier) - TIER_ORDER.indexOf(b.tier as PlanTier))
               .map((a) => {
                 const d = AGENT_DISPLAY[a.id] ?? agentDisplay(a);
                 return (
-                  <li key={a.id} className="flex flex-col gap-1.5 rounded-md border border-line bg-surface p-3.5">
-                    <Badge variant={a.tier as PlanTier} className="self-start">
-                      {TIER_LABEL[a.tier as PlanTier]}
-                    </Badge>
-                    <span className="text-sm font-medium text-text">{d.name}</span>
-                    <span className="text-caption text-text-3">{d.job}</span>
+                  <li key={a.id} className="flex">
+                    <Link
+                      href="/features"
+                      className="hover-card hover-card-quiet flex w-full flex-col gap-1.5 rounded-md border border-line bg-surface p-3.5"
+                    >
+                      <Badge variant={a.tier as PlanTier} className="self-start">
+                        {TIER_LABEL[a.tier as PlanTier]}
+                      </Badge>
+                      <span className="text-sm font-medium text-text">{d.name}</span>
+                      <span className="text-caption text-text-3">{d.job}</span>
+                    </Link>
                   </li>
                 );
               })}
           </ul>
+          <p className="text-sm text-text-2">
+            Also included:{" "}
+            {TOOLS.map((t, i) => {
+              const d = agentDisplay(t);
+              return (
+                <span key={t.id}>
+                  {i > 0 && " and "}
+                  <span className="font-medium text-text">{d.name}</span> ({d.job.toLowerCase()}, {TIER_LABEL[t.tier as PlanTier]})
+                </span>
+              );
+            })}
+            .
+          </p>
         </div>
 
-        <div className="grid items-center gap-12 min-[1000px]:grid-cols-[7fr_5fr]">
+        <div className="grid items-center gap-12 rail:grid-cols-[7fr_5fr]">
           <Reveal className="flex flex-col gap-6">
             <h2 className="text-display-m text-text">
               You decide how <span className="font-medium">hands-on to be.</span>
@@ -413,7 +438,7 @@ export default function LandingPage() {
                 <li
                   key={m.key}
                   className={cn(
-                    "grid items-baseline gap-2 rounded-lg border bg-surface px-6 py-5 sm:grid-cols-[150px_1fr] sm:gap-4",
+                    "hover-card hover-card-quiet grid items-baseline gap-2 rounded-lg border bg-surface px-6 py-5 sm:grid-cols-[150px_1fr] sm:gap-4",
                     m.highlight ? "border-accent" : "border-line"
                   )}
                 >
@@ -448,14 +473,10 @@ export default function LandingPage() {
               Real people. Real results.
             </h2>
           </Reveal>
-          <ul className="grid gap-3.5 min-[1000px]:grid-cols-2">
+          <ul className="grid gap-3.5 rail:grid-cols-2">
             {TESTIMONIALS.map((t, i) => (
-              <Reveal
-                key={t.name}
-                as="li"
-                step={i}
-                className="flex flex-col justify-between gap-5 rounded-lg border border-ink-line bg-ink-surface p-7"
-              >
+              <Reveal key={t.name} as="li" step={i} className="flex">
+                <figure className="hover-card hover-card-ink flex w-full flex-col justify-between gap-5 rounded-lg border border-ink-line bg-ink-surface p-7">
                 <blockquote className="text-[17px] leading-relaxed text-ink-text">“{t.quote}”</blockquote>
                 <footer className="flex items-center gap-3">
                   <span
@@ -469,6 +490,7 @@ export default function LandingPage() {
                     {t.role && <p className="text-caption text-ink-text-3">{t.role}</p>}
                   </div>
                 </footer>
+                </figure>
               </Reveal>
             ))}
           </ul>
@@ -488,15 +510,13 @@ export default function LandingPage() {
           {PRICING.map((p, i) => {
             const ink = p.tier === "pro";
             return (
-              <Reveal
-                key={p.tier}
-                as="li"
-                step={i}
-                className={cn(
-                  "flex flex-col gap-4 rounded-lg border p-7",
-                  ink ? "band-ink border-ink" : "border-line bg-surface"
-                )}
-              >
+              <Reveal key={p.tier} as="li" step={i} className="flex">
+                <div
+                  className={cn(
+                    "hover-card flex w-full flex-col gap-4 rounded-lg border p-7",
+                    ink ? "hover-card-ink band-ink border-ink" : "hover-card-quiet border-line bg-surface"
+                  )}
+                >
                 <p className={cn("text-label", ink ? "text-ink-accent" : "text-text-3")}>
                   {TIER_LABEL[p.tier]}
                   {ink && " · most popular"}
@@ -520,6 +540,7 @@ export default function LandingPage() {
                 >
                   <Link href={p.cta.href}>{p.cta.label}</Link>
                 </Button>
+                </div>
               </Reveal>
             );
           })}
@@ -537,7 +558,7 @@ export default function LandingPage() {
         <div className="border-t border-line">
           {faqs.map((f, i) => (
             <details key={f.question} className="faq-item border-b border-line" open={i === 0}>
-              <summary className="flex cursor-pointer items-center justify-between gap-4 py-[22px] text-[1.0625rem] font-medium text-text transition-colors duration-[var(--duration-fast)] hover:text-accent-hover md:text-[1.1875rem]">
+              <summary className="flex cursor-pointer items-center justify-between gap-4 py-[22px] text-[1.0625rem] font-medium text-text transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] hover:text-accent-hover md:text-[1.1875rem]">
                 {f.question}
               </summary>
               <div className="max-w-[760px] pb-6 text-base leading-relaxed text-text-2">{f.answer}</div>

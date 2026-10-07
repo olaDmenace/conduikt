@@ -19,6 +19,7 @@ import {
   isUnlimited,
   type PlanTier,
 } from "@/src/lib/plans";
+import { AI_AGENT_COUNT, aiAgentCountForTier } from "@/src/lib/ai/agents/display";
 
 interface Profile {
   id: string;
@@ -50,8 +51,8 @@ const plans: {
     name: "Pro",
     features: [
       "5 projects",
-      "250 generations/month",
-      "10 AI agents",
+      "250 pieces of content a month",
+      `${aiAgentCountForTier("pro")} AI agents`,
       "Multi-channel publishing",
       "3 audiences, 10K marketing emails/mo + custom domain",
     ],
@@ -61,8 +62,8 @@ const plans: {
     name: "Growth",
     features: [
       "15 projects",
-      "500 generations/month",
-      "14 AI agents",
+      "500 pieces of content a month",
+      `All ${AI_AGENT_COUNT} AI agents + Calendar`,
       "Analytics feedback loop",
       "10 audiences, 50K marketing emails/mo",
     ],
@@ -72,8 +73,8 @@ const plans: {
     name: "Agency",
     features: [
       "Unlimited projects",
-      "Unlimited generations",
-      "15 AI agents",
+      "No monthly content limit",
+      `All ${AI_AGENT_COUNT} AI agents + Client Reports`,
       "White-label reports",
       "API access",
       "Unlimited audiences, 200K marketing emails/mo",

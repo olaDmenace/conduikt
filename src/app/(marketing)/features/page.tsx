@@ -3,14 +3,15 @@ import Link from "next/link";
 import { ArrowRight, BarChart3, Sparkles, Globe, TrendingUp, Mail, Shield, Zap, Calendar, FileText, Users, Code } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
+import { AI_AGENT_COUNT } from "@/src/lib/ai/agents/display";
 
 export const metadata: Metadata = {
-  title: "Features — 18 AI Marketing Agents for SEO, Content & Publishing",
+  title: `Features — ${AI_AGENT_COUNT} AI Marketing Agents for SEO, Content & Publishing`,
   description:
     "Explore Conduikt's AI marketing features: SEO audits, CRO analysis, AI copywriting, social content, email marketing campaigns, campaign orchestration, closed-loop analytics, and multi-channel publishing.",
   alternates: { canonical: "https://conduikt.com/features/" },
   openGraph: {
-    title: "Features — 18 AI Marketing Agents for SEO, Content & Publishing",
+    title: `Features — ${AI_AGENT_COUNT} AI Marketing Agents for SEO, Content & Publishing`,
     description:
       "Explore Conduikt's AI marketing features: SEO audits, CRO analysis, AI copywriting, social content, email marketing campaigns, campaign orchestration, closed-loop analytics, and multi-channel publishing.",
     url: "https://conduikt.com/features/",

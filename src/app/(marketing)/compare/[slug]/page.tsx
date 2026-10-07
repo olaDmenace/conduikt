@@ -4,6 +4,7 @@ import { CheckCircle2, XCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
+import { AI_AGENT_COUNT } from "@/src/lib/ai/agents/display";
 
 interface Comparison {
   slug: string;
@@ -38,7 +39,7 @@ const COMPARISONS: Comparison[] = [
     ],
     whyConduikt: [
       "Conduikt audits your site BEFORE generating content, so every piece is data-driven.",
-      "10 specialized AI agents vs. one general-purpose writer.",
+      `${AI_AGENT_COUNT} specialized AI agents vs. one general-purpose writer.`,
       "Built-in publishing to X and LinkedIn. Email sequences export to your ESP, no separate copywriter needed.",
       "Campaign orchestrator chains agents together for end-to-end automation.",
     ],
@@ -87,7 +88,7 @@ const COMPARISONS: Comparison[] = [
       { name: "Starting Price", conduikt: "$49/mo", competitor: "$20/mo" },
     ],
     whyConduikt: [
-      "10 specialized AI agents vs. generic writing templates.",
+      `${AI_AGENT_COUNT} specialized AI agents vs. generic writing templates.`,
       "End-to-end workflow: audit → strategize → create → publish → analyze.",
       "Google Search Console integration for real keyword data.",
       "Campaign orchestrator chains agents into automated pipelines.",
@@ -99,7 +100,7 @@ const COMPARISONS: Comparison[] = [
     tagline: "SEO analysis + AI content in one platform",
     features: [
       { name: "SEO Audit", conduikt: true, competitor: true },
-      { name: "Content Generation", conduikt: "15 agents", competitor: "1 editor" },
+      { name: "Content Generation", conduikt: `${AI_AGENT_COUNT} agents`, competitor: "1 editor" },
       { name: "CRO Analysis", conduikt: true, competitor: false },
       { name: "Social Content", conduikt: true, competitor: false },
       { name: "Email Sequences", conduikt: true, competitor: false },
@@ -134,7 +135,7 @@ export async function generateMetadata({
   const competitor = comparison?.competitor || slug;
   const url = `https://conduikt.com/compare/${slug}/`;
   const title = `Conduikt vs ${competitor} — AI Marketing Comparison`;
-  const description = `Compare Conduikt and ${competitor}. See how Conduikt's 15 AI marketing agents stack up for SEO audits, content generation, and multi-channel publishing.`;
+  const description = `Compare Conduikt and ${competitor}. See how Conduikt's ${AI_AGENT_COUNT} AI marketing agents stack up for SEO audits, content generation, and multi-channel publishing.`;
   return {
     title,
     description,

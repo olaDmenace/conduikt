@@ -4,16 +4,17 @@ import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
+import { AI_AGENT_COUNT } from "@/src/lib/ai/agents/display";
 
 export const metadata: Metadata = {
   title: "Conduikt vs Competitors — AI Marketing Tool Comparisons",
   description:
-    "See how Conduikt's 15 AI marketing agents compare to Jasper, Copy.ai, Writesonic, and Surfer SEO. Full feature breakdowns and honest analysis.",
+    `See how Conduikt's ${AI_AGENT_COUNT} AI marketing agents compare to Jasper, Copy.ai, Writesonic, and Surfer SEO. Full feature breakdowns and honest analysis.`,
   alternates: { canonical: "https://conduikt.com/compare/" },
   openGraph: {
     title: "Conduikt vs Competitors — AI Marketing Tool Comparisons",
     description:
-      "See how Conduikt's 15 AI marketing agents compare to Jasper, Copy.ai, Writesonic, and Surfer SEO. Full feature breakdowns and honest analysis.",
+      `See how Conduikt's ${AI_AGENT_COUNT} AI marketing agents compare to Jasper, Copy.ai, Writesonic, and Surfer SEO. Full feature breakdowns and honest analysis.`,
     url: "https://conduikt.com/compare/",
     type: "website",
   },
@@ -34,7 +35,7 @@ const comparisons = [
     competitor: "Jasper",
     tagline: "AI marketing that audits before it writes",
     highlights: [
-      "10 specialized agents vs. one general-purpose writer",
+      `${AI_AGENT_COUNT} specialized agents vs. one general-purpose writer`,
       "Built-in multi-channel publishing",
       "Campaign orchestrator for end-to-end automation",
     ],

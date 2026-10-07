@@ -3,16 +3,17 @@ import {
   PricingGrid,
   type PricingTier,
 } from "@/src/components/marketing/pricing-card";
+import { AI_AGENT_COUNT, aiAgentCountForTier } from "@/src/lib/ai/agents/display";
 
 export const metadata: Metadata = {
   title: "Pricing — Free, Pro $49, Growth $99, Agency $249",
   description:
-    "Simple Conduikt pricing. Start free with 3 AI marketing agents and basic email marketing. Upgrade to Pro for the full 10-agent suite, custom sending domain, and 10K marketing emails/month. Growth for analytics. Agency for white-label client reports.",
+    `Simple Conduikt pricing. Start free with ${aiAgentCountForTier("free")} AI marketing agents and basic email marketing. Upgrade to Pro for ${aiAgentCountForTier("pro")} agents, a custom sending domain, and 10K marketing emails a month. Growth unlocks all ${AI_AGENT_COUNT}. Agency adds white-label client reports.`,
   alternates: { canonical: "https://conduikt.com/pricing/" },
   openGraph: {
     title: "Pricing — Free, Pro $49, Growth $99, Agency $249",
     description:
-      "Simple Conduikt pricing. Start free with 3 AI marketing agents and basic email marketing. Upgrade to Pro for the full 10-agent suite, custom sending domain, and 10K marketing emails/month. Growth for analytics. Agency for white-label client reports.",
+      `Simple Conduikt pricing. Start free with ${aiAgentCountForTier("free")} AI marketing agents and basic email marketing. Upgrade to Pro for ${aiAgentCountForTier("pro")} agents, a custom sending domain, and 10K marketing emails a month. Growth unlocks all ${AI_AGENT_COUNT}. Agency adds white-label client reports.`,
     url: "https://conduikt.com/pricing/",
     type: "website",
   },
@@ -37,7 +38,7 @@ const tiers: PricingTier[] = [
     price: "$0",
     period: "/forever",
     features: [
-      "3 AI agents (SEO Audit, Social, Keywords)",
+      `${aiAgentCountForTier("free")} AI agents (Site Audit, Social, Keyword Finder)`,
       "5 generations / month",
       "1 project",
       "Email marketing — 1 audience, 100 contacts",
@@ -54,7 +55,7 @@ const tiers: PricingTier[] = [
     price: "$49",
     period: "/per month",
     features: [
-      "10 AI agents — full suite",
+      `${aiAgentCountForTier("pro")} AI agents`,
       "250 generations / month",
       "5 projects",
       "Full unblurred results on every agent",
@@ -75,7 +76,7 @@ const tiers: PricingTier[] = [
     price: "$99",
     period: "/per month",
     features: [
-      "14 AI agents — Pro plus Campaigns, Calendar, A/B Tests, Video Ads",
+      `All ${AI_AGENT_COUNT} AI agents — Pro plus Campaign, Video Ad, Split Test, Landing Pages, and the Calendar`,
       "500 generations / month",
       "15 projects",
       "Email marketing — 10 audiences, 10,000 contacts each",
@@ -92,7 +93,7 @@ const tiers: PricingTier[] = [
     price: "$249",
     period: "/per month",
     features: [
-      "15 AI agents — exclusive Client Reports (white-label PDFs)",
+      `All ${AI_AGENT_COUNT} AI agents plus Client Reports (white-label PDFs)`,
       "Unlimited generations",
       "Unlimited projects",
       "Multi-client workspace",
