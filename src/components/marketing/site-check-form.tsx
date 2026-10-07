@@ -6,9 +6,9 @@ import { normalizeAuditUrl, PENDING_AUDIT_KEY } from "@/src/lib/onboarding/url";
 import { cn } from "@/src/lib/utils/cn";
 
 // "Check my site free" — used in the hero and the final CTA (both on
-// photographs). The URL is kept on this device and the visitor goes to
-// sign up; the Magic Audit page picks it up afterwards so they never
-// retype it.
+// photographs). Opens the public check at /check, which runs the audit
+// and an agent preview, then gates the rest behind a free account. The
+// URL is also kept on this device so the app picks it up after sign-up.
 
 export function SiteCheckForm({ className }: { className?: string }) {
   const router = useRouter();
@@ -31,7 +31,7 @@ export function SiteCheckForm({ className }: { className?: string }) {
     } catch {
       // Private mode: the audit page just starts empty.
     }
-    router.push("/signup");
+    router.push(`/check?url=${encodeURIComponent(url)}`);
   }
 
   return (

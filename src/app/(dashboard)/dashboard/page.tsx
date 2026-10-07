@@ -90,6 +90,7 @@ export default function DashboardPage() {
   const [tab, setTab] = useState<"active" | "scheduled" | "history">("active");
   const [busy, setBusy] = useState(false);
   const [showTour, setShowTour] = useState(false);
+  const [firstWeek, setFirstWeek] = useState<FirstWeekSummary | null>(null);
 
   const load = useCallback(async () => {
     // Every sign-in path lands here. If the visitor typed their site into
@@ -107,6 +108,12 @@ export default function DashboardPage() {
     }
     const json = (await res.json()) as Overview;
     setData(json);
+    if (json.project) {
+      fetch(`/api/onboarding/first-week?projectId=${json.project.id}`, { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((s) => setFirstWeek(s?.started ? s : null))
+        .catch(() => setFirstWeek(null));
+    }
     if (!json.user.onboardingCompleted) setShowTour(true);
     // Scope the rail to the project we are showing.
     if (json.project && json.project.id !== currentProjectId) setCurrentProjectId(json.project.id);
@@ -300,6 +307,23 @@ export default function DashboardPage() {
 
       <KpiStrip cells={cells} />
 
+      {firstWeek && (
+        <Card className="flex flex-wrap items-center justify-between gap-4">
+          <div className="space-y-1">
+            <p className="text-label text-text-3">Your first week</p>
+            <p className="text-title text-text">
+              {firstWeek.done
+                ? `${firstWeek.counts.done} agents finished their first run on ${firstWeek.host}.`
+                : `${firstWeek.counts.done} of ${firstWeek.counts.done + firstWeek.counts.running + firstWeek.counts.queued + firstWeek.counts.failed} agents finished. The rest are working.`}
+              {firstWeek.counts.locked > 0 ? ` ${firstWeek.counts.locked} more on a bigger plan.` : ""}
+            </p>
+          </div>
+          <Button asChild variant={firstWeek.done ? "outline" : "primary"}>
+            <Link href={`/projects/${pid}/first-week`}>See their work</Link>
+          </Button>
+        </Card>
+      )}
+
       <div className="grid gap-6 rail:grid-cols-[3fr_2fr]">
         {/* Runs */}
         <Card className="self-start p-0 md:p-0">
@@ -463,7 +487,14 @@ export default function DashboardPage() {
   );
 }
 
+interface FirstWeekSummary {
+  host: string;
+  done: boolean;
+  counts: { done: number; running: number; queued: number; failed: number; locked: number };
+}
+
 function runTypeLabel(type: string): string {
+  if (type === "first_week_agent") return "First run on your site";
   if (type === "playbook_action") return "Posting from your plan";
   if (type.startsWith("email")) return "Email sequence step";
   return type.replace(/_/g, " ");

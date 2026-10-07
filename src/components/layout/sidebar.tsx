@@ -114,11 +114,19 @@ export function Sidebar() {
     return () => window.removeEventListener("conduikt:generation", onGeneration);
   }, []);
 
-  // Fall back to the first project when nothing is selected yet.
+  // Fall back to the first project when nothing is selected yet. A
+  // selected project missing from the list may simply be new (the first-
+  // week flow creates one): refetch once before giving up on it.
+  const refetchedFor = useRef<string | null>(null);
   useEffect(() => {
     if (!currentProjectId && projects.length > 0) setCurrentProjectId(projects[0].id);
     if (currentProjectId && projects.length > 0 && !projects.some((p) => p.id === currentProjectId)) {
-      setCurrentProjectId(projects[0].id);
+      if (refetchedFor.current !== currentProjectId) {
+        refetchedFor.current = currentProjectId;
+        window.dispatchEvent(new Event("conduikt:generation"));
+      } else {
+        setCurrentProjectId(projects[0].id);
+      }
     }
   }, [projects, currentProjectId, setCurrentProjectId]);
 

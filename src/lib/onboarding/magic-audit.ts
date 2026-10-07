@@ -21,6 +21,8 @@ export interface PageSignal {
   metaDescription: string | null;
   h1: string | null;
   bodyText: string;
+  /** Raw HTML, capped at 60k chars, for agents that read the markup. */
+  html?: string;
 }
 
 export interface MagicAuditResult {
@@ -97,6 +99,7 @@ export async function fetchPageSignal(
     metaDescription: meta ? decodeEntities(meta.trim()) : null,
     h1: h1 ? decodeEntities(h1.trim()) : null,
     bodyText,
+    html: html.slice(0, 60_000),
   };
 }
 

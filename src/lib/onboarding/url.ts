@@ -40,3 +40,35 @@ export function clearPendingAudit(): void {
     // Nothing to clear.
   }
 }
+
+// The signed-out check's result, kept on this device so the signed-in
+// audit page can show it straight away instead of paying for it twice.
+const PENDING_RESULT_KEY = "conduikt:pending-audit-result";
+const PENDING_RESULT_MS = 60 * 60 * 1000;
+
+export function savePendingResult(url: string, audit: unknown): void {
+  try {
+    localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify({ url, audit, at: Date.now() }));
+  } catch {
+    // Storage blocked: the audit page will just run it again.
+  }
+}
+
+/** The saved result for this URL if it's under an hour old. */
+export function readPendingResult<T>(url: string): T | null {
+  try {
+    const raw = JSON.parse(localStorage.getItem(PENDING_RESULT_KEY) ?? "null") as { url: string; audit: T; at: number } | null;
+    if (!raw || raw.url !== url || Date.now() - raw.at > PENDING_RESULT_MS) return null;
+    return raw.audit;
+  } catch {
+    return null;
+  }
+}
+
+export function clearPendingResult(): void {
+  try {
+    localStorage.removeItem(PENDING_RESULT_KEY);
+  } catch {
+    // Nothing to clear.
+  }
+}
