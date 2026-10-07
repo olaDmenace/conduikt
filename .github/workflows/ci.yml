@@ -39,6 +39,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Design tokens (no new hex colours outside globals.css)
+        run: npm run check:hex
+
       - name: Typecheck
         # Next.js 16 exposes typecheck via tsc; run non-emitting.
         run: npx tsc --noEmit

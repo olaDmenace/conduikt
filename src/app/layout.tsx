@@ -1,43 +1,42 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
+import { Space_Grotesk, Geist, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "@/src/styles/globals.css";
 import { softwareAppJsonLd, faqJsonLd } from "@/src/lib/seo/homepage-schema";
 import { TawkChat } from "@/src/components/marketing/tawk-chat";
+import { Providers } from "@/src/app/providers";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
-// Per DESIGN_SYSTEM.md:
-//   Display / Headings: Space Grotesk 600/700, fallback Inter
-//   Body: Inter 400/500
-//   Mono: JetBrains Mono 500
+// Per docs/DESIGN.md §Typography: Space Grotesk (display, weight 300),
+// Geist (interface + body), JetBrains Mono (labels, aligned numbers).
+// Variables are set on <html> so the @theme tokens in globals.css can
+// resolve them from :root.
 const spaceGrotesk = Space_Grotesk({
-  weight: ["500", "600", "700"],
+  weight: ["300", "400", "500", "600"],
   subsets: ["latin"],
-  variable: "--font-display",
+  variable: "--font-space-grotesk",
   display: "swap",
 });
 
-const inter = Inter({
-  weight: ["400", "500", "600", "700"],
+const geist = Geist({
+  weight: ["400", "500", "600"],
   subsets: ["latin"],
-  variable: "--font-body",
+  variable: "--font-geist",
   display: "swap",
 });
 
 const jetbrainsMono = JetBrains_Mono({
+  weight: ["400", "500"],
   subsets: ["latin"],
-  variable: "--font-mono",
+  variable: "--font-jetbrains-mono",
   display: "swap",
 });
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#0C0C0E" },
-    { media: "(prefers-color-scheme: light)", color: "#F5F2ED" },
-  ],
-  colorScheme: "dark light",
+  themeColor: "#EAE4D5",
+  colorScheme: "light",
 };
 
 const organizationJsonLd = {
@@ -159,17 +158,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en-US" className="dark" data-theme="dark" suppressHydrationWarning>
+    <html
+      lang="en-US"
+      className={`${spaceGrotesk.variable} ${geist.variable} ${jetbrainsMono.variable}`}
+      suppressHydrationWarning
+    >
       <head>
-        {/* Pre-hydration theme set per DESIGN_SYSTEM.md: read user
-            override from localStorage first, otherwise honour the OS
-            preference. Avoids the FOUC where a light-mode user briefly
-            sees dark surfaces before React hydrates. */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=JSON.parse(localStorage.getItem('conduikt-ui')||'{}');var saved=t.state&&t.state.theme;var sys=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';var theme=saved||sys;document.documentElement.className=theme;document.documentElement.setAttribute('data-theme',theme)}catch(e){}})()`,
-          }}
-        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
@@ -187,10 +181,8 @@ export default function RootLayout({
         <meta name="application-name" content="Conduikt" />
         <meta name="apple-mobile-web-app-title" content="Conduikt" />
       </head>
-      <body
-        className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable} font-sans antialiased grain`}
-      >
-        {children}
+      <body className="font-sans antialiased">
+        <Providers>{children}</Providers>
         {GA_ID && (
           <>
             <Script

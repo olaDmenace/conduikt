@@ -1,6 +1,10 @@
 # Conduikt — Project Context
 
-AI Marketing Automation SaaS. Next.js 15 + Supabase + Claude API. Design system: "Mineral" (dark obsidian + copper/amber accents).
+AI Marketing Automation SaaS. Next.js 16 + Supabase + Claude API.
+
+## Design
+
+`docs/DESIGN.md` is the single source of truth for colour, type, spacing, icons, components, voice and app structure (Direction C: sand ground, ink bands, one orange accent, teal for data). Tokens live only in `src/styles/globals.css`. Do not add colours, fonts or radii outside it. `npm run check:hex` must not regress. The old "Mineral" system (dark obsidian, copper, DM Serif, Outfit) is retired.
 
 See `~/.claude/projects/C--Users-ADMIN-Desktop-projects-conduikt/memory/` for session memory (architecture, design rules, IDs, project status).
 

@@ -6,7 +6,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowRight, Menu, X } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import { ThemeToggle } from "@/src/components/theme/theme-toggle";
 
 // Sticky marketing nav per DESIGN_SYSTEM.md spec:
 //   - 72px tall.
@@ -130,7 +129,6 @@ export function MarketingNav() {
           </div>
           {/* Desktop right-side actions */}
           <div className="hidden items-center gap-3 md:flex">
-            <ThemeToggle />
             <Button variant="ghost" asChild>
               <Link href="/login">Sign in</Link>
             </Button>
@@ -143,7 +141,6 @@ export function MarketingNav() {
           </div>
           {/* Mobile-only: theme toggle + hamburger */}
           <div className="flex items-center gap-2 md:hidden">
-            <ThemeToggle />
             <button
               type="button"
               onClick={() => setMobileOpen((p) => !p)}
