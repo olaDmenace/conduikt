@@ -243,22 +243,18 @@ export default function LandingPage() {
               Conduikt checks your website, writes your posts and emails, publishes them for you, then watches what
               worked and uses it next week.
             </Reveal>
-            <Reveal step={4} className="flex flex-col gap-3">
-              <div className="flex flex-row gap-3">
-                <Button size="lg" asChild className="h-[54px] flex-1 px-7 text-base sm:flex-none">
-                  <Link href="/signup">Start free</Link>
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline-ink"
-                  asChild
-                  className="h-[54px] flex-1 border-on-photo px-7 text-base text-on-photo hover:bg-overlay/40 sm:flex-none"
-                >
-                  <Link href="#loop">See it work</Link>
-                </Button>
-              </div>
+            <Reveal step={4} className="flex w-full flex-col gap-3 rail:max-w-[520px]">
+              <SiteCheckForm />
               <p className="text-[13px] text-ink-text-2">
-                No card needed · Set up in 2 minutes · Paid plans from {PLAN_PRICING.pro.label} a month
+                Or{" "}
+                <Link href="/signup" className="hover-link underline underline-offset-2 hover:text-on-photo">
+                  start free
+                </Link>{" "}
+                without a site ·{" "}
+                <Link href="#loop" className="hover-link underline underline-offset-2 hover:text-on-photo">
+                  see it work
+                </Link>{" "}
+                · Paid plans from {PLAN_PRICING.pro.label} a month
               </p>
             </Reveal>
           </div>
