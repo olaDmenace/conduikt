@@ -1,30 +1,28 @@
-﻿"use client";
+"use client";
 
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cn } from "@/src/lib/utils/cn";
 
+// docs/DESIGN.md §Components · Button. Square (6px), flat, no gradient,
+// no glow, no scale. One primary per screen or band.
 const buttonVariants = {
-  // Primary: brand-orange gradient with a soft accent glow that
-  // strengthens on hover.
-  primary:
-    "bg-gradient-to-br from-[#D9663A] to-[#B24E27] text-on-accent shadow-[0_0_20px_var(--accent-glow)] hover:shadow-[0_0_32px_var(--accent-glow)] hover:brightness-110 hover:scale-[1.015] active:brightness-95 active:scale-[0.985]",
-  // Secondary: hairline outline. Hover picks up an accent border and
-  // a very soft accent halo so the button doesn't feel inert next to
-  // the primary CTA's glow.
-  secondary:
-    "bg-transparent border border-border-strong text-text-primary hover:bg-surface-3 hover:border-accent/40 hover:shadow-[0_0_16px_var(--accent-glow)]",
-  ghost:
-    "bg-transparent border-none text-text-secondary hover:text-text-primary",
-  danger:
-    "bg-error/10 text-error border border-error/20 hover:bg-error/20",
+  primary: "bg-accent text-white hover:bg-accent-hover",
+  outline: "border border-line-strong bg-transparent text-text hover:bg-surface-2",
+  quiet: "border border-line bg-surface text-text hover:bg-surface-2",
+  // On ink bands: outline in ink-text.
+  "outline-ink": "border border-ink-text bg-transparent text-ink-text hover:bg-ink-surface",
+  ghost: "bg-transparent text-text-2 hover:bg-surface-2 hover:text-text",
+  danger: "border border-danger bg-transparent text-danger hover:bg-surface-2",
+  // Legacy alias: "secondary" was the hairline outline in v1.
+  secondary: "border border-line-strong bg-transparent text-text hover:bg-surface-2",
 };
 
 const buttonSizes = {
-  sm: "px-3 py-1.5 text-[0.8125rem]",
-  md: "px-6 py-3 text-[0.875rem]",
-  lg: "px-8 py-3.5 text-[0.9375rem]",
-  icon: "p-2.5",
+  sm: "h-8 px-3 text-[13px]",
+  md: "h-9 px-3.5 text-sm", // 36px — app default
+  lg: "h-12 px-5 text-[15px]", // 48px — marketing
+  icon: "h-9 w-9 p-0",
 };
 
 export interface ButtonProps
@@ -40,10 +38,9 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <Comp
         className={cn(
-          // Soft-cubic easing + 250ms aligns with the rest of the UI —
-          // slower than the previous 150ms snap, faster than section
-          // reveals.
-          "inline-flex items-center justify-center gap-2 rounded-lg font-medium font-sans transition-all duration-[250ms] ease-[var(--ease-out-soft)] cursor-pointer disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed",
+          "inline-flex items-center justify-center gap-2 rounded-md font-sans font-medium whitespace-nowrap",
+          "transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out-soft)]",
+          "disabled:opacity-50 disabled:pointer-events-none",
           buttonVariants[variant],
           buttonSizes[size],
           className
@@ -56,4 +53,33 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 );
 Button.displayName = "Button";
 
-export { Button, buttonVariants };
+/**
+ * Icon-only button. `label` is required: it becomes the aria-label so
+ * every icon control is announced (docs/DESIGN.md §Accessibility).
+ */
+export interface IconButtonProps
+  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "aria-label"> {
+  label: string;
+  variant?: "ghost" | "quiet" | "outline";
+  size?: "sm" | "md";
+}
+
+const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
+  ({ label, variant = "ghost", size = "md", className, type = "button", ...props }, ref) => (
+    <button
+      ref={ref}
+      type={type}
+      aria-label={label}
+      className={cn(
+        "inline-flex shrink-0 items-center justify-center rounded-md transition-colors duration-[var(--duration-fast)]",
+        size === "sm" ? "h-8 w-8" : "h-9 w-9",
+        buttonVariants[variant],
+        className
+      )}
+      {...props}
+    />
+  )
+);
+IconButton.displayName = "IconButton";
+
+export { Button, IconButton, buttonVariants };

@@ -1,50 +1,67 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { Button } from '@/src/components/ui/button'
+import { Button, IconButton } from '@/src/components/ui/button'
 
+// docs/DESIGN.md §Components · Button: square (6px), flat, no gradient.
 describe('Button Component', () => {
-  it('renders with default variant (primary)', () => {
+  it('renders primary as a flat accent fill with white text', () => {
     render(<Button>Click me</Button>)
     const button = screen.getByRole('button', { name: 'Click me' })
-    expect(button).toBeInTheDocument()
-    expect(button.className).toContain('bg-gradient-to-br')
+    expect(button.className).toContain('bg-accent')
+    expect(button.className).toContain('text-white')
+    expect(button.className).not.toContain('gradient')
+    expect(button.className).not.toContain('shadow')
+    expect(button.className).not.toContain('scale')
   })
 
-  it('renders secondary variant', () => {
+  it('uses the 6px radius, never a pill', () => {
+    render(<Button>Square</Button>)
+    const button = screen.getByRole('button', { name: 'Square' })
+    expect(button.className).toContain('rounded-md')
+    expect(button.className).not.toContain('rounded-full')
+  })
+
+  it('renders outline with the ink border', () => {
+    render(<Button variant="outline">Outline</Button>)
+    const button = screen.getByRole('button', { name: 'Outline' })
+    expect(button.className).toContain('border-line-strong')
+    expect(button.className).toContain('bg-transparent')
+  })
+
+  it('keeps "secondary" as a legacy alias of outline', () => {
     render(<Button variant="secondary">Secondary</Button>)
     const button = screen.getByRole('button', { name: 'Secondary' })
-    expect(button.className).toContain('border')
-    expect(button.className).toContain('bg-transparent')
+    expect(button.className).toContain('border-line-strong')
+  })
+
+  it('renders quiet with the line border and surface fill', () => {
+    render(<Button variant="quiet">Quiet</Button>)
+    const button = screen.getByRole('button', { name: 'Quiet' })
+    expect(button.className).toContain('border-line')
+    expect(button.className).toContain('bg-surface')
   })
 
   it('renders ghost variant', () => {
     render(<Button variant="ghost">Ghost</Button>)
-    const button = screen.getByRole('button', { name: 'Ghost' })
-    expect(button.className).toContain('bg-transparent')
+    expect(screen.getByRole('button', { name: 'Ghost' }).className).toContain('bg-transparent')
   })
 
-  it('renders danger variant', () => {
+  it('renders danger with the danger token', () => {
     render(<Button variant="danger">Danger</Button>)
-    const button = screen.getByRole('button', { name: 'Danger' })
-    expect(button.className).toContain('error')
+    expect(screen.getByRole('button', { name: 'Danger' }).className).toContain('text-danger')
   })
 
-  it('renders with sm size', () => {
-    render(<Button size="sm">Small</Button>)
-    const button = screen.getByRole('button', { name: 'Small' })
-    expect(button.className).toContain('px-3')
-  })
-
-  it('renders with lg size', () => {
-    render(<Button size="lg">Large</Button>)
-    const button = screen.getByRole('button', { name: 'Large' })
-    expect(button.className).toContain('px-8')
-  })
-
-  it('renders with icon size', () => {
-    render(<Button size="icon">X</Button>)
-    const button = screen.getByRole('button', { name: 'X' })
-    expect(button.className).toContain('p-2.5')
+  it('sizes: md is 36px (app), lg is 48px (marketing)', () => {
+    render(
+      <>
+        <Button>App</Button>
+        <Button size="lg">Marketing</Button>
+        <Button size="icon">X</Button>
+      </>
+    )
+    expect(screen.getByRole('button', { name: 'App' }).className).toContain('h-9')
+    expect(screen.getByRole('button', { name: 'Marketing' }).className).toContain('h-12')
+    expect(screen.getByRole('button', { name: 'X' }).className).toContain('w-9')
   })
 
   it('applies disabled styling', () => {
@@ -56,11 +73,19 @@ describe('Button Component', () => {
 
   it('accepts custom className', () => {
     render(<Button className="custom-class">Custom</Button>)
-    const button = screen.getByRole('button', { name: 'Custom' })
-    expect(button.className).toContain('custom-class')
+    expect(screen.getByRole('button', { name: 'Custom' }).className).toContain('custom-class')
   })
 
   it('has displayName set', () => {
     expect(Button.displayName).toBe('Button')
+  })
+})
+
+describe('IconButton', () => {
+  it('requires a label and exposes it as the accessible name', () => {
+    render(<IconButton label="Close drawer"><span aria-hidden>x</span></IconButton>)
+    const button = screen.getByRole('button', { name: 'Close drawer' })
+    expect(button).toHaveAttribute('aria-label', 'Close drawer')
+    expect(button).toHaveAttribute('type', 'button')
   })
 })

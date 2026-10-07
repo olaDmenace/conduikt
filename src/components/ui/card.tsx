@@ -1,19 +1,18 @@
 import * as React from "react";
 import { cn } from "@/src/lib/utils/cn";
 
+// docs/DESIGN.md §Components · Card. 8px radius, 1px line, flat. Emphasis
+// is a same-width accent border, never a shadow or a scale.
 const Card = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & { hover?: boolean }
->(({ className, hover = false, ...props }, ref) => (
+  React.HTMLAttributes<HTMLDivElement> & { hover?: boolean; emphasis?: boolean }
+>(({ className, hover = false, emphasis = false, ...props }, ref) => (
   <div
     ref={ref}
     className={cn(
-      // Use the soft-cubic easing so card hovers feel composed rather
-      // than snappy. Duration matches --duration-base for consistency
-      // across UI elements.
-      "rounded-xl border border-border-default bg-surface-1 p-6 shadow-[var(--shadow-ambient)] transition-[border-color,box-shadow,transform] duration-[var(--duration-base)] ease-[var(--ease-out-soft)]",
-      hover &&
-        "hover:border-border-strong hover:shadow-[var(--shadow-elevated)] cursor-pointer",
+      "rounded-lg border bg-surface p-4 md:p-6 transition-colors duration-[var(--duration-fast)]",
+      emphasis ? "border-accent" : "border-line",
+      hover && "cursor-pointer hover:border-accent",
       className
     )}
     {...props}
@@ -21,15 +20,27 @@ const Card = React.forwardRef<
 ));
 Card.displayName = "Card";
 
-const CardHeader = React.forwardRef<
+/** Card on the ink surface — bands, the sidebar plan tile, "waiting for you". */
+const InkCard = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex flex-col gap-1.5 pb-4", className)}
+    className={cn(
+      "rounded-lg border border-ink-line bg-ink-surface p-5 text-ink-text",
+      className
+    )}
     {...props}
   />
+));
+InkCard.displayName = "InkCard";
+
+const CardHeader = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div ref={ref} className={cn("flex flex-col gap-1.5 pb-4", className)} {...props} />
 ));
 CardHeader.displayName = "CardHeader";
 
@@ -37,11 +48,7 @@ const CardTitle = React.forwardRef<
   HTMLHeadingElement,
   React.HTMLAttributes<HTMLHeadingElement>
 >(({ className, ...props }, ref) => (
-  <h3
-    ref={ref}
-    className={cn("text-h3 text-text-primary", className)}
-    {...props}
-  />
+  <h3 ref={ref} className={cn("text-title text-text", className)} {...props} />
 ));
 CardTitle.displayName = "CardTitle";
 
@@ -49,11 +56,7 @@ const CardDescription = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, ...props }, ref) => (
-  <p
-    ref={ref}
-    className={cn("text-small text-text-secondary", className)}
-    {...props}
-  />
+  <p ref={ref} className={cn("text-body-s text-text-2", className)} {...props} />
 ));
 CardDescription.displayName = "CardDescription";
 
@@ -71,10 +74,10 @@ const CardFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex items-center pt-4 border-t border-border-subtle", className)}
+    className={cn("flex items-center border-t border-line pt-4", className)}
     {...props}
   />
 ));
 CardFooter.displayName = "CardFooter";
 
-export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter };
+export { Card, InkCard, CardHeader, CardTitle, CardDescription, CardContent, CardFooter };
