@@ -4,27 +4,16 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import {
   Sparkles,
-  Hash,
-  Star,
   Clock,
-  Loader2,
   BarChart3,
   TrendingUp,
-  FileText,
-  Zap,
   Search,
-  MousePointerClick,
-  Eye,
-  ArrowUpDown,
   RefreshCw,
-  DollarSign,
   Trophy,
   Heart,
-  Share2,
-  Download,
   Video,
   Unlink,
-} from "lucide-react";
+} from "@/src/components/ui/lucide-icons";
 import { PdfDownloadButton } from "@/src/components/ui/pdf-download-button";
 import {
   LineChart,
@@ -39,7 +28,17 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  InkCard,
+} from "@/src/components/ui/card";
+import { EmptyState } from "@/src/components/ui/empty-state";
+import { KpiStrip } from "@/src/components/ui/kpi-strip";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
@@ -107,22 +106,24 @@ interface KeywordTracking {
 // ---------- constants ----------
 
 const agentLabels: Record<string, string> = {
-  "seo-audit": "SEO Audit",
-  "page-cro": "Page CRO",
-  copywriting: "Copywriting",
-  "social-content": "Social Content",
-  "email-sequence": "Email Sequence",
-  "content-strategy": "Content Strategy",
-  "competitor-analysis": "Competitor Analysis",
-  "blog-post": "Blog Post",
-  "keyword-research": "Keyword Research",
-  "growth-playbook": "Growth Playbook",
+  "seo-audit": "Site Audit",
+  "page-cro": "Conversion Check",
+  copywriting: "Copywriter",
+  "social-content": "Social",
+  "email-sequence": "Email",
+  "content-strategy": "Strategy",
+  "competitor-analysis": "Competitor Watch",
+  "blog-post": "Blog",
+  "keyword-research": "Keyword Finder",
+  "growth-playbook": "Growth Plan",
 };
 
-const ACCENT = "#D9663A";
-const SURFACE_2 = "#1C1C22";
-const BORDER = "#FFFFFF12";
-const TEXT_TERTIARY = "#5E5A54";
+// Chart colours come from the tokens (docs/DESIGN.md: teal for the primary
+// series, text-3 for axes, line for the grid).
+const TEAL = "var(--teal)";
+const SURFACE_2 = "var(--surface-2)";
+const LINE = "var(--line)";
+const TEXT_3 = "var(--text-3)";
 
 // ---------- helpers ----------
 
@@ -147,9 +148,9 @@ function getWeekKey(iso: string) {
 function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-lg border border-border-default bg-surface-2 px-3 py-2 text-small shadow-lg">
-      <p className="text-text-tertiary mb-0.5">{label}</p>
-      <p className="font-mono font-medium text-text-primary">{payload[0].value}</p>
+    <div className="rounded-md border border-line bg-surface px-3 py-2 text-body-s shadow-[var(--shadow-float)]">
+      <p className="text-text-3 mb-0.5">{label}</p>
+      <p className="font-mono font-medium text-text">{payload[0].value}</p>
     </div>
   );
 }
@@ -204,14 +205,14 @@ export default function AnalyticsPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast(data.error || "Failed to sync Google Search Console", "error");
+        toast(data.error || "Couldn't update your Google search data. Try again.", "error");
         return;
       }
       setGscKeywords(data.topQueries ?? []);
       toast(
         data.synced > 0
-          ? `Synced ${data.synced} queries from GSC`
-          : "No query data returned from GSC yet",
+          ? `Updated ${data.synced} searches from Google`
+          : "Google has no search data for this site yet",
         data.synced > 0 ? "success" : "info"
       );
     } finally {
@@ -223,6 +224,11 @@ export default function AnalyticsPage() {
   // connected_accounts (RLS scopes the delete to rows the user owns)
   // then resets the page state so the empty-state Connect CTA shows.
   async function handleDisconnectGoogle(platform: "gsc" | "ga4" | "youtube") {
+    const googleName = {
+      gsc: "Google Search Console",
+      ga4: "Google Analytics",
+      youtube: "YouTube",
+    } as const;
     const supabase = createClient();
     const { error } = await supabase
       .from("connected_accounts")
@@ -230,7 +236,7 @@ export default function AnalyticsPage() {
       .eq("project_id", id)
       .eq("platform", platform);
     if (error) {
-      toast(`Failed to disconnect ${platform.toUpperCase()}`, "error");
+      toast(`Couldn't disconnect ${googleName[platform]}. Try again.`, "error");
       return;
     }
     if (platform === "gsc") {
@@ -242,7 +248,7 @@ export default function AnalyticsPage() {
     } else {
       setYoutubeConnected(false);
     }
-    toast(`${platform.toUpperCase()} disconnected from this project`, "info");
+    toast(`${googleName[platform]} disconnected from this project`, "info");
   }
 
   async function handleSyncMetrics() {
@@ -271,9 +277,9 @@ export default function AnalyticsPage() {
       if (problems.length > 0) {
         toast(problems.join(" · "), "error");
       } else if (totalSynced > 0) {
-        toast(`Synced metrics for ${totalSynced} posts`, "success");
+        toast(`Updated numbers for ${totalSynced} posts`, "success");
       } else {
-        toast("No new metrics to sync yet", "info");
+        toast("No new numbers yet", "info");
       }
     } finally {
       setMetricsSyncing(false);
@@ -388,24 +394,37 @@ export default function AnalyticsPage() {
     return point;
   });
 
-  const KW_COLORS = ["#D9663A", "#4ADE80", "#60A5FA", "#F59E0B", "#A78BFA"];
+  // Up to five tracked search terms. Teal is the primary series, the accent
+  // the comparison; the rest stay inside the token palette and are told
+  // apart by dash pattern as well as colour.
+  const KW_COLORS = [
+    "var(--teal)",
+    "var(--accent)",
+    "var(--text)",
+    "var(--ink-teal)",
+    "var(--accent-display)",
+  ];
+  const KW_DASHES = [undefined, "6 3", "2 3", "8 3 2 3", "4 4"];
 
   // Biggest win
   const biggestWinAudit =
     firstScore !== null && latestScore !== null && latestScore > firstScore
-      ? `Your audit score improved by +${latestScore - firstScore} points since you started`
+      ? `Your site score went up ${latestScore - firstScore} points since you started`
       : null;
   const biggestWinPost = bestPost
-    ? `Your best post got ${bestPost.impressions.toLocaleString()} impressions`
+    ? `Your best post got ${bestPost.impressions.toLocaleString()} views`
     : null;
   const biggestWin = biggestWinAudit || biggestWinPost;
 
+  const sectionHeading = "flex items-center gap-2 text-heading text-text";
+  const emptyCard = "flex flex-col items-center py-8 text-center";
+
   return (
     <div>
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-4">
         <PageHeader
           title="Analytics"
-          description="Impact dashboard — track your marketing progress"
+          description="What your marketing is doing for you, week by week"
         />
         <PdfDownloadButton
           href={`/api/projects/${id}/analytics/pdf`}
@@ -413,165 +432,137 @@ export default function AnalyticsPage() {
         />
       </div>
 
-
       {loading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="h-6 w-6 text-accent animate-spin" />
+        <div className="space-y-6" role="status" aria-label="Loading">
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-line bg-line rail:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="space-y-2 bg-surface p-5">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-7 w-16" />
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <Skeleton className="h-64" />
+            <Skeleton className="h-64" />
+          </div>
         </div>
       ) : (
         <>
-          {/* Stats Row */}
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 mb-6">
-            {[
+          {/* Stats */}
+          <KpiStrip
+            className="mb-6 animate-in rail:grid-cols-4"
+            cells={[
               {
-                label: "AI Generations",
-                value: totalGenerations,
-                icon: Sparkles,
-                delay: "0ms",
+                label: "Pieces of content",
+                value: totalGenerations.toLocaleString(),
               },
               {
-                label: "Assets Saved",
-                value: totalAssets,
-                icon: FileText,
-                delay: "60ms",
+                label: "Saved to library",
+                value: totalAssets.toLocaleString(),
               },
               {
-                label: "Top Agent",
-                value: mostUsedAgent ? (agentLabels[mostUsedAgent] ?? mostUsedAgent) : "—",
-                icon: Star,
-                delay: "120ms",
-                small: true,
+                label: "Most used agent",
+                value: mostUsedAgent
+                  ? (agentLabels[mostUsedAgent] ?? mostUsedAgent)
+                  : "None yet",
               },
               {
-                label: "Avg Run Time",
-                value: avgRunTime,
-                icon: Clock,
-                delay: "180ms",
+                label: "Average time per piece",
+                value: totalGenerations ? avgRunTime : "None yet",
               },
-            ].map((stat) => (
-              <Card
-                key={stat.label}
-                className="animate-in"
-                style={{ animationDelay: stat.delay }}
-              >
-                <CardContent className="flex items-start justify-between p-5">
-                  <div className="min-w-0">
-                    <p className="text-caption text-text-tertiary">{stat.label}</p>
-                    <p
-                      className={`mt-1 font-semibold font-mono text-text-primary truncate ${stat.small ? "text-base" : "text-2xl"}`}
-                      title={String(stat.value)}
-                    >
-                      {stat.value}
-                    </p>
-                  </div>
-                  <div className="rounded-lg bg-surface-2 p-2 shrink-0 ml-2">
-                    <stat.icon className="h-5 w-5 text-accent" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+            ]}
+          />
 
-          {/* Highlights Row */}
+          {/* Highlights */}
           {(scoreDelta !== null || mostActiveCount > 0) && (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-6">
+            <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {scoreDelta !== null && (
-                <Card className="animate-in" style={{ animationDelay: "240ms" }}>
-                  <CardContent className="p-5 flex items-center gap-4">
-                    <div className={`rounded-xl p-3 ${scoreDelta >= 0 ? "bg-success/10" : "bg-error/10"}`}>
-                      <TrendingUp className={`h-5 w-5 ${scoreDelta >= 0 ? "text-success" : "text-error"}`} />
-                    </div>
-                    <div>
-                      <p className="text-caption text-text-tertiary">Audit Score Change</p>
-                      <p className="text-body font-medium text-text-primary">
-                        {scoreDelta >= 0 ? "+" : ""}{scoreDelta} points
-                      </p>
-                      <p className="text-small text-text-tertiary">
-                        {firstScore} → {latestScore}
-                      </p>
-                    </div>
-                  </CardContent>
+                <Card className="animate-in" style={{ animationDelay: "80ms" }}>
+                  <p className="text-label text-text-3">Site score change</p>
+                  <p
+                    className={`mt-2 text-numeric text-3xl ${scoreDelta >= 0 ? "text-teal" : "text-warning"}`}
+                  >
+                    {scoreDelta >= 0 ? "+" : ""}
+                    {scoreDelta} points
+                  </p>
+                  <p className="mt-1 text-body-s text-text-3">
+                    From {firstScore} to {latestScore} out of 100
+                  </p>
                 </Card>
               )}
               {mostActiveCount > 0 && (
-                <Card className="animate-in" style={{ animationDelay: "300ms" }}>
-                  <CardContent className="p-5 flex items-center gap-4">
-                    <div className="rounded-xl p-3 bg-accent/10">
-                      <Zap className="h-5 w-5 text-accent" />
-                    </div>
-                    <div>
-                      <p className="text-caption text-text-tertiary">Most Active Week</p>
-                      <p className="text-body font-medium text-text-primary">
-                        {mostActiveCount} generation{mostActiveCount !== 1 ? "s" : ""}
-                      </p>
-                      <p className="text-small text-text-tertiary">
-                        Week of {mostActiveWeek ? new Date(mostActiveWeek).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
-                      </p>
-                    </div>
-                  </CardContent>
+                <Card className="animate-in" style={{ animationDelay: "160ms" }}>
+                  <p className="text-label text-text-3">Busiest week</p>
+                  <p className="mt-2 text-numeric text-3xl text-text">
+                    {mostActiveCount} {mostActiveCount !== 1 ? "pieces" : "piece"}
+                  </p>
+                  <p className="mt-1 text-body-s text-text-3">
+                    Week of{" "}
+                    {mostActiveWeek
+                      ? new Date(mostActiveWeek).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                      : "unknown"}
+                  </p>
                 </Card>
               )}
               {latestScore !== null && (
-                <Card className="animate-in" style={{ animationDelay: "360ms" }}>
-                  <CardContent className="p-5 flex items-center gap-4">
-                    <div className="rounded-xl p-3 bg-info/10">
-                      <BarChart3 className="h-5 w-5 text-info" />
-                    </div>
-                    <div>
-                      <p className="text-caption text-text-tertiary">Latest Audit Score</p>
-                      <p className="text-body font-medium text-text-primary">{latestScore}/100</p>
-                      <p className="text-small text-text-tertiary">{audits.length} audit{audits.length !== 1 ? "s" : ""} total</p>
-                    </div>
-                  </CardContent>
+                <Card className="animate-in" style={{ animationDelay: "240ms" }}>
+                  <p className="text-label text-text-3">Latest site score</p>
+                  <p className="mt-2 text-numeric text-3xl text-text">
+                    {latestScore} out of 100
+                  </p>
+                  <p className="mt-1 text-body-s text-text-3">
+                    {audits.length} site {audits.length !== 1 ? "checks" : "check"} so far
+                  </p>
                 </Card>
               )}
             </div>
           )}
 
-          {/* Charts Row */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 mb-6">
-            {/* Audit Score Trend */}
-            <Card className="animate-in" style={{ animationDelay: "120ms" }}>
+          {/* Charts */}
+          <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {/* Site score trend */}
+            <Card className="animate-in" style={{ animationDelay: "80ms" }}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-h3">
-                  <TrendingUp className="h-4 w-4 text-accent" />
-                  Audit Score Trend
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-text-3" />
+                  Site score over time
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {auditTrendData.length < 2 ? (
-                  <div className="flex flex-col items-center py-10 text-center">
-                    <p className="text-small text-text-tertiary">
+                  <div className={emptyCard}>
+                    <p className="text-body-s text-text-3">
                       {auditTrendData.length === 0
-                        ? "Run an audit to start tracking your score"
-                        : "Run at least 2 audits to see the trend"}
+                        ? "Check your site to start tracking your score."
+                        : "Check your site once more to see the trend."}
                     </p>
                   </div>
                 ) : (
                   <ResponsiveContainer width="100%" height={200}>
                     <LineChart data={auditTrendData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke={BORDER} />
+                      <CartesianGrid strokeDasharray="3 3" stroke={LINE} vertical={false} />
                       <XAxis
                         dataKey="date"
-                        tick={{ fill: TEXT_TERTIARY, fontSize: 11 }}
+                        tick={{ fill: TEXT_3, fontSize: 12 }}
                         axisLine={false}
                         tickLine={false}
                       />
                       <YAxis
                         domain={[0, 100]}
-                        tick={{ fill: TEXT_TERTIARY, fontSize: 11 }}
+                        tick={{ fill: TEXT_3, fontSize: 12 }}
                         axisLine={false}
                         tickLine={false}
                         width={28}
                       />
-                      <Tooltip content={<ChartTooltip />} cursor={{ stroke: BORDER }} />
+                      <Tooltip content={<ChartTooltip />} cursor={{ stroke: LINE }} />
                       <Line
                         type="monotone"
                         dataKey="score"
-                        stroke={ACCENT}
+                        stroke={TEAL}
                         strokeWidth={2}
-                        dot={{ fill: ACCENT, r: 4, strokeWidth: 0 }}
-                        activeDot={{ r: 6, fill: ACCENT }}
+                        dot={{ fill: TEAL, r: 3, strokeWidth: 0 }}
+                        activeDot={{ r: 5, fill: TEAL }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
@@ -579,42 +570,46 @@ export default function AnalyticsPage() {
               </CardContent>
             </Card>
 
-            {/* Content Velocity */}
-            <Card className="animate-in" style={{ animationDelay: "180ms" }}>
+            {/* Content per week */}
+            <Card className="animate-in" style={{ animationDelay: "160ms" }}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-h3">
-                  <Sparkles className="h-4 w-4 text-accent" />
-                  Content Velocity
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-text-3" />
+                  Content made each week
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {velocityData.length === 0 ? (
-                  <div className="flex flex-col items-center py-10 text-center">
-                    <p className="text-small text-text-tertiary">
-                      Generate content to see weekly velocity
+                  <div className={emptyCard}>
+                    <p className="text-body-s text-text-3">
+                      Make your first piece of content to see this chart.
                     </p>
                   </div>
                 ) : (
                   <ResponsiveContainer width="100%" height={200}>
                     <BarChart data={velocityData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke={BORDER} />
+                      <CartesianGrid strokeDasharray="3 3" stroke={LINE} vertical={false} />
                       <XAxis
                         dataKey="week"
-                        tick={{ fill: TEXT_TERTIARY, fontSize: 11 }}
+                        tick={{ fill: TEXT_3, fontSize: 12 }}
                         axisLine={false}
                         tickLine={false}
                       />
                       <YAxis
                         allowDecimals={false}
-                        tick={{ fill: TEXT_TERTIARY, fontSize: 11 }}
+                        tick={{ fill: TEXT_3, fontSize: 12 }}
                         axisLine={false}
                         tickLine={false}
                         width={24}
                       />
                       <Tooltip content={<ChartTooltip />} cursor={{ fill: SURFACE_2 }} />
-                      <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                      <Bar dataKey="count" radius={[2, 2, 0, 0]}>
                         {velocityData.map((_, i) => (
-                          <Cell key={i} fill={i === velocityData.length - 1 ? ACCENT : `${ACCENT}80`} />
+                          <Cell
+                            key={i}
+                            fill={TEAL}
+                            fillOpacity={i === velocityData.length - 1 ? 1 : 0.45}
+                          />
                         ))}
                       </Bar>
                     </BarChart>
@@ -624,30 +619,30 @@ export default function AnalyticsPage() {
             </Card>
           </div>
 
-          {/* Agent Usage Breakdown */}
+          {/* Agent usage */}
           {agentBreakdown.length > 0 && (
-            <Card className="animate-in mb-6" style={{ animationDelay: "240ms" }}>
+            <Card className="mb-6 animate-in" style={{ animationDelay: "240ms" }}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-h3">
-                  <BarChart3 className="h-4 w-4 text-accent" />
-                  Agent Usage
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4 text-text-3" />
+                  Which agents you use most
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   {agentBreakdown.map((item) => (
                     <div key={item.agent} className="flex items-center gap-3">
-                      <span className="text-small text-text-secondary w-36 shrink-0 truncate">
+                      <span className="w-36 shrink-0 truncate text-body-s text-text-2">
                         {item.agent}
                       </span>
-                      <div className="flex-1 h-2 rounded-full bg-surface-2 overflow-hidden">
+                      <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-2">
                         <div
-                          className="h-full rounded-full bg-accent transition-all duration-700"
+                          className="h-full rounded-full bg-teal transition-all duration-700"
                           style={{ width: `${item.pct}%` }}
                         />
                       </div>
-                      <span className="text-small font-mono text-text-tertiary w-12 text-right shrink-0">
-                        {item.count}×
+                      <span className="w-16 shrink-0 text-right font-mono text-body-s text-text-3">
+                        {item.count} {item.count === 1 ? "run" : "runs"}
                       </span>
                     </div>
                   ))}
@@ -656,33 +651,24 @@ export default function AnalyticsPage() {
             </Card>
           )}
 
-          {/* Biggest Win + Cost Tracker */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-6">
-            {biggestWin && (
-              <Card className="animate-in" style={{ animationDelay: "300ms" }}>
-                <CardContent className="p-5 flex items-center gap-4">
-                  <div className="rounded-xl p-3 bg-accent/10">
-                    <Trophy className="h-5 w-5 text-accent" />
-                  </div>
-                  <div>
-                    <p className="text-caption text-text-tertiary">Biggest Win</p>
-                    <p className="text-body font-medium text-text-primary">
-                      {biggestWin}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-            {/* AI cost card hidden */}
-          </div>
+          {/* Biggest win */}
+          {biggestWin && (
+            <InkCard className="mb-6 flex animate-in items-center gap-4" style={{ animationDelay: "300ms" }}>
+              <Trophy className="h-5 w-5 shrink-0 text-ink-accent" />
+              <div>
+                <p className="text-label text-ink-text-3">Biggest win</p>
+                <p className="mt-1 text-title text-ink-text">{biggestWin}</p>
+              </div>
+            </InkCard>
+          )}
 
-          {/* Social Performance Section */}
+          {/* Social performance */}
           {postMetrics.length > 0 && (
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-h2 text-text-primary flex items-center gap-2">
-                  <Heart className="h-5 w-5 text-accent" />
-                  Social Performance
+            <section className="mb-6">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h2 className={sectionHeading}>
+                  <Heart className="h-5 w-5 text-text-3" />
+                  How your posts are doing
                 </h2>
                 <Button
                   size="sm"
@@ -690,95 +676,87 @@ export default function AnalyticsPage() {
                   onClick={handleSyncMetrics}
                   disabled={metricsSyncing}
                 >
-                  <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${metricsSyncing ? "animate-spin" : ""}`} />
-                  {metricsSyncing ? "Syncing..." : "Sync Now"}
+                  {!metricsSyncing && <RefreshCw className="h-3.5 w-3.5" />}
+                  {metricsSyncing ? "Updating…" : "Update now"}
                 </Button>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 mb-4">
-                {[
-                  { label: "Total Impressions", value: totalImpressions.toLocaleString(), icon: Eye },
-                  { label: "Total Likes", value: totalLikes.toLocaleString(), icon: Heart },
-                  { label: "Total Shares", value: totalShares.toLocaleString(), icon: Share2 },
-                  { label: "Best Post", value: bestPost ? `${bestPost.impressions.toLocaleString()} imp.` : "—", icon: Trophy },
-                ].map((stat, i) => (
-                  <Card key={stat.label} className="animate-in" style={{ animationDelay: `${i * 60}ms` }}>
-                    <CardContent className="flex items-start justify-between p-5">
-                      <div className="min-w-0">
-                        <p className="text-caption text-text-tertiary">{stat.label}</p>
-                        <p className="mt-1 font-semibold font-mono text-text-primary text-2xl">
-                          {stat.value}
-                        </p>
-                      </div>
-                      <div className="rounded-lg bg-surface-2 p-2 shrink-0 ml-2">
-                        <stat.icon className="h-5 w-5 text-accent" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              <KpiStrip
+                className="mb-4 animate-in rail:grid-cols-4"
+                cells={[
+                  { label: "Views", value: totalImpressions.toLocaleString() },
+                  { label: "Likes", value: totalLikes.toLocaleString() },
+                  { label: "Shares", value: totalShares.toLocaleString() },
+                  {
+                    label: "Best post",
+                    value: bestPost
+                      ? `${bestPost.impressions.toLocaleString()} views`
+                      : "None yet",
+                  },
+                ]}
+              />
 
               {socialBarData.length > 0 && (
-                <Card className="animate-in" style={{ animationDelay: "120ms" }}>
+                <Card className="animate-in" style={{ animationDelay: "80ms" }}>
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-h3">
-                      <BarChart3 className="h-4 w-4 text-accent" />
-                      Weekly Impressions
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart3 className="h-4 w-4 text-text-3" />
+                      Views each week
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={200}>
                       <BarChart data={socialBarData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke={BORDER} />
-                        <XAxis dataKey="week" tick={{ fill: TEXT_TERTIARY, fontSize: 11 }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fill: TEXT_TERTIARY, fontSize: 11 }} axisLine={false} tickLine={false} width={40} />
+                        <CartesianGrid strokeDasharray="3 3" stroke={LINE} vertical={false} />
+                        <XAxis dataKey="week" tick={{ fill: TEXT_3, fontSize: 12 }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fill: TEXT_3, fontSize: 12 }} axisLine={false} tickLine={false} width={40} />
                         <Tooltip content={<ChartTooltip />} cursor={{ fill: SURFACE_2 }} />
-                        <Bar dataKey="impressions" radius={[4, 4, 0, 0]} fill={ACCENT} />
+                        <Bar dataKey="impressions" radius={[2, 2, 0, 0]} fill={TEAL} />
                       </BarChart>
                     </ResponsiveContainer>
                   </CardContent>
                 </Card>
               )}
 
-              {postMetrics.length > 0 && (
-                <p className="text-small text-text-tertiary mt-2">
-                  Last synced: {new Date(postMetrics[0].synced_at).toLocaleString()}
-                </p>
-              )}
-            </div>
+              <p className="mt-2 text-caption text-text-3">
+                Last updated {new Date(postMetrics[0].synced_at).toLocaleString()}
+              </p>
+            </section>
           )}
 
-          {/* Keyword Ranking Tracker */}
+          {/* Search ranking tracker */}
           {trackedKeywords.length > 0 && (
-            <Card className="animate-in mb-6" style={{ animationDelay: "180ms" }}>
+            <Card className="mb-6 animate-in" style={{ animationDelay: "160ms" }}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-h3">
-                  <TrendingUp className="h-4 w-4 text-accent" />
-                  Keyword Ranking Tracker
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-text-3" />
+                  Where you rank on Google
                 </CardTitle>
+                <CardDescription>Lower is better. 1 is the top result.</CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={250}>
                   <LineChart data={keywordChartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={BORDER} />
-                    <XAxis dataKey="date" tick={{ fill: TEXT_TERTIARY, fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={LINE} vertical={false} />
+                    <XAxis dataKey="date" tick={{ fill: TEXT_3, fontSize: 12 }} axisLine={false} tickLine={false} />
                     <YAxis
                       reversed
                       domain={[1, "auto"]}
-                      tick={{ fill: TEXT_TERTIARY, fontSize: 11 }}
+                      tick={{ fill: TEXT_3, fontSize: 12 }}
                       axisLine={false}
                       tickLine={false}
                       width={28}
-                      label={{ value: "Position", angle: -90, position: "insideLeft", fill: TEXT_TERTIARY, fontSize: 10 }}
+                      label={{ value: "Rank", angle: -90, position: "insideLeft", fill: TEXT_3, fontSize: 12 }}
                     />
                     <Tooltip content={<ChartTooltip />} />
-                    <Legend />
+                    <Legend wrapperStyle={{ fontSize: 12 }} />
                     {trackedKeywords.map(([term], i) => (
                       <Line
                         key={term}
                         type="monotone"
                         dataKey={term}
                         stroke={KW_COLORS[i]}
+                        strokeDasharray={KW_DASHES[i]}
                         strokeWidth={2}
                         dot={{ r: 3, fill: KW_COLORS[i] }}
                         connectNulls
@@ -791,56 +769,44 @@ export default function AnalyticsPage() {
           )}
 
           {gscConnected && trackedKeywords.length === 0 && (
-            <Card className="animate-in mb-6">
-              <CardContent className="flex flex-col items-center py-8 text-center">
-                <TrendingUp className="h-6 w-6 text-text-tertiary mb-2" />
-                <p className="text-small text-text-secondary">
-                  Connect GSC and track keywords to see ranking trends
-                </p>
-                <p className="text-caption text-text-tertiary mt-1">
-                  Sync GSC data at least twice to see position changes
-                </p>
-              </CardContent>
-            </Card>
+            <EmptyState
+              className="mb-6"
+              icon={<TrendingUp className="h-6 w-6" />}
+              title="Update your Google search data at least twice to see how your rank changes."
+            />
           )}
 
-          {/* Search Performance (GSC) — empty state CTA when not connected */}
+          {/* Google search — not connected */}
           {!gscConnected && (
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-h2 text-text-primary flex items-center gap-2">
-                  <Search className="h-5 w-5 text-accent" />
-                  Search Performance
-                </h2>
-              </div>
-              <Card className="animate-in">
-                <CardContent className="flex flex-col items-center py-12 text-center">
-                  <Search className="h-8 w-8 text-text-tertiary mb-3" />
-                  <p className="text-body text-text-secondary">
-                    Connect Google Search Console for this project
-                  </p>
-                  <p className="text-small text-text-tertiary mt-1 mb-4">
-                    See real keyword performance, clicks, impressions, and
-                    rank trends.
-                  </p>
-                  <Button size="sm" asChild>
-                    <a href={`/api/integrations/gsc/connect?project_id=${id}`}>
-                      Connect GSC
-                    </a>
-                  </Button>
-                  <UnverifiedAppWarning />
-                </CardContent>
-              </Card>
-            </div>
+            <section className="mb-6">
+              <h2 className={`mb-4 ${sectionHeading}`}>
+                <Search className="h-5 w-5 text-text-3" />
+                How people find you on Google
+              </h2>
+              <EmptyState
+                icon={<Search className="h-6 w-6" />}
+                title="Connect Google Search Console to see the searches that bring people to your site, and where you rank."
+                action={
+                  <div className="flex flex-col items-center">
+                    <Button size="sm" asChild>
+                      <a href={`/api/integrations/gsc/connect?project_id=${id}`}>
+                        Connect Google Search Console
+                      </a>
+                    </Button>
+                    <UnverifiedAppWarning />
+                  </div>
+                }
+              />
+            </section>
           )}
 
-          {/* Search Performance — full widget when connected */}
+          {/* Google search — connected */}
           {gscConnected && (
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-h2 text-text-primary flex items-center gap-2">
-                  <Search className="h-5 w-5 text-accent" />
-                  Search Performance
+            <section className="mb-6">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <h2 className={sectionHeading}>
+                  <Search className="h-5 w-5 text-text-3" />
+                  How people find you on Google
                 </h2>
                 <div className="flex items-center gap-2">
                   <Button
@@ -849,17 +815,15 @@ export default function AnalyticsPage() {
                     onClick={handleGscSync}
                     disabled={gscSyncing}
                   >
-                    <RefreshCw
-                      className={`h-3.5 w-3.5 mr-1.5 ${gscSyncing ? "animate-spin" : ""}`}
-                    />
-                    {gscSyncing ? "Syncing..." : "Sync GSC Data"}
+                    {!gscSyncing && <RefreshCw className="h-3.5 w-3.5" />}
+                    {gscSyncing ? "Updating…" : "Update search data"}
                   </Button>
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={() => handleDisconnectGoogle("gsc")}
                   >
-                    <Unlink className="h-3.5 w-3.5 mr-1.5" />
+                    <Unlink className="h-3.5 w-3.5" />
                     Disconnect
                   </Button>
                 </div>
@@ -867,148 +831,102 @@ export default function AnalyticsPage() {
 
               {gscKeywords.length > 0 && (
                 <>
-                  {/* GSC Stats Row */}
-                  <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 mb-4">
-                    {[
+                  <KpiStrip
+                    className="mb-4 animate-in rail:grid-cols-4"
+                    cells={[
                       {
-                        label: "Total Clicks",
+                        label: "Clicks from Google",
                         value: gscKeywords
                           .reduce((s, k) => s + k.clicks, 0)
                           .toLocaleString(),
-                        icon: MousePointerClick,
                       },
                       {
-                        label: "Total Impressions",
+                        label: "Views in Google",
                         value: gscKeywords
                           .reduce((s, k) => s + k.impressions, 0)
                           .toLocaleString(),
-                        icon: Eye,
                       },
                       {
-                        label: "Avg CTR",
+                        label: "Click rate",
                         value:
                           (
                             (gscKeywords.reduce((s, k) => s + k.ctr, 0) /
                               gscKeywords.length) *
                             100
                           ).toFixed(1) + "%",
-                        icon: TrendingUp,
                       },
                       {
-                        label: "Avg Position",
+                        label: "Average rank",
                         value: (
                           gscKeywords.reduce((s, k) => s + k.position, 0) /
                           gscKeywords.length
                         ).toFixed(1),
-                        icon: ArrowUpDown,
                       },
-                    ].map((stat, i) => (
-                      <Card
-                        key={stat.label}
-                        className="animate-in"
-                        style={{ animationDelay: `${i * 60}ms` }}
-                      >
-                        <CardContent className="flex items-start justify-between p-5">
-                          <div className="min-w-0">
-                            <p className="text-caption text-text-tertiary">
-                              {stat.label}
-                            </p>
-                            <p className="mt-1 font-semibold font-mono text-text-primary text-2xl">
-                              {stat.value}
-                            </p>
-                          </div>
-                          <div className="rounded-lg bg-surface-2 p-2 shrink-0 ml-2">
-                            <stat.icon className="h-5 w-5 text-accent" />
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                    ]}
+                  />
 
-                  {/* Top Queries Table */}
-                  <Card className="animate-in" style={{ animationDelay: "60ms" }}>
-                    <CardHeader>
-                      <CardTitle className="flex items-center justify-between">
-                        <span>Top Search Queries</span>
-                        <Badge variant="secondary">{gscKeywords.length}</Badge>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                          <thead>
-                            <tr className="border-b border-border-subtle">
-                              <th className="px-6 py-3 text-caption text-text-tertiary font-medium">
-                                Query
-                              </th>
-                              <th className="px-6 py-3 text-caption text-text-tertiary font-medium text-right">
-                                Clicks
-                              </th>
-                              <th className="px-6 py-3 text-caption text-text-tertiary font-medium text-right">
-                                Impressions
-                              </th>
-                              <th className="px-6 py-3 text-caption text-text-tertiary font-medium text-right">
-                                CTR
-                              </th>
-                              <th className="px-6 py-3 text-caption text-text-tertiary font-medium text-right">
-                                Position
-                              </th>
+                  {/* Top searches */}
+                  <Card className="animate-in overflow-hidden p-0 md:p-0" style={{ animationDelay: "80ms" }}>
+                    <div className="flex items-center justify-between p-4 md:px-6">
+                      <h3 className="text-title text-text">Top searches</h3>
+                      <Badge variant="secondary">{gscKeywords.length}</Badge>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left">
+                        <thead>
+                          <tr className="border-y border-line">
+                            <th className="px-6 py-3 text-label text-text-3">Search</th>
+                            <th className="px-6 py-3 text-right text-label text-text-3">Clicks</th>
+                            <th className="px-6 py-3 text-right text-label text-text-3">Views</th>
+                            <th className="px-6 py-3 text-right text-label text-text-3">Click rate</th>
+                            <th className="px-6 py-3 text-right text-label text-text-3">Rank</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {gscKeywords.slice(0, 20).map((kw) => (
+                            <tr
+                              key={kw.term}
+                              className="border-b border-line transition-colors last:border-0 hover:bg-ground"
+                            >
+                              <td className="max-w-[300px] truncate px-6 py-3 text-body-s text-text">
+                                {kw.term}
+                              </td>
+                              <td className="px-6 py-3 text-right font-mono text-body-s text-text-2">
+                                {kw.clicks.toLocaleString()}
+                              </td>
+                              <td className="px-6 py-3 text-right font-mono text-body-s text-text-2">
+                                {kw.impressions.toLocaleString()}
+                              </td>
+                              <td className="px-6 py-3 text-right font-mono text-body-s text-text-2">
+                                {(kw.ctr * 100).toFixed(1)}%
+                              </td>
+                              <td className="px-6 py-3 text-right font-mono text-body-s text-text-2">
+                                {kw.position.toFixed(1)}
+                              </td>
                             </tr>
-                          </thead>
-                          <tbody>
-                            {gscKeywords.slice(0, 20).map((kw) => (
-                              <tr
-                                key={kw.term}
-                                className="border-b border-border-subtle last:border-0 hover:bg-surface-1/50 transition-colors"
-                              >
-                                <td className="px-6 py-3 text-small text-text-primary truncate max-w-[300px]">
-                                  {kw.term}
-                                </td>
-                                <td className="px-6 py-3 text-small text-text-secondary font-mono text-right">
-                                  {kw.clicks.toLocaleString()}
-                                </td>
-                                <td className="px-6 py-3 text-small text-text-secondary font-mono text-right">
-                                  {kw.impressions.toLocaleString()}
-                                </td>
-                                <td className="px-6 py-3 text-small text-text-secondary font-mono text-right">
-                                  {(kw.ctr * 100).toFixed(1)}%
-                                </td>
-                                <td className="px-6 py-3 text-small text-text-secondary font-mono text-right">
-                                  {kw.position.toFixed(1)}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </CardContent>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </Card>
                 </>
               )}
 
               {gscKeywords.length === 0 && (
-                <Card className="animate-in">
-                  <CardContent className="flex flex-col items-center py-12 text-center">
-                    <Search className="h-8 w-8 text-text-tertiary mb-3" />
-                    <p className="text-body text-text-secondary">
-                      No GSC data yet
-                    </p>
-                    <p className="text-small text-text-tertiary mt-1">
-                      Click &ldquo;Sync GSC Data&rdquo; to pull your search
-                      performance metrics
-                    </p>
-                  </CardContent>
-                </Card>
+                <EmptyState
+                  icon={<Search className="h-6 w-6" />}
+                  title="No search data yet. Press “Update search data” to pull it from Google."
+                />
               )}
-            </div>
+            </section>
           )}
 
-          {/* GA4 Traffic */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-h2 text-text-primary flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-accent" />
-                Traffic & Engagement
+          {/* Google Analytics traffic */}
+          <section className="mb-6">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 className={sectionHeading}>
+                <BarChart3 className="h-5 w-5 text-text-3" />
+                Visitors to your site
               </h2>
               {ga4Connected && (
                 <Button
@@ -1016,7 +934,7 @@ export default function AnalyticsPage() {
                   variant="ghost"
                   onClick={() => handleDisconnectGoogle("ga4")}
                 >
-                  <Unlink className="h-3.5 w-3.5 mr-1.5" />
+                  <Unlink className="h-3.5 w-3.5" />
                   Disconnect
                 </Button>
               )}
@@ -1024,50 +942,41 @@ export default function AnalyticsPage() {
             {ga4Connected && ga4HasProperty ? (
               <Ga4Widget projectId={id} />
             ) : ga4Connected && !ga4HasProperty ? (
-              <Card className="animate-in">
-                <CardContent className="flex flex-col items-center py-12 text-center">
-                  <BarChart3 className="h-8 w-8 text-text-tertiary mb-3" />
-                  <p className="text-body text-text-secondary">
-                    No GA4 property selected
-                  </p>
-                  <p className="text-small text-text-tertiary mt-1 mb-4">
-                    Disconnect and reconnect GA4 to pick a property.
-                  </p>
-                  <Button size="sm" variant="secondary" asChild>
+              <EmptyState
+                icon={<BarChart3 className="h-6 w-6" />}
+                title="No Google Analytics property picked yet. Reconnect to choose one."
+                action={
+                  <Button size="sm" variant="outline" asChild>
                     <a href={`/api/integrations/ga4/connect?project_id=${id}`}>
-                      Reconnect GA4
+                      Reconnect Google Analytics
                     </a>
                   </Button>
-                </CardContent>
-              </Card>
+                }
+              />
             ) : (
-              <Card className="animate-in">
-                <CardContent className="flex flex-col items-center py-12 text-center">
-                  <BarChart3 className="h-8 w-8 text-text-tertiary mb-3" />
-                  <p className="text-body text-text-secondary">
-                    Connect Google Analytics 4 for this project
-                  </p>
-                  <p className="text-small text-text-tertiary mt-1 mb-4">
-                    See traffic, top pages, and traffic sources alongside
-                    your search performance.
-                  </p>
-                  <Button size="sm" asChild>
-                    <a href={`/api/integrations/ga4/connect?project_id=${id}`}>
-                      Connect GA4
-                    </a>
-                  </Button>
-                  <UnverifiedAppWarning />
-                </CardContent>
-              </Card>
+              <EmptyState
+                icon={<BarChart3 className="h-6 w-6" />}
+                title="Connect Google Analytics to see visitors, top pages and where they come from."
+                action={
+                  <div className="flex flex-col items-center">
+                    <Button size="sm" asChild>
+                      <a href={`/api/integrations/ga4/connect?project_id=${id}`}>
+                        Connect Google Analytics
+                      </a>
+                    </Button>
+                    <UnverifiedAppWarning />
+                  </div>
+                }
+              />
             )}
-          </div>
+          </section>
 
-          {/* YouTube Channel */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-h2 text-text-primary flex items-center gap-2">
-                <Video className="h-5 w-5 text-accent" />
-                YouTube Channel
+          {/* YouTube */}
+          <section className="mb-6">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 className={sectionHeading}>
+                <Video className="h-5 w-5 text-text-3" />
+                YouTube channel
               </h2>
               {youtubeConnected && (
                 <Button
@@ -1075,7 +984,7 @@ export default function AnalyticsPage() {
                   variant="ghost"
                   onClick={() => handleDisconnectGoogle("youtube")}
                 >
-                  <Unlink className="h-3.5 w-3.5 mr-1.5" />
+                  <Unlink className="h-3.5 w-3.5" />
                   Disconnect
                 </Button>
               )}
@@ -1083,85 +992,71 @@ export default function AnalyticsPage() {
             {youtubeConnected ? (
               <YoutubeWidget projectId={id} />
             ) : (
-              <Card className="animate-in">
-                <CardContent className="flex flex-col items-center py-12 text-center">
-                  <Video className="h-8 w-8 text-text-tertiary mb-3" />
-                  <p className="text-body text-text-secondary">
-                    Connect YouTube for this project
-                  </p>
-                  <p className="text-small text-text-tertiary mt-1 mb-4">
-                    See channel stats and recent video performance.
-                  </p>
-                  <Button size="sm" asChild>
-                    <a href={`/api/integrations/youtube/connect?project_id=${id}`}>
-                      Connect YouTube
-                    </a>
-                  </Button>
-                  <UnverifiedAppWarning />
-                </CardContent>
-              </Card>
+              <EmptyState
+                icon={<Video className="h-6 w-6" />}
+                title="Connect YouTube to see channel stats and how recent videos are doing."
+                action={
+                  <div className="flex flex-col items-center">
+                    <Button size="sm" asChild>
+                      <a href={`/api/integrations/youtube/connect?project_id=${id}`}>
+                        Connect YouTube
+                      </a>
+                    </Button>
+                    <UnverifiedAppWarning />
+                  </div>
+                }
+              />
             )}
-          </div>
+          </section>
 
-          {/* Generation History Table */}
+          {/* Content history */}
           {generations.length === 0 ? (
-            <Card className="animate-in" style={{ animationDelay: "300ms" }}>
-              <CardContent>
-                <div className="flex flex-col items-center py-16 text-center">
-                  <BarChart3 className="h-10 w-10 text-text-tertiary mb-4" />
-                  <p className="text-body text-text-secondary">No AI generations yet</p>
-                  <p className="text-small text-text-tertiary mt-1">
-                    Use the Content Studio or run an audit to see history here
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <EmptyState
+              icon={<BarChart3 className="h-6 w-6" />}
+              title="Nothing made yet. Use an agent or check your site and it shows up here."
+            />
           ) : (
-            <Card className="animate-in" style={{ animationDelay: "300ms" }}>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Generation History</span>
-                  <Badge variant="secondary">{generations.length}</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead>
-                      <tr className="border-b border-border-subtle">
-                        <th className="px-6 py-3 text-caption text-text-tertiary font-medium">Agent</th>
-                        <th className="px-6 py-3 text-caption text-text-tertiary font-medium text-right">Duration</th>
-                        <th className="px-6 py-3 text-caption text-text-tertiary font-medium text-right">Date</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {[...generations].reverse().map((gen) => {
-                        return (
-                          <tr
-                            key={gen.id}
-                            className="border-b border-border-subtle last:border-0 hover:bg-surface-1/50 transition-colors"
-                          >
-                            <td className="px-6 py-4">
-                              <Badge variant="secondary">
-                                {agentLabels[gen.agent_used as string] ?? gen.agent_used}
-                              </Badge>
-                            </td>
-                            <td className="px-6 py-4 text-small text-text-secondary text-right">
-                              {gen.duration_ms ? `${(gen.duration_ms / 1000).toFixed(1)}s` : "—"}
-                            </td>
-                            <td className="px-6 py-4 text-small text-text-tertiary text-right whitespace-nowrap">
-                              <span className="inline-flex items-center gap-1.5">
-                                <Clock className="h-3 w-3" />
-                                {formatDate(gen.created_at)}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
+            <Card className="animate-in overflow-hidden p-0 md:p-0" style={{ animationDelay: "300ms" }}>
+              <div className="flex items-center justify-between p-4 md:px-6">
+                <h3 className="text-title text-text">Everything made for this project</h3>
+                <Badge variant="secondary">{generations.length}</Badge>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-y border-line">
+                      <th className="px-6 py-3 text-label text-text-3">Agent</th>
+                      <th className="px-6 py-3 text-right text-label text-text-3">Took</th>
+                      <th className="px-6 py-3 text-right text-label text-text-3">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...generations].reverse().map((gen) => {
+                      return (
+                        <tr
+                          key={gen.id}
+                          className="border-b border-line transition-colors last:border-0 hover:bg-ground"
+                        >
+                          <td className="px-6 py-4">
+                            <Badge variant="secondary">
+                              {agentLabels[gen.agent_used as string] ?? gen.agent_used}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4 text-right font-mono text-body-s text-text-2">
+                            {gen.duration_ms ? `${(gen.duration_ms / 1000).toFixed(1)}s` : "Not recorded"}
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4 text-right font-mono text-body-s text-text-3">
+                            <span className="inline-flex items-center gap-1.5">
+                              <Clock className="h-3 w-3" />
+                              {formatDate(gen.created_at)}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </Card>
           )}
         </>

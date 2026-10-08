@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { createContext, useContext, useState, useCallback, useMemo } from "react";
-import { X, CheckCircle2, AlertTriangle, Info } from "lucide-react";
+import { X, CheckCircle2, AlertTriangle, Info } from "@/src/components/ui/lucide-icons";
 import { cn } from "@/src/lib/utils/cn";
 
 type ToastVariant = "success" | "error" | "warning" | "info";
@@ -27,18 +27,21 @@ export function useToast() {
   return context;
 }
 
+// Toasts float above the page, so they get the one allowed shadow. The
+// variant shows as the icon colour (plus a same-width danger or accent
+// border when it needs attention), never a tinted wash.
 const variantStyles: Record<ToastVariant, string> = {
-  success: "border-success/30 bg-success/10",
-  error: "border-error/30 bg-error/10",
-  warning: "border-warning/30 bg-warning/10",
-  info: "border-info/30 bg-info/10",
+  success: "border-line",
+  error: "border-danger",
+  warning: "border-accent",
+  info: "border-line",
 };
 
 const variantIcons: Record<ToastVariant, React.ReactNode> = {
-  success: <CheckCircle2 className="h-4 w-4 text-success shrink-0" />,
-  error: <AlertTriangle className="h-4 w-4 text-error shrink-0" />,
-  warning: <AlertTriangle className="h-4 w-4 text-warning shrink-0" />,
-  info: <Info className="h-4 w-4 text-info shrink-0" />,
+  success: <CheckCircle2 className="h-4 w-4 shrink-0 text-teal" />,
+  error: <AlertTriangle className="h-4 w-4 shrink-0 text-danger" />,
+  warning: <AlertTriangle className="h-4 w-4 shrink-0 text-accent" />,
+  info: <Info className="h-4 w-4 shrink-0 text-text-2" />,
 };
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
@@ -62,20 +65,26 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={contextValue}>
       {children}
       {/* Toast Container */}
-      <div className="fixed bottom-6 right-6 z-[10000] flex flex-col gap-2">
+      <div
+        className="fixed bottom-4 left-4 right-4 z-[10000] flex flex-col items-end gap-2 sm:bottom-6 sm:left-auto sm:right-6"
+        role="status"
+        aria-live="polite"
+      >
         {toasts.map((t) => (
           <div
             key={t.id}
             className={cn(
-              "flex items-center gap-3 rounded-xl border px-4 py-3 shadow-[var(--shadow-elevated)] backdrop-blur-md animate-in min-w-[300px] max-w-[420px]",
+              "flex w-full items-center gap-3 rounded-md border bg-surface px-4 py-3 text-text shadow-[var(--shadow-float)] animate-in sm:w-auto sm:min-w-[300px] sm:max-w-[420px]",
               variantStyles[t.variant]
             )}
           >
             {variantIcons[t.variant]}
-            <p className="text-small text-text-primary flex-1">{t.message}</p>
+            <p className="flex-1 text-body-s text-text">{t.message}</p>
             <button
+              type="button"
               onClick={() => removeToast(t.id)}
-              className="rounded p-0.5 text-text-tertiary hover:text-text-primary transition-colors"
+              aria-label="Dismiss"
+              className="rounded-sm p-0.5 text-text-3 transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] hover:text-text"
             >
               <X className="h-3.5 w-3.5" />
             </button>

@@ -1,3 +1,4 @@
+import { Badge } from "@/src/components/ui/badge";
 import { getUsageData } from "@/src/lib/admin/queries";
 
 export const dynamic = "force-dynamic";
@@ -28,67 +29,67 @@ export default async function AdminUsagePage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-h1 text-text-primary">Usage & Costs</h1>
-        <p className="text-body text-text-secondary mt-1">
+        <h1 className="text-display-s text-text">Usage and costs</h1>
+        <p className="mt-1 text-body text-text-2">
           Resource consumption and estimated API costs across the platform
         </p>
       </div>
 
       {/* Cost overview cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
         <CostCard
-          label="Estimated Total Cost"
+          label="Estimated total cost"
           value={`$${totalCost.toFixed(2)}`}
           sub="all time"
           highlight
         />
         <CostCard
-          label="Total Generations"
+          label="Pieces of content"
           value={totalGenerations.toLocaleString()}
           sub="API calls"
         />
         <CostCard
-          label="Input Tokens"
+          label="Input tokens"
           value={formatTokens(totalInputTokens)}
           sub={`~$${((totalInputTokens * 3) / 1_000_000).toFixed(2)}`}
         />
         <CostCard
-          label="Output Tokens"
+          label="Output tokens"
           value={formatTokens(totalOutputTokens)}
           sub={`~$${((totalOutputTokens * 15) / 1_000_000).toFixed(2)}`}
         />
       </div>
 
       {/* Cost by model */}
-      <div className="rounded-xl border border-border-default bg-surface-1 p-6">
-        <h2 className="text-h3 text-text-primary mb-4">Cost by Model</h2>
+      <div className="rounded-lg border border-line bg-surface p-6">
+        <h2 className="mb-4 text-title text-text">Cost by model</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-border-subtle">
-                <th className="text-caption text-text-tertiary pb-3 pr-4">Model</th>
-                <th className="text-caption text-text-tertiary pb-3 pr-4 text-right">Calls</th>
-                <th className="text-caption text-text-tertiary pb-3 pr-4 text-right">Input Tokens</th>
-                <th className="text-caption text-text-tertiary pb-3 pr-4 text-right">Output Tokens</th>
-                <th className="text-caption text-text-tertiary pb-3 text-right">Est. Cost</th>
+              <tr className="border-b border-line">
+                <th className="text-label text-text-3 pb-3 pr-4">Model</th>
+                <th className="text-label text-text-3 pb-3 pr-4 text-right">Calls</th>
+                <th className="text-label text-text-3 pb-3 pr-4 text-right">Input tokens</th>
+                <th className="text-label text-text-3 pb-3 pr-4 text-right">Output tokens</th>
+                <th className="text-label text-text-3 pb-3 text-right">Est. Cost</th>
               </tr>
             </thead>
             <tbody>
               {Object.entries(modelStats)
                 .sort(([, a], [, b]) => b.cost - a.cost)
                 .map(([model, stats]) => (
-                  <tr key={model} className="border-b border-border-subtle last:border-0">
-                    <td className="py-3 pr-4 text-data text-text-primary">{model}</td>
-                    <td className="py-3 pr-4 text-data text-text-secondary text-right">
+                  <tr key={model} className="border-b border-line last:border-0">
+                    <td className="py-3 pr-4 font-mono text-body-s text-text">{model}</td>
+                    <td className="py-3 pr-4 font-mono text-body-s text-text-2 text-right">
                       {stats.count}
                     </td>
-                    <td className="py-3 pr-4 text-data text-text-secondary text-right">
+                    <td className="py-3 pr-4 font-mono text-body-s text-text-2 text-right">
                       {stats.inputTokens.toLocaleString()}
                     </td>
-                    <td className="py-3 pr-4 text-data text-text-secondary text-right">
+                    <td className="py-3 pr-4 font-mono text-body-s text-text-2 text-right">
                       {stats.outputTokens.toLocaleString()}
                     </td>
-                    <td className="py-3 text-data text-accent text-right font-medium">
+                    <td className="py-3 text-right font-mono text-body-s font-medium text-text">
                       ${stats.cost.toFixed(3)}
                     </td>
                   </tr>
@@ -99,21 +100,21 @@ export default async function AdminUsagePage() {
       </div>
 
       {/* Per-project breakdown */}
-      <div className="rounded-xl border border-border-default bg-surface-1 p-6">
-        <h2 className="text-h3 text-text-primary mb-4">
-          Cost by Project ({projectUsage.length})
+      <div className="rounded-lg border border-line bg-surface p-6">
+        <h2 className="mb-4 text-title text-text">
+          Cost by project ({projectUsage.length})
         </h2>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-border-subtle">
-                <th className="text-caption text-text-tertiary pb-3 pr-4">Project</th>
-                <th className="text-caption text-text-tertiary pb-3 pr-4">Website</th>
-                <th className="text-caption text-text-tertiary pb-3 pr-4">Owner</th>
-                <th className="text-caption text-text-tertiary pb-3 pr-4">Agents Used</th>
-                <th className="text-caption text-text-tertiary pb-3 pr-4 text-right">Generations</th>
-                <th className="text-caption text-text-tertiary pb-3 pr-4 text-right">Tokens</th>
-                <th className="text-caption text-text-tertiary pb-3 text-right">Est. Cost</th>
+              <tr className="border-b border-line">
+                <th className="text-label text-text-3 pb-3 pr-4">Project</th>
+                <th className="text-label text-text-3 pb-3 pr-4">Website</th>
+                <th className="text-label text-text-3 pb-3 pr-4">Owner</th>
+                <th className="text-label text-text-3 pb-3 pr-4">Agents used</th>
+                <th className="text-label text-text-3 pb-3 pr-4 text-right">Pieces of content</th>
+                <th className="text-label text-text-3 pb-3 pr-4 text-right">Tokens</th>
+                <th className="text-label text-text-3 pb-3 text-right">Est. Cost</th>
               </tr>
             </thead>
             <tbody>
@@ -126,15 +127,15 @@ export default async function AdminUsagePage() {
                 return (
                   <tr
                     key={pu.projectId}
-                    className="border-b border-border-subtle last:border-0 hover:bg-surface-2/50 transition-colors"
+                    className="border-b border-line transition-colors duration-[var(--duration-fast)] last:border-0 hover:bg-surface-2"
                   >
-                    <td className="py-3 pr-4 text-body text-text-primary font-medium">
+                    <td className="py-3 pr-4 text-body font-medium text-text">
                       {pu.projectName}
                     </td>
-                    <td className="py-3 pr-4 text-small text-text-secondary font-mono max-w-[180px] truncate">
-                      {pu.websiteUrl ?? "--"}
+                    <td className="py-3 pr-4 text-body-s text-text-2 font-mono max-w-[180px] truncate">
+                      {pu.websiteUrl ?? "Not set"}
                     </td>
-                    <td className="py-3 pr-4 text-small text-text-secondary">
+                    <td className="py-3 pr-4 text-body-s text-text-2">
                       {pu.ownerName}
                     </td>
                     <td className="py-3 pr-4 max-w-[250px]">
@@ -143,27 +144,24 @@ export default async function AdminUsagePage() {
                           .sort(([, a], [, b]) => b - a)
                           .slice(0, 4)
                           .map(([agent, count]) => (
-                            <span
-                              key={agent}
-                              className="inline-block rounded-full bg-accent-muted px-2 py-0.5 text-[0.6875rem] font-medium text-accent whitespace-nowrap"
-                            >
+                            <Badge key={agent} variant="secondary" className="normal-case">
                               {agent.replace(/-/g, " ")} x{count}
-                            </span>
+                            </Badge>
                           ))}
                         {Object.keys(pu.agents).length > 4 && (
-                          <span className="text-[0.6875rem] text-text-tertiary">
+                          <span className="text-caption text-text-3">
                             +{Object.keys(pu.agents).length - 4} more
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="py-3 pr-4 text-data text-text-secondary text-right">
+                    <td className="py-3 pr-4 font-mono text-body-s text-text-2 text-right">
                       {pu.generationCount}
                     </td>
-                    <td className="py-3 pr-4 text-data text-text-secondary text-right">
+                    <td className="py-3 pr-4 font-mono text-body-s text-text-2 text-right">
                       {formatTokens(pu.inputTokens + pu.outputTokens)}
                     </td>
-                    <td className="py-3 text-data text-accent text-right font-medium">
+                    <td className="py-3 text-right font-mono text-body-s font-medium text-text">
                       ${pu.cost.toFixed(3)}
                     </td>
                   </tr>
@@ -171,8 +169,8 @@ export default async function AdminUsagePage() {
               })}
               {projectUsage.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-text-tertiary text-body">
-                    No usage data yet
+                  <td colSpan={7} className="py-8 text-center text-body text-text-3">
+                    No usage data yet.
                   </td>
                 </tr>
               )}
@@ -182,57 +180,55 @@ export default async function AdminUsagePage() {
       </div>
 
       {/* Audited websites */}
-      <div className="rounded-xl border border-border-default bg-surface-1 p-6">
-        <h2 className="text-h3 text-text-primary mb-4">
-          Audited Websites ({latestAudits.length})
+      <div className="rounded-lg border border-line bg-surface p-6">
+        <h2 className="mb-4 text-title text-text">
+          Audited websites ({latestAudits.length})
         </h2>
         {latestAudits.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-border-subtle">
-                  <th className="text-caption text-text-tertiary pb-3 pr-4">URL</th>
-                  <th className="text-caption text-text-tertiary pb-3 pr-4">Project</th>
-                  <th className="text-caption text-text-tertiary pb-3 pr-4">Type</th>
-                  <th className="text-caption text-text-tertiary pb-3 pr-4 text-right">Score</th>
-                  <th className="text-caption text-text-tertiary pb-3">Last Audited</th>
+                <tr className="border-b border-line">
+                  <th className="text-label text-text-3 pb-3 pr-4">URL</th>
+                  <th className="text-label text-text-3 pb-3 pr-4">Project</th>
+                  <th className="text-label text-text-3 pb-3 pr-4">Type</th>
+                  <th className="text-label text-text-3 pb-3 pr-4 text-right">Score</th>
+                  <th className="text-label text-text-3 pb-3">Last audited</th>
                 </tr>
               </thead>
               <tbody>
                 {latestAudits.map((audit) => (
                   <tr
                     key={audit.id}
-                    className="border-b border-border-subtle last:border-0 hover:bg-surface-2/50 transition-colors"
+                    className="border-b border-line transition-colors duration-[var(--duration-fast)] last:border-0 hover:bg-surface-2"
                   >
-                    <td className="py-3 pr-4 text-small text-text-primary font-mono max-w-[300px] truncate">
+                    <td className="py-3 pr-4 text-body-s text-text font-mono max-w-[300px] truncate">
                       {audit.url}
                     </td>
-                    <td className="py-3 pr-4 text-small text-text-secondary">
+                    <td className="py-3 pr-4 text-body-s text-text-2">
                       {audit.projectName}
                     </td>
                     <td className="py-3 pr-4">
-                      <span className="inline-block rounded-full bg-surface-2 px-2.5 py-0.5 text-[0.75rem] font-medium text-text-secondary uppercase">
-                        {audit.type}
-                      </span>
+                      <Badge variant="secondary">{audit.type}</Badge>
                     </td>
                     <td className="py-3 pr-4 text-right">
                       {audit.score != null ? (
                         <span
-                          className={`text-data font-medium ${
+                          className={`font-mono text-body-s font-medium ${
                             audit.score >= 80
-                              ? "text-success"
+                              ? "text-teal"
                               : audit.score >= 50
-                                ? "text-warning"
-                                : "text-error"
+                                ? "text-accent"
+                                : "text-danger"
                           }`}
                         >
                           {audit.score}/100
                         </span>
                       ) : (
-                        <span className="text-text-tertiary text-small">--</span>
+                        <span className="text-body-s text-text-3">No score</span>
                       )}
                     </td>
-                    <td className="py-3 text-small text-text-secondary">
+                    <td className="py-3 text-body-s text-text-2">
                       {new Date(audit.created_at).toLocaleDateString()}
                     </td>
                   </tr>
@@ -241,13 +237,13 @@ export default async function AdminUsagePage() {
             </table>
           </div>
         ) : (
-          <p className="text-body text-text-tertiary">No audits performed yet</p>
+          <p className="text-body text-text-3">No audits performed yet.</p>
         )}
       </div>
 
       {/* Pricing note */}
-      <div className="rounded-lg border border-border-subtle bg-surface-0/50 px-4 py-3">
-        <p className="text-small text-text-tertiary">
+      <div className="rounded-lg border border-line bg-ground px-4 py-3">
+        <p className="text-body-s text-text-3">
           Cost estimates based on Anthropic API pricing: Sonnet $3/MTok input, $15/MTok output.
           Actual costs may vary with batching, caching, or plan discounts.
         </p>
@@ -269,21 +265,17 @@ function CostCard({
 }) {
   return (
     <div
-      className={`rounded-xl border p-5 ${
-        highlight
-          ? "border-accent/30 bg-gradient-to-br from-surface-1 to-accent/5"
-          : "border-border-default bg-surface-1"
-      }`}
+      className={highlight ? "band-ink p-5" : "bg-surface p-5"}
     >
-      <p className="text-caption text-text-tertiary mb-1">{label}</p>
+      <p className={`mb-2 text-label ${highlight ? "text-ink-text-3" : "text-text-3"}`}>{label}</p>
       <p
-        className={`text-[1.75rem] font-semibold font-mono leading-none ${
-          highlight ? "text-accent" : "text-text-primary"
+        className={`text-numeric text-[1.75rem] ${
+          highlight ? "text-ink-text" : "text-text"
         }`}
       >
         {value}
       </p>
-      <p className="text-[0.75rem] text-text-tertiary mt-1">{sub}</p>
+      <p className={`mt-1 text-caption ${highlight ? "text-ink-text-2" : "text-text-3"}`}>{sub}</p>
     </div>
   );
 }

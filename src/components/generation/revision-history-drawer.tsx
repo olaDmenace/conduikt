@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { History, RotateCcw, Sparkles, PenTool, Save, X, Loader2 } from "lucide-react";
+import { History, RotateCcw, Sparkles, PenTool, Save, X } from "@/src/components/ui/lucide-icons";
 import { cn } from "@/src/lib/utils/cn";
+import { IconButton } from "@/src/components/ui/button";
+import { Skeleton } from "@/src/components/ui/skeleton";
 
 /**
  * Revision History drawer for a saved asset.
@@ -40,9 +42,9 @@ const SOURCE_BADGES: Record<
   { label: string; icon: React.ElementType; className: string }
 > = {
   generation: { label: "Generated", icon: Sparkles, className: "text-accent" },
-  manual_edit: { label: "Edited", icon: PenTool, className: "text-info" },
-  autosave: { label: "Autosaved", icon: Save, className: "text-text-tertiary" },
-  restore: { label: "Restored", icon: RotateCcw, className: "text-success" },
+  manual_edit: { label: "Edited", icon: PenTool, className: "text-text-2" },
+  autosave: { label: "Autosaved", icon: Save, className: "text-text-3" },
+  restore: { label: "Restored", icon: RotateCcw, className: "text-teal" },
 };
 
 function fmtRelative(iso: string): string {
@@ -114,7 +116,7 @@ export function RevisionHistoryDrawer({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-md border border-border-default bg-surface-1 px-2.5 py-1 text-caption text-text-secondary transition-colors hover:bg-surface-2 hover:text-text-primary hover:border-border-strong"
+        className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 py-1 text-caption text-text-2 transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] hover:bg-surface-2 hover:text-text hover:border-line-strong"
         aria-label="Open revision history"
       >
         <History className="h-3.5 w-3.5" />
@@ -124,36 +126,36 @@ export function RevisionHistoryDrawer({
       {open && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div
-            className="absolute inset-0 bg-black/50"
+            className="absolute inset-0 bg-overlay"
             onClick={() => setOpen(false)}
           />
           <aside
-            className="relative w-full max-w-sm bg-surface-0 border-l border-border-default shadow-2xl overflow-y-auto"
+            className="relative w-full max-w-sm bg-ground border-l border-line shadow-[var(--shadow-float)] overflow-y-auto"
             aria-label="Revision history"
           >
-            <header className="sticky top-0 bg-surface-0 border-b border-border-default p-4 flex items-center justify-between">
+            <header className="sticky top-0 bg-ground border-b border-line p-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <History className="h-4 w-4 text-text-secondary" />
-                <h3 className="text-small font-medium text-text-primary">
-                  Revision History
-                </h3>
+                <History className="h-4 w-4 text-text-3" />
+                <h3 className="text-title text-text">Revision history</h3>
               </div>
-              <button
+              <IconButton
+                size="sm"
+                label="Close history drawer"
                 onClick={() => setOpen(false)}
-                className="rounded p-1.5 text-text-tertiary hover:text-text-primary hover:bg-surface-2 transition-colors"
-                aria-label="Close history drawer"
               >
                 <X className="h-4 w-4" />
-              </button>
+              </IconButton>
             </header>
 
             <div className="p-3">
               {loading ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="h-5 w-5 animate-spin text-text-tertiary" />
+                <div className="space-y-1.5" role="status" aria-label="Loading revisions">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Skeleton key={i} className="h-[68px]" />
+                  ))}
                 </div>
               ) : revisions.length === 0 ? (
-                <p className="text-center text-small text-text-tertiary py-8">
+                <p className="text-center text-body-s text-text-3 py-8">
                   No revisions yet. Save or regenerate this asset to build
                   a history.
                 </p>
@@ -167,8 +169,8 @@ export function RevisionHistoryDrawer({
                       <li
                         key={rev.id}
                         className={cn(
-                          "rounded-lg border border-border-default bg-surface-1 p-3",
-                          isCurrent && "border-accent/40 bg-accent-muted/30"
+                          "rounded-lg border border-line bg-surface p-3",
+                          isCurrent && "border-accent bg-accent-soft"
                         )}
                       >
                         <div className="flex items-center gap-2 text-caption">
@@ -176,7 +178,7 @@ export function RevisionHistoryDrawer({
                           <span className={cn("font-medium", badge.className)}>
                             {badge.label}
                           </span>
-                          <span className="text-text-tertiary">
+                          <span className="text-text-3">
                             · {fmtRelative(rev.created_at)}
                           </span>
                           {isCurrent && (
@@ -190,14 +192,12 @@ export function RevisionHistoryDrawer({
                             type="button"
                             onClick={() => handleRestore(rev)}
                             disabled={restoring !== null}
-                            className="mt-2 inline-flex items-center gap-1 text-caption text-accent hover:text-accent-hover disabled:opacity-50"
+                            className="mt-2 inline-flex items-center gap-1 text-caption text-accent hover-link hover:text-accent-hover disabled:opacity-50"
                           >
-                            {restoring === rev.id ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              <RotateCcw className="h-3 w-3" />
-                            )}
-                            <span>Restore this version</span>
+                            <RotateCcw className="h-3 w-3" />
+                            <span>
+                              {restoring === rev.id ? "Restoring…" : "Restore this version"}
+                            </span>
                           </button>
                         )}
                       </li>
@@ -205,9 +205,9 @@ export function RevisionHistoryDrawer({
                   })}
                 </ol>
               )}
-              <p className="mt-4 text-caption text-text-tertiary leading-snug">
-                Restoring is non-destructive — the current version is
-                snapshotted first so you can un-restore.
+              <p className="mt-4 text-caption text-text-3 leading-snug">
+                Restoring keeps your current version. It is saved first, so you
+                can switch back.
               </p>
             </div>
           </aside>

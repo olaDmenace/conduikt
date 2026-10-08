@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import {
-  Loader2,
   Plus,
   RefreshCw,
   Trash2,
@@ -11,9 +10,11 @@ import {
   Target,
   Search,
   TrendingUp,
-} from "lucide-react";
+} from "@/src/components/ui/lucide-icons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
-import { Button } from "@/src/components/ui/button";
+import { Button, IconButton } from "@/src/components/ui/button";
+import { EmptyState } from "@/src/components/ui/empty-state";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import { Input } from "@/src/components/ui/input";
 import { Badge } from "@/src/components/ui/badge";
 import { PageHeader } from "@/src/components/layout/page-header";
@@ -71,14 +72,14 @@ export default function CompetitorsPage() {
       body: JSON.stringify({ competitor_url: url, competitor_name: name }),
     });
     if (res.ok) {
-      toast("Competitor added!", "success");
+      toast("Competitor added", "success");
       setUrl("");
       setName("");
       setShowForm(false);
       fetchTrackers();
     } else {
       const err = await res.json();
-      toast(err.error || "Failed to add", "error");
+      toast(err.error || "Couldn't add that competitor. Try again.", "error");
     }
     setAdding(false);
   }
@@ -90,10 +91,10 @@ export default function CompetitorsPage() {
       { method: "POST" }
     );
     if (res.ok) {
-      toast("Analysis complete!", "success");
+      toast("Check done", "success");
       fetchTrackers();
     } else {
-      toast("Analysis failed", "error");
+      toast("The check failed. Try again.", "error");
     }
     setChecking(null);
   }
@@ -104,7 +105,7 @@ export default function CompetitorsPage() {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      toast(err.error || "Failed to remove competitor", "error");
+      toast(err.error || "Couldn't remove that competitor. Try again.", "error");
       return;
     }
     setTrackers((prev) => prev.filter((t) => t.id !== trackerId));
@@ -114,22 +115,22 @@ export default function CompetitorsPage() {
   return (
     <div>
       <PageHeader
-        title="Competitors"
-        description="Track and analyze your competition"
+        title="Competitor Watch"
+        description="Sees what rivals are doing, and what they cover that you don't."
       >
         <Button size="sm" onClick={() => setShowForm(!showForm)}>
           <Plus className="h-4 w-4" />
-          Add Competitor
+          Add competitor
         </Button>
       </PageHeader>
 
       {showForm && (
         <Card className="animate-in mb-6">
-          <CardContent className="p-5">
-            <form onSubmit={handleAdd} className="flex gap-3 items-end">
-              <div className="flex-1">
+          <CardContent>
+            <form onSubmit={handleAdd} className="flex flex-wrap items-end gap-3">
+              <div className="min-w-[220px] flex-1">
                 <Input
-                  label="Competitor URL"
+                  label="Their website"
                   type="url"
                   placeholder="https://competitor.com"
                   value={url}
@@ -140,17 +141,13 @@ export default function CompetitorsPage() {
               <div className="w-48">
                 <Input
                   label="Name (optional)"
-                  placeholder="Competitor name"
+                  placeholder="Try: Acme"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
               </div>
-              <Button type="submit" disabled={adding} size="sm">
-                {adding ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  "Add"
-                )}
+              <Button type="submit" disabled={adding}>
+                {adding ? "Adding…" : "Add"}
               </Button>
             </form>
           </CardContent>
@@ -158,21 +155,22 @@ export default function CompetitorsPage() {
       )}
 
       {loading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="h-6 w-6 text-accent animate-spin" />
+        <div className="space-y-4" role="status" aria-label="Loading">
+          <Skeleton className="h-36" />
+          <Skeleton className="h-36" />
         </div>
       ) : trackers.length === 0 ? (
-        <Card className="animate-in">
-          <CardContent className="flex flex-col items-center py-16 text-center">
-            <Target className="h-10 w-10 text-text-tertiary mb-4" />
-            <p className="text-body text-text-secondary">
-              No competitors tracked yet
-            </p>
-            <p className="text-small text-text-tertiary mt-1">
-              Add a competitor to start monitoring their SEO strategy
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          className="animate-in"
+          icon={<Target className="h-6 w-6" />}
+          title="No competitors yet. Add one to see what they rank for on Google and what they write about."
+          action={
+            <Button size="sm" onClick={() => setShowForm(true)}>
+              <Plus className="h-4 w-4" />
+              Add competitor
+            </Button>
+          }
+        />
       ) : (
         <div className="space-y-4">
           {trackers.map((tracker, i) => {
@@ -187,19 +185,17 @@ export default function CompetitorsPage() {
               <Card
                 key={tracker.id}
                 className="animate-in"
-                style={{ animationDelay: `${i * 60}ms` }}
+                style={{ animationDelay: `${Math.min(i, 5) * 80}ms` }}
               >
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardHeader className="flex flex-row items-center justify-between">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="rounded-lg bg-surface-2 p-2 shrink-0">
-                      <Globe className="h-4 w-4 text-accent" />
-                    </div>
+                    <Globe className="h-4 w-4 shrink-0 text-text-3" />
                     <div className="min-w-0">
-                      <CardTitle className="text-body truncate">
+                      <CardTitle className="truncate">
                         {tracker.competitor_name ||
                           tracker.competitor_url.replace(/^https?:\/\//, "")}
                       </CardTitle>
-                      <p className="text-caption text-text-tertiary truncate">
+                      <p className="text-caption text-text-3 truncate">
                         {tracker.competitor_url}
                       </p>
                     </div>
@@ -207,40 +203,40 @@ export default function CompetitorsPage() {
                   <div className="flex items-center gap-2 shrink-0">
                     <Button
                       size="sm"
-                      variant="secondary"
+                      variant="outline"
                       onClick={() => handleCheck(tracker.id)}
                       disabled={checking === tracker.id}
                     >
-                      <RefreshCw
-                        className={`h-3.5 w-3.5 mr-1 ${
-                          checking === tracker.id ? "animate-spin" : ""
-                        }`}
-                      />
-                      {checking === tracker.id ? "Analyzing..." : "Check Now"}
+                      {checking !== tracker.id && (
+                        <RefreshCw className="h-3.5 w-3.5" />
+                      )}
+                      {checking === tracker.id ? "Checking…" : "Check now"}
                     </Button>
-                    <button
+                    <IconButton
+                      label="Remove competitor"
+                      size="sm"
                       onClick={() => handleDelete(tracker.id)}
-                      className="rounded-lg p-2 text-text-tertiary hover:text-error hover:bg-error/10 transition-colors"
+                      className="hover:text-danger"
                     >
                       <Trash2 className="h-4 w-4" />
-                    </button>
+                    </IconButton>
                   </div>
                 </CardHeader>
                 <CardContent>
                   {latest ? (
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                       <div>
-                        <p className="text-caption text-text-tertiary">
-                          Keyword Overlap
+                        <p className="text-label text-text-3">
+                          Searches you both show up for
                         </p>
-                        <p className="text-h3 font-mono text-text-primary">
-                          {latest.keyword_overlap ?? "—"}
+                        <p className="mt-1.5 text-numeric text-2xl text-text">
+                          {latest.keyword_overlap ?? "Not measured"}
                           {overlapDelta !== null && overlapDelta !== 0 && (
                             <span
-                              className={`ml-1 text-small ${
+                              className={`ml-1 font-mono text-body-s ${
                                 overlapDelta > 0
                                   ? "text-warning"
-                                  : "text-success"
+                                  : "text-teal"
                               }`}
                             >
                               {overlapDelta > 0 ? "+" : ""}
@@ -250,18 +246,20 @@ export default function CompetitorsPage() {
                         </p>
                       </div>
                       <div>
-                        <p className="text-caption text-text-tertiary">
-                          Est. Domain Authority
+                        <p className="text-label text-text-3">
+                          How much Google trusts them
                         </p>
-                        <p className="text-h3 font-mono text-text-primary">
-                          {latest.estimated_da ?? "—"}
+                        <p className="mt-1.5 text-numeric text-2xl text-text">
+                          {latest.estimated_da != null
+                            ? `${latest.estimated_da} out of 100`
+                            : "Not measured"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-caption text-text-tertiary">
-                          Content Gaps
+                        <p className="text-label text-text-3">
+                          Topics they cover, you don&apos;t
                         </p>
-                        <div className="flex flex-wrap gap-1 mt-1">
+                        <div className="mt-1.5 flex flex-wrap gap-1">
                           {(latest.content_gaps ?? []).slice(0, 3).map((g) => (
                             <Badge key={g} variant="secondary">
                               {g}
@@ -270,10 +268,10 @@ export default function CompetitorsPage() {
                         </div>
                       </div>
                       <div>
-                        <p className="text-caption text-text-tertiary">
-                          Last Checked
+                        <p className="text-label text-text-3">
+                          Last checked
                         </p>
-                        <p className="text-small text-text-secondary">
+                        <p className="mt-1.5 font-mono text-body-s text-text-2">
                           {tracker.last_checked_at
                             ? new Date(
                                 tracker.last_checked_at
@@ -283,9 +281,9 @@ export default function CompetitorsPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 text-small text-text-tertiary">
+                    <div className="flex items-center gap-2 text-body-s text-text-3">
                       <Search className="h-4 w-4" />
-                      Click &ldquo;Check Now&rdquo; to run your first analysis
+                      Press &ldquo;Check now&rdquo; to run the first check.
                     </div>
                   )}
                 </CardContent>

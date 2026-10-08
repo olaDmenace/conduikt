@@ -1,3 +1,4 @@
+import { Badge } from "@/src/components/ui/badge";
 import { getSubscriptionStats, getAllUsers } from "@/src/lib/admin/queries";
 
 export const dynamic = "force-dynamic";
@@ -11,12 +12,15 @@ export default async function AdminSubscriptionsPage() {
   const total = Object.values(distribution).reduce((a, b) => a + b, 0);
   const plans = ["free", "pro", "growth", "agency"] as const;
 
-  const planColors: Record<string, { bar: string; badge: string }> = {
-    free: { bar: "bg-text-tertiary", badge: "bg-surface-2 text-text-secondary" },
-    pro: { bar: "bg-accent", badge: "bg-accent-muted text-accent" },
-    growth: { bar: "bg-success", badge: "bg-success/10 text-success" },
-    agency: { bar: "bg-info", badge: "bg-info/10 text-info" },
+  // Teal is the data colour; the paid tiers step from light to deep.
+  const planBars: Record<string, string> = {
+    free: "bg-line-strong",
+    pro: "bg-teal",
+    growth: "bg-ink-teal",
+    agency: "bg-ink",
   };
+  const tierVariant = (plan: string) =>
+    (["free", "pro", "growth", "agency"] as const).find((t) => t === plan) ?? "free";
 
   // Paid users list
   const paidUsers = users.filter((u) => u.plan !== "free");
@@ -24,37 +28,30 @@ export default async function AdminSubscriptionsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-h1 text-text-primary">Subscriptions</h1>
-        <p className="text-body text-text-secondary mt-1">
+        <h1 className="text-display-s text-text">Subscriptions</h1>
+        <p className="mt-1 text-body text-text-2">
           Plan distribution and subscriber details
         </p>
       </div>
 
       {/* Plan distribution cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
         {plans.map((plan) => {
           const count = distribution[plan] ?? 0;
           const pct = total > 0 ? ((count / total) * 100).toFixed(1) : "0";
           return (
-            <div
-              key={plan}
-              className="rounded-xl border border-border-default bg-surface-1 p-5"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span
-                  className={`inline-block rounded-full px-2.5 py-0.5 text-[0.75rem] font-medium capitalize ${planColors[plan].badge}`}
-                >
-                  {plan}
-                </span>
-                <span className="text-caption text-text-tertiary">{pct}%</span>
+            <div key={plan} className="bg-surface p-5">
+              <div className="mb-2 flex items-center justify-between">
+                <Badge variant={plan}>{plan}</Badge>
+                <span className="font-mono text-caption text-text-3">{pct}%</span>
               </div>
-              <p className="text-[2rem] font-semibold text-text-primary font-mono leading-none mb-3">
+              <p className="mb-3 text-numeric text-[2rem] text-text">
                 {count}
               </p>
               {/* Bar */}
-              <div className="h-1.5 rounded-full bg-surface-3 overflow-hidden">
+              <div className="h-1.5 overflow-hidden rounded-sm bg-surface-2">
                 <div
-                  className={`h-full rounded-full ${planColors[plan].bar} transition-all duration-500`}
+                  className={`h-full ${planBars[plan]}`}
                   style={{ width: `${total > 0 ? (count / total) * 100 : 0}%` }}
                 />
               </div>
@@ -64,30 +61,30 @@ export default async function AdminSubscriptionsPage() {
       </div>
 
       {/* Visual bar chart */}
-      <div className="rounded-xl border border-border-default bg-surface-1 p-6">
-        <h2 className="text-h3 text-text-primary mb-4">Plan Distribution</h2>
+      <div className="rounded-lg border border-line bg-surface p-6">
+        <h2 className="mb-4 text-title text-text">Plan distribution</h2>
         <div className="space-y-3">
           {plans.map((plan) => {
             const count = distribution[plan] ?? 0;
             const pct = total > 0 ? (count / total) * 100 : 0;
             return (
               <div key={plan} className="flex items-center gap-4">
-                <span className="w-16 text-small text-text-secondary capitalize">
+                <span className="w-16 text-body-s capitalize text-text-2">
                   {plan}
                 </span>
-                <div className="flex-1 h-8 rounded-lg bg-surface-3 overflow-hidden">
+                <div className="h-8 flex-1 overflow-hidden rounded-sm bg-surface-2">
                   <div
-                    className={`h-full ${planColors[plan].bar} rounded-lg flex items-center px-3 transition-all duration-500`}
+                    className={`flex h-full items-center px-3 ${planBars[plan]}`}
                     style={{ width: `${Math.max(pct, 2)}%` }}
                   >
                     {pct > 10 && (
-                      <span className="text-[0.75rem] font-medium text-on-accent">
+                      <span className={`font-mono text-caption font-medium ${plan === "free" ? "text-text" : "text-white"}`}>
                         {count}
                       </span>
                     )}
                   </div>
                 </div>
-                <span className="w-12 text-right text-data text-text-secondary">
+                <span className="w-12 text-right font-mono text-body-s text-text-2">
                   {count}
                 </span>
               </div>
@@ -97,45 +94,41 @@ export default async function AdminSubscriptionsPage() {
       </div>
 
       {/* Paid subscribers table */}
-      <div className="rounded-xl border border-border-default bg-surface-1 p-6">
-        <h2 className="text-h3 text-text-primary mb-4">
-          Paid Subscribers ({paidUsers.length})
+      <div className="rounded-lg border border-line bg-surface p-6">
+        <h2 className="mb-4 text-title text-text">
+          Paid subscribers ({paidUsers.length})
         </h2>
         {paidUsers.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-border-subtle">
-                  <th className="text-caption text-text-tertiary pb-3 pr-4">Name</th>
-                  <th className="text-caption text-text-tertiary pb-3 pr-4">Plan</th>
-                  <th className="text-caption text-text-tertiary pb-3 pr-4">Generations</th>
-                  <th className="text-caption text-text-tertiary pb-3 pr-4">Projects</th>
-                  <th className="text-caption text-text-tertiary pb-3">Since</th>
+                <tr className="border-b border-line">
+                  <th className="text-label text-text-3 pb-3 pr-4">Name</th>
+                  <th className="text-label text-text-3 pb-3 pr-4">Plan</th>
+                  <th className="text-label text-text-3 pb-3 pr-4">Pieces of content</th>
+                  <th className="text-label text-text-3 pb-3 pr-4">Projects</th>
+                  <th className="text-label text-text-3 pb-3">Since</th>
                 </tr>
               </thead>
               <tbody>
                 {paidUsers.map((user) => (
                   <tr
                     key={user.id}
-                    className="border-b border-border-subtle last:border-0"
+                    className="border-b border-line last:border-0"
                   >
-                    <td className="py-3 pr-4 text-body text-text-primary">
+                    <td className="py-3 pr-4 text-body text-text">
                       {user.full_name ?? "Unnamed"}
                     </td>
                     <td className="py-3 pr-4">
-                      <span
-                        className={`inline-block rounded-full px-2.5 py-0.5 text-[0.75rem] font-medium capitalize ${planColors[user.plan]?.badge ?? planColors.free.badge}`}
-                      >
-                        {user.plan}
-                      </span>
+                      <Badge variant={tierVariant(user.plan)}>{user.plan}</Badge>
                     </td>
-                    <td className="py-3 pr-4 text-data text-text-secondary">
+                    <td className="py-3 pr-4 font-mono text-body-s text-text-2">
                       {user.generation_count}
                     </td>
-                    <td className="py-3 pr-4 text-data text-text-secondary">
+                    <td className="py-3 pr-4 font-mono text-body-s text-text-2">
                       {user.projectCount}
                     </td>
-                    <td className="py-3 text-small text-text-secondary">
+                    <td className="py-3 text-body-s text-text-2">
                       {new Date(user.created_at).toLocaleDateString()}
                     </td>
                   </tr>
@@ -144,7 +137,7 @@ export default async function AdminSubscriptionsPage() {
             </table>
           </div>
         ) : (
-          <p className="text-body text-text-tertiary">No paid subscribers yet</p>
+          <p className="text-body text-text-3">No paid subscribers yet.</p>
         )}
       </div>
     </div>

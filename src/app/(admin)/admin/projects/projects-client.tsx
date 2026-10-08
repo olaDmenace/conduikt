@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, ArrowUpDown } from "lucide-react";
+import { Search, ArrowUpDown } from "@/src/components/ui/lucide-icons";
 
 type Project = {
   id: string;
@@ -23,7 +23,7 @@ export function AdminProjectsClient({ projects }: { projects: Project[] }) {
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    let result = projects.filter(
+    const result = projects.filter(
       (p) =>
         p.name.toLowerCase().includes(q) ||
         p.ownerName.toLowerCase().includes(q) ||
@@ -49,34 +49,34 @@ export function AdminProjectsClient({ projects }: { projects: Project[] }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-h1 text-text-primary">Projects</h1>
-          <p className="text-body text-text-secondary mt-1">
+          <h1 className="text-display-s text-text">Projects</h1>
+          <p className="mt-1 text-body text-text-2">
             {projects.length} total projects
           </p>
         </div>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary" />
+        <div className="relative w-full sm:w-auto">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-3" />
           <input
             type="text"
-            placeholder="Search by name or owner..."
+            placeholder="Search by name or owner…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="rounded-lg border border-border-default bg-surface-2 pl-9 pr-4 py-2 text-body text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/40 w-72"
+            className="rounded-md border border-line-strong bg-surface pl-9 pr-4 py-2 text-body text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent w-full sm:w-72"
           />
         </div>
       </div>
 
-      <div className="rounded-xl border border-border-default bg-surface-1 overflow-hidden">
+      <div className="rounded-lg border border-line bg-surface overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-border-subtle bg-surface-0/50">
+              <tr className="border-b border-line bg-ground">
                 <SortHeader label="Name" sortKey="name" current={sortKey} asc={sortAsc} onSort={toggleSort} />
                 <SortHeader label="Owner" sortKey="ownerName" current={sortKey} asc={sortAsc} onSort={toggleSort} />
-                <th className="text-caption text-text-tertiary px-4 py-3">Website</th>
-                <SortHeader label="Generations" sortKey="generationCount" current={sortKey} asc={sortAsc} onSort={toggleSort} />
+                <th className="text-label text-text-3 px-4 py-3">Website</th>
+                <SortHeader label="Pieces of content" sortKey="generationCount" current={sortKey} asc={sortAsc} onSort={toggleSort} />
                 <SortHeader label="Created" sortKey="created_at" current={sortKey} asc={sortAsc} onSort={toggleSort} />
               </tr>
             </thead>
@@ -84,30 +84,30 @@ export function AdminProjectsClient({ projects }: { projects: Project[] }) {
               {filtered.map((project) => (
                 <tr
                   key={project.id}
-                  className="border-b border-border-subtle last:border-0 hover:bg-surface-2/50 transition-colors"
+                  className="border-b border-line transition-colors duration-[var(--duration-fast)] last:border-0 hover:bg-surface-2"
                 >
-                  <td className="px-4 py-3 text-body text-text-primary">
+                  <td className="px-4 py-3 text-body text-text">
                     {project.name}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="text-small text-text-secondary">{project.ownerName}</div>
-                    <div className="text-[0.75rem] text-text-tertiary">{project.ownerEmail}</div>
+                    <div className="text-body-s text-text-2">{project.ownerName}</div>
+                    <div className="text-caption text-text-3">{project.ownerEmail}</div>
                   </td>
-                  <td className="px-4 py-3 text-small text-text-secondary font-mono max-w-[200px] truncate">
-                    {project.website_url ?? "--"}
+                  <td className="px-4 py-3 text-body-s text-text-2 font-mono max-w-[200px] truncate">
+                    {project.website_url ?? "Not set"}
                   </td>
-                  <td className="px-4 py-3 text-data text-text-secondary">
+                  <td className="px-4 py-3 font-mono text-body-s text-text-2">
                     {project.generationCount}
                   </td>
-                  <td className="px-4 py-3 text-small text-text-secondary">
+                  <td className="px-4 py-3 text-body-s text-text-2">
                     {new Date(project.created_at).toLocaleDateString()}
                   </td>
                 </tr>
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-text-tertiary text-body">
-                    No projects found
+                  <td colSpan={5} className="py-8 text-center text-body text-text-3">
+                    No projects match this search.
                   </td>
                 </tr>
               )}
@@ -135,8 +135,9 @@ function SortHeader({
   return (
     <th className="px-4 py-3">
       <button
+        type="button"
         onClick={() => onSort(sortKey)}
-        className="flex items-center gap-1 text-caption text-text-tertiary hover:text-text-primary transition-colors"
+        className="hover-link flex items-center gap-1 text-label text-text-3 hover:text-text"
       >
         {label}
         <ArrowUpDown className={`h-3 w-3 ${current === sortKey ? "text-accent" : ""}`} />

@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Loader2, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronUp, Sparkles } from "@/src/components/ui/lucide-icons";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
+import { Skeleton } from "@/src/components/ui/skeleton";
 
 interface ScoreResult {
   total_score: number;
@@ -40,7 +41,8 @@ function ScoreGauge({
   const circumference = 2 * Math.PI * radius;
   const pct = score / maxScore;
   const offset = circumference - pct * circumference;
-  const color = pct > 0.75 ? "#4ADE80" : pct >= 0.5 ? "#F59E0B" : "#EF4444";
+  const strokeClass =
+    pct > 0.75 ? "stroke-teal" : pct >= 0.5 ? "stroke-accent" : "stroke-danger";
 
   return (
     <div className="flex flex-col items-center gap-1.5">
@@ -51,7 +53,7 @@ function ScoreGauge({
             cy={size / 2}
             r={radius}
             fill="none"
-            stroke="var(--surface-2)"
+            className="stroke-surface-2"
             strokeWidth={4}
           />
           <circle
@@ -59,24 +61,23 @@ function ScoreGauge({
             cy={size / 2}
             r={radius}
             fill="none"
-            stroke={color}
+            className={`${strokeClass} transition-all duration-700 ease-out`}
             strokeWidth={4}
             strokeDasharray={circumference}
             strokeDashoffset={offset}
             strokeLinecap="round"
-            className="transition-all duration-700 ease-out"
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
           <span
-            className="font-mono font-semibold text-text-primary"
+            className="font-display font-light tabular-nums text-text"
             style={{ fontSize: size * 0.22 }}
           >
             {score}
           </span>
         </div>
       </div>
-      <span className="text-caption text-text-tertiary text-center leading-tight">
+      <span className="text-caption text-text-3 text-center leading-tight">
         {label}
       </span>
     </div>
@@ -130,11 +131,16 @@ export function ContentScorePanel({
   if (loading) {
     return (
       <Card className="animate-in mt-4">
-        <CardContent className="flex items-center justify-center gap-2 py-6">
-          <Loader2 className="h-4 w-4 text-accent animate-spin" />
-          <span className="text-small text-text-secondary">
-            Scoring content quality...
-          </span>
+        <CardContent className="space-y-4" role="status" aria-label="Scoring content quality">
+          <div className="flex items-center justify-between">
+            <span className="text-body-s text-text-2">Scoring content quality…</span>
+            <Skeleton className="h-[22px] w-28" />
+          </div>
+          <div className="flex items-center justify-center gap-6 flex-wrap">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-[72px] w-[72px] rounded-full" />
+            ))}
+          </div>
         </CardContent>
       </Card>
     );
@@ -150,20 +156,18 @@ export function ContentScorePanel({
         : "rewrite";
 
   const verdictConfig = {
-    publish: { label: "Ready to Publish", variant: "success" as const },
-    improve: { label: "Could be Stronger", variant: "warning" as const },
-    rewrite: { label: "Needs Rework", variant: "secondary" as const },
+    publish: { label: "Ready to publish", variant: "success" as const },
+    improve: { label: "Could be stronger", variant: "warning" as const },
+    rewrite: { label: "Needs rework", variant: "secondary" as const },
   };
 
   const v = verdictConfig[verdict];
 
   return (
     <Card className="animate-in mt-4">
-      <CardContent className="p-5 space-y-4">
+      <CardContent className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-body font-medium text-text-primary">
-            Content Quality Score
-          </h3>
+          <h3 className="text-title text-text">Content quality score</h3>
           <Badge variant={v.variant}>{v.label}</Badge>
         </div>
 
@@ -183,7 +187,7 @@ export function ContentScorePanel({
           <ScoreGauge
             score={result.brand_alignment}
             maxScore={25}
-            label="Brand Fit"
+            label="Brand fit"
           />
           <ScoreGauge
             score={result.total_score}
@@ -195,7 +199,7 @@ export function ContentScorePanel({
 
         {/* Summary */}
         {result.summary && (
-          <p className="text-small text-text-secondary text-center">
+          <p className="text-body-s text-text-2 text-center">
             {result.summary}
           </p>
         )}
@@ -204,7 +208,7 @@ export function ContentScorePanel({
         <div>
           <button
             onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1.5 text-small text-text-secondary hover:text-text-primary transition-colors"
+            className="flex items-center gap-1.5 text-body-s text-text-2 hover:text-text transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)]"
           >
             {expanded ? (
               <ChevronUp className="h-3.5 w-3.5" />
@@ -216,17 +220,17 @@ export function ContentScorePanel({
           {expanded && (
             <div className="mt-3 space-y-2">
               {result.top_strength && (
-                <div className="flex gap-2 text-small">
-                  <span className="text-success shrink-0">Strength:</span>
-                  <span className="text-text-secondary">
+                <div className="flex gap-2 text-body-s">
+                  <span className="text-teal shrink-0">Strength:</span>
+                  <span className="text-text-2">
                     {result.top_strength}
                   </span>
                 </div>
               )}
               {result.top_improvement && (
-                <div className="flex gap-2 text-small">
-                  <span className="text-warning shrink-0">Improve:</span>
-                  <span className="text-text-secondary">
+                <div className="flex gap-2 text-body-s">
+                  <span className="text-accent shrink-0">Improve:</span>
+                  <span className="text-text-2">
                     {result.top_improvement}
                   </span>
                 </div>
@@ -240,10 +244,10 @@ export function ContentScorePanel({
           <div className="flex justify-end">
             <Button
               size="sm"
-              variant="secondary"
+              variant="outline"
               onClick={() => onImprove(result.top_improvement)}
             >
-              <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+              <Sparkles className="h-3.5 w-3.5" />
               Improve with AI
             </Button>
           </div>
@@ -257,14 +261,14 @@ export function ContentScorePanel({
 export function ContentScoreBadge({ score }: { score: number }) {
   const color =
     score >= 75
-      ? "bg-success/20 text-success"
+      ? "bg-teal-soft text-teal"
       : score >= 50
-        ? "bg-warning/20 text-warning"
-        : "bg-error/20 text-error";
+        ? "bg-accent-soft text-accent"
+        : "bg-surface-2 text-danger";
 
   return (
     <span
-      className={`inline-flex items-center justify-center rounded-md px-1.5 py-0.5 text-caption font-mono font-semibold ${color}`}
+      className={`inline-flex items-center justify-center rounded-sm px-1.5 py-0.5 font-mono text-caption font-medium ${color}`}
     >
       {score}
     </span>

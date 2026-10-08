@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   Search,
   Sparkles,
-  Loader2,
   TrendingUp,
   BookOpen,
   Target,
@@ -19,7 +18,7 @@ import {
   PenLine,
   Lock,
   ArrowUpRight,
-} from "lucide-react";
+} from "@/src/components/ui/lucide-icons";
 import {
   Card,
   CardContent,
@@ -27,8 +26,9 @@ import {
   CardTitle,
 } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
-import { Button } from "@/src/components/ui/button";
+import { Button, IconButton } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
+import { EmptyState } from "@/src/components/ui/empty-state";
 import { PageHeader } from "@/src/components/layout/page-header";
 import { ExpectationBanner } from "@/src/components/ui/expectation-banner";
 
@@ -82,16 +82,16 @@ interface KeywordResult {
 // ---------- helpers ----------
 
 const intentConfig: Record<string, { label: string; color: string }> = {
-  informational:  { label: "Info",     color: "text-info bg-info/10 border-info/20"         },
-  navigational:   { label: "Nav",      color: "text-text-secondary bg-surface-2 border-border-default" },
-  commercial:     { label: "Research", color: "text-warning bg-warning/10 border-warning/20" },
-  transactional:  { label: "Buy",      color: "text-success bg-success/10 border-success/20" },
+  informational:  { label: "Learning", color: "text-text-2 bg-surface-2" },
+  navigational:   { label: "Looking",  color: "text-text-2 bg-surface-2" },
+  commercial:     { label: "Comparing", color: "text-text-2 bg-surface-2" },
+  transactional:  { label: "Buying",   color: "text-teal bg-teal-soft" },
 };
 
 const difficultyConfig: Record<string, { color: string; dot: string }> = {
-  low:    { color: "text-success",          dot: "bg-success"  },
-  medium: { color: "text-warning",          dot: "bg-warning"  },
-  high:   { color: "text-error",            dot: "bg-error"    },
+  low:    { color: "text-teal",          dot: "bg-teal"  },
+  medium: { color: "text-text-2",          dot: "bg-accent"  },
+  high:   { color: "text-text-2",            dot: "bg-danger"    },
 };
 
 function DifficultyBadge({ level }: { level: "low" | "medium" | "high" }) {
@@ -99,7 +99,7 @@ function DifficultyBadge({ level }: { level: "low" | "medium" | "high" }) {
   return (
     <span className={`inline-flex items-center gap-1.5 text-caption ${cfg.color}`}>
       <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
-      {level}
+      {level} difficulty
     </span>
   );
 }
@@ -107,7 +107,7 @@ function DifficultyBadge({ level }: { level: "low" | "medium" | "high" }) {
 function IntentBadge({ intent }: { intent: string }) {
   const cfg = intentConfig[intent] ?? intentConfig.informational;
   return (
-    <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-caption font-medium ${cfg.color}`}>
+    <span className={`inline-flex h-[22px] items-center rounded-sm px-2 font-mono text-[11px] font-medium uppercase tracking-wide ${cfg.color}`}>
       {cfg.label}
     </span>
   );
@@ -260,10 +260,10 @@ export default function KeywordsPage({
           const parsed = parseJsonResponse(fullText) as KeywordResult;
           setResult(parsed);
           setActiveTab("primary");
-          toast("Keyword research complete!", "success");
+          toast("Keywords ready", "success");
         } catch (parseErr) {
           console.warn("[keywords] parse failed:", parseErr, "raw head:", fullText.slice(0, 300));
-          toast("Results came through but formatting looked off. Check raw output.", "warning");
+          toast("The results came back in the wrong shape. Try again.", "warning");
         }
       }
     } catch (err) {
@@ -295,18 +295,18 @@ export default function KeywordsPage({
   return (
     <div>
       <PageHeader
-        title="Keyword Research"
-        description="Discover high-value keywords and content clusters powered by AI"
+        title="Keyword Finder"
+        description="Find the searches worth writing for, grouped into topics"
       />
 
 
       <ExpectationBanner
         storageKey="conduikt-expect-keywords"
-        message="Keyword research is the starting point, not the finish line. Rankings come from publishing quality content around these keywords consistently over weeks and months."
+        message="Finding keywords is the start, not the finish. You rank by publishing good content around them, week after week."
         details={[
-          "Target low-difficulty keywords first for quicker wins, then build up to competitive ones.",
-          "Use the 'Blog' button on any keyword to start writing content around it right away.",
-          "Revisit your keyword strategy monthly — search trends shift, and new opportunities emerge.",
+          "Go after low-difficulty keywords first for quick wins, then build up to harder ones.",
+          "Use the Blog button on any keyword to start writing about it right away.",
+          "Look again every month. Searches change and new chances appear.",
         ]}
       />
 
@@ -314,7 +314,7 @@ export default function KeywordsPage({
       <form onSubmit={handleGenerate} className="mb-8">
         <div className="relative flex gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary pointer-events-none" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-3 pointer-events-none" />
             <input
               ref={inputRef}
               type="text"
@@ -322,20 +322,20 @@ export default function KeywordsPage({
               onChange={(e) => setSeedInput(e.target.value)}
               onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
               onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-              placeholder="Enter a seed keyword or topic…"
-              className="w-full rounded-lg border border-border-default bg-surface-1 pl-10 pr-4 py-3 text-body text-text-primary placeholder-text-tertiary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition-colors"
+              placeholder="Enter a topic or keyword…"
+              className="w-full rounded-md border border-line-strong bg-surface py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent pl-10 pr-4"
             />
             {/* Autocomplete dropdown */}
             {showSuggestions && suggestions.length > 0 && (
-              <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-lg border border-border-default bg-surface-2 shadow-elevated overflow-hidden">
+              <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-md border border-line bg-surface shadow-[var(--shadow-float)] overflow-hidden">
                 {suggestions.map((s) => (
                   <button
                     key={s}
                     type="button"
                     onMouseDown={() => selectSuggestion(s)}
-                    className="flex items-center gap-2 w-full px-4 py-2.5 text-body text-text-secondary hover:bg-surface-3 hover:text-text-primary transition-colors text-left"
+                    className="flex items-center gap-2 w-full px-4 py-2.5 text-body text-text-2 hover:bg-surface-2 hover:text-text transition-colors delay-[var(--hover-delay)] duration-[var(--duration-fast)] text-left"
                   >
-                    <Search className="h-3.5 w-3.5 shrink-0 text-text-tertiary" />
+                    <Search className="h-3.5 w-3.5 shrink-0 text-text-3" />
                     {s}
                   </button>
                 ))}
@@ -343,12 +343,8 @@ export default function KeywordsPage({
             )}
           </div>
           <Button type="submit" disabled={generating || !seedInput.trim()}>
-            {generating ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Sparkles className="h-4 w-4" />
-            )}
-            {generating ? "Researching…" : "Research"}
+            {!generating && <Sparkles className="h-4 w-4" />}
+            {generating ? "Finding…" : "Find keywords"}
           </Button>
         </div>
       </form>
@@ -356,31 +352,29 @@ export default function KeywordsPage({
       {/* Generating indicator */}
       {generating && !result && (
         <Card className="mb-8">
-          <CardContent className="py-10 flex flex-col items-center gap-3 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-muted">
-              <Loader2 className="h-6 w-6 text-accent animate-spin" />
-            </div>
-            <p className="text-body font-semibold text-text-primary">
-              Analysing keyword opportunities...
+          <CardContent className="flex flex-col items-center gap-3 text-center">
+            <p className="flex items-center gap-2 text-title text-text">
+              <span className="live-dot" aria-hidden />
+              Finding keywords…
             </p>
-            <p className="text-small text-text-tertiary max-w-sm">
-              Finding clusters, long-tail opportunities, and quick wins. This usually takes 20-30 seconds.
+            <p className="text-body-s text-text-3 max-w-sm">
+              Grouping topics, longer searches and quick wins. This usually takes 20 to 30 seconds.
             </p>
           </CardContent>
         </Card>
       )}
 
       {!generating && !result && rawText && (
-        <Card className="mb-8 border-warning/30">
-          <CardContent className="py-6 space-y-2">
-            <p className="text-small text-text-primary font-medium">
-              We got a response but couldn&apos;t format it. Try regenerating.
+        <Card className="mb-8 border-accent">
+          <CardContent className="space-y-2">
+            <p className="text-body-s text-text font-medium">
+              We got an answer but couldn&apos;t read it. Press Find keywords to try again.
             </p>
-            <details className="text-small">
-              <summary className="cursor-pointer text-text-tertiary hover:text-text-secondary">
+            <details className="text-body-s">
+              <summary className="cursor-pointer text-text-3 hover:text-text">
                 Show raw output
               </summary>
-              <pre className="mt-2 whitespace-pre-wrap text-caption text-text-secondary font-mono break-words max-h-[320px] overflow-y-auto">
+              <pre className="mt-2 whitespace-pre-wrap text-caption text-text-2 font-mono break-words max-h-[320px] overflow-y-auto">
                 {rawText}
               </pre>
             </details>
@@ -393,11 +387,11 @@ export default function KeywordsPage({
         <div className="space-y-6">
           {/* Priority quick-wins */}
           {result.priority_order?.length > 0 && (
-            <Card className="border-accent/30 animate-in">
+            <Card emphasis className="animate-in">
               <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-h3">
-                  <Zap className="h-5 w-5 text-accent" />
-                  Top 5 Priority Keywords
+                <CardTitle className="flex items-center gap-2 text-heading">
+                  <Zap className="h-4 w-4 text-accent" />
+                  Start with these 5
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -405,19 +399,21 @@ export default function KeywordsPage({
                   {result.priority_order.map((term, i) => (
                     <li
                       key={i}
-                      className="flex items-center gap-3 rounded-lg border border-border-default bg-surface-0 px-4 py-3 animate-in"
+                      className="flex items-center gap-3 rounded-md border border-line bg-ground px-4 py-3 animate-in"
                       style={{ animationDelay: `${i * 60}ms` }}
                     >
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/10 text-caption font-bold text-accent">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-2 font-mono text-caption text-text-2">
                         {i + 1}
                       </span>
-                      <span className="flex-1 text-body text-text-primary font-medium">{term}</span>
-                      <button
+                      <span className="flex-1 text-title text-text">{term}</span>
+                      <IconButton
+                        size="sm"
+                        label={`Copy "${term}"`}
                         onClick={() => copy(term, `prio-${i}`)}
-                        className="p-1.5 rounded-md text-text-tertiary hover:text-text-primary hover:bg-surface-2 transition-colors"
+                        className="text-text-3"
                       >
-                        {copied === `prio-${i}` ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
-                      </button>
+                        {copied === `prio-${i}` ? <Check className="h-3.5 w-3.5 text-teal" /> : <Copy className="h-3.5 w-3.5" />}
+                      </IconButton>
                     </li>
                   ))}
                 </ol>
@@ -427,12 +423,12 @@ export default function KeywordsPage({
 
           {/* Competitor gap */}
           {result.competitor_gap && (
-            <Card className="animate-in bg-surface-1" style={{ animationDelay: "60ms" }}>
-              <CardContent className="py-4 flex items-start gap-3">
-                <TrendingUp className="h-5 w-5 text-accent-secondary shrink-0 mt-0.5" />
+            <Card className="animate-in" style={{ animationDelay: "60ms" }}>
+              <CardContent className="flex items-start gap-3">
+                <TrendingUp className="h-4 w-4 text-text-3 shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-caption text-text-tertiary mb-1">Competitor Gap</p>
-                  <p className="text-body text-text-secondary">{result.competitor_gap}</p>
+                  <p className="text-label text-text-3 mb-1.5">Where competitors are missing</p>
+                  <p className="text-body text-text-2">{result.competitor_gap}</p>
                 </div>
               </CardContent>
             </Card>
@@ -441,25 +437,27 @@ export default function KeywordsPage({
           {/* Tabs */}
           <div className="animate-in" style={{ animationDelay: "120ms" }}>
             {/* Tab bar */}
-            <div className="flex gap-1 rounded-lg border border-border-default bg-surface-0 p-1 mb-4 overflow-x-auto">
+            <div role="tablist" className="flex gap-1 rounded-md border border-line bg-surface p-1 mb-4 overflow-x-auto">
               {([
-                { key: "primary",   label: "Primary",    count: primaryCount,   icon: Target       },
-                { key: "longtail",  label: "Long-tail",  count: longtailCount,  icon: Search       },
-                { key: "questions", label: "Questions",  count: questionCount,  icon: HelpCircle   },
-                { key: "clusters",  label: "Clusters",   count: clusterCount,   icon: BookOpen     },
+                { key: "primary",   label: "Main",          count: primaryCount,   icon: Target       },
+                { key: "longtail",  label: "Longer searches", count: longtailCount,  icon: Search       },
+                { key: "questions", label: "Questions",     count: questionCount,  icon: HelpCircle   },
+                { key: "clusters",  label: "Topics",        count: clusterCount,   icon: BookOpen     },
               ] as const).map((tab) => (
                 <button
                   key={tab.key}
+                  role="tab"
+                  aria-selected={activeTab === tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`flex items-center gap-2 whitespace-nowrap rounded-md px-3 py-1.5 text-small font-medium transition-colors shrink-0 ${
+                  className={`flex items-center gap-2 whitespace-nowrap rounded-md px-3 py-1.5 text-body-s font-medium transition-colors delay-[var(--hover-delay)] duration-[var(--duration-fast)] shrink-0 ${
                     activeTab === tab.key
-                      ? "bg-surface-2 text-accent"
-                      : "text-text-secondary hover:text-text-primary hover:bg-surface-2"
+                      ? "bg-ink text-ink-text"
+                      : "text-text-2 hover:text-text hover:bg-surface-2"
                   }`}
                 >
                   <tab.icon className="h-3.5 w-3.5" />
                   {tab.label}
-                  <span className="rounded-full bg-surface-3 px-1.5 py-0.5 text-caption text-text-tertiary">
+                  <span className="font-mono text-caption opacity-70">
                     {tab.count}
                   </span>
                 </button>
@@ -474,17 +472,17 @@ export default function KeywordsPage({
                   return (
                     <div
                       key={i}
-                      className="rounded-lg border border-border-default bg-surface-1 p-4 animate-in"
+                      className="rounded-lg border border-line bg-surface p-4 animate-in"
                       style={{ animationDelay: `${i * 40}ms` }}
                     >
                       {gated ? (
                         <div className="relative">
-                          <div aria-hidden className="select-none pointer-events-none blur-sm space-y-1.5">
-                            <span className="text-body font-medium text-text-primary">Lorem ipsum keyword opportunity</span>
+                          <div aria-hidden className="select-none pointer-events-none  space-y-1.5">
+                            <span className="text-title text-text">Lorem ipsum keyword opportunity</span>
                             <div className="flex items-center gap-3">
-                              <span className="rounded-md border px-1.5 py-0.5 text-caption text-text-tertiary">Info</span>
-                              <span className="text-caption text-text-tertiary">medium</span>
-                              <span className="text-caption text-text-tertiary">1,200/mo</span>
+                              <span className="rounded-sm bg-surface-2 px-2 py-0.5 text-caption text-text-3">Learning</span>
+                              <span className="text-caption text-text-3">medium</span>
+                              <span className="text-caption text-text-3">1,200/mo</span>
                             </div>
                           </div>
                         </div>
@@ -492,48 +490,49 @@ export default function KeywordsPage({
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                              <span className="text-body font-medium text-text-primary">{kw.term}</span>
+                              <span className="text-title text-text">{kw.term}</span>
                               {kw.quick_win && (
-                                <span className="inline-flex items-center gap-1 rounded-md bg-success/10 border border-success/20 px-1.5 py-0.5 text-caption text-success">
+                                <Badge variant="success">
                                   <Zap className="h-3 w-3" /> Quick win
-                                </span>
+                                </Badge>
                               )}
                             </div>
                             <div className="flex items-center gap-3 flex-wrap">
                               <IntentBadge intent={kw.intent} />
                               <DifficultyBadge level={kw.difficulty} />
-                              <span className="text-caption text-text-tertiary">{kw.estimated_volume}/mo</span>
-                              <span className="text-caption text-text-tertiary">→ {kw.suggested_format.replace(/_/g, " ")}</span>
+                              <span className="font-mono text-caption text-text-3">{kw.estimated_volume}/mo</span>
+                              <span className="text-caption text-text-3">→ {kw.suggested_format.replace(/_/g, " ")}</span>
                             </div>
-                            <p className="mt-2 text-small text-text-secondary">{kw.rationale}</p>
+                            <p className="mt-2 text-body-s text-text-2">{kw.rationale}</p>
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
                             <Link
                               href={`/projects/${projectId}/blog?keyword=${encodeURIComponent(kw.term)}`}
-                              className="flex items-center gap-1 rounded-md border border-border-default bg-surface-0 px-2 py-1 text-caption text-text-secondary hover:border-accent/40 hover:text-accent transition-colors whitespace-nowrap"
-                              title="Write blog post targeting this keyword"
+                              className="flex h-8 items-center gap-1 rounded-md border border-line bg-surface px-2.5 text-caption text-text-2 transition-colors delay-[var(--hover-delay)] duration-[var(--duration-fast)] hover:border-accent hover:text-text whitespace-nowrap"
+                              title="Write a blog post for this keyword"
                             >
                               <PenLine className="h-3 w-3" />
                               Blog
                             </Link>
-                            <button
-                              onClick={() => copy(kw.term, `kw-${i}`)}
-                              className="p-1.5 rounded-md text-text-tertiary hover:text-text-primary hover:bg-surface-2 transition-colors"
+                            <IconButton
+                              size="sm"
+                              label="Copy keyword"
                               title="Copy keyword"
+                              onClick={() => copy(kw.term, `kw-${i}`)}
+                              className="text-text-3"
                             >
-                              {copied === `kw-${i}` ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
-                            </button>
-                            <button
-                              onClick={() => toggleSave(kw.term)}
-                              className={`p-1.5 rounded-md transition-colors ${
-                                saved.has(kw.term)
-                                  ? "text-accent bg-accent-muted"
-                                  : "text-text-tertiary hover:text-accent hover:bg-accent-muted"
-                              }`}
+                              {copied === `kw-${i}` ? <Check className="h-3.5 w-3.5 text-teal" /> : <Copy className="h-3.5 w-3.5" />}
+                            </IconButton>
+                            <IconButton
+                              size="sm"
+                              label={saved.has(kw.term) ? "Remove from saved" : "Save keyword"}
                               title={saved.has(kw.term) ? "Remove from saved" : "Save keyword"}
+                              aria-pressed={saved.has(kw.term)}
+                              onClick={() => toggleSave(kw.term)}
+                              className={saved.has(kw.term) ? "text-teal" : "text-text-3"}
                             >
                               {saved.has(kw.term) ? <Check className="h-3.5 w-3.5" /> : <Save className="h-3.5 w-3.5" />}
-                            </button>
+                            </IconButton>
                           </div>
                         </div>
                       )}
@@ -541,11 +540,11 @@ export default function KeywordsPage({
                   );
                 })}
                 {plan === "free" && result.primary_keywords.length > FREE_PRIMARY_LIMIT && (
-                  <div className="rounded-lg border border-dashed border-accent/40 bg-accent-muted/20 p-5 flex items-center justify-between gap-4">
+                  <div className="rounded-lg border border-accent bg-surface p-5 flex flex-wrap items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <Lock className="h-5 w-5 text-accent shrink-0" />
-                      <p className="text-small text-text-secondary">
-                        <strong>{result.primary_keywords.length - FREE_PRIMARY_LIMIT}</strong> more keywords hidden. Upgrade to Pro to see all results.
+                      <Lock className="h-4 w-4 text-accent shrink-0" />
+                      <p className="text-body-s text-text-2">
+                        <span className="font-mono text-text">{result.primary_keywords.length - FREE_PRIMARY_LIMIT}</span> more keywords hidden. Upgrade to Pro to see them all.
                       </p>
                     </div>
                     <Button size="sm" asChild>
@@ -565,28 +564,30 @@ export default function KeywordsPage({
                 {result.long_tail_keywords.map((kw, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between gap-4 rounded-lg border border-border-default bg-surface-1 px-4 py-3 animate-in"
+                    className="flex items-center justify-between gap-4 rounded-lg border border-line bg-surface px-4 py-3 animate-in"
                     style={{ animationDelay: `${i * 30}ms` }}
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-body text-text-primary font-medium truncate">{kw.term}</p>
-                      <div className="flex items-center gap-3 mt-0.5">
+                      <p className="text-title text-text truncate">{kw.term}</p>
+                      <div className="flex flex-wrap items-center gap-3 mt-1">
                         <IntentBadge intent={kw.intent} />
                         <DifficultyBadge level={kw.difficulty} />
-                        <span className="text-caption text-text-tertiary">{kw.estimated_volume}/mo</span>
+                        <span className="font-mono text-caption text-text-3">{kw.estimated_volume}/mo</span>
                         {kw.parent_keyword && (
-                          <span className="text-caption text-text-tertiary">
+                          <span className="text-caption text-text-3">
                             <ChevronRight className="h-3 w-3 inline" /> {kw.parent_keyword}
                           </span>
                         )}
                       </div>
                     </div>
-                    <button
+                    <IconButton
+                      size="sm"
+                      label="Copy keyword"
                       onClick={() => copy(kw.term, `lt-${i}`)}
-                      className="p-1.5 rounded-md text-text-tertiary hover:text-text-primary hover:bg-surface-2 transition-colors shrink-0"
+                      className="text-text-3"
                     >
-                      {copied === `lt-${i}` ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
-                    </button>
+                      {copied === `lt-${i}` ? <Check className="h-3.5 w-3.5 text-teal" /> : <Copy className="h-3.5 w-3.5" />}
+                    </IconButton>
                   </div>
                 ))}
               </div>
@@ -598,26 +599,26 @@ export default function KeywordsPage({
                 {result.question_keywords.map((q, i) => (
                   <div
                     key={i}
-                    className="flex items-start justify-between gap-4 rounded-lg border border-border-default bg-surface-1 px-4 py-3 animate-in"
+                    className="flex items-start justify-between gap-4 rounded-lg border border-line bg-surface px-4 py-3 animate-in"
                     style={{ animationDelay: `${i * 30}ms` }}
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-body text-text-primary font-medium">{q.question}</p>
+                      <p className="text-title text-text">{q.question}</p>
                       <div className="flex items-center gap-2 mt-1">
                         {q.snippet_opportunity && (
-                          <span className="inline-flex items-center gap-1 rounded-md bg-info/10 border border-info/20 px-1.5 py-0.5 text-caption text-info">
-                            Featured snippet
-                          </span>
+                          <Badge variant="info">Can win the answer box</Badge>
                         )}
-                        <span className="text-caption text-text-tertiary">cluster: {q.cluster}</span>
+                        <span className="text-caption text-text-3">Topic: {q.cluster}</span>
                       </div>
                     </div>
-                    <button
+                    <IconButton
+                      size="sm"
+                      label="Copy question"
                       onClick={() => copy(q.question, `q-${i}`)}
-                      className="p-1.5 rounded-md text-text-tertiary hover:text-text-primary hover:bg-surface-2 transition-colors shrink-0 mt-0.5"
+                      className="text-text-3"
                     >
-                      {copied === `q-${i}` ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
-                    </button>
+                      {copied === `q-${i}` ? <Check className="h-3.5 w-3.5 text-teal" /> : <Copy className="h-3.5 w-3.5" />}
+                    </IconButton>
                   </div>
                 ))}
               </div>
@@ -633,32 +634,33 @@ export default function KeywordsPage({
                     style={{ animationDelay: `${i * 60}ms` }}
                   >
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-h3 flex items-center gap-2">
-                        <BookOpen className="h-4 w-4 text-accent" />
+                      <CardTitle className="text-heading flex items-center gap-2">
+                        <BookOpen className="h-4 w-4 text-text-3" />
                         {cluster.pillar}
                       </CardTitle>
-                      <p className="text-small text-text-secondary mt-1">
-                        Pillar page: <span className="text-text-primary font-medium">{cluster.pillar_page_title}</span>
+                      <p className="text-body-s text-text-2 mt-1">
+                        Main page: <span className="text-text font-medium">{cluster.pillar_page_title}</span>
                       </p>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-caption text-text-tertiary mb-2">Cluster keywords</p>
+                      <p className="text-label text-text-3 mb-2">Keywords</p>
                       <div className="flex flex-wrap gap-1.5 mb-4">
                         {cluster.cluster_keywords.map((kw, j) => (
                           <button
                             key={j}
                             onClick={() => copy(kw, `ck-${i}-${j}`)}
-                            className="rounded-md border border-border-default bg-surface-0 px-2.5 py-1 text-small text-text-secondary hover:border-accent/40 hover:text-text-primary transition-colors"
+                            title="Copy"
+                            className="rounded-md border border-line bg-ground px-2.5 py-1 text-body-s text-text-2 transition-colors delay-[var(--hover-delay)] duration-[var(--duration-fast)] hover:border-accent hover:text-text"
                           >
                             {kw}
                           </button>
                         ))}
                       </div>
-                      <p className="text-caption text-text-tertiary mb-2">Cluster pages</p>
+                      <p className="text-label text-text-3 mb-2">Pages to write</p>
                       <ul className="space-y-1">
                         {cluster.cluster_page_titles.map((title, j) => (
-                          <li key={j} className="flex items-start gap-2 text-small text-text-secondary">
-                            <ChevronRight className="h-3.5 w-3.5 shrink-0 mt-0.5 text-text-tertiary" />
+                          <li key={j} className="flex items-start gap-2 text-body-s text-text-2">
+                            <ChevronRight className="h-3.5 w-3.5 shrink-0 mt-0.5 text-text-3" />
                             {title}
                           </li>
                         ))}
@@ -672,17 +674,17 @@ export default function KeywordsPage({
 
           {/* Saved keywords export hint */}
           {saved.size > 0 && (
-            <Card className="border-accent/30 animate-in">
-              <CardContent className="py-4 flex items-center justify-between">
+            <Card className="animate-in">
+              <CardContent className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Save className="h-4 w-4 text-accent" />
-                  <span className="text-body text-text-primary">
-                    <strong>{saved.size}</strong> keywords saved
+                  <Save className="h-4 w-4 text-teal" />
+                  <span className="text-body text-text">
+                    <span className="font-mono">{saved.size}</span> keywords saved
                   </span>
                 </div>
                 <button
                   onClick={() => copy(Array.from(saved).join("\n"), "saved-all")}
-                  className="flex items-center gap-1.5 text-small text-accent hover:text-accent-hover transition-colors"
+                  className="hover-link flex items-center gap-1.5 text-body-s text-accent hover:text-accent-hover"
                 >
                   {copied === "saved-all" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                   Copy all saved
@@ -695,17 +697,10 @@ export default function KeywordsPage({
 
       {/* Empty state */}
       {!result && !generating && (
-        <Card className="border-dashed border-border-strong">
-          <CardContent className="flex flex-col items-center py-16 text-center">
-            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent-muted">
-              <Search className="h-7 w-7 text-accent" />
-            </div>
-            <h3 className="text-h3 text-text-primary mb-2">Find keyword opportunities</h3>
-            <p className="text-body text-text-secondary max-w-md">
-              Enter a seed keyword above to get AI-powered keyword clusters, long-tail opportunities, question keywords, and content cluster recommendations.
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={<Search className="h-8 w-8" />}
+          title="No keywords yet. Enter a topic above to see the searches worth writing for, grouped into topics."
+        />
       )}
     </div>
   );

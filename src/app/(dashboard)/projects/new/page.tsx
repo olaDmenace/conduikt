@@ -4,15 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Globe,
   ArrowRight,
   ArrowLeft,
-  Sparkles,
-  Loader2,
   CheckCircle2,
-  ClipboardList,
   ArrowUpRight,
-} from "lucide-react";
+} from "@/src/components/ui/lucide-icons";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -197,7 +193,7 @@ export default function NewProjectPage() {
 
     const newProjectId = data.id;
     setProjectId(newProjectId);
-    toast("Project created successfully!", "success");
+    toast("Project created", "success");
     setStep("audit");
     setLoading(false);
 
@@ -232,7 +228,7 @@ export default function NewProjectPage() {
       }
 
       setAuditProgress({ fetching: "done", analyzing: "done", saving: "done" });
-      toast("SEO audit complete!", "success");
+      toast("Site audit finished", "success");
       setTimeout(() => router.push(`/projects/${pid}/audit`), 1500);
     } catch {
       setAuditProgress((p) => ({ ...p, fetching: "error" }));
@@ -249,7 +245,7 @@ export default function NewProjectPage() {
   return (
     <div className="max-w-2xl mx-auto">
       <PageHeader
-        title="New Project"
+        title="New project"
         description="Connect your website to get started"
       />
 
@@ -258,12 +254,12 @@ export default function NewProjectPage() {
         {STEPS.map((s, i) => (
           <div key={s} className="flex items-center gap-3">
             <div
-              className={`flex h-8 w-8 items-center justify-center rounded-full text-[0.8125rem] font-medium transition-colors ${
+              className={`flex h-8 w-8 items-center justify-center rounded-full font-mono text-body-s transition-colors ${
                 step === s
-                  ? "bg-gradient-to-br from-[#D9663A] to-[#B24E27] text-on-accent"
+                  ? "bg-accent text-white"
                   : i < stepIndex
-                  ? "bg-success/20 text-success"
-                  : "bg-surface-2 text-text-tertiary"
+                  ? "bg-teal-soft text-teal"
+                  : "bg-surface-2 text-text-3"
               }`}
             >
               {i < stepIndex ? (
@@ -275,7 +271,7 @@ export default function NewProjectPage() {
             {i < STEPS.length - 1 && (
               <div
                 className={`h-px w-10 ${
-                  i < stepIndex ? "bg-success/40" : "bg-border-default"
+                  i < stepIndex ? "bg-teal" : "bg-line"
                 }`}
               />
             )}
@@ -287,21 +283,16 @@ export default function NewProjectPage() {
       {step === "url" && (
         <Card className="animate-in">
           <CardContent>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="rounded-lg bg-accent-muted p-2">
-                <Globe className="h-5 w-5 text-accent" />
-              </div>
-              <div>
-                <h2 className="text-h3">Enter your website</h2>
-                <p className="text-small text-text-secondary">
-                  We&apos;ll create your project and analyze your site
-                </p>
-              </div>
+            <div className="mb-6 space-y-1">
+              <h2 className="text-heading text-text">Enter your website</h2>
+              <p className="text-body-s text-text-2">
+                We&apos;ll create your project and check your site
+              </p>
             </div>
             <form onSubmit={handleStep1} className="space-y-4">
               <Input
                 label="Project name"
-                placeholder="My SaaS Product"
+                placeholder="My product"
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
                 required
@@ -321,7 +312,7 @@ export default function NewProjectPage() {
               />
 
               {error && (
-                <div className="rounded-lg border border-error/20 bg-error/10 px-4 py-3 text-small text-error">
+                <div className="rounded-lg border border-danger bg-surface-2 px-4 py-3 text-body-s text-danger">
                   {error}
                 </div>
               )}
@@ -341,16 +332,11 @@ export default function NewProjectPage() {
       {step === "setup" && (
         <Card className="animate-in">
           <CardContent>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="rounded-lg bg-accent-muted p-2">
-                <ClipboardList className="h-5 w-5 text-accent" />
-              </div>
-              <div>
-                <h2 className="text-h3">Tell us about your marketing</h2>
-                <p className="text-small text-text-secondary">
-                  Question {currentQ + 1} of {QUESTIONS.length}
-                </p>
-              </div>
+            <div className="mb-6 space-y-1">
+              <h2 className="text-heading text-text">Tell us about your marketing</h2>
+              <p className="text-label text-text-3">
+                Question {currentQ + 1} of {QUESTIONS.length}
+              </p>
             </div>
 
             <div className="mb-2">
@@ -363,7 +349,7 @@ export default function NewProjectPage() {
                 />
               </div>
 
-              <p className="text-body font-medium text-text-primary mb-4">
+              <p className="text-title text-text mb-4">
                 {q.question}
               </p>
 
@@ -377,24 +363,24 @@ export default function NewProjectPage() {
                       onClick={() =>
                         handleSelectOption(q.id, option, q.multi)
                       }
-                      className={`text-left rounded-xl border px-4 py-3.5 text-small font-medium transition-all duration-150 ${
+                      className={`text-left rounded-md border px-4 py-3.5 text-body transition-colors delay-[var(--hover-delay)] duration-[var(--duration-fast)] ${
                         selected
-                          ? "border-accent bg-accent/10 text-accent shadow-[0_0_0_1px_var(--accent)]"
-                          : "border-border-default bg-surface-1 text-text-secondary hover:border-border-strong hover:bg-surface-2"
+                          ? "border-accent bg-accent-soft text-text"
+                          : "border-line bg-surface text-text-2 hover:border-line-strong hover:bg-surface-2"
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         <div
-                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-${
-                            q.multi ? "md" : "full"
+                          className={`flex h-5 w-5 shrink-0 items-center justify-center ${
+                            q.multi ? "rounded-sm" : "rounded-full"
                           } border transition-colors ${
                             selected
                               ? "border-accent bg-accent"
-                              : "border-border-strong bg-surface-0"
+                              : "border-line-strong bg-ground"
                           }`}
                         >
                           {selected && (
-                            <CheckCircle2 className="h-3 w-3 text-on-accent" />
+                            <CheckCircle2 className="h-3 w-3 text-white" />
                           )}
                         </div>
                         {option}
@@ -408,7 +394,7 @@ export default function NewProjectPage() {
             <div className="flex justify-between pt-4">
               <Button
                 type="button"
-                variant="secondary"
+                variant="outline"
                 onClick={() => {
                   if (currentQ > 0) setCurrentQ(currentQ - 1);
                   else setStep("url");
@@ -445,49 +431,44 @@ export default function NewProjectPage() {
       {step === "context" && (
         <Card className="animate-in">
           <CardContent>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="rounded-lg bg-accent-muted p-2">
-                <Sparkles className="h-5 w-5 text-accent" />
-              </div>
-              <div>
-                <h2 className="text-h3">Marketing Context</h2>
-                <p className="text-small text-text-secondary">
-                  Help AI understand your business (optional)
-                </p>
-              </div>
+            <div className="mb-6 space-y-1">
+              <h2 className="text-heading text-text">About your business</h2>
+              <p className="text-body-s text-text-2">
+                Optional. It helps every agent write for your customers.
+              </p>
             </div>
             <form onSubmit={handleStep3} className="space-y-4">
               <div>
-                <label className="text-small text-text-secondary block mb-1.5">
-                  Target Audience
+                <label className="text-body-s text-text-2 block mb-1.5">
+                  Who you sell to
                 </label>
                 <textarea
                   value={targetAudience}
                   onChange={(e) => setTargetAudience(e.target.value)}
                   placeholder="Who is your ideal customer? e.g., SaaS founders looking to automate marketing..."
                   rows={3}
-                  className="w-full rounded-lg border border-border-strong bg-surface-0 px-4 py-3 text-text-primary placeholder:text-text-tertiary font-sans text-[0.9375rem] transition-all duration-150 focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-glow)] resize-none"
+                  className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent resize-none"
                 />
               </div>
               <div>
-                <label className="text-small text-text-secondary block mb-1.5">
-                  Value Proposition
+                <label className="text-body-s text-text-2 block mb-1.5">
+                  What makes you different
                 </label>
                 <textarea
                   value={valueProposition}
                   onChange={(e) => setValueProposition(e.target.value)}
                   placeholder="What makes your product unique? What problem does it solve?"
                   rows={3}
-                  className="w-full rounded-lg border border-border-strong bg-surface-0 px-4 py-3 text-text-primary placeholder:text-text-tertiary font-sans text-[0.9375rem] transition-all duration-150 focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-glow)] resize-none"
+                  className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent resize-none"
                 />
               </div>
               {error && (
-                <div className="rounded-lg border border-error/20 bg-error/10 px-4 py-3 text-small text-error">
+                <div className="rounded-lg border border-danger bg-surface-2 px-4 py-3 text-body-s text-danger">
                   <p>{error}</p>
                   {errorCode === "PROJECT_LIMIT" && (
                     <Button size="sm" className="mt-3" asChild>
                       <Link href="/settings/billing">
-                        Upgrade Plan
+                        Upgrade plan
                         <ArrowUpRight className="h-3.5 w-3.5" />
                       </Link>
                     </Button>
@@ -498,7 +479,7 @@ export default function NewProjectPage() {
               <div className="flex justify-between pt-2">
                 <Button
                   type="button"
-                  variant="secondary"
+                  variant="outline"
                   onClick={() => setStep("setup")}
                 >
                   <ArrowLeft className="h-4 w-4" />
@@ -506,15 +487,15 @@ export default function NewProjectPage() {
                 </Button>
                 <Button type="submit" disabled={loading}>
                   {loading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    "Creating…"
                   ) : websiteUrl ? (
                     <>
-                      Create &amp; Run Audit
+                      Create and check my site
                       <ArrowRight className="h-4 w-4" />
                     </>
                   ) : (
                     <>
-                      Create Project
+                      Create project
                       <ArrowRight className="h-4 w-4" />
                     </>
                   )}
@@ -528,29 +509,33 @@ export default function NewProjectPage() {
       {/* Step 4: Running Audit */}
       {step === "audit" && (
         <Card className="animate-in">
-          <CardContent className="flex flex-col items-center py-12 text-center">
-            <div className="mb-6 relative">
-              <div className="h-20 w-20 rounded-full border-2 border-accent/20 flex items-center justify-center">
-                {auditProgress.saving === "done" ? (
-                  <CheckCircle2 className="h-8 w-8 text-success" />
-                ) : (
-                  <Loader2 className="h-8 w-8 text-accent animate-spin" />
-                )}
-              </div>
-            </div>
-            <h2 className="text-h2 text-text-primary">
-              {auditProgress.saving === "done"
-                ? "Audit Complete!"
-                : "Running your first audit"}
-            </h2>
-            <p className="mt-2 text-body text-text-secondary max-w-md">
+          <CardContent className="flex flex-col items-center text-center">
+            <div className="mb-4 flex items-center gap-2 text-label text-text-3">
               {auditProgress.saving === "done" ? (
-                "Redirecting to your audit results..."
+                <>
+                  <CheckCircle2 className="h-4 w-4 text-teal" />
+                  <span className="text-teal">Done</span>
+                </>
               ) : (
                 <>
-                  Analyzing{" "}
-                  <span className="text-accent">{websiteUrl}</span> for SEO
-                  issues and content opportunities.
+                  <span className="live-dot" aria-hidden />
+                  Running
+                </>
+              )}
+            </div>
+            <h2 className="text-heading text-text">
+              {auditProgress.saving === "done"
+                ? "Audit finished"
+                : "Checking your site"}
+            </h2>
+            <p className="mt-2 text-body text-text-2 max-w-md">
+              {auditProgress.saving === "done" ? (
+                "Taking you to your results…"
+              ) : (
+                <>
+                  Checking{" "}
+                  <span className="font-mono text-text">{websiteUrl}</span> for
+                  search issues and things to write about.
                 </>
               )}
             </p>
@@ -558,19 +543,19 @@ export default function NewProjectPage() {
               {(
                 [
                   { key: "fetching", label: "Fetching page content" },
-                  { key: "analyzing", label: "Analyzing your project" },
+                  { key: "analyzing", label: "Checking your site" },
                   { key: "saving", label: "Saving results" },
                 ] as const
               ).map((item) => (
                 <div
                   key={item.key}
-                  className="flex items-center justify-between text-small"
+                  className="flex items-center justify-between text-body-s"
                 >
                   <span
                     className={
                       auditProgress[item.key] === "pending"
-                        ? "text-text-tertiary"
-                        : "text-text-secondary"
+                        ? "text-text-3"
+                        : "text-text-2"
                     }
                   >
                     {item.label}
@@ -578,18 +563,18 @@ export default function NewProjectPage() {
                   <span
                     className={
                       auditProgress[item.key] === "done"
-                        ? "text-success"
+                        ? "text-teal"
                         : auditProgress[item.key] === "running"
                         ? "text-accent"
                         : auditProgress[item.key] === "error"
-                        ? "text-error"
-                        : "text-text-tertiary"
+                        ? "text-danger"
+                        : "text-text-3"
                     }
                   >
                     {auditProgress[item.key] === "done"
                       ? "Done"
                       : auditProgress[item.key] === "running"
-                      ? "Running..."
+                      ? "Running…"
                       : auditProgress[item.key] === "error"
                       ? "Failed"
                       : "Pending"}

@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { AlertTriangle, RotateCcw, LayoutDashboard, Mail } from "lucide-react";
+import { RotateCcw, LayoutDashboard, Mail } from "@/src/components/ui/lucide-icons";
+import { Button } from "@/src/components/ui/button";
 
 export default function GlobalError({
   error,
@@ -16,77 +18,63 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface-0 px-6 py-16">
+    <div className="flex min-h-screen items-center justify-center bg-ground px-4 py-16">
       <div className="w-full max-w-md text-center">
         {/* Conduikt mark */}
         <Link
           href="/"
-          className="mx-auto mb-10 inline-flex items-center gap-2"
+          className="mx-auto mb-10 inline-flex items-center gap-2.5 text-text"
           aria-label="Conduikt home"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#D9663A] to-[#B24E27]">
-            <span className="text-sm font-bold text-on-accent">C</span>
-          </div>
-          <span className="font-display text-lg text-text-primary">
+          <Image src="/conduikt-icon.png" alt="" width={32} height={32} className="h-8 w-8" />
+          <span className="font-display text-lg font-medium tracking-tight">
             Conduikt
           </span>
         </Link>
 
-        {/* Error badge */}
-        <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl border border-accent/20 bg-accent-muted">
-          <AlertTriangle
-            className="h-7 w-7 text-accent"
-            strokeWidth={1.75}
-          />
-        </div>
-
-        <h1 className="text-h1 text-text-primary mb-3">
-          Something went sideways
+        <p className="mb-3 text-label text-danger">Error</p>
+        <h1 className="mb-4 text-display-s text-text">
+          This page didn&apos;t load
         </h1>
-        <p className="text-body text-text-secondary mb-1 leading-relaxed">
-          An unexpected error tripped us up. Our team has been notified
-          automatically, and we&apos;re already looking into it.
+        <p className="mb-1 text-body text-text-2">
+          Something went wrong on our side. We&apos;ve been told about it
+          and we&apos;re looking into it.
         </p>
-        <p className="text-body text-text-secondary mb-6 leading-relaxed">
-          You can retry the action — it often works the second time — or head
-          back to your dashboard.
+        <p className="mb-6 text-body text-text-2">
+          Retry usually works. If it doesn&apos;t, go back to your dashboard.
         </p>
 
         {error.digest && (
-          <div className="mb-8 inline-flex items-center gap-2 rounded-md border border-border-subtle bg-surface-1 px-3 py-1.5">
-            <span className="text-caption text-text-tertiary uppercase tracking-wider">
+          <div className="mb-8 inline-flex items-center gap-2 rounded-md border border-line bg-surface px-3 py-1.5">
+            <span className="text-label text-text-3">
               Reference
             </span>
-            <span className="font-mono text-small text-text-secondary">
+            <span className="font-mono text-body-s text-text-2">
               {error.digest}
             </span>
           </div>
         )}
 
-        <div className="flex items-center justify-center gap-3">
-          <button
-            onClick={reset}
-            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-br from-[#D9663A] to-[#B24E27] px-5 py-2.5 text-[0.875rem] font-medium text-on-accent transition-all hover:brightness-110"
-          >
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <Button onClick={reset}>
             <RotateCcw className="h-4 w-4" />
-            Try again
-          </button>
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-2 rounded-lg border border-border-strong px-5 py-2.5 text-[0.875rem] font-medium text-text-secondary transition-all hover:bg-surface-2 hover:text-text-primary"
-          >
-            <LayoutDashboard className="h-4 w-4" />
-            Dashboard
-          </Link>
+            Retry
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/dashboard">
+              <LayoutDashboard className="h-4 w-4" />
+              Dashboard
+            </Link>
+          </Button>
         </div>
 
-        <p className="mt-10 text-small text-text-tertiary">
+        <p className="mt-10 text-body-s text-text-3">
           Still broken?{" "}
           <a
             href="mailto:hello@conduikt.com"
-            className="inline-flex items-center gap-1 text-accent hover:text-accent-hover transition-colors"
+            className="hover-link inline-flex items-center gap-1 text-accent hover:text-accent-hover"
           >
-            <Mail className="h-3.5 w-3.5" />
+            <Mail className="h-3.5 w-3.5" aria-hidden />
             hello@conduikt.com
           </a>
         </p>

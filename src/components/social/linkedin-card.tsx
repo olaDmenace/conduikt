@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ThumbsUp, MessageSquare, Repeat, Send, MoreHorizontal, Globe } from "lucide-react";
+import { ThumbsUp, MessageSquare, Repeat, Send, MoreHorizontal, Globe } from "@/src/components/ui/lucide-icons";
 import { cn } from "@/src/lib/utils/cn";
 
 /**
@@ -54,7 +54,7 @@ export function LinkedInCard({
   return (
     <article
       className={cn(
-        "rounded-lg border border-border-default bg-surface-1 overflow-hidden max-w-[555px] font-sans",
+        "rounded-lg border border-line bg-surface overflow-hidden max-w-[555px] font-sans",
         className
       )}
       aria-label="LinkedIn post preview"
@@ -71,7 +71,7 @@ export function LinkedInCard({
             />
           ) : (
             <div
-              className="h-12 w-12 rounded-full bg-surface-3 flex items-center justify-center text-text-secondary text-base font-semibold"
+              className="h-12 w-12 rounded-full bg-surface-2 flex items-center justify-center text-text-2 text-base font-semibold"
               aria-hidden
             >
               {author.name.charAt(0).toUpperCase()}
@@ -81,19 +81,19 @@ export function LinkedInCard({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-1.5">
-            <span className="text-[0.9375rem] font-semibold text-text-primary hover:underline cursor-pointer truncate">
+            <span className="text-[0.9375rem] font-semibold text-text hover:underline cursor-pointer truncate">
               {author.name}
             </span>
-            <span className="text-caption text-text-tertiary shrink-0">
+            <span className="text-caption text-text-3 shrink-0">
               · You
             </span>
           </div>
           {author.headline && (
-            <p className="text-caption text-text-tertiary line-clamp-1">
+            <p className="text-caption text-text-3 line-clamp-1">
               {author.headline}
             </p>
           )}
-          <div className="mt-0.5 flex items-center gap-1 text-[0.6875rem] text-text-tertiary">
+          <div className="mt-0.5 flex items-center gap-1 text-caption text-text-3">
             <span>{timestamp}</span>
             <span aria-hidden>·</span>
             <Globe className="h-3 w-3" aria-hidden />
@@ -102,7 +102,7 @@ export function LinkedInCard({
 
         <button
           type="button"
-          className="shrink-0 p-1 rounded-full text-text-tertiary hover:bg-surface-2"
+          className="shrink-0 rounded-md p-1 text-text-3 disabled:cursor-default"
           aria-label="More options (preview only)"
           disabled
         >
@@ -113,7 +113,7 @@ export function LinkedInCard({
       {/* Body */}
       <div className="px-4 pb-3">
         {text ? (
-          <p className="text-[0.875rem] leading-[1.45] text-text-primary whitespace-pre-wrap break-words">
+          <p className="text-[0.875rem] leading-[1.45] text-text whitespace-pre-wrap break-words">
             {displayed}
             {needsFold && !expanded && (
               <>
@@ -121,7 +121,7 @@ export function LinkedInCard({
                 <button
                   type="button"
                   onClick={() => setExpanded(true)}
-                  className="text-text-tertiary hover:text-text-primary hover:underline"
+                  className="text-text-3 hover-link hover:text-text hover:underline"
                 >
                   see more
                 </button>
@@ -129,7 +129,7 @@ export function LinkedInCard({
             )}
           </p>
         ) : (
-          <p className="text-[0.875rem] text-text-tertiary italic">
+          <p className="text-[0.875rem] text-text-3 italic">
             Your LinkedIn post will appear here as you type…
           </p>
         )}
@@ -137,11 +137,11 @@ export function LinkedInCard({
 
       {/* Media placeholder */}
       {mediaCount > 0 && (
-        <div className="mx-4 mb-3 rounded overflow-hidden border border-border-subtle grid grid-cols-1">
+        <div className="mx-4 mb-3 rounded-md overflow-hidden border border-line grid grid-cols-1">
           {Array.from({ length: Math.min(mediaCount, 4) }).map((_, i) => (
             <div
               key={i}
-              className="aspect-video bg-surface-3 flex items-center justify-center text-text-tertiary text-caption"
+              className="aspect-video bg-surface-2 flex items-center justify-center text-text-3 text-caption"
             >
               Media {i + 1}
             </div>
@@ -151,17 +151,17 @@ export function LinkedInCard({
 
       {/* Fold indicator — always show the character count so authors know
           where their post gets truncated in the feed. */}
-      <div className="mx-4 mb-2 flex items-center justify-between text-caption text-text-tertiary font-mono tabular-nums">
+      <div className="mx-4 mb-2 flex items-center justify-between text-caption text-text-3 font-mono tabular-nums">
         <span>{text.length} characters</span>
         {needsFold && (
-          <span className={cn(expanded ? "text-text-tertiary" : "text-warning")}>
-            Feed shows first {FOLD_CHARS} · rest hidden behind "see more"
+          <span className={cn(expanded ? "text-text-3" : "text-accent")}>
+            Feed shows first {FOLD_CHARS} · rest hidden behind &ldquo;see more&rdquo;
           </span>
         )}
       </div>
 
       {/* Divider */}
-      <div className="mx-4 h-px bg-border-subtle" />
+      <div className="mx-4 h-px bg-line" />
 
       {/* Reaction bar (visual only) */}
       <div className="flex items-center justify-between px-2 py-1">
@@ -175,7 +175,7 @@ export function LinkedInCard({
             key={label}
             type="button"
             disabled
-            className="flex items-center gap-1.5 px-3 py-2 rounded text-caption text-text-secondary hover:bg-surface-2 disabled:opacity-100 disabled:cursor-default"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-md text-caption text-text-2 disabled:opacity-100 disabled:cursor-default"
             aria-label={`${label} (preview only)`}
           >
             <Icon className="h-4 w-4" />

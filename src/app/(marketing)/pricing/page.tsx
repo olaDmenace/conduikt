@@ -39,14 +39,14 @@ const tiers: PricingTier[] = [
     period: "/forever",
     features: [
       `${aiAgentCountForTier("free")} AI agents (Site Audit, Social, Keyword Finder)`,
-      "5 generations / month",
+      "5 pieces of content a month",
       "1 project",
       "Email marketing — 1 audience, 100 contacts",
       "50 marketing emails / month (shared sender)",
       "Basic results — critical findings require Pro",
       "Manual copy-paste publishing",
     ],
-    cta: "Get Started Free",
+    cta: "Get started free",
     popular: false,
     ctaHref: "/signup",
   },
@@ -56,10 +56,10 @@ const tiers: PricingTier[] = [
     period: "/per month",
     features: [
       `${aiAgentCountForTier("pro")} AI agents`,
-      "250 generations / month",
+      "250 pieces of content a month",
       "5 projects",
       "Full unblurred results on every agent",
-      "Growth Playbook included",
+      "Growth Plan included",
       "Multi-channel publishing (X + LinkedIn)",
       "Email marketing — 3 audiences, 2,000 contacts each",
       "10,000 marketing emails / month",
@@ -67,7 +67,7 @@ const tiers: PricingTier[] = [
       "Saved assets library",
       "Email support",
     ],
-    cta: "Start Pro Trial",
+    cta: "Start Pro trial",
     popular: true,
     ctaHref: "/signup?plan=pro",
   },
@@ -77,14 +77,14 @@ const tiers: PricingTier[] = [
     period: "/per month",
     features: [
       `All ${AI_AGENT_COUNT} AI agents — Pro plus Campaign, Video Ad, Split Test, Landing Pages, and the Calendar`,
-      "500 generations / month",
+      "500 pieces of content a month",
       "15 projects",
       "Email marketing — 10 audiences, 10,000 contacts each",
       "50,000 marketing emails / month",
       "Analytics dashboard with feedback loop",
       "Priority support (24h response)",
     ],
-    cta: "Start Growth Trial",
+    cta: "Start Growth trial",
     popular: false,
     ctaHref: "/signup?plan=growth",
   },
@@ -94,7 +94,7 @@ const tiers: PricingTier[] = [
     period: "/per month",
     features: [
       `All ${AI_AGENT_COUNT} AI agents plus Client Reports (white-label PDFs)`,
-      "Unlimited generations",
+      "Unlimited pieces of content",
       "Unlimited projects",
       "Multi-client workspace",
       "Team seats (up to 5 included)",
@@ -105,7 +105,7 @@ const tiers: PricingTier[] = [
       "Bulk operations across projects",
       "Dedicated support",
     ],
-    cta: "Contact Sales",
+    cta: "Contact sales",
     popular: false,
     ctaHref: "/signup?plan=agency",
   },
@@ -113,21 +113,22 @@ const tiers: PricingTier[] = [
 
 export default function PricingPage() {
   return (
-    <div className="pt-6 sm:pt-8 pb-14 sm:pb-20">
+    <div>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
-      <div className="mx-auto max-w-6xl px-6">
-        <div className="text-center mb-16">
-          <h1 className="text-hero text-text-primary">Simple pricing</h1>
-          <p className="mt-4 text-lg text-text-secondary max-w-xl mx-auto">
+      <section className="mx-auto flex w-full max-w-[1200px] flex-col gap-10 px-4 pb-20 pt-16 md:px-10 md:pb-28 md:pt-24">
+        <div className="flex max-w-[760px] flex-col gap-4">
+          <p className="text-label text-accent">Pricing</p>
+          <h1 className="text-display-m text-text">Simple pricing</h1>
+          <p className="text-lg leading-relaxed text-text-2">
             Start free. Upgrade when you need more power. Cancel anytime.
           </p>
-          <p className="mt-2 text-small text-text-tertiary">Annual plans coming soon &mdash; save up to 20%.</p>
+          <p className="text-body-s text-text-3">Annual plans coming soon. Save up to 20%.</p>
         </div>
         <PricingGrid tiers={tiers} />
-      </div>
+      </section>
     </div>
   );
 }

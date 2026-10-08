@@ -3,17 +3,18 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  Loader2,
   Clock,
   X as XIcon,
   Send,
   Settings as SettingsIcon,
   ListChecks,
   Pencil,
-} from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+} from "@/src/components/ui/lucide-icons";
+import { Card } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { EmptyState } from "@/src/components/ui/empty-state";
 import { PageHeader } from "@/src/components/layout/page-header";
 import { useToast } from "@/src/components/ui/toast";
 
@@ -69,7 +70,7 @@ export default function AutomationQueuePage() {
     });
     if (res.ok) {
       toast(
-        action === "cancel" ? "Queued action cancelled" : "Will publish on next tick",
+        action === "cancel" ? "Cancelled. It won't publish." : "Publishing in the next minute or so",
         "success"
       );
       await load();
@@ -82,35 +83,39 @@ export default function AutomationQueuePage() {
   return (
     <div>
       <PageHeader
-        title="Automation Queue"
-        description="Items the Growth Playbook auto-execute is about to publish. Cancel or push them through manually here."
+        title="Automation queue"
+        description="Posts the Growth Plan is about to publish for you. Cancel them, or publish one now."
       >
         <Button variant="ghost" asChild>
           <Link href="/settings/automation">
-            <SettingsIcon className="h-4 w-4 mr-1.5" />
+            <SettingsIcon className="h-4 w-4" />
             Automation settings
           </Link>
         </Button>
       </PageHeader>
 
       {loading ? (
-        <div className="flex justify-center py-20">
-          <Loader2 className="h-8 w-8 text-accent animate-spin" />
+        <div className="space-y-3" role="status" aria-label="Loading the queue">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="space-y-3 rounded-lg border border-line bg-surface p-4 md:p-6">
+              <div className="flex gap-2">
+                <Skeleton className="h-[22px] w-16" />
+                <Skeleton className="h-[22px] w-20" />
+              </div>
+              <Skeleton className="h-20 w-full" />
+            </div>
+          ))}
         </div>
       ) : items.length === 0 ? (
-        <Card className="border-dashed border-border-strong">
-          <CardContent className="flex flex-col items-center py-16 text-center">
-            <ListChecks className="h-12 w-12 text-text-tertiary mb-4" />
-            <h3 className="text-h3 text-text-primary">Queue is empty</h3>
-            <p className="mt-2 text-body text-text-secondary max-w-md">
-              Items show up here when you click "Auto-execute" on a Growth
-              Playbook action and your settings include a review hold.
-            </p>
-            <Button asChild className="mt-6" variant="ghost">
+        <EmptyState
+          icon={<ListChecks className="h-8 w-8" />}
+          title="Nothing is waiting to publish. Posts land here when you auto-run a Growth Plan step and your settings hold it for review."
+          action={
+            <Button asChild>
               <Link href="/settings/automation">Open automation settings</Link>
             </Button>
-          </CardContent>
-        </Card>
+          }
+        />
       ) : (
         <div className="space-y-3">
           {items.map((item, i) => {
@@ -125,61 +130,58 @@ export default function AutomationQueuePage() {
                 className="animate-in"
                 style={{ animationDelay: `${i * 60}ms` }}
               >
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between gap-4 mb-3">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {item.channel && (
-                        <Badge variant="secondary">{item.channel}</Badge>
-                      )}
-                      <Badge variant="warning">{item.status}</Badge>
-                      <span className="flex items-center gap-1 text-caption text-text-tertiary">
-                        <Clock className="h-3 w-3" />
-                        Publishes {formatRelative(item.scheduled_for)}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      {projectId && item.asset && (
-                        <Button size="sm" variant="ghost" asChild>
-                          <Link
-                            href={`/projects/${projectId}/assets/${item.asset.id}`}
-                          >
-                            <Pencil className="h-3.5 w-3.5 mr-1" />
-                            Edit
-                          </Link>
-                        </Button>
-                      )}
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => act(item.id, "publish_now")}
-                      >
-                        <Send className="h-3.5 w-3.5 mr-1" />
-                        Publish now
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => act(item.id, "cancel")}
-                      >
-                        <XIcon className="h-3.5 w-3.5 mr-1" />
-                        Cancel
-                      </Button>
-                    </div>
+                <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {item.channel && (
+                      <Badge variant="secondary">{item.channel}</Badge>
+                    )}
+                    <Badge variant="warning">{item.status}</Badge>
+                    <span className="flex items-center gap-1 font-mono text-caption text-text-3">
+                      <Clock className="h-3 w-3" aria-hidden />
+                      Publishes {formatRelative(item.scheduled_for)}
+                    </span>
                   </div>
-                  {item.asset?.title && (
-                    <p className="text-small text-text-secondary mb-2">
-                      {item.asset.title}
-                    </p>
-                  )}
-                  <pre className="rounded-lg bg-surface-2 p-3 text-small font-mono text-text-primary whitespace-pre-wrap break-words max-h-48 overflow-y-auto">
-                    {text}
-                  </pre>
-                  {item.last_error && (
-                    <p className="text-caption text-error mt-2">
-                      Last error: {item.last_error}
-                    </p>
-                  )}
-                </CardContent>
+                  <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+                    {projectId && item.asset && (
+                      <Button size="sm" variant="quiet" asChild>
+                        <Link
+                          href={`/projects/${projectId}/assets/${item.asset.id}`}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                          Edit
+                        </Link>
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      onClick={() => act(item.id, "publish_now")}
+                    >
+                      <Send className="h-3.5 w-3.5" />
+                      Publish now
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => act(item.id, "cancel")}
+                    >
+                      <XIcon className="h-3.5 w-3.5" />
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+                {item.asset?.title && (
+                  <p className="mb-2 text-title text-text">
+                    {item.asset.title}
+                  </p>
+                )}
+                <pre className="max-h-48 overflow-y-auto whitespace-pre-wrap break-words rounded-md border border-line bg-ground p-3 font-sans text-body text-text">
+                  {text}
+                </pre>
+                {item.last_error && (
+                  <p className="mt-2 text-caption text-danger">
+                    Last error: {item.last_error}
+                  </p>
+                )}
               </Card>
             );
           })}

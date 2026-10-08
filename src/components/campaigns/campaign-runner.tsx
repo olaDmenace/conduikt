@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   CheckCircle2,
   XCircle,
-  Loader2,
   Clock,
   Play,
   ChevronDown,
@@ -14,9 +13,9 @@ import {
   Check,
   CalendarPlus,
   ExternalLink,
-} from "lucide-react";
+} from "@/src/components/ui/lucide-icons";
 import { Button } from "@/src/components/ui/button";
-import { Card, CardContent } from "@/src/components/ui/card";
+import { Card } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { AGENT_REGISTRY } from "@/src/lib/ai/agents/registry";
 import { useToast } from "@/src/components/ui/toast";
@@ -56,30 +55,30 @@ const statusConfig: Record<
   string,
   { icon: typeof Clock; color: string; label: string }
 > = {
-  pending: { icon: Clock, color: "text-text-tertiary", label: "Pending" },
-  running: { icon: Loader2, color: "text-accent", label: "Running" },
-  completed: { icon: CheckCircle2, color: "text-success", label: "Done" },
-  failed: { icon: XCircle, color: "text-error", label: "Failed" },
-  skipped: { icon: Clock, color: "text-text-tertiary", label: "Skipped" },
+  pending: { icon: Clock, color: "text-text-3", label: "Waiting" },
+  running: { icon: Clock, color: "text-accent", label: "Running" },
+  completed: { icon: CheckCircle2, color: "text-teal", label: "Done" },
+  failed: { icon: XCircle, color: "text-danger", label: "Failed" },
+  skipped: { icon: Clock, color: "text-text-3", label: "Skipped" },
 };
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function formatResultData(data: any): React.ReactNode {
   if (!data || typeof data !== "object") {
-    return <p className="text-text-secondary text-sm">{String(data)}</p>;
+    return <p className="text-body-s text-text-2">{String(data)}</p>;
   }
 
   // Variants (e.g. ad copy variants)
   if (Array.isArray(data.variants)) {
     return (
       <div className="space-y-3">
-        <h4 className="text-caption font-semibold text-text-secondary uppercase tracking-wide">
+        <h4 className="text-label text-text-3">
           Variants ({data.variants.length})
         </h4>
         {data.variants.map((v: any, i: number) => (
-          <div key={i} className="rounded-md bg-surface-1 p-3 border border-border-subtle">
-            <span className="text-caption font-mono text-accent">#{i + 1}</span>
-            <p className="text-sm text-text-primary mt-1 whitespace-pre-wrap">
+          <div key={i} className="rounded-md bg-surface p-3 border border-line">
+            <span className="font-mono text-caption text-text-3">#{i + 1}</span>
+            <p className="mt-1 whitespace-pre-wrap text-body-s text-text">
               {v.text || v.content || v.copy || JSON.stringify(v, null, 2)}
             </p>
           </div>
@@ -92,18 +91,18 @@ function formatResultData(data: any): React.ReactNode {
   if (Array.isArray(data.posts)) {
     return (
       <div className="space-y-3">
-        <h4 className="text-caption font-semibold text-text-secondary uppercase tracking-wide">
+        <h4 className="text-label text-text-3">
           Posts ({data.posts.length})
         </h4>
         {data.posts.map((p: any, i: number) => (
-          <div key={i} className="rounded-md bg-surface-1 p-3 border border-border-subtle">
+          <div key={i} className="rounded-md bg-surface p-3 border border-line">
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-caption font-mono text-accent">#{i + 1}</span>
+              <span className="font-mono text-caption text-text-3">#{i + 1}</span>
               {p.platform && (
                 <Badge variant="secondary">{p.platform}</Badge>
               )}
             </div>
-            <p className="text-sm text-text-primary whitespace-pre-wrap">
+            <p className="whitespace-pre-wrap text-body-s text-text">
               {p.text || p.content || p.body || JSON.stringify(p, null, 2)}
             </p>
           </div>
@@ -116,15 +115,15 @@ function formatResultData(data: any): React.ReactNode {
   if (Array.isArray(data.emails)) {
     return (
       <div className="space-y-3">
-        <h4 className="text-caption font-semibold text-text-secondary uppercase tracking-wide">
+        <h4 className="text-label text-text-3">
           Emails ({data.emails.length})
         </h4>
         {data.emails.map((e: any, i: number) => (
-          <div key={i} className="rounded-md bg-surface-1 p-3 border border-border-subtle">
-            <span className="text-caption font-mono text-accent">#{i + 1}</span>
-            <p className="text-sm font-medium text-text-primary mt-1">{e.subject || e.subject_line}</p>
+          <div key={i} className="rounded-md bg-surface p-3 border border-line">
+            <span className="font-mono text-caption text-text-3">#{i + 1}</span>
+            <p className="mt-1 text-title text-text">{e.subject || e.subject_line}</p>
             {(e.goal || e.objective) && (
-              <p className="text-xs text-text-tertiary mt-0.5">Goal: {e.goal || e.objective}</p>
+              <p className="mt-0.5 text-caption text-text-3">Goal: {e.goal || e.objective}</p>
             )}
           </div>
         ))}
@@ -136,15 +135,15 @@ function formatResultData(data: any): React.ReactNode {
   if (Array.isArray(data.findings)) {
     return (
       <div className="space-y-3">
-        <h4 className="text-caption font-semibold text-text-secondary uppercase tracking-wide">
+        <h4 className="text-label text-text-3">
           Findings ({data.findings.length})
         </h4>
         {data.findings.map((f: any, i: number) => (
-          <div key={i} className="rounded-md bg-surface-1 p-3 border border-border-subtle">
-            <span className="text-caption font-mono text-accent">#{i + 1}</span>
-            <p className="text-sm font-medium text-text-primary mt-1">{f.title || f.name}</p>
+          <div key={i} className="rounded-md bg-surface p-3 border border-line">
+            <span className="font-mono text-caption text-text-3">#{i + 1}</span>
+            <p className="mt-1 text-title text-text">{f.title || f.name}</p>
             {(f.recommendation || f.description) && (
-              <p className="text-xs text-text-tertiary mt-0.5">{f.recommendation || f.description}</p>
+              <p className="mt-0.5 text-caption text-text-3">{f.recommendation || f.description}</p>
             )}
           </div>
         ))}
@@ -155,11 +154,9 @@ function formatResultData(data: any): React.ReactNode {
   // Markdown content
   if (typeof data.content_markdown === "string") {
     return (
-      <div className="prose prose-invert prose-sm max-w-none">
-        <pre className="text-sm text-text-primary whitespace-pre-wrap font-sans bg-transparent p-0">
-          {data.content_markdown}
-        </pre>
-      </div>
+      <pre className="whitespace-pre-wrap bg-transparent p-0 font-sans text-body-s text-text">
+        {data.content_markdown}
+      </pre>
     );
   }
 
@@ -167,17 +164,17 @@ function formatResultData(data: any): React.ReactNode {
   if (Array.isArray(data.pillars)) {
     return (
       <div className="space-y-3">
-        <h4 className="text-caption font-semibold text-text-secondary uppercase tracking-wide">
-          Content Pillars ({data.pillars.length})
+        <h4 className="text-label text-text-3">
+          Content themes ({data.pillars.length})
         </h4>
         {data.pillars.map((p: any, i: number) => (
-          <div key={i} className="rounded-md bg-surface-1 p-3 border border-border-subtle">
-            <span className="text-caption font-mono text-accent">#{i + 1}</span>
-            <p className="text-sm font-medium text-text-primary mt-1">{p.topic || p.name || p.title}</p>
+          <div key={i} className="rounded-md bg-surface p-3 border border-line">
+            <span className="font-mono text-caption text-text-3">#{i + 1}</span>
+            <p className="mt-1 text-title text-text">{p.topic || p.name || p.title}</p>
             {Array.isArray(p.content_pieces || p.pieces || p.items) && (
               <ul className="mt-1.5 space-y-0.5 pl-4 list-disc">
                 {(p.content_pieces || p.pieces || p.items).map((piece: any, j: number) => (
-                  <li key={j} className="text-xs text-text-secondary">
+                  <li key={j} className="text-caption text-text-2">
                     {piece.title || piece.name || String(piece)}
                   </li>
                 ))}
@@ -193,20 +190,20 @@ function formatResultData(data: any): React.ReactNode {
   if (Array.isArray(data.competitors)) {
     return (
       <div className="space-y-3">
-        <h4 className="text-caption font-semibold text-text-secondary uppercase tracking-wide">
+        <h4 className="text-label text-text-3">
           Competitors ({data.competitors.length})
         </h4>
         {data.competitors.map((c: any, i: number) => (
-          <div key={i} className="rounded-md bg-surface-1 p-3 border border-border-subtle">
-            <span className="text-caption font-mono text-accent">#{i + 1}</span>
-            <p className="text-sm font-medium text-text-primary mt-1">{c.name}</p>
+          <div key={i} className="rounded-md bg-surface p-3 border border-line">
+            <span className="font-mono text-caption text-text-3">#{i + 1}</span>
+            <p className="mt-1 text-title text-text">{c.name}</p>
             {c.strengths && (
-              <p className="text-xs text-success mt-0.5">
+              <p className="mt-0.5 text-caption text-teal">
                 Strengths: {Array.isArray(c.strengths) ? c.strengths.join(", ") : c.strengths}
               </p>
             )}
             {c.weaknesses && (
-              <p className="text-xs text-error mt-0.5">
+              <p className="mt-0.5 text-caption text-danger">
                 Weaknesses: {Array.isArray(c.weaknesses) ? c.weaknesses.join(", ") : c.weaknesses}
               </p>
             )}
@@ -218,7 +215,7 @@ function formatResultData(data: any): React.ReactNode {
 
   // Default: prettified JSON
   return (
-    <pre className="text-[0.75rem] text-text-secondary whitespace-pre-wrap font-mono">
+    <pre className="whitespace-pre-wrap font-mono text-caption text-text-2">
       {JSON.stringify(data, null, 2)}
     </pre>
   );
@@ -243,14 +240,14 @@ function CopyButton({ text }: { text: string }) {
         e.stopPropagation();
         handleCopy();
       }}
-      className="h-7 px-2 text-text-tertiary hover:text-text-primary"
+      className="h-7 px-2 text-text-3 hover:text-text"
     >
       {copied ? (
-        <Check className="h-3.5 w-3.5 text-success" />
+        <Check className="h-3.5 w-3.5 text-teal" />
       ) : (
         <Copy className="h-3.5 w-3.5" />
       )}
-      <span className="ml-1 text-xs">{copied ? "Copied" : "Copy"}</span>
+      <span className="text-caption">{copied ? "Copied" : "Copy"}</span>
     </Button>
   );
 }
@@ -279,7 +276,7 @@ function SavedAssetsPanel({
 
   async function handleSchedule(asset: SavedAsset) {
     if (!asset.postText) {
-      toast("Post text missing — open the asset to schedule manually.", "error");
+      toast("The post text is missing. Open it to schedule it yourself.", "error");
       return;
     }
     if (!scheduledAt) {
@@ -289,7 +286,7 @@ function SavedAssetsPanel({
     const channel = asset.channel === "linkedin" ? "linkedin" : "x";
     if (asset.channel !== "x" && asset.channel !== "linkedin") {
       toast(
-        `Scheduling for ${asset.channel} isn't supported — only X and LinkedIn auto-publish via cron.`,
+        `We can't schedule to ${asset.channel} yet. Only X and LinkedIn post on their own.`,
         "error"
       );
       return;
@@ -308,7 +305,7 @@ function SavedAssetsPanel({
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast(body.error || "Failed to schedule", "error");
+        toast(body.error || "Couldn't schedule. Try again.", "error");
         return;
       }
       setScheduledIds((prev) => new Set(prev).add(asset.id));
@@ -333,10 +330,10 @@ function SavedAssetsPanel({
           : `${assets.length} drafts saved`;
 
   return (
-    <div className="mt-2 rounded-md border border-success/30 bg-success/5 p-3 space-y-2">
+    <div className="mt-2 space-y-2 rounded-md bg-teal-soft p-3">
       <div className="flex items-center gap-2">
-        <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
-        <p className="text-small text-text-primary font-medium">{heading}</p>
+        <CheckCircle2 className="h-4 w-4 shrink-0 text-teal" />
+        <p className="text-title text-text">{heading}</p>
       </div>
       <ul className="space-y-1.5">
         {assets.map((asset) => {
@@ -356,64 +353,62 @@ function SavedAssetsPanel({
           return (
             <li
               key={asset.id}
-              className="flex flex-col gap-2 rounded border border-border-subtle bg-surface-1 px-3 py-2"
+              className="flex flex-col gap-2 rounded-md border border-line bg-surface px-3 py-2"
             >
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-small text-text-primary truncate flex-1 min-w-0">
+                <span className="text-body-s text-text truncate flex-1 min-w-0">
                   {asset.title || "Untitled"}
                 </span>
                 {channelLabel && (
-                  <span className="text-xs px-1.5 py-0.5 rounded bg-surface-2 text-text-secondary font-mono">
-                    {channelLabel}
-                  </span>
+                  <Badge variant="secondary">{channelLabel}</Badge>
                 )}
                 {isScheduled ? (
-                  <span className="text-xs text-success font-medium flex items-center gap-1">
+                  <span className="flex items-center gap-1 text-caption font-medium text-teal">
                     <Check className="h-3 w-3" />
                     Scheduled
                   </span>
                 ) : asset.type === "social_post" ? (
                   <Button
                     size="sm"
-                    variant="secondary"
+                    variant="outline"
                     onClick={() =>
                       setOpenSchedulerFor(showScheduler ? null : asset.id)
                     }
                   >
-                    <CalendarPlus className="h-3.5 w-3.5 mr-1" />
+                    <CalendarPlus className="h-3.5 w-3.5" />
                     {showScheduler ? "Cancel" : "Schedule"}
                   </Button>
                 ) : (
-                  <Button size="sm" variant="secondary" asChild>
+                  <Button size="sm" variant="outline" asChild>
                     <Link
                       href={`/projects/${projectId}/assets/${asset.id}`}
                       target="_blank"
                     >
-                      <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                      <ExternalLink className="h-3.5 w-3.5" />
                       Open
                     </Link>
                   </Button>
                 )}
               </div>
               {showScheduler && !isScheduled && asset.type === "social_post" && (
-                <div className="flex items-center gap-2 pt-1 border-t border-border-subtle">
+                <div className="flex items-center gap-2 border-t border-line pt-2">
+                  <label htmlFor={`schedule-${asset.id}`} className="sr-only">
+                    Date and time
+                  </label>
                   <input
+                    id={`schedule-${asset.id}`}
                     type="datetime-local"
                     min={minDateTime}
                     value={scheduledAt}
                     onChange={(e) => setScheduledAt(e.target.value)}
-                    className="flex-1 rounded border border-border-default bg-surface-0 px-2 py-1 text-small text-text-primary focus:border-accent focus:outline-none"
+                    className="h-8 flex-1 rounded-md border border-line-strong bg-surface px-2.5 text-body-s text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                   />
                   <Button
                     size="sm"
                     onClick={() => handleSchedule(asset)}
                     disabled={submitting || !scheduledAt}
                   >
-                    {submitting ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      "Confirm"
-                    )}
+                    {submitting ? "Scheduling…" : "Confirm"}
                   </Button>
                 </div>
               )}
@@ -465,11 +460,11 @@ export function CampaignRunner({
 
   return (
     <Card>
-      <CardContent>
+      <div>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-h3 text-text-primary">{campaign.name}</h3>
-            <p className="text-small text-text-secondary">
+            <h3 className="text-title text-text">{campaign.name}</h3>
+            <p className="text-body-s text-text-2">
               {steps.length} step{steps.length !== 1 ? "s" : ""}
             </p>
           </div>
@@ -485,16 +480,15 @@ export function CampaignRunner({
                   : "secondary"
               }
             >
+              {campaign.status === "running" && (
+                <span className="live-dot" aria-hidden />
+              )}
               {campaign.status}
             </Badge>
             {canRun && (
               <Button size="sm" onClick={handleRun} disabled={running}>
-                {running ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Play className="h-4 w-4" />
-                )}
-                {running ? "Running..." : "Run"}
+                {!running && <Play className="h-4 w-4" />}
+                {running ? "Running…" : "Run"}
               </Button>
             )}
           </div>
@@ -533,26 +527,27 @@ export function CampaignRunner({
             return (
               <div
                 key={step.id}
-                className="rounded-lg border border-border-default bg-surface-0"
+                className="rounded-md border border-line bg-ground"
               >
                 <button
                   onClick={() => hasResult && toggleStep(step.id)}
-                  className="flex items-center gap-3 w-full p-3 text-left"
+                  aria-expanded={hasResult ? isExpanded : undefined}
+                  className="flex w-full items-center gap-3 p-3 text-left"
                 >
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-surface-2 text-caption font-mono text-text-secondary shrink-0">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-2 font-mono text-caption text-text-2">
                     {step.step_order}
                   </span>
-                  <Icon
-                    className={`h-4 w-4 shrink-0 ${config.color} ${
-                      step.status === "running" ? "animate-spin" : ""
-                    }`}
-                  />
+                  {step.status === "running" ? (
+                    <span className="live-dot shrink-0" aria-hidden />
+                  ) : (
+                    <Icon className={`h-4 w-4 shrink-0 ${config.color}`} />
+                  )}
                   <div className="flex-1 min-w-0">
-                    <span className="text-body font-medium text-text-primary block">
+                    <span className="block text-title text-text">
                       {def?.name || step.agent_id}
                     </span>
                     {def?.description && (
-                      <span className="text-xs text-text-tertiary block truncate">
+                      <span className="block truncate text-caption text-text-3">
                         {def.description}
                       </span>
                     )}
@@ -572,14 +567,14 @@ export function CampaignRunner({
                   </Badge>
                   {hasResult ? (
                     isExpanded ? (
-                      <ChevronUp className="h-4 w-4 text-text-tertiary shrink-0" />
+                      <ChevronUp className="h-4 w-4 text-text-3 shrink-0" />
                     ) : (
-                      <ChevronDown className="h-4 w-4 text-text-tertiary shrink-0" />
+                      <ChevronDown className="h-4 w-4 text-text-3 shrink-0" />
                     )
                   ) : null}
                 </button>
                 {isExpanded && hasResult && (
-                  <div className="px-3 pb-3 border-t border-border-subtle">
+                  <div className="px-3 pb-3 border-t border-line">
                     {savedAssets.length > 0 && (
                       <SavedAssetsPanel
                         assets={savedAssets}
@@ -589,9 +584,9 @@ export function CampaignRunner({
                     <div className="flex items-center justify-end mt-2 mb-1">
                       <CopyButton text={rawText} />
                     </div>
-                    <div className="overflow-y-auto max-h-[500px] bg-surface-2 rounded-lg p-3">
+                    <div className="max-h-[500px] overflow-y-auto rounded-md border border-line bg-surface p-3">
                       {typeof step.result === "string" ? (
-                        <p className="text-sm text-text-primary whitespace-pre-wrap">
+                        <p className="whitespace-pre-wrap text-body-s text-text">
                           {step.result}
                         </p>
                       ) : (
@@ -604,7 +599,7 @@ export function CampaignRunner({
             );
           })}
         </div>
-      </CardContent>
+      </div>
     </Card>
   );
 }

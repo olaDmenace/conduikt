@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Save, Trash2, Loader2, AlertTriangle, Upload, Palette } from "lucide-react";
+import { Save, Trash2, AlertTriangle, Upload, Palette } from "@/src/components/ui/lucide-icons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
+import { Skeleton } from "@/src/components/ui/skeleton";
 
 import { useToast } from "@/src/components/ui/toast";
 
@@ -156,7 +157,7 @@ export default function ProjectSettingsPage() {
     if (res.ok) {
       const updated = await res.json();
       setProject(updated);
-      toast("Project updated!", "success");
+      toast("Project saved", "success");
     } else {
       const err = await res.json();
       toast(err.error || "Failed to update project", "error");
@@ -171,7 +172,7 @@ export default function ProjectSettingsPage() {
     const res = await fetch(`/api/projects/${id}`, { method: "DELETE" });
 
     if (res.ok) {
-      toast("Project deleted.", "success");
+      toast("Project deleted", "success");
       router.push("/projects");
     } else {
       const err = await res.json();
@@ -183,9 +184,10 @@ export default function ProjectSettingsPage() {
   if (loading) {
     return (
       <div>
-        <PageHeader title="Project Settings" description="Manage project configuration" />
-        <div className="flex justify-center py-12">
-          <Loader2 className="h-6 w-6 text-accent animate-spin" />
+        <PageHeader title="Project settings" description="Your project's details and what every agent knows about it" />
+        <div className="max-w-2xl space-y-6" role="status" aria-label="Loading settings">
+          <Skeleton className="h-64 w-full" />
+          <Skeleton className="h-96 w-full" />
         </div>
       </div>
     );
@@ -194,21 +196,21 @@ export default function ProjectSettingsPage() {
   if (!project) {
     return (
       <div>
-        <PageHeader title="Project Settings" description="Project not found" />
+        <PageHeader title="Project settings" description="We couldn't find this project." />
       </div>
     );
   }
 
   return (
     <div>
-      <PageHeader title="Project Settings" description="Manage project configuration" />
+      <PageHeader title="Project settings" description="Your project's details and what every agent knows about it" />
 
 
       <form onSubmit={handleSave} className="space-y-6 max-w-2xl">
         {/* General */}
         <Card className="animate-in">
           <CardHeader>
-            <CardTitle>General</CardTitle>
+            <CardTitle className="text-heading">General</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <Input
@@ -226,9 +228,9 @@ export default function ProjectSettingsPage() {
               onChange={(e) => setWebsiteUrl(e.target.value)}
             />
             <div className="flex flex-col gap-1.5">
-              <label className="text-small text-text-secondary">Description</label>
+              <label className="text-body-s text-text-2">Description</label>
               <textarea
-                className="w-full rounded-lg border border-border-strong bg-surface-0 px-4 py-3 text-text-primary placeholder:text-text-tertiary font-sans text-[0.9375rem] transition-all duration-150 focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-glow)] focus:outline-none min-h-[80px] resize-y"
+                className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent min-h-[80px] resize-y"
                 placeholder="Brief description of your project"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -240,16 +242,16 @@ export default function ProjectSettingsPage() {
         {/* Marketing Context */}
         <Card className="animate-in" style={{ animationDelay: "60ms" }}>
           <CardHeader>
-            <CardTitle>Marketing Context</CardTitle>
-            <p className="text-small text-text-secondary">
-              This context is injected into AI prompts to personalize generated content.
+            <CardTitle className="text-heading">About your business</CardTitle>
+            <p className="text-body-s text-text-2">
+              Every agent reads this so what it writes fits your business.
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-small text-text-secondary">Value Proposition</label>
+              <label className="text-body-s text-text-2">What makes you different</label>
               <textarea
-                className="w-full rounded-lg border border-border-strong bg-surface-0 px-4 py-3 text-text-primary placeholder:text-text-tertiary font-sans text-[0.9375rem] transition-all duration-150 focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-glow)] focus:outline-none min-h-[80px] resize-y"
+                className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent min-h-[80px] resize-y"
                 placeholder="What makes your product uniquely valuable?"
                 value={valueProposition}
                 onChange={(e) => setValueProposition(e.target.value)}
@@ -257,9 +259,9 @@ export default function ProjectSettingsPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-small text-text-secondary">Positioning Statement</label>
+              <label className="text-body-s text-text-2">Positioning statement</label>
               <textarea
-                className="w-full rounded-lg border border-border-strong bg-surface-0 px-4 py-3 text-text-primary placeholder:text-text-tertiary font-sans text-[0.9375rem] transition-all duration-150 focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-glow)] focus:outline-none min-h-[80px] resize-y"
+                className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent min-h-[80px] resize-y"
                 placeholder="For [audience], [product] is the [category] that [benefit]..."
                 value={positioningStatement}
                 onChange={(e) => setPositioningStatement(e.target.value)}
@@ -267,11 +269,11 @@ export default function ProjectSettingsPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-small text-text-secondary">
-                Target Audience <span className="text-text-tertiary">(JSON)</span>
+              <label className="text-body-s text-text-2">
+                Who you sell to <span className="font-mono text-text-3">(JSON)</span>
               </label>
               <textarea
-                className="w-full rounded-lg border border-border-strong bg-surface-0 px-4 py-3 text-text-primary placeholder:text-text-tertiary font-mono text-[0.8125rem] transition-all duration-150 focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-glow)] focus:outline-none min-h-[100px] resize-y"
+                className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent font-mono min-h-[100px] resize-y"
                 placeholder='{"personas": [{"role": "founder", "pain_points": ["..."]}]}'
                 value={targetAudienceText}
                 onChange={(e) => setTargetAudienceText(e.target.value)}
@@ -279,11 +281,11 @@ export default function ProjectSettingsPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-small text-text-secondary">
-                Brand Voice <span className="text-text-tertiary">(JSON)</span>
+              <label className="text-body-s text-text-2">
+                Brand voice <span className="font-mono text-text-3">(JSON)</span>
               </label>
               <textarea
-                className="w-full rounded-lg border border-border-strong bg-surface-0 px-4 py-3 text-text-primary placeholder:text-text-tertiary font-mono text-[0.8125rem] transition-all duration-150 focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-glow)] focus:outline-none min-h-[100px] resize-y"
+                className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent font-mono min-h-[100px] resize-y"
                 placeholder='{"tone": "professional", "dos": ["..."], "donts": ["..."]}'
                 value={brandVoiceText}
                 onChange={(e) => setBrandVoiceText(e.target.value)}
@@ -291,11 +293,11 @@ export default function ProjectSettingsPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-small text-text-secondary">
-                Competitors <span className="text-text-tertiary">(JSON)</span>
+              <label className="text-body-s text-text-2">
+                Competitors <span className="font-mono text-text-3">(JSON)</span>
               </label>
               <textarea
-                className="w-full rounded-lg border border-border-strong bg-surface-0 px-4 py-3 text-text-primary placeholder:text-text-tertiary font-mono text-[0.8125rem] transition-all duration-150 focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-glow)] focus:outline-none min-h-[100px] resize-y"
+                className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent font-mono min-h-[100px] resize-y"
                 placeholder='[{"name": "Competitor", "url": "https://...", "strengths": ["..."]}]'
                 value={competitorsText}
                 onChange={(e) => setCompetitorsText(e.target.value)}
@@ -303,11 +305,11 @@ export default function ProjectSettingsPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-small text-text-secondary">
-                Keywords <span className="text-text-tertiary">(JSON)</span>
+              <label className="text-body-s text-text-2">
+                Keywords <span className="font-mono text-text-3">(JSON)</span>
               </label>
               <textarea
-                className="w-full rounded-lg border border-border-strong bg-surface-0 px-4 py-3 text-text-primary placeholder:text-text-tertiary font-mono text-[0.8125rem] transition-all duration-150 focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-glow)] focus:outline-none min-h-[100px] resize-y"
+                className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent font-mono min-h-[100px] resize-y"
                 placeholder='[{"term": "ai marketing", "volume": 5400, "difficulty": 45}]'
                 value={keywordsText}
                 onChange={(e) => setKeywordsText(e.target.value)}
@@ -320,26 +322,26 @@ export default function ProjectSettingsPage() {
         {userPlan === "agency" && (
           <Card className="animate-in" style={{ animationDelay: "120ms" }}>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Palette className="h-5 w-5 text-accent" />
-                Client Branding
+              <CardTitle className="flex items-center gap-2 text-heading">
+                <Palette className="h-4 w-4 text-text-3" />
+                Client branding
               </CardTitle>
-              <p className="text-small text-text-secondary">
-                Customize PDF reports with your client&apos;s branding.
+              <p className="text-body-s text-text-2">
+                Put your client&apos;s brand on PDF reports.
               </p>
             </CardHeader>
             <CardContent className="space-y-4">
               <Input
-                label="Client Name"
+                label="Client name"
                 placeholder="Acme Corp"
                 value={clientName}
                 onChange={(e) => setClientName(e.target.value)}
               />
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-small text-text-secondary">Client Logo</label>
+                <label className="text-body-s text-text-2">Client logo</label>
                 {clientLogoUrl && (
-                  <div className="mb-2 p-3 rounded-lg border border-border-default bg-surface-1 inline-block">
+                  <div className="mb-2 p-3 rounded-md border border-line bg-surface inline-block">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={clientLogoUrl}
@@ -351,7 +353,7 @@ export default function ProjectSettingsPage() {
                 <div className="flex items-center gap-3">
                   <Button
                     type="button"
-                    variant="secondary"
+                    variant="outline"
                     size="sm"
                     disabled={uploadingLogo}
                     onClick={() => {
@@ -386,12 +388,8 @@ export default function ProjectSettingsPage() {
                       input.click();
                     }}
                   >
-                    {uploadingLogo ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Upload className="h-4 w-4" />
-                    )}
-                    {uploadingLogo ? "Uploading..." : "Upload Logo"}
+                    {!uploadingLogo && <Upload className="h-4 w-4" />}
+                    {uploadingLogo ? "Uploading…" : "Upload logo"}
                   </Button>
                   {clientLogoUrl && (
                     <Button
@@ -407,13 +405,14 @@ export default function ProjectSettingsPage() {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-small text-text-secondary">Report Accent Color</label>
+                <label className="text-body-s text-text-2">Report accent colour</label>
                 <div className="flex items-center gap-3">
                   <input
                     type="color"
                     value={reportAccentColor}
                     onChange={(e) => setReportAccentColor(e.target.value)}
-                    className="w-10 h-10 rounded-lg border border-border-strong cursor-pointer bg-transparent"
+                    aria-label="Pick report accent colour"
+                    className="w-10 h-10 rounded-md border border-line-strong cursor-pointer bg-transparent"
                   />
                   <Input
                     placeholder="#D9663A"
@@ -431,14 +430,11 @@ export default function ProjectSettingsPage() {
         <div className="flex justify-end">
           <Button type="submit" size="sm" disabled={saving}>
             {saving ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Saving...
-              </>
+              "Saving…"
             ) : (
               <>
                 <Save className="h-4 w-4" />
-                Save Changes
+                Save changes
               </>
             )}
           </Button>
@@ -447,16 +443,16 @@ export default function ProjectSettingsPage() {
 
       {/* Danger Zone */}
       <div className="max-w-2xl mt-8">
-        <Card className="animate-in border-error/20" style={{ animationDelay: "120ms" }}>
+        <Card className="animate-in border-danger" style={{ animationDelay: "120ms" }}>
           <CardHeader>
-            <CardTitle className="text-error">Danger Zone</CardTitle>
+            <CardTitle className="text-heading text-danger">Delete project</CardTitle>
           </CardHeader>
           <CardContent>
             {!showDeleteConfirm ? (
               <>
-                <p className="text-body text-text-secondary mb-4">
-                  Deleting this project will remove all campaigns, assets, and audit data.
-                  This action cannot be undone.
+                <p className="text-body text-text-2 mb-4">
+                  Deleting this project removes all its campaigns, content and audits.
+                  You can&apos;t undo this.
                 </p>
                 <Button
                   variant="danger"
@@ -464,27 +460,27 @@ export default function ProjectSettingsPage() {
                   onClick={() => setShowDeleteConfirm(true)}
                 >
                   <Trash2 className="h-4 w-4" />
-                  Delete Project
+                  Delete project
                 </Button>
               </>
             ) : (
               <div className="space-y-4">
-                <div className="flex items-start gap-3 rounded-lg bg-error/5 border border-error/20 p-4">
-                  <AlertTriangle className="h-5 w-5 text-error shrink-0 mt-0.5" />
+                <div className="flex items-start gap-3 rounded-md bg-surface-2 border border-danger p-4">
+                  <AlertTriangle className="h-4 w-4 text-danger shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-body font-medium text-error">
-                      Are you absolutely sure?
+                    <p className="text-title text-danger">
+                      Are you sure?
                     </p>
-                    <p className="text-small text-text-secondary mt-1">
-                      This will permanently delete <strong className="text-text-primary">{project.name}</strong> and
-                      all associated data including audits, assets, and campaigns.
+                    <p className="text-body-s text-text-2 mt-1">
+                      This will permanently delete <strong className="text-text">{project.name}</strong> and
+                      everything in it, including audits, content and campaigns.
                     </p>
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-small text-text-secondary mb-1.5 block">
-                    Type <strong className="text-text-primary">{project.name}</strong> to confirm
+                  <label className="text-body-s text-text-2 mb-1.5 block">
+                    Type <strong className="text-text">{project.name}</strong> to confirm
                   </label>
                   <Input
                     placeholder={project.name}
@@ -501,10 +497,7 @@ export default function ProjectSettingsPage() {
                     onClick={handleDelete}
                   >
                     {deleting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Deleting...
-                      </>
+                      "Deleting…"
                     ) : (
                       <>
                         <Trash2 className="h-4 w-4" />

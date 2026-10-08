@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { Metadata } from "next";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowRight, CheckCircle2 } from "@/src/components/ui/lucide-icons";
 import { Button } from "@/src/components/ui/button";
-import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { AI_AGENT_COUNT } from "@/src/lib/ai/agents/display";
 
@@ -88,85 +87,74 @@ export default function CompareIndexPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       {/* Hero */}
-      <section className="pt-8 pb-20">
-        <div className="mx-auto max-w-4xl px-6 text-center">
-          <Badge className="mb-6">Comparisons</Badge>
-          <h1 className="text-hero text-text-primary">
-            How Conduikt Stacks Up
-          </h1>
-          <p className="mt-4 text-lg text-text-secondary max-w-2xl mx-auto">
+      <section className="mx-auto w-full max-w-[1200px] px-4 pb-12 pt-16 md:px-10 md:pt-24">
+        <div className="flex max-w-[760px] flex-col gap-4">
+          <p className="text-label text-accent">Comparisons</p>
+          <h1 className="text-display-m text-text">How Conduikt stacks up</h1>
+          <p className="text-lg leading-relaxed text-text-2">
             Honest, feature-by-feature comparisons against the most popular AI
-            marketing tools. See exactly where Conduikt wins — and where it
+            marketing tools. See exactly where Conduikt wins, and where it
             doesn&apos;t.
           </p>
         </div>
       </section>
 
-      {/* Comparison Cards */}
-      <section className="pb-20">
-        <div className="mx-auto max-w-4xl px-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {comparisons.map((c) => (
-              <Card
-                key={c.slug}
-                className="group hover:border-accent/50 transition-colors"
+      {/* Comparison cards */}
+      <section className="mx-auto w-full max-w-[1200px] px-4 pb-24 md:px-10">
+        <ul className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
+          {comparisons.map((c, i) => (
+            <li key={c.slug} className="animate-in flex" style={{ animationDelay: `${i * 80}ms` }}>
+              <Link
+                href={`/compare/${c.slug}`}
+                className="group hover-card hover-card-quiet flex w-full flex-col rounded-lg border border-line bg-surface p-6 md:p-7"
               >
-                <CardContent className="p-6 flex flex-col h-full">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <p className="text-caption text-text-tertiary mb-1">
-                        Conduikt vs
-                      </p>
-                      <h2 className="text-h2 text-text-primary">{c.competitor}</h2>
-                    </div>
-                    <Badge variant="secondary" className="shrink-0 ml-4">
-                      {c.conduiktWins}/{c.totalFeatures} wins
-                    </Badge>
+                <div className="mb-4 flex items-start justify-between gap-4">
+                  <div>
+                    <p className="mb-2 text-label text-text-3">Conduikt vs</p>
+                    <h2 className="text-heading text-text">{c.competitor}</h2>
                   </div>
+                  <Badge variant="success" className="shrink-0">
+                    {c.conduiktWins}/{c.totalFeatures} wins
+                  </Badge>
+                </div>
 
-                  <p className="text-body text-text-secondary mb-6">{c.tagline}</p>
+                <p className="mb-6 text-body text-text-2">{c.tagline}</p>
 
-                  <ul className="space-y-2 mb-8 flex-1">
-                    {c.highlights.map((h, i) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-success mt-0.5 shrink-0" />
-                        <span className="text-small text-text-secondary">{h}</span>
-                      </li>
-                    ))}
-                  </ul>
+                <ul className="mb-8 flex-1 space-y-2">
+                  {c.highlights.map((h, j) => (
+                    <li key={j} className="flex items-start gap-2">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-teal" />
+                      <span className="text-body-s text-text-2">{h}</span>
+                    </li>
+                  ))}
+                </ul>
 
-                  <Link href={`/compare/${c.slug}`}>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="w-full group-hover:border-accent/50"
-                    >
-                      See Full Comparison
-                      <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
+                <span className="inline-flex items-center gap-1.5 text-body-s font-medium text-accent-hover">
+                  See the full comparison
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
       </section>
 
       {/* CTA */}
-      <section className="pb-24">
-        <div className="mx-auto max-w-2xl px-6 text-center">
-          <h2 className="text-h1 text-text-primary mb-4">
+      <section className="band-ink">
+        <div className="mx-auto flex w-full max-w-[1200px] flex-col items-start gap-5 px-4 py-14 md:px-10 md:py-[72px]">
+          <p className="text-label text-ink-accent">Start free</p>
+          <h2 className="max-w-[760px] text-display-s text-ink-text">
             Ready to see for yourself?
           </h2>
-          <p className="text-body text-text-secondary mb-8">
-            Start free. No credit card required. 5 AI generations on us.
+          <p className="max-w-[560px] text-lg leading-relaxed text-ink-text-2">
+            Start free. No credit card required. 5 pieces of content on us.
           </p>
-          <Link href="/signup">
-            <Button size="lg">
-              Start Free
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
-          </Link>
+          <Button size="lg" asChild>
+            <Link href="/signup">
+              Start free
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
         </div>
       </section>
     </div>

@@ -4,7 +4,6 @@ import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
-  Loader2,
   CheckCircle2,
   XCircle,
   AlertTriangle,
@@ -13,8 +12,9 @@ import {
   FileEdit,
   Send as SendIcon,
   Trash2,
-} from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+} from "@/src/components/ui/lucide-icons";
+import { Card } from "@/src/components/ui/card";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
@@ -50,12 +50,12 @@ function StatusBadge({ status }: { status: Broadcast["status"] }) {
     cancelled: "secondary",
   };
   const icons: Record<Broadcast["status"], React.ReactNode> = {
-    draft: <FileEdit className="h-3 w-3 mr-1" />,
-    scheduled: <Calendar className="h-3 w-3 mr-1" />,
-    sending: <Loader2 className="h-3 w-3 mr-1 animate-spin" />,
-    sent: <CheckCircle2 className="h-3 w-3 mr-1" />,
-    failed: <AlertTriangle className="h-3 w-3 mr-1" />,
-    cancelled: <XCircle className="h-3 w-3 mr-1" />,
+    draft: <FileEdit className="h-3 w-3" />,
+    scheduled: <Calendar className="h-3 w-3" />,
+    sending: <span className="live-dot" aria-hidden />,
+    sent: <CheckCircle2 className="h-3 w-3" />,
+    failed: <AlertTriangle className="h-3 w-3" />,
+    cancelled: <XCircle className="h-3 w-3" />,
   };
   return (
     <Badge variant={variants[status]}>
@@ -105,11 +105,11 @@ export default function BroadcastDetailPage({
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast(data.error ?? "Send failed", "error");
+        toast(data.error ?? "Couldn't send. Try again.", "error");
         return;
       }
       toast(
-        `Sent to ${data.audience_size} ${data.audience_size === 1 ? "contact" : "contacts"}`,
+        `Sent to ${data.audience_size} ${data.audience_size === 1 ? "person" : "people"}`,
         "success"
       );
       await fetchBroadcast();
@@ -120,35 +120,37 @@ export default function BroadcastDetailPage({
 
   async function handleDelete() {
     if (!broadcast) return;
-    if (!confirm("Delete this broadcast? This cannot be undone.")) return;
+    if (!confirm("Delete this email? You can't undo this.")) return;
     const res = await fetch(
       `/api/projects/${projectId}/broadcasts/${broadcastId}`,
       { method: "DELETE" }
     );
     if (res.ok) {
-      toast("Broadcast deleted", "success");
+      toast("Email deleted", "success");
       window.location.href = `/projects/${projectId}/broadcasts`;
     } else {
       const err = await res.json().catch(() => ({}));
-      toast(err.error ?? "Delete failed", "error");
+      toast(err.error ?? "Couldn't delete. Try again.", "error");
     }
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 text-accent animate-spin" />
+      <div className="space-y-6" role="status" aria-label="Loading">
+        <Skeleton className="h-4 w-28" />
+        <Skeleton className="h-10 w-2/3" />
+        <Skeleton className="h-96" />
       </div>
     );
   }
   if (!broadcast) {
     return (
       <div>
-        <PageHeader title="Broadcast not found" />
+        <PageHeader title="We couldn't find this email" />
         <Button asChild variant="ghost">
           <Link href={`/projects/${projectId}/broadcasts`}>
             <ArrowLeft className="h-4 w-4" />
-            Back to broadcasts
+            Back to one-off emails
           </Link>
         </Button>
       </div>
@@ -179,33 +181,33 @@ export default function BroadcastDetailPage({
     <div>
       <Link
         href={`/projects/${projectId}/broadcasts`}
-        className="inline-flex items-center gap-1.5 text-small text-text-tertiary hover:text-text-primary mb-3 transition-colors"
+        className="hover-link mb-3 inline-flex items-center gap-1.5 text-body-s text-text-3 transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] hover:text-text"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
-        All broadcasts
+        All one-off emails
       </Link>
 
-      <div className="flex items-start justify-between gap-4 mb-2">
+      <div className="mb-2 flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <Mail className="h-5 w-5 text-accent" />
+          <div className="mb-2 flex items-center gap-2">
+            <Mail className="h-5 w-5 text-text-3" />
             <StatusBadge status={broadcast.status} />
           </div>
-          <h1 className="text-h1 text-text-primary">{broadcast.subject}</h1>
-          <p className="mt-1 text-body text-text-secondary">
-            To <strong>{broadcast.audiences.name}</strong> · From {broadcast.from_name}{" "}
+          <h1 className="text-display-s text-text">{broadcast.subject}</h1>
+          <p className="mt-1 text-body text-text-2">
+            To <span className="font-medium text-text">{broadcast.audiences.name}</span> · From {broadcast.from_name}{" "}
             &lt;{broadcast.from_email}&gt;
           </p>
         </div>
         <div className="flex items-center gap-2">
           {canSendNow && (
             <Button onClick={handleSendNow} disabled={sending}>
-              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendIcon className="h-4 w-4" />}
+              {!sending && <SendIcon className="h-4 w-4" />}
               {sending ? "Sending…" : "Send now"}
             </Button>
           )}
           {canDelete && (
-            <Button variant="ghost" onClick={handleDelete} className="text-error hover:bg-error/10">
+            <Button variant="danger" onClick={handleDelete}>
               <Trash2 className="h-4 w-4" />
               Delete
             </Button>
@@ -215,56 +217,54 @@ export default function BroadcastDetailPage({
 
       {/* Error message if failed */}
       {broadcast.status === "failed" && broadcast.error_message && (
-        <Card className="mb-6 border-error/40 bg-error/5">
-          <CardContent>
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-error shrink-0 mt-0.5" />
-              <div>
-                <p className="text-body font-medium text-error">Send failed</p>
-                <p className="text-small text-text-secondary mt-1">
-                  {broadcast.error_message}
-                </p>
-              </div>
+        <Card className="mb-6 mt-4 border-danger bg-surface-2">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-danger" />
+            <div>
+              <p className="text-title text-danger">This email didn&apos;t send</p>
+              <p className="mt-1 text-body-s text-text-2">
+                {broadcast.error_message}
+              </p>
             </div>
-          </CardContent>
+          </div>
         </Card>
       )}
 
       {/* Stats — only meaningful after send */}
       {(broadcast.status === "sent" || broadcast.status === "sending") && sent > 0 && (
         <>
-          <h2 className="text-h2 text-text-primary mt-8 mb-3">Delivery</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <StatCard label="Sent" value={sent} sub="Total recipients" />
+          <h2 className="mb-3 mt-8 text-heading text-text">How it went</h2>
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-line bg-line md:grid-cols-4">
+            <StatCard label="Sent" value={sent} sub="People it went to" />
             <StatCard
               label="Delivered"
               value={delivered}
-              sub={`${deliveryRate}% delivery rate`}
+              sub={`${deliveryRate}% reached the inbox`}
             />
             <StatCard
               label="Opened"
               value={opened}
-              sub={`${openRate}% open rate`}
+              sub={`${openRate}% of emails opened`}
               accent="success"
             />
             <StatCard
               label="Clicked"
               value={clicked}
-              sub={`${clickRate}% click rate`}
+              sub={`${clickRate}% clicked a link`}
               accent="success"
             />
           </div>
 
-          <h2 className="text-h2 text-text-primary mt-8 mb-3">Issues</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <h2 className="mb-3 mt-8 text-heading text-text">Problems</h2>
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-line bg-line md:grid-cols-3">
             <StatCard
               label="Bounced"
               value={bounced}
-              sub={`${bounceRate}% bounce rate`}
+              sub={`${bounceRate}% couldn't be delivered`}
               accent={bounceRate > 5 ? "error" : "default"}
             />
             <StatCard
-              label="Complaints"
+              label="Marked as spam"
               value={complained}
               accent={complained > 0 ? "error" : "default"}
             />
@@ -274,43 +274,43 @@ export default function BroadcastDetailPage({
       )}
 
       {/* HTML preview */}
-      <h2 className="text-h2 text-text-primary mt-8 mb-3">Preview</h2>
-      <Card>
-        <CardContent className="p-0">
-          <div className="border-b border-border-default px-4 py-3 bg-surface-1 space-y-1">
-            <div className="text-small text-text-secondary">
-              <span className="font-medium text-text-primary">Subject:</span>{" "}
+      <h2 className="mb-3 mt-8 text-heading text-text">Preview</h2>
+      <Card className="overflow-hidden p-0 md:p-0">
+        <div>
+          <div className="space-y-1 border-b border-line px-4 py-3">
+            <div className="text-body-s text-text-2">
+              <span className="font-medium text-text">Subject:</span>{" "}
               {broadcast.subject}
             </div>
-            <div className="text-small text-text-tertiary">
+            <div className="text-body-s text-text-3">
               <span>From:</span> {broadcast.from_name} &lt;{broadcast.from_email}&gt;
               {broadcast.reply_to && (
                 <span className="ml-3">
-                  <span>Reply-To:</span> {broadcast.reply_to}
+                  <span>Replies go to:</span> {broadcast.reply_to}
                 </span>
               )}
             </div>
             {broadcast.scheduled_for && (
-              <div className="text-small text-text-tertiary">
+              <div className="text-body-s text-text-3">
                 <span>Scheduled for:</span>{" "}
                 {new Date(broadcast.scheduled_for).toLocaleString()}
               </div>
             )}
             {broadcast.sent_at && (
-              <div className="text-small text-text-tertiary">
+              <div className="text-body-s text-text-3">
                 <span>Sent at:</span> {new Date(broadcast.sent_at).toLocaleString()}
               </div>
             )}
           </div>
-          <div className="p-1 bg-white">
+          <div className="bg-surface p-1">
             <iframe
               srcDoc={broadcast.html_body}
-              title="Broadcast preview"
-              className="w-full min-h-[500px] border-0 rounded-lg"
+              title="Email preview"
+              className="min-h-[500px] w-full rounded-md border-0"
               sandbox=""
             />
           </div>
-        </CardContent>
+        </div>
       </Card>
     </div>
   );
@@ -328,21 +328,17 @@ function StatCard({
   accent?: "default" | "success" | "error";
 }) {
   const colorMap = {
-    default: "text-text-primary",
-    success: "text-success",
-    error: "text-error",
+    default: "text-text",
+    success: "text-teal",
+    error: "text-danger",
   };
   return (
-    <Card>
-      <CardContent>
-        <p className="text-caption text-text-tertiary uppercase tracking-wider">
-          {label}
-        </p>
-        <p className={`text-h1 font-mono mt-1 ${colorMap[accent]}`}>{value}</p>
-        {sub && (
-          <p className="text-caption text-text-tertiary mt-1">{sub}</p>
-        )}
-      </CardContent>
-    </Card>
+    <div className="flex flex-col gap-1.5 bg-surface p-4 md:p-5">
+      <p className="text-label text-text-3">{label}</p>
+      <p className={`text-numeric text-[1.75rem] ${colorMap[accent]}`}>
+        {typeof value === "number" ? value.toLocaleString() : value}
+      </p>
+      {sub && <p className="text-caption text-text-3">{sub}</p>}
+    </div>
   );
 }

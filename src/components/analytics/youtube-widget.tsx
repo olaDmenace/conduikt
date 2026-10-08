@@ -3,14 +3,16 @@
 import { useEffect, useState } from "react";
 import {
   Video,
-  Users,
   Eye,
   PlaySquare,
   Heart,
   MessageSquare,
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+} from "@/src/components/ui/lucide-icons";
+import { Card } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
+import { EmptyState } from "@/src/components/ui/empty-state";
+import { KpiStrip } from "@/src/components/ui/kpi-strip";
+import { Skeleton } from "@/src/components/ui/skeleton";
 
 interface YoutubeChannelStats {
   channelId: string;
@@ -89,68 +91,41 @@ export function YoutubeWidget({ projectId }: Props) {
 
   if (loading) {
     return (
-      <Card className="animate-in">
-        <CardContent className="flex items-center justify-center py-10">
-          <div className="text-small text-text-tertiary">
-            Loading YouTube data...
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-4" role="status" aria-label="Loading YouTube">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-10 w-10 rounded-full" />
+          <Skeleton className="h-5 w-40" />
+        </div>
+        <Skeleton className="h-24" />
+        <Skeleton className="h-48" />
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Card className="animate-in">
-        <CardContent className="flex flex-col items-center py-10 text-center">
-          <Video className="h-8 w-8 text-text-tertiary mb-3" />
-          <p className="text-body text-text-secondary">{error}</p>
-          <p className="text-small text-text-tertiary mt-1">
-            Reconnect YouTube in Settings &rarr; Integrations.
-          </p>
-        </CardContent>
-      </Card>
+      <EmptyState
+        icon={<Video className="h-6 w-6" />}
+        title={`We couldn't load YouTube: ${error}. Reconnect it in Settings, then Connected accounts.`}
+      />
     );
   }
 
   if (!data || !data.channel) {
     return (
-      <Card className="animate-in">
-        <CardContent className="flex flex-col items-center py-10 text-center">
-          <Video className="h-8 w-8 text-text-tertiary mb-3" />
-          <p className="text-body text-text-secondary">No YouTube channel found</p>
-          <p className="text-small text-text-tertiary mt-1">
-            The connected Google account doesn&rsquo;t own a channel.
-          </p>
-        </CardContent>
-      </Card>
+      <EmptyState
+        icon={<Video className="h-6 w-6" />}
+        title="No YouTube channel found. The Google account you connected doesn't own a channel."
+      />
     );
   }
 
   const channel = data.channel;
 
-  const channelStats = [
-    {
-      label: "Subscribers",
-      value: channel.subscriberCount.toLocaleString(),
-      icon: Users,
-    },
-    {
-      label: "Total Views",
-      value: channel.viewCount.toLocaleString(),
-      icon: Eye,
-    },
-    {
-      label: "Videos",
-      value: channel.videoCount.toLocaleString(),
-      icon: PlaySquare,
-    },
-  ];
-
   return (
     <div>
       {/* Channel header */}
-      <div className="flex items-center gap-3 mb-4">
+      <div className="mb-4 flex items-center gap-3">
         {channel.thumbnailUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -158,111 +133,90 @@ export function YoutubeWidget({ projectId }: Props) {
             alt={channel.channelTitle}
             width={40}
             height={40}
-            className="h-10 w-10 rounded-full border border-border-default"
+            className="h-10 w-10 rounded-full border border-line"
           />
         ) : (
-          <div className="h-10 w-10 rounded-full bg-surface-2 flex items-center justify-center">
-            <Video className="h-5 w-5 text-text-tertiary" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-2">
+            <Video className="h-5 w-5 text-text-3" />
           </div>
         )}
         <div>
-          <p className="text-h3 text-text-primary">{channel.channelTitle}</p>
-          <p className="text-caption text-text-tertiary font-mono">
-            {channel.channelId}
-          </p>
+          <p className="text-title text-text">{channel.channelTitle}</p>
+          <p className="font-mono text-caption text-text-3">{channel.channelId}</p>
         </div>
       </div>
 
       {/* Channel stats */}
-      <div className="grid grid-cols-3 gap-4 mb-4">
-        {channelStats.map((stat, i) => (
-          <Card
-            key={stat.label}
-            className="animate-in"
-            style={{ animationDelay: `${i * 60}ms` }}
-          >
-            <CardContent className="flex items-start justify-between p-5">
-              <div className="min-w-0">
-                <p className="text-caption text-text-tertiary">{stat.label}</p>
-                <p className="mt-1 font-semibold font-mono text-text-primary text-2xl">
-                  {stat.value}
-                </p>
-              </div>
-              <div className="rounded-lg bg-surface-2 p-2 shrink-0 ml-2">
-                <stat.icon className="h-5 w-5 text-accent" />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <KpiStrip
+        className="mb-4 animate-in rail:grid-cols-3"
+        cells={[
+          { label: "Subscribers", value: channel.subscriberCount.toLocaleString() },
+          { label: "Views", value: channel.viewCount.toLocaleString() },
+          { label: "Videos", value: channel.videoCount.toLocaleString() },
+        ]}
+      />
 
       {/* Recent videos */}
-      <Card className="animate-in" style={{ animationDelay: "240ms" }}>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span className="flex items-center gap-2">
-              <PlaySquare className="h-4 w-4 text-accent" />
-              Recent Videos
-            </span>
-            <Badge variant="secondary">{data.recentVideos.length}</Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {data.recentVideos.length === 0 ? (
-            <p className="px-6 py-6 text-small text-text-tertiary">
-              No videos uploaded yet.
-            </p>
-          ) : (
-            <ul className="divide-y divide-border-subtle">
-              {data.recentVideos.map((video) => (
-                <li
-                  key={video.videoId}
-                  className="flex gap-3 px-6 py-3 hover:bg-surface-1/50 transition-colors"
-                >
-                  {video.thumbnailUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={video.thumbnailUrl}
-                      alt={video.title}
-                      width={96}
-                      height={54}
-                      className="h-[54px] w-24 rounded object-cover shrink-0 border border-border-default"
-                    />
-                  ) : (
-                    <div className="h-[54px] w-24 rounded bg-surface-2 shrink-0 flex items-center justify-center">
-                      <Video className="h-5 w-5 text-text-tertiary" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <a
-                      href={`https://www.youtube.com/watch?v=${video.videoId}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-small text-text-primary hover:text-accent transition-colors line-clamp-2"
-                    >
-                      {video.title}
-                    </a>
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-caption text-text-tertiary">
-                      <span>{timeAgo(video.publishedAt)}</span>
-                      <span className="flex items-center gap-1 font-mono">
-                        <Eye className="h-3 w-3" />
-                        {video.views.toLocaleString()}
-                      </span>
-                      <span className="flex items-center gap-1 font-mono">
-                        <Heart className="h-3 w-3" />
-                        {video.likes.toLocaleString()}
-                      </span>
-                      <span className="flex items-center gap-1 font-mono">
-                        <MessageSquare className="h-3 w-3" />
-                        {video.comments.toLocaleString()}
-                      </span>
-                    </div>
+      <Card className="animate-in overflow-hidden p-0 md:p-0" style={{ animationDelay: "160ms" }}>
+        <div className="flex items-center justify-between border-b border-line p-4 md:px-6">
+          <h3 className="flex items-center gap-2 text-title text-text">
+            <PlaySquare className="h-4 w-4 text-text-3" />
+            Recent videos
+          </h3>
+          <Badge variant="secondary">{data.recentVideos.length}</Badge>
+        </div>
+        {data.recentVideos.length === 0 ? (
+          <p className="px-6 py-6 text-body-s text-text-3">No videos uploaded yet.</p>
+        ) : (
+          <ul className="divide-y divide-line">
+            {data.recentVideos.map((video) => (
+              <li
+                key={video.videoId}
+                className="flex gap-3 px-6 py-3 transition-colors hover:bg-ground"
+              >
+                {video.thumbnailUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={video.thumbnailUrl}
+                    alt={video.title}
+                    width={96}
+                    height={54}
+                    className="h-[54px] w-24 shrink-0 rounded-sm border border-line object-cover"
+                  />
+                ) : (
+                  <div className="flex h-[54px] w-24 shrink-0 items-center justify-center rounded-sm bg-surface-2">
+                    <Video className="h-5 w-5 text-text-3" />
                   </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
+                )}
+                <div className="min-w-0 flex-1">
+                  <a
+                    href={`https://www.youtube.com/watch?v=${video.videoId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover-link line-clamp-2 text-body-s text-text transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] hover:text-accent-hover"
+                  >
+                    {video.title}
+                  </a>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-text-3">
+                    <span>{timeAgo(video.publishedAt)}</span>
+                    <span className="flex items-center gap-1 font-mono">
+                      <Eye className="h-3 w-3" aria-hidden />
+                      {video.views.toLocaleString()} views
+                    </span>
+                    <span className="flex items-center gap-1 font-mono">
+                      <Heart className="h-3 w-3" aria-hidden />
+                      {video.likes.toLocaleString()} likes
+                    </span>
+                    <span className="flex items-center gap-1 font-mono">
+                      <MessageSquare className="h-3 w-3" aria-hidden />
+                      {video.comments.toLocaleString()} comments
+                    </span>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </Card>
     </div>
   );

@@ -6,16 +6,16 @@ import {
   ArrowRight,
   ArrowLeft,
   Check,
-  Loader2,
   Building2,
   Users,
   MessageSquare,
   Globe,
   SkipForward,
-} from "lucide-react";
+} from "@/src/components/ui/lucide-icons";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import { useToast } from "@/src/components/ui/toast";
 
 // ── Constants ──────────────────────────────────────────────
@@ -277,15 +277,16 @@ export default function OnboardingPage({
 
       router.push(`/projects/${id}`);
     } catch {
-      toast("Network error — your onboarding wasn't saved.", "error");
+      toast("Couldn't reach the server. Your profile wasn't saved. Try again.", "error");
       setSaving(false);
     }
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 text-accent animate-spin" />
+      <div className="mx-auto max-w-2xl space-y-6 py-8" role="status" aria-label="Loading">
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-96 w-full" />
       </div>
     );
   }
@@ -295,10 +296,10 @@ export default function OnboardingPage({
       {/* Progress indicator */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-caption text-text-tertiary">
+          <p className="text-label text-text-3">
             Step {step} of {TOTAL_STEPS}
           </p>
-          <p className="text-caption text-text-tertiary">
+          <p className="text-label text-text-3">
             {step === 1
               ? "About your business"
               : step === 2
@@ -307,7 +308,7 @@ export default function OnboardingPage({
                   ? "Your brand voice"
                   : step === 4
                     ? "Competitors (optional)"
-                    : "Confirmation"}
+                    : "Check and confirm"}
           </p>
         </div>
         <div className="flex gap-1.5">
@@ -318,8 +319,8 @@ export default function OnboardingPage({
                 i < step
                   ? "bg-accent"
                   : i === step
-                    ? "bg-accent/40"
-                    : "bg-border-default"
+                    ? "bg-accent-soft"
+                    : "bg-line"
               }`}
             />
           ))}
@@ -329,23 +330,21 @@ export default function OnboardingPage({
       {/* Step 1 — About your business */}
       {step === 1 && (
         <Card className="animate-in">
-          <CardContent className="space-y-6 py-8">
+          <CardContent className="space-y-6">
             <div className="flex items-center gap-3 mb-2">
-              <div className="rounded-xl bg-accent-muted p-3">
-                <Building2 className="h-6 w-6 text-accent" />
-              </div>
+              <Building2 className="h-5 w-5 shrink-0 text-text-3" />
               <div>
-                <h2 className="text-h2 text-text-primary">
+                <h2 className="text-heading text-text">
                   About your business
                 </h2>
-                <p className="text-small text-text-secondary">
+                <p className="text-body-s text-text-2">
                   Help us understand what you do
                 </p>
               </div>
             </div>
 
             <div>
-              <label className="text-caption text-text-tertiary mb-2 block">
+              <label className="text-body-s text-text-2 mb-2 block">
                 Business name
               </label>
               <input
@@ -357,14 +356,14 @@ export default function OnboardingPage({
                     businessName: e.target.value,
                   }))
                 }
-                className="w-full rounded-lg border border-border-default bg-surface-0 py-3 px-4 text-[0.875rem] text-text-primary placeholder:text-text-tertiary transition-colors focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-glow)]"
+                className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 placeholder="Your business name"
                 autoFocus
               />
             </div>
 
             <div>
-              <label className="text-caption text-text-tertiary mb-2 block">
+              <label className="text-body-s text-text-2 mb-2 block">
                 Website URL
               </label>
               <input
@@ -376,13 +375,13 @@ export default function OnboardingPage({
                     websiteUrl: e.target.value,
                   }))
                 }
-                className="w-full rounded-lg border border-border-default bg-surface-0 py-3 px-4 text-[0.875rem] text-text-primary placeholder:text-text-tertiary transition-colors focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-glow)]"
+                className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 placeholder="https://yoursite.com"
               />
             </div>
 
             <div>
-              <label className="text-caption text-text-tertiary mb-2 block">
+              <label className="text-body-s text-text-2 mb-2 block">
                 Industry
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -393,10 +392,10 @@ export default function OnboardingPage({
                     onClick={() =>
                       setData((prev) => ({ ...prev, industry: ind }))
                     }
-                    className={`rounded-lg border px-3 py-2 text-caption text-left transition-colors ${
+                    className={`rounded-md border px-3 py-2 text-body-s text-left transition-colors ${
                       data.industry === ind
-                        ? "border-accent bg-accent-muted text-text-primary"
-                        : "border-border-default bg-surface-0 text-text-secondary hover:bg-surface-2"
+                        ? "border-accent bg-accent-soft text-text"
+                        : "border-line bg-surface text-text-2 hover:bg-surface-2"
                     }`}
                   >
                     {ind}
@@ -406,7 +405,7 @@ export default function OnboardingPage({
             </div>
 
             <div>
-              <label className="text-caption text-text-tertiary mb-2 block">
+              <label className="text-body-s text-text-2 mb-2 block">
                 Business description
               </label>
               <textarea
@@ -417,13 +416,13 @@ export default function OnboardingPage({
                     businessDescription: e.target.value.slice(0, 300),
                   }))
                 }
-                className="w-full rounded-lg border border-border-default bg-surface-0 py-3 px-4 text-[0.875rem] text-text-primary placeholder:text-text-tertiary transition-colors focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-glow)] resize-none"
+                className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent resize-none"
                 placeholder="We help [who] to [what] by [how]"
                 rows={3}
                 maxLength={300}
               />
-              <p className="mt-1 text-caption text-text-tertiary">
-                {data.businessDescription.length}/300
+              <p className="mt-1 text-caption text-text-3">
+                <span className="font-mono">{data.businessDescription.length}/300</span>
               </p>
             </div>
           </CardContent>
@@ -433,21 +432,19 @@ export default function OnboardingPage({
       {/* Step 2 — Your audience */}
       {step === 2 && (
         <Card className="animate-in">
-          <CardContent className="space-y-6 py-8">
+          <CardContent className="space-y-6">
             <div className="flex items-center gap-3 mb-2">
-              <div className="rounded-xl bg-accent-muted p-3">
-                <Users className="h-6 w-6 text-accent" />
-              </div>
+              <Users className="h-5 w-5 shrink-0 text-text-3" />
               <div>
-                <h2 className="text-h2 text-text-primary">Your audience</h2>
-                <p className="text-small text-text-secondary">
+                <h2 className="text-heading text-text">Your audience</h2>
+                <p className="text-body-s text-text-2">
                   Tell us who you are trying to reach
                 </p>
               </div>
             </div>
 
             <div>
-              <label className="text-caption text-text-tertiary mb-2 block">
+              <label className="text-body-s text-text-2 mb-2 block">
                 Primary target audience
               </label>
               <input
@@ -459,7 +456,7 @@ export default function OnboardingPage({
                     targetAudience: e.target.value.slice(0, 150),
                   }))
                 }
-                className="w-full rounded-lg border border-border-default bg-surface-0 py-3 px-4 text-[0.875rem] text-text-primary placeholder:text-text-tertiary transition-colors focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-glow)]"
+                className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 placeholder="e.g. Solo founders building SaaS products"
                 maxLength={150}
                 autoFocus
@@ -467,7 +464,7 @@ export default function OnboardingPage({
             </div>
 
             <div>
-              <label className="text-caption text-text-tertiary mb-2 block">
+              <label className="text-body-s text-text-2 mb-2 block">
                 Their biggest pain point
               </label>
               <input
@@ -479,14 +476,14 @@ export default function OnboardingPage({
                     audiencePainPoint: e.target.value.slice(0, 150),
                   }))
                 }
-                className="w-full rounded-lg border border-border-default bg-surface-0 py-3 px-4 text-[0.875rem] text-text-primary placeholder:text-text-tertiary transition-colors focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-glow)]"
+                className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 placeholder="e.g. Not enough time to create consistent marketing content"
                 maxLength={150}
               />
             </div>
 
             <div>
-              <label className="text-caption text-text-tertiary mb-2 block">
+              <label className="text-body-s text-text-2 mb-2 block">
                 Where they spend time online
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -495,10 +492,10 @@ export default function OnboardingPage({
                     key={channel}
                     type="button"
                     onClick={() => toggleChannel(channel)}
-                    className={`rounded-lg border px-3 py-2.5 text-caption text-left transition-colors flex items-center gap-2 ${
+                    className={`rounded-md border px-3 py-2.5 text-body-s text-left transition-colors flex items-center gap-2 ${
                       data.onlineChannels.includes(channel)
-                        ? "border-accent bg-accent-muted text-text-primary"
-                        : "border-border-default bg-surface-0 text-text-secondary hover:bg-surface-2"
+                        ? "border-accent bg-accent-soft text-text"
+                        : "border-line bg-surface text-text-2 hover:bg-surface-2"
                     }`}
                   >
                     {data.onlineChannels.includes(channel) && (
@@ -516,21 +513,19 @@ export default function OnboardingPage({
       {/* Step 3 — Your brand voice */}
       {step === 3 && (
         <Card className="animate-in">
-          <CardContent className="space-y-6 py-8">
+          <CardContent className="space-y-6">
             <div className="flex items-center gap-3 mb-2">
-              <div className="rounded-xl bg-accent-muted p-3">
-                <MessageSquare className="h-6 w-6 text-accent" />
-              </div>
+              <MessageSquare className="h-5 w-5 shrink-0 text-text-3" />
               <div>
-                <h2 className="text-h2 text-text-primary">Your brand voice</h2>
-                <p className="text-small text-text-secondary">
+                <h2 className="text-heading text-text">Your brand voice</h2>
+                <p className="text-body-s text-text-2">
                   How should your content sound?
                 </p>
               </div>
             </div>
 
             <div>
-              <label className="text-caption text-text-tertiary mb-2 block">
+              <label className="text-body-s text-text-2 mb-2 block">
                 Brand voice
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -541,10 +536,10 @@ export default function OnboardingPage({
                     onClick={() =>
                       setData((prev) => ({ ...prev, brandVoice: voice }))
                     }
-                    className={`rounded-lg border px-3 py-2.5 text-caption transition-colors ${
+                    className={`rounded-md border px-3 py-2.5 text-body-s transition-colors ${
                       data.brandVoice === voice
-                        ? "border-accent bg-accent-muted text-text-primary"
-                        : "border-border-default bg-surface-0 text-text-secondary hover:bg-surface-2"
+                        ? "border-accent bg-accent-soft text-text"
+                        : "border-line bg-surface text-text-2 hover:bg-surface-2"
                     }`}
                   >
                     {voice}
@@ -554,9 +549,9 @@ export default function OnboardingPage({
             </div>
 
             <div>
-              <label className="text-caption text-text-tertiary mb-2 block">
+              <label className="text-body-s text-text-2 mb-2 block">
                 Brand voice example{" "}
-                <span className="text-text-tertiary/60">(optional)</span>
+                <span className="text-text-3">(optional)</span>
               </label>
               <textarea
                 value={data.brandVoiceExample}
@@ -566,18 +561,18 @@ export default function OnboardingPage({
                     brandVoiceExample: e.target.value.slice(0, 300),
                   }))
                 }
-                className="w-full rounded-lg border border-border-default bg-surface-0 py-3 px-4 text-[0.875rem] text-text-primary placeholder:text-text-tertiary transition-colors focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-glow)] resize-none"
+                className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent resize-none"
                 placeholder="Paste a sentence or two that sounds like your brand"
                 rows={3}
                 maxLength={300}
               />
-              <p className="mt-1 text-caption text-text-tertiary">
-                {data.brandVoiceExample.length}/300
+              <p className="mt-1 text-caption text-text-3">
+                <span className="font-mono">{data.brandVoiceExample.length}/300</span>
               </p>
             </div>
 
             <div>
-              <label className="text-caption text-text-tertiary mb-2 block">
+              <label className="text-body-s text-text-2 mb-2 block">
                 Primary marketing goal
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -588,10 +583,10 @@ export default function OnboardingPage({
                     onClick={() =>
                       setData((prev) => ({ ...prev, primaryGoal: goal }))
                     }
-                    className={`rounded-lg border px-4 py-3 text-small text-left transition-colors ${
+                    className={`rounded-md border px-4 py-3 text-body-s text-left transition-colors ${
                       data.primaryGoal === goal
-                        ? "border-accent bg-accent-muted text-text-primary"
-                        : "border-border-default bg-surface-0 text-text-secondary hover:bg-surface-2"
+                        ? "border-accent bg-accent-soft text-text"
+                        : "border-line bg-surface text-text-2 hover:bg-surface-2"
                     }`}
                   >
                     {goal}
@@ -606,34 +601,32 @@ export default function OnboardingPage({
       {/* Step 4 — Competitors (optional) */}
       {step === 4 && (
         <Card className="animate-in">
-          <CardContent className="space-y-6 py-8">
+          <CardContent className="space-y-6">
             <div className="flex items-center gap-3 mb-2">
-              <div className="rounded-xl bg-accent-muted p-3">
-                <Globe className="h-6 w-6 text-accent" />
-              </div>
+              <Globe className="h-5 w-5 shrink-0 text-text-3" />
               <div>
-                <h2 className="text-h2 text-text-primary">Your competitors</h2>
-                <p className="text-small text-text-secondary">
-                  Optional — skip if you prefer
+                <h2 className="text-heading text-text">Your competitors</h2>
+                <p className="text-body-s text-text-2">
+                  Optional. Skip if you like.
                 </p>
               </div>
             </div>
 
-            <p className="text-body text-text-secondary">
-              Add up to 3 competitor website URLs. We&apos;ll track them and
-              surface insights about their strategy.
+            <p className="text-body text-text-2">
+              Add up to 3 competitor websites. We&apos;ll keep an eye on them and
+              tell you what they&apos;re doing.
             </p>
 
             {data.competitors.map((url, i) => (
               <div key={i}>
-                <label className="text-caption text-text-tertiary mb-2 block">
+                <label className="text-body-s text-text-2 mb-2 block">
                   Competitor {i + 1}
                 </label>
                 <input
                   type="url"
                   value={url}
                   onChange={(e) => updateCompetitor(i, e.target.value)}
-                  className="w-full rounded-lg border border-border-default bg-surface-0 py-3 px-4 text-[0.875rem] text-text-primary placeholder:text-text-tertiary transition-colors focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-glow)]"
+                  className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                   placeholder={`https://competitor${i + 1}.com`}
                   autoFocus={i === 0}
                 />
@@ -646,16 +639,14 @@ export default function OnboardingPage({
       {/* Step 5 — Confirmation */}
       {step === 5 && (
         <Card className="animate-in">
-          <CardContent className="space-y-6 py-8">
+          <CardContent className="space-y-6">
             <div className="flex items-center gap-3 mb-2">
-              <div className="rounded-xl bg-success/20 p-3">
-                <Check className="h-6 w-6 text-success" />
-              </div>
+              <Check className="h-5 w-5 shrink-0 text-teal" />
               <div>
-                <h2 className="text-h2 text-text-primary">
+                <h2 className="text-heading text-text">
                   Review your profile
                 </h2>
-                <p className="text-small text-text-secondary">
+                <p className="text-body-s text-text-2">
                   Make sure everything looks right
                 </p>
               </div>
@@ -747,12 +738,8 @@ export default function OnboardingPage({
 
           {step === 5 && (
             <Button size="sm" disabled={saving} onClick={handleComplete}>
-              {saving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Check className="h-4 w-4" />
-              )}
-              {saving ? "Saving..." : "Looks good"}
+              {!saving && <Check className="h-4 w-4" />}
+              {saving ? "Saving…" : "Looks good"}
             </Button>
           )}
         </div>
@@ -763,9 +750,9 @@ export default function OnboardingPage({
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-start gap-4 py-2 border-b border-border-default last:border-0">
-      <p className="text-caption text-text-tertiary w-32 shrink-0">{label}</p>
-      <p className="text-body text-text-primary">{value}</p>
+    <div className="flex items-start gap-4 py-2 border-b border-line last:border-0">
+      <p className="text-label text-text-3 w-32 shrink-0 pt-1">{label}</p>
+      <p className="text-body text-text">{value}</p>
     </div>
   );
 }

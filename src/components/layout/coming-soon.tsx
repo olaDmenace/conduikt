@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent } from "@/src/components/ui/card";
+import { Card } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
-import { Bell, Check } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { Bell, Check } from "@/src/components/ui/lucide-icons";
+import type { LucideIcon } from "@/src/components/ui/lucide-icons";
 
 interface ComingSoonProps {
   icon: LucideIcon;
@@ -19,41 +19,43 @@ export function ComingSoon({ icon: Icon, title, description }: ComingSoonProps) 
 
   return (
     <div className="flex items-center justify-center py-16">
-      <Card className="max-w-md w-full animate-in">
-        <CardContent className="flex flex-col items-center text-center py-12 px-8">
-          <div className="mb-6 rounded-2xl bg-surface-2 p-4">
-            <Icon className="h-10 w-10 text-text-tertiary" />
-          </div>
-          <h2 className="text-h2 text-text-primary mb-2">{title}</h2>
-          <p className="text-body text-text-secondary mb-8">{description}</p>
+      <Card className="w-full max-w-md animate-in">
+        <div className="flex flex-col items-center px-2 py-6 text-center">
+          <Icon className="mb-4 h-6 w-6 text-text-3" aria-hidden />
+          <span className="text-label text-text-3">Coming soon</span>
+          <h2 className="mt-3 text-heading text-text">{title}</h2>
+          <p className="mt-2 mb-8 text-body text-text-2">{description}</p>
 
           {submitted ? (
-            <div className="flex items-center gap-2 text-success text-small font-medium">
-              <Check className="h-4 w-4" />
-              We&apos;ll let you know when it&apos;s ready!
+            <div className="flex items-center gap-2 text-body-s font-medium text-teal">
+              <Check className="h-4 w-4" aria-hidden />
+              We&apos;ll let you know when it&apos;s ready.
             </div>
           ) : (
-            <div className="flex w-full gap-2">
-              <Input
-                type="email"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="flex-1"
-              />
+            <div className="flex w-full items-end gap-2">
+              <div className="flex-1">
+                <Input
+                  type="email"
+                  label="Email"
+                  hideLabel
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
               <Button
-                size="sm"
                 onClick={() => {
                   if (email.trim()) setSubmitted(true);
                 }}
                 disabled={!email.trim()}
+                className="h-10"
               >
                 <Bell className="h-4 w-4" />
-                Notify Me
+                Notify me
               </Button>
             </div>
           )}
-        </CardContent>
+        </div>
       </Card>
     </div>
   );

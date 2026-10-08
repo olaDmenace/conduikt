@@ -4,17 +4,13 @@ import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import {
   FileBarChart,
-  Loader2,
   Download,
   AlertTriangle,
-} from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/ui/card";
+} from "@/src/components/ui/lucide-icons";
+import { Card } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
+import { EmptyState } from "@/src/components/ui/empty-state";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import { PageHeader } from "@/src/components/layout/page-header";
 import { useToast } from "@/src/components/ui/toast";
 
@@ -60,15 +56,17 @@ export default function ClientReportsPage({
       a.click();
       URL.revokeObjectURL(url);
     } else {
-      toast("Failed to generate report", "error");
+      toast("Couldn't make the report. Try again.", "error");
     }
     setDownloading(null);
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 text-accent animate-spin" />
+      <div className="space-y-3" role="status" aria-label="Loading">
+        <Skeleton className="h-10 w-56" />
+        <Skeleton className="h-20" />
+        <Skeleton className="h-20" />
       </div>
     );
   }
@@ -77,31 +75,27 @@ export default function ClientReportsPage({
     <div>
       <PageHeader
         title="Client Reports"
-        description="Generate white-label PDF reports for your clients"
+        description="Reports you can send to clients, with your branding instead of ours."
       />
 
       {audits.length === 0 ? (
-        <Card className="border-dashed border-border-strong">
-          <CardContent className="flex flex-col items-center py-16 text-center">
-            <AlertTriangle className="h-10 w-10 text-text-tertiary mb-4" />
-            <h3 className="text-h2 text-text-primary">No audits to report on</h3>
-            <p className="mt-2 max-w-md text-body text-text-secondary">
-              Run an SEO audit first, then come back here to generate a
-              white-label PDF report for your client.
-            </p>
-            <Button className="mt-6" asChild>
-              <Link href={`/projects/${projectId}/audit`}>Go to Audit</Link>
+        <EmptyState
+          icon={<AlertTriangle className="h-6 w-6" />}
+          title="Nothing to report on yet. Check your client's site first, then come back to download a report."
+          action={
+            <Button asChild>
+              <Link href={`/projects/${projectId}/audit`}>Check the site</Link>
             </Button>
-          </CardContent>
-        </Card>
+          }
+        />
       ) : (
         <div className="space-y-3">
-          <p className="text-small text-text-secondary mb-4">
-            Select an audit to download as a white-label PDF. To customise branding
-            (client name, logo, accent colour), update your{" "}
+          <p className="mb-4 text-body-s text-text-2">
+            Pick a site check to download as a PDF with your branding. To change the
+            client name, logo or colour, update your{" "}
             <Link
               href={`/projects/${projectId}/settings`}
-              className="text-accent hover:text-accent-hover transition-colors"
+              className="hover-link text-accent transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] hover:text-accent-hover"
             >
               project settings
             </Link>
@@ -110,45 +104,43 @@ export default function ClientReportsPage({
           {audits.map((audit, i) => {
             const scoreColor =
               (audit.score ?? 0) >= 80
-                ? "text-success"
+                ? "text-teal"
                 : (audit.score ?? 0) >= 50
-                  ? "text-warning"
-                  : "text-error";
+                  ? "text-accent"
+                  : "text-danger";
             return (
               <Card
                 key={audit.id}
-                className="animate-in"
-                style={{ animationDelay: `${i * 60}ms` }}
+                className="animate-in flex flex-wrap items-center justify-between gap-3"
+                style={{ animationDelay: `${Math.min(i, 5) * 80}ms` }}
               >
-                <CardContent className="flex items-center justify-between py-4">
-                  <div className="flex items-center gap-4">
-                    <FileBarChart className="h-5 w-5 text-accent shrink-0" />
-                    <div>
-                      <p className="text-body font-medium text-text-primary">
-                        {audit.type.toUpperCase()} Audit —{" "}
-                        <span className={scoreColor}>
-                          {audit.score ?? "N/A"}
-                        </span>
+                  <div className="flex min-w-0 items-center gap-4">
+                    <FileBarChart className="h-5 w-5 shrink-0 text-text-3" />
+                    <div className="min-w-0">
+                      <p className="text-title text-text">
+                        Site check ·{" "}
+                        {audit.score != null ? (
+                          <span className={scoreColor}>
+                            {audit.score} out of 100
+                          </span>
+                        ) : (
+                          <span className="text-text-3">No score</span>
+                        )}
                       </p>
-                      <p className="text-small text-text-tertiary">
-                        {new Date(audit.created_at).toLocaleDateString()} — {audit.url}
+                      <p className="truncate text-body-s text-text-3">
+                        {new Date(audit.created_at).toLocaleDateString()} · {audit.url}
                       </p>
                     </div>
                   </div>
                   <Button
                     size="sm"
-                    variant="secondary"
+                    variant="outline"
                     disabled={downloading === audit.id}
                     onClick={() => handleDownload(audit.id)}
                   >
-                    {downloading === audit.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Download className="h-4 w-4" />
-                    )}
-                    Download PDF
+                    {downloading !== audit.id && <Download className="h-4 w-4" />}
+                    {downloading === audit.id ? "Preparing…" : "Download PDF"}
                   </Button>
-                </CardContent>
               </Card>
             );
           })}

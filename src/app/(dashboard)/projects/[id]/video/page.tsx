@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback, useRef, use } from "react";
 import {
   Video,
   Film,
-  Loader2,
   ArrowRight,
   Download,
   RefreshCw,
@@ -19,11 +18,13 @@ import {
   Info,
   Shuffle,
   Wand2,
-} from "lucide-react";
+} from "@/src/components/ui/lucide-icons";
 import Link from "next/link";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
-import { Button } from "@/src/components/ui/button";
+import { Button, IconButton } from "@/src/components/ui/button";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { EmptyState } from "@/src/components/ui/empty-state";
 import { PageHeader } from "@/src/components/layout/page-header";
 
 import { useToast } from "@/src/components/ui/toast";
@@ -55,7 +56,7 @@ interface StatusResponse {
 
 const STATUS_STEPS = [
   { key: "scripting", label: "Writing your script" },
-  { key: "generating_video", label: "AI is recording your presenter" },
+  { key: "generating_video", label: "Recording your presenter" },
   { key: "ready", label: "Finalising your video" },
 ];
 
@@ -213,7 +214,7 @@ export default function VideoAgentPage({
       toast(err.error || "Failed to retry video generation", "error");
       return;
     }
-    toast("Retrying video generation...", "success");
+    toast("Trying that video again…", "success");
     setActiveJobId(jobId);
     setJobStatus({
       status: "scripting",
@@ -290,37 +291,35 @@ export default function VideoAgentPage({
   return (
     <div>
       <PageHeader
-        title="Video Ad Agent"
-        description="Generate presenter-style video ads with AI"
+        title="Video Ad"
+        description="Make short video ads with a presenter or a creator talking to camera"
       />
 
       <ExpectationBanner
         storageKey="conduikt-expect-video"
-        message="AI-generated videos take a few minutes to render. The quality improves when you iterate — first drafts are starting points, not final cuts."
+        message="Videos take a few minutes to make. They get better as you try again; treat the first one as a starting point, not the final cut."
         details={[
-          "Video generation typically takes 2-5 minutes depending on length and complexity.",
-          "Test different scripts and styles — small tweaks to tone or pacing can significantly improve engagement.",
-          "Video ads perform best when paired with a clear CTA and consistent posting schedule.",
+          "A video usually takes 2 to 5 minutes, depending on length.",
+          "Try different scripts and styles. Small changes to tone or pace can make a big difference.",
+          "Video ads work best with a clear call to action and regular posting.",
         ]}
       />
 
       {/* Plan gate overlay */}
       {planGated && (
-        <Card className="mb-8 border-warning animate-in">
-          <CardContent className="flex flex-col items-center py-10 text-center">
-            <div className="mb-4 rounded-xl bg-warning/10 p-4">
-              <Lock className="h-8 w-8 text-warning" />
-            </div>
-            <h3 className="text-h2 text-text-primary">
-              Video Ads require Growth or Agency plan
+        <Card emphasis className="mb-8 animate-in">
+          <CardContent className="flex flex-col items-center text-center">
+            <Lock className="mb-4 h-6 w-6 text-accent" />
+            <h3 className="text-heading text-text">
+              Video Ad needs the Growth or Agency plan
             </h3>
-            <p className="mt-2 max-w-md text-body text-text-secondary">
-              Upgrade to unlock AI presenter video generation, voiceovers, and
-              automatic publishing.
+            <p className="mt-2 max-w-md text-body text-text-2">
+              Upgrade to make presenter videos with voiceover and post them
+              automatically.
             </p>
             <Button className="mt-6" asChild>
               <Link href="/settings/billing">
-                Upgrade Plan
+                Upgrade plan
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
@@ -336,31 +335,27 @@ export default function VideoAgentPage({
               setStyle("presenter");
               setPhase("form");
             }}
-            className="text-left rounded-2xl border-2 border-border-default bg-surface-1 p-6 hover:border-accent hover:bg-surface-2 transition-all group"
+            className="hover-card hover-card-quiet text-left rounded-lg border border-line bg-surface p-6 group"
           >
-            <div className="mb-4 rounded-xl bg-accent-muted p-3 w-fit">
-              <Video className="h-6 w-6 text-accent" />
-            </div>
-            <h3 className="text-h3 text-text-primary mb-1">Presenter Ad</h3>
-            <p className="text-small text-text-secondary">
-              Studio-quality, avatar on screen. Best for SaaS
+            <Video className="mb-4 h-5 w-5 text-text-3" />
+            <h3 className="text-title text-text mb-1">Presenter ad</h3>
+            <p className="text-body-s text-text-2">
+              A presenter on screen, studio quality. Best for product
               explainers and LinkedIn ads.
             </p>
             <Badge className="mt-3" variant="success">
-              Active
+              Ready
             </Badge>
           </button>
 
-          <div className="relative text-left rounded-2xl border-2 border-border-subtle bg-surface-1 p-6 opacity-60 cursor-not-allowed">
-            <div className="mb-4 rounded-xl bg-surface-2 p-3 w-fit">
-              <Film className="h-6 w-6 text-text-tertiary" />
-            </div>
-            <h3 className="text-h3 text-text-primary mb-1">Cinematic Ad</h3>
-            <p className="text-small text-text-secondary">
-              Scene-based, high-production. Powered by Runway ML.
+          <div className="relative text-left rounded-lg border border-line bg-surface p-6 opacity-60 cursor-not-allowed">
+            <Film className="mb-4 h-5 w-5 text-text-3" />
+            <h3 className="text-title text-text mb-1">Cinematic ad</h3>
+            <p className="text-body-s text-text-2">
+              Scene by scene, high production. Made with Runway.
             </p>
-            <Badge className="mt-3" variant="warning">
-              Coming Soon
+            <Badge className="mt-3" variant="secondary">
+              Coming soon
             </Badge>
           </div>
 
@@ -369,18 +364,16 @@ export default function VideoAgentPage({
               setStyle("ugc");
               setPhase("form");
             }}
-            className="text-left rounded-2xl border-2 border-border-default bg-surface-1 p-6 hover:border-accent hover:bg-surface-2 transition-all group"
+            className="hover-card hover-card-quiet text-left rounded-lg border border-line bg-surface p-6 group"
           >
-            <div className="mb-4 rounded-xl bg-accent-muted p-3 w-fit">
-              <Smartphone className="h-6 w-6 text-accent" />
-            </div>
-            <h3 className="text-h3 text-text-primary mb-1">UGC Ad</h3>
-            <p className="text-small text-text-secondary">
-              Authentic, first-person, social-native. Made for TikTok, Reels,
+            <Smartphone className="mb-4 h-5 w-5 text-text-3" />
+            <h3 className="text-title text-text mb-1">Creator ad</h3>
+            <p className="text-body-s text-text-2">
+              A creator talking to camera, made for TikTok, Reels
               and Shorts.
             </p>
             <Badge className="mt-3" variant="success">
-              Active
+              Ready
             </Badge>
           </button>
         </div>
@@ -393,10 +386,10 @@ export default function VideoAgentPage({
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* UGC info message */}
               {style === "ugc" && (
-                <div className="flex items-start gap-3 rounded-lg border border-accent/30 bg-accent-muted/30 p-4">
-                  <Info className="h-5 w-5 text-accent shrink-0 mt-0.5" />
-                  <p className="text-small text-text-secondary">
-                    UGC videos are vertical (9:16) and optimised for TikTok,
+                <div className="flex items-start gap-3 rounded-md border border-line bg-surface-2 p-4">
+                  <Info className="h-4 w-4 text-text-3 shrink-0 mt-0.5" />
+                  <p className="text-body-s text-text-2">
+                    Creator videos are vertical (9:16) and made for TikTok,
                     Instagram Reels, and YouTube Shorts.
                   </p>
                 </div>
@@ -405,21 +398,21 @@ export default function VideoAgentPage({
               {/* Avatar Selection — UGC only */}
               {style === "ugc" && (
                 <div>
-                  <label className="text-caption text-text-tertiary mb-2 block">
-                    Avatar selection
+                  <label className="text-body-s text-text-2 mb-2 block">
+                    Presenter
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                     {([
                       {
                         value: "random" as const,
                         label: "Random",
-                        desc: "System picks a matching avatar",
+                        desc: "We pick a suitable presenter",
                         icon: Shuffle,
                       },
                       {
                         value: "brand-matched" as const,
-                        label: "Brand-matched",
-                        desc: "AI selects based on your brand",
+                        label: "Matched to your brand",
+                        desc: "We choose one that fits your brand",
                         icon: Wand2,
                       },
                     ]).map((opt) => (
@@ -427,17 +420,18 @@ export default function VideoAgentPage({
                         key={opt.value}
                         type="button"
                         onClick={() => setAvatarMode(opt.value)}
-                        className={`text-left rounded-xl border-2 p-4 transition-all ${
+                        aria-pressed={avatarMode === opt.value}
+                        className={`text-left rounded-md border p-4 transition-colors delay-[var(--hover-delay)] duration-[var(--duration-fast)] ${
                           avatarMode === opt.value
-                            ? "border-accent bg-accent-muted/30"
-                            : "border-border-default bg-surface-0 hover:border-border-strong"
+                            ? "border-accent bg-accent-soft"
+                            : "border-line bg-surface hover:border-line-strong"
                         }`}
                       >
                         <opt.icon className={`h-5 w-5 mb-2 ${
-                          avatarMode === opt.value ? "text-accent" : "text-text-tertiary"
+                          avatarMode === opt.value ? "text-accent" : "text-text-3"
                         }`} />
-                        <p className="text-small font-medium text-text-primary">{opt.label}</p>
-                        <p className="text-caption text-text-tertiary">{opt.desc}</p>
+                        <p className="text-title text-text">{opt.label}</p>
+                        <p className="text-caption text-text-3">{opt.desc}</p>
                       </button>
                     ))}
                   </div>
@@ -445,7 +439,7 @@ export default function VideoAgentPage({
                   {/* Gender filter — for random mode only */}
                   {avatarMode === "random" && (
                     <div className="flex items-center gap-3 mb-3">
-                      <span className="text-caption text-text-tertiary">Gender:</span>
+                      <span className="text-body-s text-text-2">Gender:</span>
                       {([
                         { value: undefined, label: "Any" },
                         { value: "male" as const, label: "Male" },
@@ -455,10 +449,11 @@ export default function VideoAgentPage({
                           key={g.label}
                           type="button"
                           onClick={() => setAvatarGender(g.value)}
-                          className={`rounded-lg border px-3 py-1.5 text-caption transition-colors ${
+                          aria-pressed={avatarGender === g.value}
+                          className={`rounded-md border px-3 py-1.5 text-body-s transition-colors delay-[var(--hover-delay)] duration-[var(--duration-fast)] ${
                             avatarGender === g.value
-                              ? "border-accent bg-accent-muted text-text-primary"
-                              : "border-border-default bg-surface-0 text-text-secondary hover:bg-surface-2"
+                              ? "border-accent bg-accent-soft text-text"
+                              : "border-line bg-surface text-text-2 hover:bg-surface-2"
                           }`}
                         >
                           {g.label}
@@ -469,10 +464,10 @@ export default function VideoAgentPage({
 
                   {/* Brand-matched info */}
                   {avatarMode === "brand-matched" && (
-                    <div className="flex items-start gap-2 rounded-lg border border-accent/20 bg-accent-muted/20 p-3">
-                      <Wand2 className="h-4 w-4 text-accent shrink-0 mt-0.5" />
-                      <p className="text-caption text-text-secondary">
-                        We&apos;ll analyse your project&apos;s industry and target audience to pick the best-fit avatar.
+                    <div className="flex items-start gap-2 rounded-md border border-line bg-surface-2 p-3">
+                      <Wand2 className="h-4 w-4 text-text-3 shrink-0 mt-0.5" />
+                      <p className="text-body-s text-text-2">
+                        We&apos;ll look at your industry and audience to pick the presenter that fits best.
                       </p>
                     </div>
                   )}
@@ -481,7 +476,7 @@ export default function VideoAgentPage({
 
               {/* Brief */}
               <div>
-                <label className="text-caption text-text-tertiary mb-2 block">
+                <label className="text-body-s text-text-2 mb-2 block">
                   What is this ad about?
                 </label>
                 <textarea
@@ -495,20 +490,20 @@ export default function VideoAgentPage({
                   rows={4}
                   required
                   minLength={50}
-                  className="w-full rounded-lg border border-border-default bg-surface-0 py-3 px-4 text-[0.875rem] text-text-primary placeholder:text-text-tertiary transition-colors focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-glow)] resize-none"
+                  className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent resize-none"
                 />
-                <p className="mt-1 text-caption text-text-tertiary">
-                  {brief.length}/50 characters minimum
+                <p className="mt-1 text-caption text-text-3">
+                  <span className="font-mono">{brief.length}/50</span> characters minimum
                 </p>
               </div>
 
               {/* Ad Length — hidden for UGC (fixed 20-30s) */}
               {style !== "ugc" && (
               <div>
-                <label className="text-caption text-text-tertiary mb-2 block">
+                <label className="text-body-s text-text-2 mb-2 block">
                   Ad length
                 </label>
-                <div className="flex gap-3">
+                <div className="flex flex-wrap gap-3">
                   {(
                     [
                       { value: "short", label: "Short (~30s)" },
@@ -518,10 +513,10 @@ export default function VideoAgentPage({
                   ).map((opt) => (
                     <label
                       key={opt.value}
-                      className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 cursor-pointer transition-colors ${
+                      className={`flex items-center gap-2 rounded-md border px-4 py-2.5 cursor-pointer transition-colors delay-[var(--hover-delay)] duration-[var(--duration-fast)] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent ${
                         adLength === opt.value
-                          ? "border-accent bg-accent-muted text-text-primary"
-                          : "border-border-default bg-surface-0 text-text-secondary hover:bg-surface-2"
+                          ? "border-accent bg-accent-soft text-text"
+                          : "border-line bg-surface text-text-2 hover:bg-surface-2"
                       }`}
                     >
                       <input
@@ -532,7 +527,7 @@ export default function VideoAgentPage({
                         onChange={() => setAdLength(opt.value)}
                         className="sr-only"
                       />
-                      <span className="text-small">{opt.label}</span>
+                      <span className="text-body-s">{opt.label}</span>
                     </label>
                   ))}
                 </div>
@@ -554,12 +549,8 @@ export default function VideoAgentPage({
                   size="sm"
                   disabled={submitting || brief.length < 50}
                 >
-                  {submitting ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4" />
-                  )}
-                  {submitting ? "Generating..." : "Generate Video Ad"}
+                  {!submitting && <Sparkles className="h-4 w-4" />}
+                  {submitting ? "Starting…" : "Make video ad"}
                 </Button>
               </div>
             </form>
@@ -570,16 +561,14 @@ export default function VideoAgentPage({
       {/* Section C: Status Tracker */}
       {phase === "status" && jobStatus && (
         <Card className="mb-8 animate-in">
-          <CardContent className="py-8">
+          <CardContent>
             <div className="flex items-center gap-3 mb-6">
-              <div className="rounded-xl bg-accent-muted p-3">
-                <Video className="h-6 w-6 text-accent" />
-              </div>
+              <span className="live-dot" aria-hidden />
               <div>
-                <h3 className="text-h3 text-text-primary">
-                  Generating your video ad
+                <h3 className="text-heading text-text">
+                  Making your video ad
                 </h3>
-                <p className="text-small text-text-secondary">
+                <p className="text-body-s text-text-2">
                   {jobStatus.progressMessage}
                 </p>
               </div>
@@ -594,17 +583,19 @@ export default function VideoAgentPage({
                     className="flex items-center gap-3"
                   >
                     {state === "done" ? (
-                      <CheckCircle2 className="h-5 w-5 text-success shrink-0" />
+                      <CheckCircle2 className="h-5 w-5 text-teal shrink-0" />
                     ) : state === "active" ? (
-                      <Loader2 className="h-5 w-5 text-accent animate-spin shrink-0" />
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center" aria-hidden>
+                        <span className="live-dot" />
+                      </span>
                     ) : (
-                      <div className="h-5 w-5 rounded-full border-2 border-border-default shrink-0" />
+                      <div className="h-5 w-5 rounded-full border-2 border-line shrink-0" />
                     )}
                     <span
                       className={`text-body ${
                         state === "pending"
-                          ? "text-text-tertiary"
-                          : "text-text-primary"
+                          ? "text-text-3"
+                          : "text-text"
                       }`}
                     >
                       {step.label}
@@ -614,13 +605,13 @@ export default function VideoAgentPage({
               })}
             </div>
 
-            <p className="text-small text-text-tertiary mb-4">
-              This usually takes 2-4 minutes. You can safely leave this page
-              — we&apos;ll notify you when it&apos;s done.
+            <p className="text-body-s text-text-3 mb-4">
+              This usually takes 2 to 4 minutes. You can leave this page;
+              we&apos;ll let you know when it&apos;s done.
             </p>
-            <Button variant="secondary" size="sm" asChild>
+            <Button variant="outline" size="sm" asChild>
               <Link href="/dashboard">
-                Go to Dashboard
+                Go to dashboard
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
@@ -631,16 +622,16 @@ export default function VideoAgentPage({
       {/* Section D: Completed Video */}
       {phase === "done" && jobStatus?.videoUrl && (
         <Card className="mb-8 animate-in">
-          <CardContent className="py-8">
+          <CardContent>
             <div className="flex items-center gap-3 mb-6">
-              <CheckCircle2 className="h-6 w-6 text-success" />
-              <h3 className="text-h3 text-text-primary">
+              <CheckCircle2 className="h-5 w-5 text-teal" />
+              <h3 className="text-heading text-text">
                 Your video ad is ready
               </h3>
             </div>
 
             {/* Video Player */}
-            <div className={`rounded-xl overflow-hidden bg-surface-0 border border-border-default mb-6 ${style === "ugc" ? "max-w-sm mx-auto" : ""}`}>
+            <div className={`rounded-lg overflow-hidden bg-ground border border-line mb-6 ${style === "ugc" ? "max-w-sm mx-auto" : ""}`}>
               <video
                 src={jobStatus.videoUrl}
                 poster={jobStatus.thumbnailUrl ?? undefined}
@@ -651,7 +642,7 @@ export default function VideoAgentPage({
 
             {/* Actions */}
             <div className="flex flex-wrap items-center gap-3 mb-6">
-              <Button variant="secondary" size="sm" asChild>
+              <Button variant="outline" size="sm" asChild>
                 <a href={jobStatus.videoUrl} download>
                   <Download className="h-4 w-4" />
                   Download MP4
@@ -659,7 +650,7 @@ export default function VideoAgentPage({
               </Button>
               <Button variant="ghost" size="sm" onClick={handleNewVideo}>
                 <RefreshCw className="h-4 w-4" />
-                Generate New
+                Make another
               </Button>
             </div>
 
@@ -668,7 +659,8 @@ export default function VideoAgentPage({
               <div>
                 <button
                   onClick={() => setScriptExpanded(!scriptExpanded)}
-                  className="flex items-center gap-2 text-small text-text-secondary hover:text-text-primary transition-colors"
+                  aria-expanded={scriptExpanded}
+                  className="hover-link flex items-center gap-2 text-body-s text-text-2 hover:text-text"
                 >
                   {scriptExpanded ? (
                     <ChevronUp className="h-4 w-4" />
@@ -678,7 +670,7 @@ export default function VideoAgentPage({
                   {scriptExpanded ? "Hide script" : "Show script"}
                 </button>
                 {scriptExpanded && (
-                  <div className="mt-3 rounded-lg bg-surface-0 border border-border-default p-4 max-h-80 overflow-y-auto">
+                  <div className="mt-3 rounded-md bg-ground border border-line p-4 max-h-80 overflow-y-auto">
                     <ScriptPreview data={jobStatus.scriptData} />
                   </div>
                 )}
@@ -690,19 +682,14 @@ export default function VideoAgentPage({
 
       {/* Section E: Video History */}
       <div className="mb-8">
-        <h2 className="text-h2 text-text-primary mb-4">Previous Videos</h2>
+        <h2 className="text-heading text-text mb-4">Previous videos</h2>
         {historyLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 text-accent animate-spin" />
+          <div className="space-y-3" role="status" aria-label="Loading videos">
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
           </div>
         ) : history.length === 0 ? (
-          <Card className="border-dashed border-border-strong">
-            <CardContent className="text-center py-8">
-              <p className="text-body text-text-secondary">
-                No videos generated yet. Create your first video ad above.
-              </p>
-            </CardContent>
-          </Card>
+          <EmptyState title="No videos yet. Make your first video ad above." />
         ) : (
           <div className="space-y-3">
             {history.map((job, i) => {
@@ -715,7 +702,7 @@ export default function VideoAgentPage({
                 >
                   <CardContent className="flex items-center gap-4">
                     {/* Thumbnail */}
-                    <div className="shrink-0 w-20 h-14 rounded-lg overflow-hidden bg-surface-2 flex items-center justify-center">
+                    <div className="shrink-0 w-20 h-14 rounded-md overflow-hidden bg-surface-2 flex items-center justify-center">
                       {job.thumbnail_url ? (
                         <img
                           src={job.thumbnail_url}
@@ -723,18 +710,18 @@ export default function VideoAgentPage({
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <Video className="h-5 w-5 text-text-tertiary" />
+                        <Video className="h-5 w-5 text-text-3" />
                       )}
                     </div>
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-body font-medium text-text-primary truncate">
+                      <p className="text-title text-text truncate">
                         {job.brief.slice(0, 60)}
-                        {job.brief.length > 60 ? "..." : ""}
+                        {job.brief.length > 60 ? "…" : ""}
                       </p>
-                      <p className="text-small text-text-tertiary">
-                        {job.style === "ugc" ? "UGC" : job.style === "presenter" ? "Presenter" : "Cinematic"}
+                      <p className="text-body-s text-text-3">
+                        {job.style === "ugc" ? "Creator" : job.style === "presenter" ? "Presenter" : "Cinematic"}
                         {job.duration_seconds
                           ? ` · ${job.duration_seconds}s`
                           : ""}
@@ -748,50 +735,52 @@ export default function VideoAgentPage({
                       {job.status === "ready" ? (
                         <>
                           <Badge variant="success">Ready</Badge>
-                          <Button
-                            variant="ghost"
+                          <IconButton
                             size="sm"
+                            label="Watch video"
                             onClick={() => viewJobStatus(job)}
                           >
                             <Play className="h-4 w-4" />
-                          </Button>
+                          </IconButton>
                         </>
                       ) : job.status === "failed" ? (
                         <>
                           <Badge variant="error">Failed</Badge>
-                          <Button
-                            variant="ghost"
+                          <IconButton
                             size="sm"
+                            label="Try again"
+                            title="Try again"
                             onClick={() => handleRetry(job.id)}
-                            title="Retry"
                           >
                             <RefreshCw className="h-4 w-4" />
-                          </Button>
+                          </IconButton>
                         </>
                       ) : (
                         <>
-                          <Badge variant="warning">
-                            <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                            Generating
+                          <Badge variant="default">
+                            <span className="live-dot" aria-hidden />
+                            Making
                           </Badge>
                           {!isActive && (
-                            <Button
-                              variant="ghost"
+                            <IconButton
                               size="sm"
+                              label="See progress"
                               onClick={() => viewJobStatus(job)}
                             >
                               <ArrowRight className="h-4 w-4" />
-                            </Button>
+                            </IconButton>
                           )}
                         </>
                       )}
-                      <button
-                        onClick={() => handleDelete(job.id)}
-                        className="rounded-lg p-2 text-text-tertiary hover:text-error hover:bg-error/10 transition-colors"
+                      <IconButton
+                        size="sm"
+                        label="Delete video"
                         title="Delete video"
+                        onClick={() => handleDelete(job.id)}
+                        className="text-text-3 hover:text-danger"
                       >
                         <Trash2 className="h-4 w-4" />
-                      </button>
+                      </IconButton>
                     </div>
                   </CardContent>
                 </Card>
@@ -808,14 +797,14 @@ function ScriptPreview({ data }: { data: Record<string, unknown> }) {
   const entries = Object.entries(data);
   if (entries.length === 0) {
     return (
-      <p className="text-small text-text-tertiary">No script data available.</p>
+      <p className="text-body-s text-text-3">No script saved for this video.</p>
     );
   }
   return (
     <div className="space-y-3">
       {entries.map(([key, value]) => (
         <div key={key}>
-          <p className="text-caption text-accent font-medium uppercase tracking-wider mb-1">
+          <p className="text-label text-text-3 mb-1.5">
             {key.replace(/_/g, " ")}
           </p>
           {Array.isArray(value) ? (
@@ -823,20 +812,20 @@ function ScriptPreview({ data }: { data: Record<string, unknown> }) {
               {value.map((item, i) => (
                 <li
                   key={i}
-                  className="text-small text-text-secondary pl-3 border-l-2 border-border-subtle"
+                  className="text-body-s text-text-2 pl-3 border-l-2 border-line"
                 >
                   {typeof item === "string" ? item : JSON.stringify(item)}
                 </li>
               ))}
             </ul>
           ) : typeof value === "object" && value !== null ? (
-            <p className="text-small text-text-secondary whitespace-pre-wrap">
+            <p className="text-body-s text-text-2 whitespace-pre-wrap">
               {Object.entries(value as Record<string, unknown>)
                 .map(([k, v]) => `${k}: ${typeof v === "string" ? v : JSON.stringify(v)}`)
                 .join("\n")}
             </p>
           ) : (
-            <p className="text-small text-text-secondary whitespace-pre-wrap">
+            <p className="text-body-s text-text-2 whitespace-pre-wrap">
               {String(value ?? "")}
             </p>
           )}

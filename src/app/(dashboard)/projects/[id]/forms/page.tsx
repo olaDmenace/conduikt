@@ -4,15 +4,17 @@ import { use, useEffect, useState } from "react";
 import {
   ClipboardList,
   Plus,
-  Loader2,
   Copy,
   Trash2,
   ExternalLink,
-} from "lucide-react";
+} from "@/src/components/ui/lucide-icons";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { EmptyState } from "@/src/components/ui/empty-state";
+import { KpiStrip } from "@/src/components/ui/kpi-strip";
 import { PageHeader } from "@/src/components/layout/page-header";
 import { useToast } from "@/src/components/ui/toast";
 import {
@@ -123,7 +125,7 @@ export default function FormsPage({
       setSubmitLabel("Subscribe");
       await loadAll();
       setEmbedFor(created.id);
-      toast("Form created — copy the embed snippet to your site", "success");
+      toast("Form created. Copy the snippet onto your site.", "success");
     } else {
       const err = await res.json().catch(() => ({}));
       toast(err.error || "Could not create form", "error");
@@ -190,96 +192,60 @@ export default function FormsPage({
   return (
     <div>
       <PageHeader
-        title="Lead Capture Forms"
-        description="Embed forms on your site that drop signups straight into a project audience and (optionally) trigger a sequence."
+        title="Signup forms"
+        description="Put a form on your site. Signups go straight into an audience and can start an email sequence."
       >
         <Button
           onClick={() => setCreateOpen(true)}
           disabled={audiences.length === 0}
         >
-          <Plus className="h-4 w-4 mr-1.5" />
-          New Form
+          <Plus className="h-4 w-4" />
+          New form
         </Button>
       </PageHeader>
 
       {audiences.length === 0 && !loading && (
-        <Card className="border-dashed border-border-strong mb-6">
-          <CardContent className="py-6 text-center">
-            <p className="text-text-secondary">
-              You'll need at least one audience before you can create a form.
-            </p>
-            <Button asChild size="sm" className="mt-3">
+        <EmptyState
+          className="mb-6"
+          title="You need an audience before you can make a form."
+          action={
+            <Button asChild size="sm">
               <a href={`/projects/${projectId}/audiences`}>
                 Create an audience
               </a>
             </Button>
-          </CardContent>
-        </Card>
+          }
+        />
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
-        <Card>
-          <CardContent className="py-4 flex items-center gap-3">
-            <div className="rounded-lg bg-surface-2 p-2">
-              <ClipboardList className="h-4 w-4 text-accent" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold font-mono text-text-primary">
-                {forms.length}
-              </p>
-              <p className="text-caption text-text-tertiary">Total forms</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="py-4 flex items-center gap-3">
-            <div className="rounded-lg bg-surface-2 p-2">
-              <ClipboardList className="h-4 w-4 text-success" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold font-mono text-text-primary">
-                {forms.filter((f) => f.is_active).length}
-              </p>
-              <p className="text-caption text-text-tertiary">Active</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="py-4 flex items-center gap-3">
-            <div className="rounded-lg bg-surface-2 p-2">
-              <ClipboardList className="h-4 w-4 text-info" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold font-mono text-text-primary">
-                {totalSubs}
-              </p>
-              <p className="text-caption text-text-tertiary">Submissions</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <KpiStrip
+        className="mb-8 rail:grid-cols-3"
+        cells={[
+          { label: "Forms", value: String(forms.length) },
+          { label: "Active", value: String(forms.filter((f) => f.is_active).length) },
+          { label: "Signups", value: String(totalSubs) },
+        ]}
+      />
 
       {loading ? (
-        <div className="flex justify-center py-20">
-          <Loader2 className="h-8 w-8 text-accent animate-spin" />
+        <div className="space-y-3" role="status" aria-label="Loading forms">
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
         </div>
       ) : forms.length === 0 ? (
-        <Card className="border-dashed border-border-strong">
-          <CardContent className="flex flex-col items-center py-16 text-center">
-            <ClipboardList className="h-12 w-12 text-text-tertiary mb-4" />
-            <h3 className="text-h3 text-text-primary">No forms yet</h3>
-            <p className="mt-2 text-body text-text-secondary max-w-md">
-              Create a form to start collecting email signups from your
-              landing page, blog, or any site you control.
-            </p>
-            {audiences.length > 0 && (
-              <Button className="mt-6" onClick={() => setCreateOpen(true)}>
-                Create First Form
+        <EmptyState
+          icon={<ClipboardList className="h-8 w-8" />}
+          title="No forms yet. Make one to collect email signups from your site or blog."
+          action={
+            audiences.length > 0 ? (
+              <Button onClick={() => setCreateOpen(true)}>
+                Create your first form
               </Button>
-            )}
-          </CardContent>
-        </Card>
+            ) : undefined
+          }
+        />
       ) : (
         <div className="space-y-3">
           {forms.map((form, i) => {
@@ -291,24 +257,24 @@ export default function FormsPage({
                 className="animate-in"
                 style={{ animationDelay: `${i * 60}ms` }}
               >
-                <CardContent className="p-5">
+                <CardContent>
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1.5">
-                        <h3 className="text-body font-medium text-text-primary truncate">
+                        <h3 className="text-title text-text truncate">
                           {form.name}
                         </h3>
                         <Badge
                           variant={form.is_active ? "success" : "secondary"}
                         >
-                          {form.is_active ? "active" : "paused"}
+                          {form.is_active ? "Active" : "Paused"}
                         </Badge>
                       </div>
-                      <div className="text-small text-text-secondary space-x-3">
+                      <div className="text-body-s text-text-2 space-x-3">
                         {audience && (
                           <span>
                             Audience:{" "}
-                            <span className="text-text-primary">
+                            <span className="text-text">
                               {audience.name}
                             </span>
                           </span>
@@ -316,12 +282,12 @@ export default function FormsPage({
                         {sequence && (
                           <span>
                             Sequence:{" "}
-                            <span className="text-text-primary">
+                            <span className="text-text">
                               {sequence.name}
                             </span>
                           </span>
                         )}
-                        <span className="text-text-tertiary font-mono">
+                        <span className="text-text-3 font-mono">
                           {form.submission_count} submission
                           {form.submission_count === 1 ? "" : "s"}
                         </span>
@@ -333,7 +299,7 @@ export default function FormsPage({
                         variant="ghost"
                         onClick={() => setEmbedFor(form.id)}
                       >
-                        <Copy className="h-3.5 w-3.5 mr-1" />
+                        <Copy className="h-3.5 w-3.5" />
                         Embed
                       </Button>
                       <Button
@@ -347,6 +313,7 @@ export default function FormsPage({
                         size="sm"
                         variant="ghost"
                         onClick={() => handleDelete(form.id, form.name)}
+                        aria-label={`Delete ${form.name}`}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
@@ -384,14 +351,14 @@ export default function FormsPage({
               onChange={(e) => setHeadline(e.target.value)}
             />
             <div>
-              <label className="text-small text-text-secondary block mb-1.5">
+              <label className="text-body-s text-text-2 block mb-1.5">
                 Audience
               </label>
               <select
                 value={audienceId}
                 onChange={(e) => setAudienceId(e.target.value)}
                 required
-                className="w-full rounded-lg border border-border-default bg-surface-0 px-3 py-2 text-body text-text-primary"
+                className="h-10 w-full rounded-md border border-line-strong bg-surface px-3.5 text-[15px] text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
                 <option value="">Select an audience…</option>
                 {audiences.map((a) => (
@@ -402,13 +369,13 @@ export default function FormsPage({
               </select>
             </div>
             <div>
-              <label className="text-small text-text-secondary block mb-1.5">
+              <label className="text-body-s text-text-2 block mb-1.5">
                 Trigger a sequence on submit (optional)
               </label>
               <select
                 value={sequenceId}
                 onChange={(e) => setSequenceId(e.target.value)}
-                className="w-full rounded-lg border border-border-default bg-surface-0 px-3 py-2 text-body text-text-primary"
+                className="h-10 w-full rounded-md border border-line-strong bg-surface px-3.5 text-[15px] text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
                 <option value="">None — just add to audience</option>
                 {sequences.map((s) => (
@@ -434,14 +401,7 @@ export default function FormsPage({
                 Cancel
               </Button>
               <Button type="submit" size="sm" disabled={creating}>
-                {creating ? (
-                  <>
-                    <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-                    Creating...
-                  </>
-                ) : (
-                  "Create form"
-                )}
+                {creating ? "Creating…" : "Create form"}
               </Button>
             </div>
           </form>
@@ -455,12 +415,12 @@ export default function FormsPage({
             <DialogTitle>Embed snippet</DialogTitle>
             <DialogDescription>
               Paste this anywhere on your site where the form should
-              appear. The script auto-renders into the placeholder div.
+              appear. The script fills in the empty div with your form.
             </DialogDescription>
           </DialogHeader>
           {embedFor && (
             <>
-              <pre className="rounded-lg bg-surface-2 p-4 text-caption font-mono text-text-primary overflow-x-auto whitespace-pre-wrap">
+              <pre className="rounded-md border border-line bg-surface-2 p-4 text-caption font-mono text-text overflow-x-auto whitespace-pre-wrap">
                 {embedSnippet(embedFor)}
               </pre>
               <div className="flex justify-between items-center pt-2">
@@ -470,10 +430,10 @@ export default function FormsPage({
                   onClick={() => window.open(`/embed/form.js`, "_blank")}
                 >
                   View widget script
-                  <ExternalLink className="h-3.5 w-3.5 ml-1" />
+                  <ExternalLink className="h-3.5 w-3.5" />
                 </Button>
                 <Button size="sm" onClick={() => copyEmbed(embedFor)}>
-                  <Copy className="h-3.5 w-3.5 mr-1.5" />
+                  <Copy className="h-3.5 w-3.5" />
                   Copy snippet
                 </Button>
               </div>

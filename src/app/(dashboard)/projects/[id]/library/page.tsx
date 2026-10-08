@@ -8,7 +8,6 @@ import {
   Twitter,
   Linkedin,
   Search,
-  Loader2,
   FolderOpen,
   Copy,
   Archive,
@@ -23,11 +22,13 @@ import {
   Lock,
   ArrowUpRight,
   CalendarClock,
-} from "lucide-react";
+} from "@/src/components/ui/lucide-icons";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
-import { Button } from "@/src/components/ui/button";
+import { Button, IconButton } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { EmptyState } from "@/src/components/ui/empty-state";
 import { PageHeader } from "@/src/components/layout/page-header";
 
 import { useToast } from "@/src/components/ui/toast";
@@ -71,20 +72,20 @@ const TYPE_ICONS: Record<string, typeof FileText> = {
 };
 
 const TYPE_LABELS: Record<string, string> = {
-  social_post: "Social Post",
+  social_post: "Social post",
   email: "Email",
-  blog_post: "Blog Post",
-  landing_page: "Landing Page",
-  seo_page: "SEO Page",
-  audit_report: "Audit Report",
-  copy_block: "Copy Block",
+  blog_post: "Blog post",
+  landing_page: "Landing page",
+  seo_page: "Search page",
+  audit_report: "Audit report",
+  copy_block: "Copy block",
   headline: "Headline",
-  cta: "CTA",
-  ad_copy: "Ad Copy",
-  meta_tags: "Meta Tags",
-  schema_markup: "Schema Markup",
-  growth_playbook: "Growth Playbook",
-  launch_plan: "Launch Plan",
+  cta: "Button text",
+  ad_copy: "Ad copy",
+  meta_tags: "Meta tags",
+  schema_markup: "Schema markup",
+  growth_playbook: "Growth plan",
+  launch_plan: "Launch plan",
 };
 
 const CHANNEL_LABELS: Record<string, string> = {
@@ -109,9 +110,9 @@ function AssetPreview({ asset }: { asset: Asset }) {
         {phases && phases.length > 0 && (
           <div className="space-y-1 mt-2">
             {phases.map((ph) => (
-              <div key={ph.phase} className="flex items-center justify-between text-small">
-                <span className="text-text-primary font-medium">Phase {ph.phase}: {ph.name}</span>
-                <span className="text-text-tertiary">{ph.timeline} · {ph.actions?.length ?? 0} actions</span>
+              <div key={ph.phase} className="flex items-center justify-between text-body-s">
+                <span className="text-text font-medium">Phase {ph.phase}: {ph.name}</span>
+                <span className="text-text-3">{ph.timeline} · {ph.actions?.length ?? 0} actions</span>
               </div>
             ))}
           </div>
@@ -265,7 +266,7 @@ export default function LibraryPage({
       body: JSON.stringify({ assetId }),
     });
     if (res.ok) {
-      toast("Asset archived", "info");
+      toast("Archived", "info");
       setAssets((prev) =>
         prev.map((a) =>
           a.id === assetId ? { ...a, status: "archived" } : a
@@ -283,7 +284,7 @@ export default function LibraryPage({
     navigator.clipboard.writeText(text);
     toast(
       asset.type === "email"
-        ? "Email copied — paste into your ESP"
+        ? "Email copied. Paste it into your email tool."
         : "Content copied",
       "success"
     );
@@ -306,7 +307,7 @@ export default function LibraryPage({
   async function handleSchedule() {
     if (!schedulingAsset || !scheduleDateTime || !schedulePostText.trim()) return;
     if (!isSchedulable(schedulingAsset)) {
-      toast("This asset type can't be scheduled", "error");
+      toast("This kind of content can't be scheduled", "error");
       return;
     }
 
@@ -371,19 +372,19 @@ export default function LibraryPage({
   return (
     <div>
       <PageHeader
-        title="Content Library"
-        description="Browse and manage all your generated assets"
+        title="Library"
+        description="Everything you've made for this project, in one place"
       />
 
 
       {plan === "free" && !loading && (
-        <Card className="mb-6 border-dashed border-accent/40 bg-accent-muted/20">
-          <CardContent className="flex items-center justify-between gap-4 py-4">
+        <Card emphasis className="mb-6">
+          <CardContent className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <Lock className="h-5 w-5 text-accent shrink-0" />
-              <p className="text-small text-text-secondary">
-                The Content Library is a <span className="font-semibold text-text-primary">Pro</span> feature.
-                Upgrade to save, organise, and re-use your generated assets.
+              <Lock className="h-4 w-4 text-accent shrink-0" />
+              <p className="text-body-s text-text-2">
+                The library is a <span className="font-medium text-text">Pro</span> feature.
+                Upgrade to save, sort and reuse what you make.
               </p>
             </div>
             <Button size="sm" asChild>
@@ -397,39 +398,38 @@ export default function LibraryPage({
       )}
 
       {loading ? (
-        <div className="flex justify-center py-20">
-          <Loader2 className="h-8 w-8 text-accent animate-spin" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" role="status" aria-label="Loading library">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-36 rounded-lg" />
+          ))}
         </div>
       ) : assets.length === 0 ? (
-        <Card className="border-dashed border-border-strong">
-          <CardContent className="flex flex-col items-center py-16 text-center">
-            <FolderOpen className="h-12 w-12 text-text-tertiary mb-4" />
-            <h3 className="text-h3 text-text-primary">No assets yet</h3>
-            <p className="mt-2 text-body text-text-secondary max-w-md">
-              Generate content using Content Studio or the Playground, then save drafts to build your library.
-            </p>
-            <div className="flex items-center gap-3 mt-6">
+        <EmptyState
+          icon={<FolderOpen className="h-8 w-8" />}
+          title="Nothing saved yet. Write something in Content Studio or the Playground and save it to build your library."
+          action={
+            <div className="flex items-center gap-3">
               <Button asChild>
                 <Link href={`/projects/${projectId}/content`}>
-                  Content Studio
+                  Open Content Studio
                 </Link>
               </Button>
-              <Button variant="secondary" asChild>
+              <Button variant="outline" asChild>
                 <Link href="/playground">
                   Playground
                 </Link>
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          }
+        />
       ) : (
         <>
           {/* Filter bar */}
           <div className="flex flex-wrap items-center gap-3 mb-6">
             <div className="relative flex-1 min-w-[200px] max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-3" />
               <Input
-                placeholder="Search assets..."
+                placeholder="Search your library…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -439,7 +439,7 @@ export default function LibraryPage({
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="rounded-lg border border-border-default bg-surface-0 px-3 py-2 text-small text-text-secondary"
+              className="h-9 rounded-md border border-line-strong bg-surface px-3 text-body-s text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               <option value="all">All types</option>
               {uniqueTypes.map((t) => (
@@ -452,7 +452,7 @@ export default function LibraryPage({
             <select
               value={channelFilter}
               onChange={(e) => setChannelFilter(e.target.value)}
-              className="rounded-lg border border-border-default bg-surface-0 px-3 py-2 text-small text-text-secondary"
+              className="h-9 rounded-md border border-line-strong bg-surface px-3 text-body-s text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               <option value="all">All channels</option>
               {uniqueChannels.map((ch) => (
@@ -465,7 +465,7 @@ export default function LibraryPage({
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-lg border border-border-default bg-surface-0 px-3 py-2 text-small text-text-secondary"
+              className="h-9 rounded-md border border-line-strong bg-surface px-3 text-body-s text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               <option value="all">All statuses</option>
               <option value="draft">Draft</option>
@@ -474,25 +474,29 @@ export default function LibraryPage({
             </select>
 
             <div className="flex items-center gap-1 ml-auto">
-              <Button
+              <IconButton
                 size="sm"
-                variant={viewMode === "grid" ? "primary" : "ghost"}
+                label="Grid view"
+                aria-pressed={viewMode === "grid"}
+                variant={viewMode === "grid" ? "outline" : "ghost"}
                 onClick={() => setViewMode("grid")}
               >
                 <LayoutGrid className="h-3.5 w-3.5" />
-              </Button>
-              <Button
+              </IconButton>
+              <IconButton
                 size="sm"
-                variant={viewMode === "list" ? "primary" : "ghost"}
+                label="List view"
+                aria-pressed={viewMode === "list"}
+                variant={viewMode === "list" ? "outline" : "ghost"}
                 onClick={() => setViewMode("list")}
               >
                 <List className="h-3.5 w-3.5" />
-              </Button>
+              </IconButton>
             </div>
           </div>
 
-          <p className="text-small text-text-tertiary mb-4">
-            {filtered.length} asset{filtered.length !== 1 ? "s" : ""}
+          <p className="text-label text-text-3 mb-4">
+            {filtered.length} item{filtered.length !== 1 ? "s" : ""}
           </p>
 
           {/* Grid View */}
@@ -503,20 +507,19 @@ export default function LibraryPage({
                 return (
                   <Card
                     key={asset.id}
-                    className="animate-in cursor-pointer hover:border-accent/40 transition-colors"
+                    hover
+                    className="animate-in"
                     style={{ animationDelay: `${i * 40}ms` }}
                     onClick={() => setSelectedAsset(asset)}
                   >
-                    <CardContent className="p-5">
+                    <CardContent>
                       <div className="flex items-start justify-between mb-3">
-                        <div className="rounded-lg bg-surface-2 p-2">
-                          <Icon className="h-4 w-4 text-accent" />
-                        </div>
+                        <Icon className="h-4 w-4 text-text-3" />
                         <Badge variant={statusVariant(asset.status)}>
                           {asset.status}
                         </Badge>
                       </div>
-                      <h3 className="text-body font-medium text-text-primary mb-2 truncate">
+                      <h3 className="text-title text-text mb-2 truncate">
                         {asset.title || "Untitled"}
                       </h3>
                       <div className="flex items-center gap-2 flex-wrap">
@@ -529,7 +532,7 @@ export default function LibraryPage({
                           </Badge>
                         )}
                       </div>
-                      <p className="text-caption text-text-tertiary mt-2 flex items-center gap-1">
+                      <p className="text-caption text-text-3 mt-2 flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
                         {new Date(asset.created_at).toLocaleDateString(
                           undefined,
@@ -549,16 +552,15 @@ export default function LibraryPage({
                 return (
                   <Card
                     key={asset.id}
-                    className="animate-in cursor-pointer hover:border-accent/40 transition-colors"
+                    hover
+                    className="animate-in py-3 md:py-3"
                     style={{ animationDelay: `${i * 30}ms` }}
                     onClick={() => setSelectedAsset(asset)}
                   >
-                    <CardContent className="flex items-center gap-4 py-3">
-                      <div className="rounded-lg bg-surface-2 p-2 shrink-0">
-                        <Icon className="h-4 w-4 text-accent" />
-                      </div>
+                    <CardContent className="flex items-center gap-4">
+                      <Icon className="h-4 w-4 shrink-0 text-text-3" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-body font-medium text-text-primary truncate">
+                        <p className="text-title text-text truncate">
                           {asset.title || "Untitled"}
                         </p>
                       </div>
@@ -573,7 +575,7 @@ export default function LibraryPage({
                       <Badge variant={statusVariant(asset.status)}>
                         {asset.status}
                       </Badge>
-                      <span className="text-caption text-text-tertiary whitespace-nowrap">
+                      <span className="text-caption text-text-3 whitespace-nowrap">
                         {new Date(asset.created_at).toLocaleDateString(
                           undefined,
                           { month: "short", day: "numeric" }
@@ -609,7 +611,7 @@ export default function LibraryPage({
               </DialogHeader>
 
               {/* Content preview */}
-              <div className="mt-2 rounded-lg border border-border-default bg-surface-0 p-4 text-small text-text-secondary max-h-[360px] overflow-y-auto">
+              <div className="mt-2 rounded-md border border-line bg-ground p-4 text-body-s text-text-2 max-h-[360px] overflow-y-auto">
                 <AssetPreview asset={selectedAsset} />
               </div>
 
@@ -618,11 +620,8 @@ export default function LibraryPage({
                   disabled={navigating}
                   onClick={() => startNavigation(() => router.push(`/projects/${projectId}/assets/${selectedAsset.id}`))}
                 >
-                  {navigating
-                    ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                    : <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-                  }
-                  {navigating ? "Opening…" : "Open Full View"}
+                  {!navigating && <ExternalLink className="h-3.5 w-3.5" />}
+                  {navigating ? "Opening…" : "Open full view"}
                 </Button>
                 <PdfDownloadButton
                   href={`/api/projects/${projectId}/assets/${selectedAsset.id}/pdf`}
@@ -633,7 +632,7 @@ export default function LibraryPage({
                   variant="ghost"
                   onClick={() => handleCopy(selectedAsset)}
                 >
-                  <Copy className="h-3.5 w-3.5 mr-1.5" />
+                  <Copy className="h-3.5 w-3.5" />
                   Copy
                 </Button>
                 {isSchedulable(selectedAsset) && (
@@ -642,7 +641,7 @@ export default function LibraryPage({
                     variant="ghost"
                     onClick={() => openScheduleDialog(selectedAsset)}
                   >
-                    <Calendar className="h-3.5 w-3.5 mr-1.5" />
+                    <Calendar className="h-3.5 w-3.5" />
                     Schedule
                   </Button>
                 )}
@@ -651,9 +650,9 @@ export default function LibraryPage({
                     size="sm"
                     variant="ghost"
                     onClick={() => handleArchive(selectedAsset.id)}
-                    className="text-error hover:text-error ml-auto"
+                    className="text-danger hover:text-danger ml-auto"
                   >
-                    <Archive className="h-3.5 w-3.5 mr-1.5" />
+                    <Archive className="h-3.5 w-3.5" />
                     Archive
                   </Button>
                 )}
@@ -675,7 +674,7 @@ export default function LibraryPage({
             <>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
-                  <CalendarClock className="h-5 w-5 text-accent" />
+                  <CalendarClock className="h-4 w-4 text-text-3" />
                   Schedule {schedulingAsset.channel === "x" ? "X" : "LinkedIn"} post
                 </DialogTitle>
                 <DialogDescription>
@@ -686,7 +685,7 @@ export default function LibraryPage({
 
               <div className="mt-2 space-y-4">
                 <div>
-                  <label className="text-small text-text-secondary block mb-1.5">
+                  <label className="text-body-s text-text-2 block mb-1.5">
                     When to post
                   </label>
                   <input
@@ -694,26 +693,26 @@ export default function LibraryPage({
                     value={scheduleDateTime}
                     min={minScheduleValue()}
                     onChange={(e) => setScheduleDateTime(e.target.value)}
-                    className="w-full rounded-lg border border-border-strong bg-surface-0 px-4 py-2.5 text-text-primary text-small transition-all duration-150 focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-glow)]"
+                    className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                   />
                 </div>
 
                 <div>
-                  <label className="text-small text-text-secondary block mb-1.5">
+                  <label className="text-body-s text-text-2 block mb-1.5">
                     Post text
                   </label>
                   <textarea
                     value={schedulePostText}
                     onChange={(e) => setSchedulePostText(e.target.value)}
                     rows={8}
-                    className="w-full rounded-lg border border-border-strong bg-surface-0 px-4 py-3 text-text-primary placeholder:text-text-tertiary font-sans text-[0.9375rem] transition-all duration-150 focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-glow)] resize-y"
+                    className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent resize-y"
                   />
                   {schedulingAsset.channel === "x" && (
-                    <p className="mt-1 text-caption text-text-tertiary">
+                    <p className="mt-1 text-caption text-text-3">
                       {schedulePostText.length} / 280 characters
                       {schedulePostText.length > 280 && (
-                        <span className="text-error ml-2">
-                          Too long — X will reject this
+                        <span className="text-danger ml-2">
+                          Too long. X will reject this.
                         </span>
                       )}
                     </p>
@@ -733,13 +732,10 @@ export default function LibraryPage({
                   }
                 >
                   {scheduleSubmitting ? (
-                    <>
-                      <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                      Scheduling...
-                    </>
+                    "Scheduling…"
                   ) : (
                     <>
-                      <CalendarClock className="h-3.5 w-3.5 mr-1.5" />
+                      <CalendarClock className="h-3.5 w-3.5" />
                       Schedule post
                     </>
                   )}

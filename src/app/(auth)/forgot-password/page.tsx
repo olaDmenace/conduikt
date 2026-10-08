@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/src/lib/supabase/client";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { useToast } from "@/src/components/ui/toast";
-import { ArrowLeft, Mail } from "lucide-react";
+import { ArrowLeft, Mail } from "@/src/components/ui/lucide-icons";
 import { mapSupabaseAuthError } from "@/src/lib/auth/error-map";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -50,45 +49,34 @@ export default function ForgotPasswordPage() {
 
     setSent(true);
     setLoading(false);
-    toast("Password reset email sent! Check your inbox.", "success");
+    toast("Password reset email sent. Check your inbox.", "success");
   }
 
   return (
     <div className="animate-in">
-      {/* Logo — links back to the homepage. */}
       <div className="mb-8 text-center">
-        <Link href="/" aria-label="Conduikt home" className="inline-block mb-4">
-          <Image
-            src="/conduikt-icon.png"
-            alt="Conduikt"
-            width={72}
-            height={72}
-            priority
-            className="mx-auto h-[72px] w-[72px] transition-transform duration-300 hover:scale-105"
-          />
-        </Link>
-        <h1 className="text-h1">Reset password</h1>
-        <p className="mt-2 text-body text-text-secondary">
+        <h1 className="text-display-s text-text">Reset your password</h1>
+        <p className="mt-3 text-body text-text-2">
           {sent
-            ? "Check your email for a reset link"
-            : "Enter your email and we'll send you a reset link"}
+            ? "Check your email for a reset link."
+            : "Enter your email and we'll send you a reset link."}
         </p>
       </div>
 
       {sent ? (
         <div className="space-y-6">
-          <div className="flex flex-col items-center rounded-xl border border-success/20 bg-success/10 p-6">
-            <Mail className="h-10 w-10 text-success mb-3" />
-            <p className="text-body text-text-primary text-center">
+          <div className="flex flex-col items-center rounded-lg border border-line bg-surface p-6 text-center">
+            <Mail className="mb-3 h-5 w-5 text-teal" aria-hidden />
+            <p className="text-body text-text">
               We sent a password reset link to{" "}
-              <span className="font-medium text-accent">{email}</span>
+              <span className="font-medium text-text">{email}</span>
             </p>
-            <p className="mt-2 text-small text-text-secondary text-center">
+            <p className="mt-2 text-body-s text-text-2">
               Didn&apos;t receive it? Check your spam folder or try again.
             </p>
           </div>
           <Button
-            variant="secondary"
+            variant="outline"
             className="w-full"
             onClick={() => setSent(false)}
           >
@@ -112,13 +100,13 @@ export default function ForgotPasswordPage() {
           />
 
           {formError && (
-            <div className="rounded-lg border border-error/20 bg-error/10 px-4 py-3 text-small text-error">
+            <div role="alert" className="rounded-md border border-line bg-surface-2 px-4 py-3 text-body-s text-danger">
               {formError}
             </div>
           )}
 
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Sending..." : "Send reset link"}
+            {loading ? "Sending…" : "Send reset link"}
           </Button>
         </form>
       )}
@@ -126,9 +114,9 @@ export default function ForgotPasswordPage() {
       <p className="mt-6 text-center">
         <Link
           href="/login"
-          className="inline-flex items-center gap-1.5 text-small text-accent-secondary hover:text-accent-secondary-hover transition-colors"
+          className="hover-link inline-flex items-center gap-1.5 text-body-s text-accent hover:text-accent-hover"
         >
-          <ArrowLeft className="h-3.5 w-3.5" />
+          <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
           Back to sign in
         </Link>
       </p>

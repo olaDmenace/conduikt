@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Info, X } from "lucide-react";
+import { Info, X } from "@/src/components/ui/lucide-icons";
 
 interface ExpectationBannerProps {
   /** The main message — lead with "this takes time" */
@@ -25,15 +25,15 @@ export function ExpectationBanner({
   if (dismissed) return null;
 
   return (
-    <div className="mb-6 rounded-xl border border-accent/20 bg-accent/5 px-4 py-3 animate-in">
+    <div className="mb-6 rounded-lg border border-line bg-surface px-4 py-3 animate-in">
       <div className="flex items-start gap-3">
-        <Info className="h-4 w-4 text-accent mt-0.5 shrink-0" />
-        <div className="flex-1 min-w-0">
-          <p className="text-small text-text-primary">{message}</p>
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-text-3" />
+        <div className="min-w-0 flex-1">
+          <p className="text-body-s text-text">{message}</p>
           {details && details.length > 0 && (
             <ul className="mt-2 space-y-1">
               {details.map((d, i) => (
-                <li key={i} className="text-small text-text-secondary">
+                <li key={i} className="text-body-s text-text-2">
                   {d}
                 </li>
               ))}
@@ -46,7 +46,7 @@ export function ExpectationBanner({
             setDismissed(true);
             localStorage.setItem(storageKey, "dismissed");
           }}
-          className="shrink-0 p-1 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-surface-2 transition-colors"
+          className="shrink-0 rounded-md p-1 text-text-3 transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] hover:bg-surface-2 hover:text-text"
           aria-label="Dismiss"
         >
           <X className="h-3.5 w-3.5" />

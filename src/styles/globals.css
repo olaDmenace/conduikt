@@ -418,8 +418,9 @@ body {
 .faq-item[open] summary::after { transform: rotate(45deg); }
 .faq-item[open] > div { animation: fadeUp 350ms var(--ease-out-soft) both; }
 
-/* Skeleton: surface-2 block with a gentle pulse. */
-.skeleton {
+/* Skeleton: surface-2 block with a gentle pulse. :where() keeps the
+   default radius at zero specificity so rounded-* utilities win. */
+:where(.skeleton) {
   background: var(--surface-2-raw);
   border-radius: 6px;
   animation: livepulse 1.2s ease-in-out infinite;

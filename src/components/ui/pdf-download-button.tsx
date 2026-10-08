@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, Loader2 } from "lucide-react";
+import { Download } from "@/src/components/ui/lucide-icons";
 import { Button } from "@/src/components/ui/button";
 import { useToast } from "@/src/components/ui/toast";
 
@@ -39,7 +39,7 @@ export function PdfDownloadButton({
       a.remove();
       URL.revokeObjectURL(url);
     } catch {
-      toast("Failed to generate PDF. Please try again.", "error");
+      toast("We couldn't make the PDF. Try again.", "error");
     } finally {
       setLoading(false);
     }
@@ -48,17 +48,13 @@ export function PdfDownloadButton({
   return (
     <Button
       size={size}
-      variant={variant}
+      variant={variant === "secondary" ? "outline" : variant}
       onClick={handleDownload}
       disabled={loading}
       className={className}
     >
-      {loading ? (
-        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-      ) : (
-        <Download className="h-3.5 w-3.5" />
-      )}
-      {loading ? "Generating…" : "Export PDF"}
+      {!loading && <Download className="h-3.5 w-3.5" />}
+      {loading ? "Making PDF…" : "Export PDF"}
     </Button>
   );
 }

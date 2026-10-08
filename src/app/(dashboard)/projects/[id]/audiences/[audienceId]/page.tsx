@@ -4,7 +4,6 @@ import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
-  Loader2,
   UserPlus,
   Trash2,
   Upload,
@@ -14,10 +13,14 @@ import {
   CheckCircle2,
   XCircle,
   AlertTriangle,
-} from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+} from "@/src/components/ui/lucide-icons";
+import { Card } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
-import { Button } from "@/src/components/ui/button";
+import { Button, IconButton } from "@/src/components/ui/button";
+import { EmptyState } from "@/src/components/ui/empty-state";
+import { Input } from "@/src/components/ui/input";
+import { KpiStrip } from "@/src/components/ui/kpi-strip";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import { PageHeader } from "@/src/components/layout/page-header";
 import { useToast } from "@/src/components/ui/toast";
 
@@ -54,23 +57,23 @@ const PAGE_SIZE = 50;
 function statusBadge(status: Contact["status"]) {
   if (status === "subscribed") {
     return (
-      <Badge variant="success" className="text-[0.65rem]">
-        <CheckCircle2 className="h-3 w-3 mr-1" />
+      <Badge variant="success">
+        <CheckCircle2 className="h-3 w-3" />
         Subscribed
       </Badge>
     );
   }
   if (status === "unsubscribed") {
     return (
-      <Badge variant="secondary" className="text-[0.65rem]">
-        <XCircle className="h-3 w-3 mr-1" />
+      <Badge variant="secondary">
+        <XCircle className="h-3 w-3" />
         Unsubscribed
       </Badge>
     );
   }
   return (
-    <Badge variant="error" className="text-[0.65rem]">
-      <AlertTriangle className="h-3 w-3 mr-1" />
+    <Badge variant="error">
+      <AlertTriangle className="h-3 w-3" />
       {status === "complained" ? "Complained" : "Bounced"}
     </Badge>
   );
@@ -112,7 +115,7 @@ export default function AudienceDetailPage({
       const data = await res.json();
       setAudience(data);
     } else {
-      toast("Failed to load audience", "error");
+      toast("Couldn't load this list. Refresh to try again.", "error");
     }
     setLoadingAudience(false);
   }
@@ -164,10 +167,10 @@ export default function AudienceDetailPage({
       );
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        toast(err.error ?? "Failed to add contact", "error");
+        toast(err.error ?? "Couldn't add this subscriber. Try again.", "error");
         return;
       }
-      toast("Contact added", "success");
+      toast("Subscriber added", "success");
       setAddOpen(false);
       setNewEmail("");
       setNewFirst("");
@@ -192,7 +195,7 @@ export default function AudienceDetailPage({
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast(data.error ?? "Import failed", "error");
+        toast(data.error ?? "The import failed. Check the CSV and try again.", "error");
         return;
       }
       const parts = [
@@ -213,23 +216,23 @@ export default function AudienceDetailPage({
   }
 
   async function handleDeleteContact(contactId: string) {
-    if (!confirm("Remove this contact from the audience?")) return;
+    if (!confirm("Remove this subscriber from the list?")) return;
     const res = await fetch(
       `/api/projects/${projectId}/audiences/${audienceId}/contacts/${contactId}`,
       { method: "DELETE" }
     );
     if (res.ok) {
-      toast("Contact removed", "success");
+      toast("Subscriber removed", "success");
       await Promise.all([fetchAudience(), fetchContacts()]);
     } else {
-      toast("Failed to remove contact", "error");
+      toast("Couldn't remove this subscriber. Try again.", "error");
     }
   }
 
   async function handleDeleteAudience() {
     if (
       !confirm(
-        "Delete this audience and all its contacts? This cannot be undone."
+        "Delete this list and everyone on it? You can't undo this."
       )
     )
       return;
@@ -238,28 +241,31 @@ export default function AudienceDetailPage({
       { method: "DELETE" }
     );
     if (res.ok) {
-      toast("Audience deleted", "success");
+      toast("List deleted", "success");
       window.location.href = `/projects/${projectId}/audiences`;
     } else {
-      toast("Failed to delete audience", "error");
+      toast("Couldn't delete this list. Try again.", "error");
     }
   }
 
   if (loadingAudience) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 text-accent animate-spin" />
+      <div className="space-y-6" role="status" aria-label="Loading">
+        <Skeleton className="h-4 w-28" />
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-24" />
+        <Skeleton className="h-64" />
       </div>
     );
   }
   if (!audience) {
     return (
       <div>
-        <PageHeader title="Audience not found" />
+        <PageHeader title="We couldn't find this list" />
         <Button asChild variant="ghost">
           <Link href={`/projects/${projectId}/audiences`}>
             <ArrowLeft className="h-4 w-4" />
-            Back to audiences
+            Back to subscribers
           </Link>
         </Button>
       </div>
@@ -267,150 +273,152 @@ export default function AudienceDetailPage({
   }
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const fieldClass =
+    "h-10 w-full rounded-md border border-line-strong bg-surface px-3.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent";
 
   return (
     <div>
       <Link
         href={`/projects/${projectId}/audiences`}
-        className="inline-flex items-center gap-1.5 text-small text-text-tertiary hover:text-text-primary mb-3 transition-colors"
+        className="hover-link mb-3 inline-flex items-center gap-1.5 text-body-s text-text-3 transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] hover:text-text"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
-        All audiences
+        All subscriber lists
       </Link>
 
       <PageHeader
         title={audience.name}
         description={audience.description ?? undefined}
       >
-        <Button variant="secondary" onClick={() => setImportOpen(true)}>
+        <Button variant="outline" onClick={() => setImportOpen(true)}>
           <Upload className="h-4 w-4" />
-          Import CSV
+          Import a CSV
         </Button>
         <Button onClick={() => setAddOpen(true)}>
           <UserPlus className="h-4 w-4" />
-          Add Contact
+          Add subscriber
         </Button>
       </PageHeader>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <Card>
-          <CardContent>
-            <p className="text-caption text-text-tertiary uppercase tracking-wider">
-              Subscribed
-            </p>
-            <p className="text-h1 text-text-primary font-mono mt-1">
-              {audience.stats?.subscribed ?? 0}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent>
-            <p className="text-caption text-text-tertiary uppercase tracking-wider">
-              Unsubscribed
-            </p>
-            <p className="text-h1 text-text-secondary font-mono mt-1">
-              {audience.stats?.unsubscribed ?? 0}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent>
-            <p className="text-caption text-text-tertiary uppercase tracking-wider">
-              Bounced
-            </p>
-            <p className="text-h1 text-error font-mono mt-1">
-              {audience.stats?.bounced ?? 0}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <KpiStrip
+        className="mb-6 rail:grid-cols-3"
+        cells={[
+          {
+            label: "Subscribed",
+            value: `${(audience.stats?.subscribed ?? 0).toLocaleString()} people`,
+          },
+          {
+            label: "Unsubscribed",
+            value: (audience.stats?.unsubscribed ?? 0).toLocaleString(),
+          },
+          {
+            label: "Bounced",
+            value: (audience.stats?.bounced ?? 0).toLocaleString(),
+            context: "Emails that couldn't be delivered",
+          },
+        ]}
+      />
 
       {/* Search */}
-      <div className="mb-4 relative max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
+      <div className="relative mb-4 max-w-md">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-3" />
+        <label htmlFor="contact-search" className="sr-only">
+          Search by email
+        </label>
         <input
+          id="contact-search"
           type="text"
-          placeholder="Search by email…"
+          placeholder="Try: alice@example.com"
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
             setPage(1);
           }}
-          className="w-full rounded-lg border border-border-default bg-surface-1 py-2 pl-10 pr-3 text-small text-text-primary placeholder:text-text-tertiary focus:border-accent focus:outline-none"
+          className={`${fieldClass} pl-10`}
         />
       </div>
 
       {/* Contacts table */}
       {loadingContacts ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 text-accent animate-spin" />
+        <div className="space-y-2" role="status" aria-label="Loading subscribers">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-11" />
+          ))}
         </div>
       ) : contacts.length === 0 ? (
-        <Card className="border-dashed border-border-strong">
-          <CardContent className="flex flex-col items-center py-12 text-center">
-            <Mail className="h-8 w-8 text-text-tertiary mb-3" />
-            <p className="text-body text-text-primary font-medium">
-              {search ? "No matches" : "No contacts yet"}
-            </p>
-            <p className="text-small text-text-secondary mt-1">
-              {search
-                ? "Try a different search."
-                : "Add a contact or import a CSV to get started."}
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={<Mail className="h-6 w-6" />}
+          title={
+            search
+              ? "No one matches that search. Try a different email."
+              : "No subscribers yet. Add one, or import a CSV."
+          }
+          action={
+            search ? undefined : (
+              <Button size="sm" onClick={() => setAddOpen(true)}>
+                <UserPlus className="h-4 w-4" />
+                Add subscriber
+              </Button>
+            )
+          }
+        />
       ) : (
         <>
-          <Card>
-            <CardContent className="p-0">
-              <table className="w-full text-small">
-                <thead className="border-b border-border-default">
-                  <tr className="text-text-tertiary">
-                    <th className="text-left px-4 py-2.5 font-medium">Email</th>
-                    <th className="text-left px-4 py-2.5 font-medium">Name</th>
-                    <th className="text-left px-4 py-2.5 font-medium">Status</th>
-                    <th className="text-left px-4 py-2.5 font-medium">Subscribed</th>
-                    <th className="px-4 py-2.5"></th>
+          <Card className="overflow-hidden p-0 md:p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-body-s">
+                <thead className="border-b border-line">
+                  <tr className="text-left">
+                    <th className="px-4 py-3 text-label text-text-3">Email</th>
+                    <th className="px-4 py-3 text-label text-text-3">Name</th>
+                    <th className="px-4 py-3 text-label text-text-3">Status</th>
+                    <th className="px-4 py-3 text-label text-text-3">Joined</th>
+                    <th className="px-4 py-3">
+                      <span className="sr-only">Actions</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {contacts.map((c) => (
                     <tr
                       key={c.id}
-                      className="border-b border-border-subtle last:border-0 hover:bg-surface-1"
+                      className="border-b border-line last:border-0 hover:bg-ground"
                     >
-                      <td className="px-4 py-2.5 text-text-primary truncate max-w-[280px]">
+                      <td className="max-w-[280px] truncate px-4 py-2.5 text-text">
                         {c.email}
                       </td>
-                      <td className="px-4 py-2.5 text-text-secondary">
-                        {[c.first_name, c.last_name].filter(Boolean).join(" ") || "—"}
+                      <td className="px-4 py-2.5 text-text-2">
+                        {[c.first_name, c.last_name].filter(Boolean).join(" ") || (
+                          <span className="text-text-3">Not set</span>
+                        )}
                       </td>
                       <td className="px-4 py-2.5">{statusBadge(c.status)}</td>
-                      <td className="px-4 py-2.5 text-text-tertiary">
+                      <td className="px-4 py-2.5 font-mono text-text-3">
                         {new Date(c.subscribed_at).toLocaleDateString()}
                       </td>
                       <td className="px-4 py-2.5 text-right">
-                        <button
+                        <IconButton
+                          label="Remove subscriber"
+                          size="sm"
                           onClick={() => handleDeleteContact(c.id)}
-                          className="rounded-lg p-1.5 text-text-tertiary hover:text-error hover:bg-error/10 transition-colors"
-                          title="Remove contact"
+                          className="hover:text-danger"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                        </IconButton>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </CardContent>
+            </div>
           </Card>
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4 text-small">
-              <span className="text-text-tertiary">
-                Page {page} of {totalPages} · {total} total
+            <div className="mt-4 flex items-center justify-between text-body-s">
+              <span className="text-text-3">
+                Page {page} of {totalPages} · {total.toLocaleString()} people
               </span>
               <div className="flex gap-2">
                 <Button
@@ -436,76 +444,73 @@ export default function AudienceDetailPage({
       )}
 
       {/* Danger zone */}
-      <Card className="mt-12 border-error/30">
-        <CardContent>
-          <h3 className="text-h3 text-error">Danger zone</h3>
-          <p className="text-small text-text-secondary mt-1">
-            Deleting an audience removes it from Resend too. Contacts and event
-            history are gone for good.
-          </p>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="mt-3 text-error hover:bg-error/10"
-            onClick={handleDeleteAudience}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            Delete audience
-          </Button>
-        </CardContent>
+      <Card className="mt-12 border-danger">
+        <h3 className="text-title text-danger">Delete this list</h3>
+        <p className="mt-1 text-body-s text-text-2">
+          This removes it from Resend too. Subscribers and their history are
+          gone for good.
+        </p>
+        <Button
+          variant="danger"
+          size="sm"
+          className="mt-3"
+          onClick={handleDeleteAudience}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+          Delete list
+        </Button>
       </Card>
 
-      {/* Add Contact modal */}
+      {/* Add subscriber dialog */}
       {addOpen && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-surface-0/80 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-md rounded-2xl border border-border-default bg-surface-1 p-6 shadow-[var(--shadow-elevated)]">
-            <button
-              type="button"
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-overlay/60 p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-contact-title"
+            className="relative w-full max-w-md rounded-lg border border-line bg-surface p-6 shadow-[var(--shadow-float)]"
+          >
+            <IconButton
+              label="Close"
+              size="sm"
               onClick={() => setAddOpen(false)}
-              className="absolute right-4 top-4 rounded-lg p-1.5 text-text-tertiary hover:text-text-primary hover:bg-surface-2 transition-colors"
-              aria-label="Close"
+              className="absolute right-4 top-4"
             >
               <X className="h-4 w-4" />
-            </button>
-            <h2 className="text-h2 text-text-primary mb-4">Add contact</h2>
+            </IconButton>
+            <h2 id="add-contact-title" className="mb-4 text-heading text-text">
+              Add a subscriber
+            </h2>
             <div className="space-y-3">
-              <div>
-                <label className="text-caption text-text-tertiary mb-1 block">Email *</label>
-                <input
-                  type="email"
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                  placeholder="alice@example.com"
-                  className="w-full rounded-lg border border-border-default bg-surface-0 px-3 py-2 text-small text-text-primary focus:border-accent focus:outline-none"
-                  autoFocus
-                />
-              </div>
+              <Input
+                label="Email"
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="alice@example.com"
+                autoFocus
+                required
+              />
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-caption text-text-tertiary mb-1 block">First name</label>
-                  <input
-                    type="text"
-                    value={newFirst}
-                    onChange={(e) => setNewFirst(e.target.value)}
-                    className="w-full rounded-lg border border-border-default bg-surface-0 px-3 py-2 text-small text-text-primary focus:border-accent focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-caption text-text-tertiary mb-1 block">Last name</label>
-                  <input
-                    type="text"
-                    value={newLast}
-                    onChange={(e) => setNewLast(e.target.value)}
-                    className="w-full rounded-lg border border-border-default bg-surface-0 px-3 py-2 text-small text-text-primary focus:border-accent focus:outline-none"
-                  />
-                </div>
+                <Input
+                  label="First name"
+                  type="text"
+                  value={newFirst}
+                  onChange={(e) => setNewFirst(e.target.value)}
+                />
+                <Input
+                  label="Last name"
+                  type="text"
+                  value={newLast}
+                  onChange={(e) => setNewLast(e.target.value)}
+                />
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="ghost" size="sm" onClick={() => setAddOpen(false)} disabled={adding}>
                   Cancel
                 </Button>
                 <Button size="sm" onClick={handleAddContact} disabled={adding || !newEmail.trim()}>
-                  {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+                  {!adding && <UserPlus className="h-4 w-4" />}
                   {adding ? "Adding…" : "Add"}
                 </Button>
               </div>
@@ -514,35 +519,49 @@ export default function AudienceDetailPage({
         </div>
       )}
 
-      {/* Import CSV modal */}
+      {/* Import CSV dialog */}
       {importOpen && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-surface-0/80 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-2xl rounded-2xl border border-border-default bg-surface-1 p-6 shadow-[var(--shadow-elevated)]">
-            <button
-              type="button"
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-overlay/60 p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="import-csv-title"
+            className="relative w-full max-w-2xl rounded-lg border border-line bg-surface p-6 shadow-[var(--shadow-float)]"
+          >
+            <IconButton
+              label="Close"
+              size="sm"
               onClick={() => setImportOpen(false)}
-              className="absolute right-4 top-4 rounded-lg p-1.5 text-text-tertiary hover:text-text-primary hover:bg-surface-2 transition-colors"
-              aria-label="Close"
+              className="absolute right-4 top-4"
             >
               <X className="h-4 w-4" />
-            </button>
-            <h2 className="text-h2 text-text-primary mb-1">Import CSV</h2>
-            <p className="text-small text-text-secondary mb-4">
-              Paste your CSV. Required column: <code className="font-mono">email</code>. Optional: <code className="font-mono">first_name</code>, <code className="font-mono">last_name</code>. Anything else becomes a custom field.
+            </IconButton>
+            <h2 id="import-csv-title" className="mb-1 text-heading text-text">
+              Import a CSV
+            </h2>
+            <p className="mb-4 text-body-s text-text-2">
+              Paste your CSV. It needs an <code className="font-mono">email</code> column.{" "}
+              <code className="font-mono">first_name</code> and{" "}
+              <code className="font-mono">last_name</code> are optional. Any other
+              column is saved as an extra field.
             </p>
+            <label htmlFor="csv-text" className="sr-only">
+              CSV
+            </label>
             <textarea
+              id="csv-text"
               value={csvText}
               onChange={(e) => setCsvText(e.target.value)}
               rows={12}
               placeholder={`email,first_name,last_name\nalice@example.com,Alice,Anderson\nbob@example.com,Bob,Brown`}
-              className="w-full rounded-lg border border-border-default bg-surface-0 px-3 py-2 text-small font-mono text-text-primary placeholder:text-text-tertiary focus:border-accent focus:outline-none resize-y"
+              className="w-full resize-y rounded-md border border-line-strong bg-surface px-3.5 py-2 font-mono text-body-s text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             />
-            <div className="flex justify-end gap-2 mt-4">
+            <div className="mt-4 flex justify-end gap-2">
               <Button variant="ghost" size="sm" onClick={() => setImportOpen(false)} disabled={importing}>
                 Cancel
               </Button>
               <Button size="sm" onClick={handleImport} disabled={importing || !csvText.trim()}>
-                {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                {!importing && <Upload className="h-4 w-4" />}
                 {importing ? "Importing…" : "Import"}
               </Button>
             </div>

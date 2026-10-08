@@ -22,7 +22,7 @@ import {
   ArrowUpRight,
   Video,
   ListChecks,
-} from "lucide-react";
+} from "@/src/components/ui/lucide-icons";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight } from "@/src/components/ui/lucide-icons";
 
 const PAGE_SIZE = 50;
 
@@ -82,34 +82,34 @@ export function AdminGenerationsClient({
     agentCounts[g.agent_used] = (agentCounts[g.agent_used] ?? 0) + 1;
   });
   const mostUsedAgent =
-    Object.entries(agentCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "--";
+    Object.entries(agentCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "None yet";
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-h1 text-text-primary">Generations</h1>
-        <p className="text-body text-text-secondary mt-1">
-          {generations.length} total AI generations
+        <h1 className="text-display-s text-text">Pieces of content</h1>
+        <p className="mt-1 text-body text-text-2">
+          {generations.length} pieces of content in total
         </p>
       </div>
 
       {/* Aggregated stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="rounded-xl border border-border-default bg-surface-1 p-5">
-          <p className="text-caption text-text-tertiary mb-1">Total Tokens</p>
-          <p className="text-[1.5rem] font-semibold text-text-primary font-mono">
+      <div className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-3">
+        <div className="bg-surface p-5">
+          <p className="mb-2 text-label text-text-3">Total tokens</p>
+          <p className="text-numeric text-[1.5rem] text-text">
             {totalTokens.toLocaleString()}
           </p>
         </div>
-        <div className="rounded-xl border border-border-default bg-surface-1 p-5">
-          <p className="text-caption text-text-tertiary mb-1">Avg Duration</p>
-          <p className="text-[1.5rem] font-semibold text-text-primary font-mono">
+        <div className="bg-surface p-5">
+          <p className="mb-2 text-label text-text-3">Avg duration</p>
+          <p className="text-numeric text-[1.5rem] text-text">
             {(avgDuration / 1000).toFixed(1)}s
           </p>
         </div>
-        <div className="rounded-xl border border-border-default bg-surface-1 p-5">
-          <p className="text-caption text-text-tertiary mb-1">Most-Used Agent</p>
-          <p className="text-[1.25rem] font-semibold text-text-primary capitalize">
+        <div className="bg-surface p-5">
+          <p className="mb-2 text-label text-text-3">Most-used agent</p>
+          <p className="text-heading capitalize text-text">
             {mostUsedAgent.replace(/-/g, " ")}
           </p>
         </div>
@@ -118,19 +118,19 @@ export function AdminGenerationsClient({
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-3" />
           <input
             type="text"
-            placeholder="Search..."
+            placeholder="Search…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="rounded-lg border border-border-default bg-surface-2 pl-9 pr-4 py-2 text-body text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/40 w-56"
+            className="rounded-md border border-line-strong bg-surface pl-9 pr-4 py-2 text-body text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent w-56"
           />
         </div>
         <select
           value={agentFilter}
           onChange={(e) => setAgentFilter(e.target.value)}
-          className="rounded-lg border border-border-default bg-surface-2 px-3 py-2 text-body text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/40"
+          className="rounded-md border border-line-strong bg-surface px-3 py-2 text-body text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
           <option value="">All agents</option>
           {agents.map((a) => (
@@ -142,7 +142,7 @@ export function AdminGenerationsClient({
         <select
           value={projectFilter}
           onChange={(e) => setProjectFilter(e.target.value)}
-          className="rounded-lg border border-border-default bg-surface-2 px-3 py-2 text-body text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/40"
+          className="rounded-md border border-line-strong bg-surface px-3 py-2 text-body text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
           <option value="">All projects</option>
           {projects.map((p) => (
@@ -154,49 +154,49 @@ export function AdminGenerationsClient({
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-border-default bg-surface-1 overflow-hidden">
+      <div className="rounded-lg border border-line bg-surface overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-border-subtle bg-surface-0/50">
-                <th className="text-caption text-text-tertiary px-4 py-3">Agent</th>
-                <th className="text-caption text-text-tertiary px-4 py-3">Project</th>
-                <th className="text-caption text-text-tertiary px-4 py-3">Tokens (in+out)</th>
-                <th className="text-caption text-text-tertiary px-4 py-3">Duration</th>
-                <th className="text-caption text-text-tertiary px-4 py-3">Model</th>
-                <th className="text-caption text-text-tertiary px-4 py-3">Date</th>
+              <tr className="border-b border-line bg-ground">
+                <th className="text-label text-text-3 px-4 py-3">Agent</th>
+                <th className="text-label text-text-3 px-4 py-3">Project</th>
+                <th className="text-label text-text-3 px-4 py-3">Tokens (in+out)</th>
+                <th className="text-label text-text-3 px-4 py-3">Duration</th>
+                <th className="text-label text-text-3 px-4 py-3">Model</th>
+                <th className="text-label text-text-3 px-4 py-3">Date</th>
               </tr>
             </thead>
             <tbody>
               {pageRows.map((g) => (
                 <tr
                   key={g.id}
-                  className="border-b border-border-subtle last:border-0 hover:bg-surface-2/50 transition-colors"
+                  className="border-b border-line transition-colors duration-[var(--duration-fast)] last:border-0 hover:bg-surface-2"
                 >
-                  <td className="px-4 py-3 text-body text-text-primary capitalize">
+                  <td className="px-4 py-3 text-body text-text capitalize">
                     {g.agent_used.replace(/-/g, " ")}
                   </td>
-                  <td className="px-4 py-3 text-small text-text-secondary">
+                  <td className="px-4 py-3 text-body-s text-text-2">
                     {g.projectName}
                   </td>
-                  <td className="px-4 py-3 text-data text-text-secondary">
+                  <td className="px-4 py-3 font-mono text-body-s text-text-2">
                     {((g.input_tokens ?? 0) + (g.output_tokens ?? 0)).toLocaleString()}
                   </td>
-                  <td className="px-4 py-3 text-data text-text-secondary">
-                    {g.duration_ms ? `${(g.duration_ms / 1000).toFixed(1)}s` : "--"}
+                  <td className="px-4 py-3 font-mono text-body-s text-text-2">
+                    {g.duration_ms ? `${(g.duration_ms / 1000).toFixed(1)}s` : "Not recorded"}
                   </td>
-                  <td className="px-4 py-3 text-data text-text-secondary">
+                  <td className="px-4 py-3 font-mono text-body-s text-text-2">
                     {g.model}
                   </td>
-                  <td className="px-4 py-3 text-small text-text-secondary">
+                  <td className="px-4 py-3 text-body-s text-text-2">
                     {new Date(g.created_at).toLocaleDateString()}
                   </td>
                 </tr>
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-text-tertiary text-body">
-                    No generations found
+                  <td colSpan={6} className="py-8 text-center text-body text-text-3">
+                    Nothing matches these filters.
                   </td>
                 </tr>
               )}
@@ -204,8 +204,8 @@ export function AdminGenerationsClient({
           </table>
         </div>
         {filtered.length > 0 && (
-          <div className="border-t border-border-subtle px-4 py-3 flex items-center justify-between gap-3">
-            <p className="text-small text-text-tertiary">
+          <div className="flex items-center justify-between gap-3 border-t border-line px-4 py-3">
+            <p className="text-body-s text-text-3">
               Showing {pageStart + 1}–{pageEnd} of {filtered.length}
             </p>
             <div className="flex items-center gap-2">
@@ -213,19 +213,19 @@ export function AdminGenerationsClient({
                 type="button"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage <= 1}
-                className="inline-flex items-center gap-1 rounded-lg border border-border-default bg-surface-2 px-3 py-1.5 text-small text-text-primary hover:bg-surface-3 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex items-center gap-1 rounded-md border border-line-strong bg-surface px-3 py-1.5 text-body-s text-text hover:bg-surface-2 disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)]"
               >
                 <ChevronLeft className="h-4 w-4" />
                 Prev
               </button>
-              <span className="text-small text-text-tertiary font-mono">
+              <span className="font-mono text-body-s text-text-3">
                 {currentPage} / {totalPages}
               </span>
               <button
                 type="button"
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage >= totalPages}
-                className="inline-flex items-center gap-1 rounded-lg border border-border-default bg-surface-2 px-3 py-1.5 text-small text-text-primary hover:bg-surface-3 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex items-center gap-1 rounded-md border border-line-strong bg-surface px-3 py-1.5 text-body-s text-text hover:bg-surface-2 disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)]"
               >
                 Next
                 <ChevronRight className="h-4 w-4" />

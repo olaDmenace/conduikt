@@ -1,5 +1,7 @@
 import { createServiceClient } from "@/src/lib/supabase/service";
 import type { Metadata } from "next";
+import Image from "next/image";
+import { Button } from "@/src/components/ui/button";
 
 export const metadata: Metadata = {
   title: "Unsubscribe — Conduikt",
@@ -22,12 +24,12 @@ export default async function UnsubscribePage({ searchParams }: PageProps) {
   if (!token) {
     return (
       <Shell>
-        <h1 className="text-h2 text-text-primary mb-3">
-          Invalid unsubscribe link
+        <h1 className="mb-3 text-heading text-text">
+          This unsubscribe link isn&apos;t complete
         </h1>
-        <p className="text-text-secondary">
-          This link is missing a token. If you'd like to unsubscribe, please
-          use the link in the most recent email you received from us.
+        <p className="text-body text-text-2">
+          The link is missing part of its address. To unsubscribe, use the
+          link in the most recent email you received from us.
         </p>
       </Shell>
     );
@@ -43,10 +45,10 @@ export default async function UnsubscribePage({ searchParams }: PageProps) {
   if (!contact) {
     return (
       <Shell>
-        <h1 className="text-h2 text-text-primary mb-3">Link expired</h1>
-        <p className="text-text-secondary">
-          This unsubscribe link is no longer valid. If you keep receiving
-          emails from us, please reply to one of them and we'll handle it.
+        <h1 className="mb-3 text-heading text-text">This link has expired</h1>
+        <p className="text-body text-text-2">
+          This unsubscribe link no longer works. If you keep receiving
+          emails from us, reply to one of them and we&apos;ll handle it.
         </p>
       </Shell>
     );
@@ -55,17 +57,17 @@ export default async function UnsubscribePage({ searchParams }: PageProps) {
   if (done === "1" || contact.status === "unsubscribed") {
     return (
       <Shell>
-        <p className="text-small font-mono text-accent mb-2">DONE</p>
-        <h1 className="text-h2 text-text-primary mb-3">
-          You've been unsubscribed
+        <p className="mb-3 text-label text-teal">Done</p>
+        <h1 className="mb-3 text-heading text-text">
+          You&apos;ve been unsubscribed
         </h1>
-        <p className="text-text-secondary mb-2">
-          We won't send any more marketing emails to{" "}
-          <span className="text-text-primary font-mono">{contact.email}</span>.
+        <p className="mb-2 text-body text-text-2">
+          We won&apos;t send any more marketing emails to{" "}
+          <span className="break-all font-mono text-text">{contact.email}</span>.
         </p>
-        <p className="text-text-tertiary text-small">
-          You may still receive transactional emails (e.g., billing, password
-          resets) since those aren't part of marketing campaigns.
+        <p className="text-body-s text-text-3">
+          You may still get account emails (like billing or password
+          resets), since those aren&apos;t marketing.
         </p>
       </Shell>
     );
@@ -73,20 +75,17 @@ export default async function UnsubscribePage({ searchParams }: PageProps) {
 
   return (
     <Shell>
-      <h1 className="text-h2 text-text-primary mb-3">Unsubscribe?</h1>
-      <p className="text-text-secondary mb-6">
-        We'll stop sending marketing emails to{" "}
-        <span className="text-text-primary font-mono">{contact.email}</span>.
-        You can resubscribe later by signing up again.
+      <h1 className="mb-3 text-heading text-text">Unsubscribe?</h1>
+      <p className="mb-6 text-body text-text-2">
+        We&apos;ll stop sending marketing emails to{" "}
+        <span className="break-all font-mono text-text">{contact.email}</span>.
+        You can subscribe again later by signing up again.
       </p>
       <form action="/api/unsubscribe" method="POST" className="space-y-3">
         <input type="hidden" name="token" value={token} />
-        <button
-          type="submit"
-          className="w-full rounded-lg bg-accent text-white px-5 py-3 text-body font-medium hover:bg-accent/90 transition-colors"
-        >
+        <Button type="submit" size="lg" className="w-full">
           Confirm unsubscribe
-        </button>
+        </Button>
       </form>
     </Shell>
   );
@@ -94,13 +93,16 @@ export default async function UnsubscribePage({ searchParams }: PageProps) {
 
 function Shell({ children }: { children: React.ReactNode }) {
   // Inline shell so this page doesn't pull in the marketing/dashboard
-  // layouts — this is a public, standalone surface.
+  // layouts: this is a public, standalone surface.
   return (
-    <div className="min-h-screen bg-surface-1 flex items-center justify-center px-6 py-12">
-      <div className="w-full max-w-md rounded-2xl border border-border-default bg-surface-2 p-8 shadow-lg">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-ground px-4 py-12">
+      <div className="mb-8 flex items-center gap-2.5 text-text">
+        <Image src="/conduikt-icon.png" alt="" width={32} height={32} className="h-8 w-8" />
+        <span className="font-display text-lg font-medium tracking-tight">Conduikt</span>
+      </div>
+      <div className="w-full max-w-md rounded-lg border border-line bg-surface p-6 md:p-8">
         {children}
       </div>
     </div>
   );
 }
-

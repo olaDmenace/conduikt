@@ -3,9 +3,8 @@ import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ArrowRight, Calendar, Clock, User } from "lucide-react";
+import { ArrowRight, Calendar, Clock, User } from "@/src/components/ui/lucide-icons";
 import { Button } from "@/src/components/ui/button";
-import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import {
   getPublishedBlogPost,
@@ -147,25 +146,22 @@ export default async function BlogPostPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
 
-      <section className="pt-12 pb-12">
-        <div className="mx-auto max-w-3xl px-6">
+      <section className="mx-auto w-full max-w-[1200px] px-4 pb-10 pt-12 md:px-10 md:pt-16">
+        <div className="max-w-[760px]">
           <nav
             aria-label="Breadcrumb"
-            className="mb-6 text-small text-text-tertiary"
+            className="mb-6 text-body-s text-text-3"
           >
-            <Link href="/" className="hover:text-text-primary transition-colors">
+            <Link href="/" className="hover-link hover:text-text">
               Home
             </Link>
-            <span className="mx-2">/</span>
-            <Link
-              href="/blog"
-              className="hover:text-text-primary transition-colors"
-            >
+            <span className="mx-2" aria-hidden>/</span>
+            <Link href="/blog" className="hover-link hover:text-text">
               Blog
             </Link>
           </nav>
 
-          <div className="flex flex-wrap items-center gap-2 mb-6">
+          <div className="mb-6 flex flex-wrap items-center gap-2">
             {post.tags.map((tag) => (
               <Badge key={tag} variant="secondary">
                 {tag}
@@ -173,15 +169,13 @@ export default async function BlogPostPage({
             ))}
           </div>
 
-          <h1 className="text-hero text-text-primary leading-tight">
-            {post.title}
-          </h1>
+          <h1 className="text-display-m text-text">{post.title}</h1>
 
-          <p className="mt-6 text-lg text-text-secondary leading-relaxed">
+          <p className="mt-6 text-lg leading-relaxed text-text-2">
             {post.excerpt}
           </p>
 
-          <div className="mt-8 flex flex-wrap items-center gap-5 text-small text-text-tertiary">
+          <div className="mt-8 flex flex-wrap items-center gap-5 border-t border-line pt-5 text-body-s text-text-3">
             <span className="flex items-center gap-1.5">
               <User className="h-3.5 w-3.5" />
               {post.author}
@@ -202,93 +196,69 @@ export default async function BlogPostPage({
         </div>
       </section>
 
-      <section className="pb-16">
-        <div className="mx-auto max-w-3xl px-6">
-          {/* Two render paths: legacy hand-written posts use the
-              sections array; campaign-published posts ship with
-              content_markdown. Either renders correctly. */}
-          {post.content_markdown ? (
-            <Card className="animate-in">
-              <CardContent>
-                <div className="prose-conduikt">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {post.content_markdown}
-                  </ReactMarkdown>
-                </div>
-              </CardContent>
-            </Card>
-          ) : post.sections ? (
-            <div className="space-y-8">
-              {post.sections.map((section, i) => (
-                <Card
-                  key={i}
-                  className="animate-in"
-                  style={{ animationDelay: `${i * 60}ms` }}
-                >
-                  <CardContent>
-                    <h2 className="text-h2 text-text-primary mb-4">
-                      {section.heading}
-                    </h2>
-                    <div className="space-y-4">
-                      {section.body.map((paragraph, j) => (
-                        <p
-                          key={j}
-                          className="text-body text-text-secondary leading-relaxed"
-                        >
-                          {paragraph}
-                        </p>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : null}
-        </div>
+      <section className="mx-auto w-full max-w-[1200px] px-4 pb-16 md:px-10">
+        {/* Two render paths: legacy hand-written posts use the
+            sections array; campaign-published posts ship with
+            content_markdown. Either renders correctly. */}
+        {post.content_markdown ? (
+          <div className="prose-conduikt animate-in">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {post.content_markdown}
+            </ReactMarkdown>
+          </div>
+        ) : post.sections ? (
+          <div className="prose-conduikt">
+            {post.sections.map((section, i) => (
+              <section
+                key={i}
+                className="animate-in"
+                style={{ animationDelay: `${i * 60}ms` }}
+              >
+                <h2>{section.heading}</h2>
+                {section.body.map((paragraph, j) => (
+                  <p key={j}>{paragraph}</p>
+                ))}
+              </section>
+            ))}
+          </div>
+        ) : null}
       </section>
 
-      <section className="pb-20">
-        <div className="mx-auto max-w-3xl px-6">
-          <Card className="border-accent shadow-[0_0_30px_var(--accent-glow)]">
-            <CardContent className="text-center py-10">
-              <h2 className="text-h1 text-text-primary mb-2">
-                Ready to try it?
-              </h2>
-              <p className="text-lg text-text-secondary mb-6">
-                Conduikt&apos;s AI agents handle the work this post describes.
-                Start free — no credit card.
-              </p>
-              <Button size="lg" asChild>
-                <Link href={post.cta.href}>
-                  {post.cta.label}
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
+      <section className="band-ink">
+        <div className="mx-auto flex w-full max-w-[1200px] flex-col items-start gap-5 px-4 py-14 md:px-10 md:py-[72px]">
+          <p className="text-label text-ink-accent">Try it</p>
+          <h2 className="max-w-[760px] text-display-s text-ink-text">
+            Ready to try it?
+          </h2>
+          <p className="max-w-[560px] text-lg leading-relaxed text-ink-text-2">
+            Conduikt&apos;s AI agents handle the work this post describes.
+            Start free, no credit card.
+          </p>
+          <Button size="lg" asChild>
+            <Link href={post.cta.href}>
+              {post.cta.label}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
         </div>
       </section>
 
       {related.length > 0 && (
-        <section className="pb-24">
-          <div className="mx-auto max-w-3xl px-6">
-            <h3 className="text-h2 text-text-primary mb-5">More posts</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {related.map((p) => (
-                <Link key={p.slug} href={`/blog/${p.slug}`}>
-                  <Card hover className="h-full">
-                    <CardContent>
-                      <h4 className="text-h3 text-text-primary mb-2">
-                        {p.title}
-                      </h4>
-                      <p className="text-small text-text-secondary line-clamp-2">
-                        {p.excerpt}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
+        <section className="mx-auto w-full max-w-[1200px] px-4 py-16 md:px-10 md:py-20">
+          <h2 className="mb-5 text-heading text-text">More posts</h2>
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+            {related.map((p) => (
+              <Link
+                key={p.slug}
+                href={`/blog/${p.slug}`}
+                className="hover-card hover-card-quiet flex h-full flex-col rounded-lg border border-line bg-surface p-6"
+              >
+                <h3 className="mb-2 text-title text-text">{p.title}</h3>
+                <p className="line-clamp-2 text-body-s text-text-2">
+                  {p.excerpt}
+                </p>
+              </Link>
+            ))}
           </div>
         </section>
       )}

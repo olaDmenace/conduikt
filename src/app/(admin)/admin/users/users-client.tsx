@@ -2,7 +2,9 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Search, ArrowUpDown, Download } from "lucide-react";
+import { Search, ArrowUpDown, Download } from "@/src/components/ui/lucide-icons";
+import { Button } from "@/src/components/ui/button";
+import { Badge } from "@/src/components/ui/badge";
 
 type User = {
   id: string;
@@ -25,7 +27,7 @@ export function AdminUsersClient({ users }: { users: User[] }) {
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    let result = users.filter(
+    const result = users.filter(
       (u) =>
         (u.full_name ?? "").toLowerCase().includes(q) ||
         u.email.toLowerCase().includes(q)
@@ -61,90 +63,89 @@ export function AdminUsersClient({ users }: { users: User[] }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-h1 text-text-primary">Users</h1>
-          <p className="text-body text-text-secondary mt-1">
+          <h1 className="text-display-s text-text">Users</h1>
+          <p className="mt-1 text-body text-text-2">
             {users.length} registered users
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" asChild>
           <a
             href="/api/admin/users/export"
             download
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border-default bg-surface-2 px-3 py-2 text-small font-medium text-text-primary hover:border-accent hover:bg-accent-muted transition-colors"
             title="Download all users as CSV"
           >
             <Download className="h-4 w-4" />
             Export CSV
           </a>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary" />
+          </Button>
+          <div className="relative w-full sm:w-auto">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-3" />
             <input
               type="text"
-              placeholder="Search by name or email..."
+              placeholder="Search by name or email…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="rounded-lg border border-border-default bg-surface-2 pl-9 pr-4 py-2 text-body text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/40 w-72"
+              className="rounded-md border border-line-strong bg-surface pl-9 pr-4 py-2 text-body text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent w-full sm:w-72"
             />
           </div>
         </div>
       </div>
 
-      <div className="rounded-xl border border-border-default bg-surface-1 overflow-hidden">
+      <div className="rounded-lg border border-line bg-surface overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-border-subtle bg-surface-0/50">
+              <tr className="border-b border-line bg-ground">
                 <SortHeader label="Name" sortKey="full_name" current={sortKey} asc={sortAsc} onSort={toggleSort} />
                 <SortHeader label="Email" sortKey="email" current={sortKey} asc={sortAsc} onSort={toggleSort} />
                 <SortHeader label="Plan" sortKey="plan" current={sortKey} asc={sortAsc} onSort={toggleSort} />
-                <SortHeader label="Generations" sortKey="generation_count" current={sortKey} asc={sortAsc} onSort={toggleSort} />
+                <SortHeader label="Pieces of content" sortKey="generation_count" current={sortKey} asc={sortAsc} onSort={toggleSort} />
                 <SortHeader label="Projects" sortKey="projectCount" current={sortKey} asc={sortAsc} onSort={toggleSort} />
-                <th className="text-caption text-text-tertiary px-4 py-3">Role</th>
+                <th className="text-label text-text-3 px-4 py-3">Role</th>
                 <SortHeader label="Signup" sortKey="created_at" current={sortKey} asc={sortAsc} onSort={toggleSort} />
-                <SortHeader label="Last Sign In" sortKey="lastSignIn" current={sortKey} asc={sortAsc} onSort={toggleSort} />
+                <SortHeader label="Last sign in" sortKey="lastSignIn" current={sortKey} asc={sortAsc} onSort={toggleSort} />
               </tr>
             </thead>
             <tbody>
               {filtered.map((user) => (
                 <tr
                   key={user.id}
-                  className="border-b border-border-subtle last:border-0 hover:bg-surface-2/50 transition-colors"
+                  className="border-b border-line transition-colors duration-[var(--duration-fast)] last:border-0 hover:bg-surface-2"
                 >
                   <td className="px-4 py-3">
                     <Link
                       href={`/admin/users/${user.id}`}
-                      className="text-body text-text-primary hover:text-accent transition-colors"
+                      className="hover-link text-body text-text hover:text-accent-hover"
                     >
                       {user.full_name ?? "Unnamed"}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-small text-text-secondary">
+                  <td className="px-4 py-3 font-mono text-body-s text-text-2">
                     {user.email}
                   </td>
                   <td className="px-4 py-3">
                     <PlanBadge plan={user.plan} />
                   </td>
-                  <td className="px-4 py-3 text-data text-text-secondary">
+                  <td className="px-4 py-3 font-mono text-body-s text-text-2">
                     {user.generation_count}
                   </td>
-                  <td className="px-4 py-3 text-data text-text-secondary">
+                  <td className="px-4 py-3 font-mono text-body-s text-text-2">
                     {user.projectCount}
                   </td>
                   <td className="px-4 py-3">
                     {user.role === "admin" ? (
-                      <span className="inline-block rounded-full bg-warning/10 text-warning px-2.5 py-0.5 text-[0.75rem] font-medium">
-                        admin
-                      </span>
+                      <Badge variant="count">admin</Badge>
                     ) : (
-                      <span className="text-small text-text-tertiary">user</span>
+                      <span className="text-body-s text-text-3">user</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-small text-text-secondary whitespace-nowrap">
+                  <td className="px-4 py-3 text-body-s text-text-2 whitespace-nowrap">
                     {new Date(user.created_at).toLocaleDateString()}
                   </td>
-                  <td className="px-4 py-3 text-small text-text-secondary whitespace-nowrap">
+                  <td className="px-4 py-3 text-body-s text-text-2 whitespace-nowrap">
                     {user.lastSignIn
                       ? new Date(user.lastSignIn).toLocaleDateString()
                       : "Never"}
@@ -153,8 +154,8 @@ export function AdminUsersClient({ users }: { users: User[] }) {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-text-tertiary text-body">
-                    No users found
+                  <td colSpan={8} className="py-8 text-center text-body text-text-3">
+                    No users match this search.
                   </td>
                 </tr>
               )}
@@ -182,8 +183,9 @@ function SortHeader({
   return (
     <th className="px-4 py-3">
       <button
+        type="button"
         onClick={() => onSort(sortKey)}
-        className="flex items-center gap-1 text-caption text-text-tertiary hover:text-text-primary transition-colors"
+        className="hover-link flex items-center gap-1 text-label text-text-3 hover:text-text"
       >
         {label}
         <ArrowUpDown className={`h-3 w-3 ${current === sortKey ? "text-accent" : ""}`} />
@@ -193,18 +195,6 @@ function SortHeader({
 }
 
 function PlanBadge({ plan }: { plan: string }) {
-  const colors: Record<string, string> = {
-    free: "bg-surface-2 text-text-secondary",
-    pro: "bg-accent-muted text-accent",
-    growth: "bg-success/10 text-success",
-    agency: "bg-info/10 text-info",
-  };
-
-  return (
-    <span
-      className={`inline-block rounded-full px-2.5 py-0.5 text-[0.75rem] font-medium capitalize ${colors[plan] ?? colors.free}`}
-    >
-      {plan ?? "free"}
-    </span>
-  );
+  const tier = (["free", "pro", "growth", "agency"] as const).find((t) => t === plan) ?? "free";
+  return <Badge variant={tier}>{plan ?? "free"}</Badge>;
 }

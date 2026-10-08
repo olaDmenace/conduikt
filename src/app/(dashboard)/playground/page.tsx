@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Sparkles, Copy, Check, RotateCcw, Loader2, Zap, Save } from "lucide-react";
+import { Sparkles, Copy, Check, RotateCcw, Loader2, Zap, Save } from "@/src/components/ui/lucide-icons";
 import { QuotaBadge } from "@/src/components/generation/quota-badge";
 import {
   Card,

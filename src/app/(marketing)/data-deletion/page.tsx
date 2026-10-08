@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Trash2 } from "lucide-react";
 
 export const metadata = {
   title: "User Data Deletion — Conduikt",
@@ -12,26 +11,22 @@ export default function DataDeletionPage() {
   const lastUpdated = "April 15, 2026";
 
   return (
-    <div className="mx-auto max-w-4xl px-6 py-16">
+    <div className="mx-auto w-full max-w-[1200px] px-4 pb-20 pt-16 md:px-10 md:pt-24">
         {/* Header */}
-        <div className="mb-12">
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10">
-            <Trash2 className="h-6 w-6 text-accent" />
-          </div>
-          <h1 className="text-display mb-3 text-text-primary">
-            User Data Deletion
+        <div className="mb-12 max-w-[760px] border-b border-line pb-8">
+          <p className="mb-4 text-label text-accent">Legal</p>
+          <h1 className="mb-3 text-display-m text-text">
+            User data deletion
           </h1>
-          <p className="text-body text-text-secondary">
-            Last updated: {lastUpdated}
-          </p>
+          <p className="text-body-s text-text-3">Last updated: {lastUpdated}</p>
         </div>
 
-        <div className="prose prose-invert max-w-none space-y-10 text-text-secondary">
-          <section className="space-y-3">
-            <h2 className="text-h2 text-text-primary">
+        <div className="prose-conduikt">
+          <section>
+            <h2>
               1. Your right to be forgotten
             </h2>
-            <p className="text-body leading-relaxed">
+            <p>
               You can request full deletion of your Conduikt account and every
               piece of data we hold about you at any time. This includes your
               profile, projects, generated content, scheduled posts, uploaded
@@ -41,23 +36,23 @@ export default function DataDeletionPage() {
             </p>
           </section>
 
-          <section className="space-y-3">
-            <h2 className="text-h2 text-text-primary">
+          <section>
+            <h2>
               2. Option A — Self-serve from Settings
             </h2>
-            <p className="text-body leading-relaxed">
+            <p>
               If you have an active Conduikt account, the fastest way is:
             </p>
-            <ol className="list-decimal list-inside space-y-2 text-body">
+            <ol className="list-decimal">
               <li>
                 Sign in to Conduikt and open{" "}
-                <Link href="/settings" className="text-accent hover:underline">
+                <Link href="/settings">
                   Settings
                 </Link>
                 .
               </li>
               <li>
-                Under <strong className="text-text-primary">Integrations</strong>,
+                Under <strong>Integrations</strong>,
                 disconnect any connected social accounts. This revokes the
                 stored tokens immediately.
               </li>
@@ -68,26 +63,25 @@ export default function DataDeletionPage() {
             </ol>
           </section>
 
-          <section className="space-y-3">
-            <h2 className="text-h2 text-text-primary">
+          <section>
+            <h2>
               3. Option B — Email request
             </h2>
-            <p className="text-body leading-relaxed">
+            <p>
               Send an email to{" "}
               <a
                 href="mailto:hello@conduikt.com?subject=Data%20Deletion%20Request"
-                className="text-accent hover:underline"
               >
                 hello@conduikt.com
               </a>{" "}
               with the subject line{" "}
-              <strong className="text-text-primary">
+              <strong>
                 &quot;Data Deletion Request&quot;
               </strong>{" "}
               from the email address associated with your Conduikt account.
               Include:
             </p>
-            <ul className="list-disc list-inside space-y-2 text-body">
+            <ul className="list-disc">
               <li>Your full name on the account</li>
               <li>
                 The third-party platforms you connected (so we can confirm each
@@ -99,11 +93,11 @@ export default function DataDeletionPage() {
             </ul>
           </section>
 
-          <section className="space-y-3">
-            <h2 className="text-h2 text-text-primary">
+          <section>
+            <h2>
               4. What we delete
             </h2>
-            <ul className="list-disc list-inside space-y-2 text-body">
+            <ul className="list-disc">
               <li>
                 Your profile row in our database, including name, email, plan,
                 and brand settings
@@ -121,11 +115,11 @@ export default function DataDeletionPage() {
             </ul>
           </section>
 
-          <section className="space-y-3">
-            <h2 className="text-h2 text-text-primary">
+          <section>
+            <h2>
               5. Data we retain
             </h2>
-            <p className="text-body leading-relaxed">
+            <p>
               We may retain a small amount of data for legal and accounting
               obligations only — specifically, invoice records required by tax
               law. These records contain transaction amounts and dates but no
@@ -133,31 +127,30 @@ export default function DataDeletionPage() {
             </p>
           </section>
 
-          <section className="space-y-3">
-            <h2 className="text-h2 text-text-primary">
+          <section>
+            <h2>
               6. Revoking access directly from the platform
             </h2>
-            <p className="text-body leading-relaxed">
+            <p>
               You can also revoke Conduikt&apos;s access to your social accounts
               from the platforms themselves, independent of any request to us:
             </p>
-            <ul className="list-disc list-inside space-y-2 text-body">
+            <ul className="list-disc">
               <li>
-                <strong className="text-text-primary">X (Twitter)</strong> —
+                <strong>X (Twitter)</strong> —
                 Settings → Security → Apps and sessions → Connected apps →
                 Revoke Conduikt
               </li>
               <li>
-                <strong className="text-text-primary">LinkedIn</strong> —
+                <strong>LinkedIn</strong> —
                 Settings → Data privacy → Permitted services → Remove Conduikt
               </li>
               <li>
-                <strong className="text-text-primary">Google</strong> —{" "}
+                <strong>Google</strong> —{" "}
                 <a
                   href="https://myaccount.google.com/permissions"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-accent hover:underline"
                 >
                   Third-party apps with account access
                 </a>{" "}
@@ -166,22 +159,21 @@ export default function DataDeletionPage() {
             </ul>
           </section>
 
-          <section className="space-y-3">
-            <h2 className="text-h2 text-text-primary">7. Timeline</h2>
-            <p className="text-body leading-relaxed">
+          <section>
+            <h2>7. Timeline</h2>
+            <p>
               We acknowledge deletion requests within 48 hours and complete
               deletion within 30 days. You will receive an email confirmation
               once the deletion is complete.
             </p>
           </section>
 
-          <section className="space-y-3">
-            <h2 className="text-h2 text-text-primary">8. Contact</h2>
-            <p className="text-body leading-relaxed">
+          <section>
+            <h2>8. Contact</h2>
+            <p>
               Questions about this process? Email{" "}
               <a
                 href="mailto:hello@conduikt.com"
-                className="text-accent hover:underline"
               >
                 hello@conduikt.com
               </a>
@@ -190,18 +182,18 @@ export default function DataDeletionPage() {
           </section>
         </div>
 
-      <div className="mt-16 border-t border-border-subtle pt-8 flex items-center justify-between text-small text-text-tertiary">
+      <div className="mt-16 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-8 text-body-s text-text-3">
         <span>© {new Date().getFullYear()} Conduikt · Technicity Digital</span>
         <div className="flex gap-4">
           <Link
             href="/privacy"
-            className="hover:text-text-secondary transition-colors"
+            className="hover-link hover:text-text"
           >
-            Privacy Policy
+            Privacy policy
           </Link>
           <Link
             href="/terms"
-            className="hover:text-text-secondary transition-colors"
+            className="hover-link hover:text-text"
           >
             Terms
           </Link>

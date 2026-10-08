@@ -10,15 +10,8 @@ import {
   FileText,
   Settings,
   BarChart3,
-  Globe,
-  Target,
-  Megaphone,
-  Mail,
   Zap,
-  Rocket,
-  AlertTriangle,
-  Calendar,
-} from "lucide-react";
+} from "@/src/components/ui/lucide-icons";
 import { useUIStore } from "@/src/stores/ui-store";
 import { AGENT_REGISTRY } from "@/src/lib/ai/agents/registry";
 import { agentDisplay } from "@/src/lib/ai/agents/display";
@@ -35,7 +28,7 @@ const PAGES = [
   { name: "Billing", href: "/settings/billing", icon: Zap },
   { name: "Integrations", href: "/settings/integrations", icon: Zap },
   { name: "Team", href: "/settings/team", icon: FolderOpen },
-  { name: "New Project", href: "/projects/new", icon: FolderOpen },
+  { name: "New project", href: "/projects/new", icon: FolderOpen },
 ];
 
 export function CommandPalette() {
@@ -91,31 +84,31 @@ export function CommandPalette() {
   return (
     <div className="fixed inset-0 z-50">
       <div
-        className="absolute inset-0 bg-surface-0/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-overlay/60"
         onClick={() => setOpen(false)}
       />
       <div className="relative mx-auto mt-[15vh] w-full max-w-lg px-4">
-        <Command className="rounded-xl border border-border-default bg-surface-1 shadow-elevated overflow-hidden">
-          <div className="flex items-center border-b border-border-subtle px-3">
-            <Search className="h-4 w-4 text-text-tertiary shrink-0" />
+        <Command label="Search Conduikt" className="overflow-hidden rounded-lg border border-line bg-surface shadow-[var(--shadow-float)]">
+          <div className="flex items-center border-b border-line px-3">
+            <Search className="h-4 w-4 shrink-0 text-text-3" />
             <Command.Input
-              placeholder="Search projects, agents, pages..."
-              className="flex-1 bg-transparent px-3 py-3 text-text-primary placeholder:text-text-tertiary text-[0.9375rem] outline-none"
+              placeholder="Search projects, agents, pages…"
+              className="flex-1 bg-transparent px-3 py-3 text-[15px] text-text outline-none placeholder:text-text-3"
             />
-            <kbd className="shrink-0 rounded border border-border-default bg-surface-2 px-1.5 py-0.5 text-[0.625rem] font-mono text-text-tertiary">
+            <kbd className="shrink-0 rounded-sm border border-line bg-surface-2 px-1.5 py-0.5 font-mono text-[11px] text-text-3">
               ESC
             </kbd>
           </div>
 
           <Command.List className="max-h-72 overflow-y-auto p-2">
-            <Command.Empty className="py-6 text-center text-small text-text-tertiary">
-              No results found.
+            <Command.Empty className="py-6 text-center text-body-s text-text-3">
+              Nothing matches that. Try a project, agent or page name.
             </Command.Empty>
 
             {projects.length > 0 && (
               <Command.Group
                 heading={
-                  <span className="text-caption text-text-tertiary font-medium px-2">
+                  <span className="block px-2 pb-1 pt-2 text-label text-text-3">
                     Projects
                   </span>
                 }
@@ -125,12 +118,12 @@ export function CommandPalette() {
                     key={p.id}
                     value={`project ${p.name} ${p.website_url ?? ""}`}
                     onSelect={() => navigate(`/projects/${p.id}`)}
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-small text-text-secondary cursor-pointer data-[selected=true]:bg-surface-2 data-[selected=true]:text-text-primary"
+                    className="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 text-sm text-text-2 data-[selected=true]:bg-surface-2 data-[selected=true]:text-text"
                   >
-                    <FolderOpen className="h-4 w-4 text-text-tertiary shrink-0" />
+                    <FolderOpen className="h-4 w-4 shrink-0 text-text-3" />
                     <span className="truncate">{p.name}</span>
                     {p.website_url && (
-                      <span className="ml-auto text-caption text-text-tertiary truncate max-w-32">
+                      <span className="ml-auto max-w-32 truncate font-mono text-caption text-text-3">
                         {p.website_url.replace(/^https?:\/\//, "")}
                       </span>
                     )}
@@ -141,7 +134,7 @@ export function CommandPalette() {
 
             <Command.Group
               heading={
-                <span className="text-caption text-text-tertiary font-medium px-2">
+                <span className="block px-2 pb-1 pt-2 text-label text-text-3">
                   Ask an agent to
                 </span>
               }
@@ -159,7 +152,7 @@ export function CommandPalette() {
                           : "/projects/new"
                       )
                     }
-                    className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm text-text-2 cursor-pointer data-[selected=true]:bg-surface-2 data-[selected=true]:text-text"
+                    className="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 text-sm text-text-2 data-[selected=true]:bg-surface-2 data-[selected=true]:text-text"
                   >
                     <Sparkles className="h-4 w-4 text-text-3 shrink-0" aria-hidden />
                     <span className="truncate">{d.name}</span>
@@ -171,7 +164,7 @@ export function CommandPalette() {
 
             <Command.Group
               heading={
-                <span className="text-caption text-text-tertiary font-medium px-2">
+                <span className="block px-2 pb-1 pt-2 text-label text-text-3">
                   Pages
                 </span>
               }
@@ -181,9 +174,9 @@ export function CommandPalette() {
                   key={page.href}
                   value={`page ${page.name}`}
                   onSelect={() => navigate(page.href)}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-small text-text-secondary cursor-pointer data-[selected=true]:bg-surface-2 data-[selected=true]:text-text-primary"
+                  className="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 text-sm text-text-2 data-[selected=true]:bg-surface-2 data-[selected=true]:text-text"
                 >
-                  <page.icon className="h-4 w-4 text-text-tertiary shrink-0" />
+                  <page.icon className="h-4 w-4 shrink-0 text-text-3" />
                   <span>{page.name}</span>
                 </Command.Item>
               ))}
@@ -192,8 +185,8 @@ export function CommandPalette() {
             {assets.length > 0 && (
               <Command.Group
                 heading={
-                  <span className="text-caption text-text-tertiary font-medium px-2">
-                    Recent Content
+                  <span className="block px-2 pb-1 pt-2 text-label text-text-3">
+                    Recent content
                   </span>
                 }
               >
@@ -204,9 +197,9 @@ export function CommandPalette() {
                     onSelect={() =>
                       navigate(`/projects/${a.project_id}/library`)
                     }
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-small text-text-secondary cursor-pointer data-[selected=true]:bg-surface-2 data-[selected=true]:text-text-primary"
+                    className="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 text-sm text-text-2 data-[selected=true]:bg-surface-2 data-[selected=true]:text-text"
                   >
-                    <FileText className="h-4 w-4 text-text-tertiary shrink-0" />
+                    <FileText className="h-4 w-4 shrink-0 text-text-3" />
                     <span className="truncate">{a.title}</span>
                   </Command.Item>
                 ))}

@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, X, Mail, ExternalLink, Calendar, Send } from "lucide-react";
-import { Button } from "@/src/components/ui/button";
-import { Badge } from "@/src/components/ui/badge";
+import { X, Mail, ExternalLink, Calendar, Send } from "@/src/components/ui/lucide-icons";
+import { Button, IconButton } from "@/src/components/ui/button";
+import { EmptyState } from "@/src/components/ui/empty-state";
+import { Field, Input } from "@/src/components/ui/input";
+import { Skeleton } from "@/src/components/ui/skeleton";
 
 // Modal that turns a generated email-sequence email into a Resend-backed
 // broadcast send. Wired from EmailPreview's "Send Broadcast" button.
@@ -69,7 +71,7 @@ export function SendBroadcastModal({
       try {
         const res = await fetch(`/api/projects/${projectId}/audiences`);
         if (!res.ok) {
-          toast("Failed to load audiences", "error");
+          toast("Couldn't load your subscriber lists. Try again.", "error");
           return;
         }
         const data = (await res.json()) as Audience[];
@@ -91,11 +93,11 @@ export function SendBroadcastModal({
 
   async function handleSend() {
     if (!audienceId) {
-      toast("Pick an audience first", "warning");
+      toast("Pick a list first", "warning");
       return;
     }
     if (!subject.trim()) {
-      toast("Subject is required", "warning");
+      toast("Add a subject line first", "warning");
       return;
     }
     if (scheduleMode === "later" && !scheduledFor) {
@@ -118,7 +120,7 @@ export function SendBroadcastModal({
       });
       if (!createRes.ok) {
         const err = await createRes.json().catch(() => ({}));
-        toast(err.error ?? "Failed to create broadcast", "error");
+        toast(err.error ?? "Couldn't set up the email. Try again.", "error");
         return;
       }
       const broadcast = await createRes.json();
@@ -138,21 +140,21 @@ export function SendBroadcastModal({
       );
       if (!sendRes.ok) {
         const err = await sendRes.json().catch(() => ({}));
-        toast(err.error ?? "Failed to send broadcast", "error");
+        toast(err.error ?? "Couldn't send the email. Try again.", "error");
         return;
       }
       const sendResult = await sendRes.json();
 
       const targetAudience = audiences.find((a) => a.id === audienceId);
-      const audienceLabel = targetAudience?.name ?? "your audience";
+      const audienceLabel = targetAudience?.name ?? "your list";
       if (sendResult.status === "scheduled") {
         toast(
-          `Scheduled to ${audienceLabel} (${sendResult.audience_size} contacts) for ${new Date(scheduledFor).toLocaleString()}`,
+          `Scheduled to ${audienceLabel} (${sendResult.audience_size} people) for ${new Date(scheduledFor).toLocaleString()}`,
           "success"
         );
       } else {
         toast(
-          `Sent to ${audienceLabel} (${sendResult.audience_size} contacts)`,
+          `Sent to ${audienceLabel} (${sendResult.audience_size} people)`,
           "success"
         );
       }
@@ -165,132 +167,141 @@ export function SendBroadcastModal({
   const selectedAudience = audiences.find((a) => a.id === audienceId);
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-surface-0/80 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-lg rounded-2xl border border-border-default bg-surface-1 p-6 shadow-[var(--shadow-elevated)]">
-        <button
-          type="button"
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-overlay/60 p-4">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="send-broadcast-title"
+        className="relative w-full max-w-lg rounded-lg border border-line bg-surface p-6 shadow-[var(--shadow-float)]"
+      >
+        <IconButton
+          label="Close"
+          size="sm"
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-lg p-1.5 text-text-tertiary hover:text-text-primary hover:bg-surface-2 transition-colors"
-          aria-label="Close"
+          className="absolute right-4 top-4"
         >
           <X className="h-4 w-4" />
-        </button>
+        </IconButton>
 
-        <div className="flex items-center gap-2 mb-1">
-          <Mail className="h-5 w-5 text-accent" />
-          <h2 className="text-h2 text-text-primary">Send Broadcast</h2>
+        <div className="mb-1 flex items-center gap-2">
+          <Mail className="h-5 w-5 text-text-3" />
+          <h2 id="send-broadcast-title" className="text-heading text-text">
+            Send to a list
+          </h2>
         </div>
-        <p className="text-small text-text-secondary mb-6">
-          Send this email to one of your audiences. Free tier sends from our shared
-          domain; Pro+ gets a custom sending domain.
+        <p className="mb-6 text-body-s text-text-2">
+          Send this email once to one of your subscriber lists. Free and Pro send
+          from our shared address; sending from your own address is coming on
+          higher plans.
         </p>
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-accent" />
+          <div className="space-y-4" role="status" aria-label="Loading">
+            <Skeleton className="h-10" />
+            <Skeleton className="h-10" />
+            <Skeleton className="h-10" />
           </div>
         ) : audiences.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border-strong bg-surface-0 p-6 text-center space-y-3">
-            <p className="text-body text-text-primary font-medium">
-              No audiences yet.
-            </p>
-            <p className="text-small text-text-secondary">
-              Create an audience and add contacts before sending.
-            </p>
-            <Button size="sm" variant="secondary" asChild>
-              <a href={`/projects/${projectId}/audiences`}>
-                Manage audiences
-                <ExternalLink className="h-3.5 w-3.5" />
-              </a>
-            </Button>
-          </div>
+          <EmptyState
+            title="No subscriber lists yet. Make one and add people before sending."
+            action={
+              <Button size="sm" variant="outline" asChild>
+                <a href={`/projects/${projectId}/audiences`}>
+                  Go to subscribers
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              </Button>
+            }
+          />
         ) : (
           <div className="space-y-4">
-            {/* Audience picker */}
-            <div>
-              <label className="text-caption text-text-tertiary mb-2 block">
-                Audience
-              </label>
+            {/* List picker */}
+            <Field
+              label="Subscriber list"
+              htmlFor="broadcast-audience"
+              error={
+                selectedAudience && selectedAudience.contact_count === 0
+                  ? "This list is empty. Add people before sending."
+                  : undefined
+              }
+            >
               <select
+                id="broadcast-audience"
                 value={audienceId}
                 onChange={(e) => setAudienceId(e.target.value)}
-                className="w-full rounded-lg border border-border-default bg-surface-0 px-3 py-2 text-small text-text-primary focus:border-accent focus:outline-none"
+                className="h-10 w-full rounded-md border border-line-strong bg-surface px-3.5 text-[15px] text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
                 <option value="">Pick one…</option>
                 {audiences.map((a) => (
                   <option key={a.id} value={a.id}>
-                    {a.name} ({a.contact_count} {a.contact_count === 1 ? "contact" : "contacts"})
+                    {a.name} ({a.contact_count} {a.contact_count === 1 ? "person" : "people"})
                   </option>
                 ))}
               </select>
-              {selectedAudience && selectedAudience.contact_count === 0 && (
-                <p className="text-caption text-warning mt-1.5">
-                  This audience has no contacts. Add some before sending.
-                </p>
-              )}
-            </div>
+            </Field>
 
             {/* Subject */}
-            <div>
-              <label className="text-caption text-text-tertiary mb-2 block">
-                Subject line
-              </label>
-              <input
-                type="text"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                maxLength={200}
-                className="w-full rounded-lg border border-border-default bg-surface-0 px-3 py-2 text-small text-text-primary focus:border-accent focus:outline-none"
-              />
-              <p className="text-caption text-text-tertiary mt-1.5">
-                {subject.length}/200
-              </p>
-            </div>
+            <Input
+              label="Subject line"
+              type="text"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              maxLength={200}
+              hint={`${subject.length} of 200 characters`}
+            />
 
             {/* When */}
             <div>
-              <label className="text-caption text-text-tertiary mb-2 block">When</label>
-              <div className="grid grid-cols-2 gap-2 mb-2">
+              <p className="mb-1.5 text-body-s text-text-2">When</p>
+              <div className="mb-2 grid grid-cols-2 gap-2" role="group" aria-label="When">
                 <button
                   type="button"
                   onClick={() => setScheduleMode("now")}
-                  className={`rounded-lg border px-3 py-2 text-small font-medium transition-colors ${
+                  aria-pressed={scheduleMode === "now"}
+                  className={`flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-body-s font-medium transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] ${
                     scheduleMode === "now"
-                      ? "border-accent bg-accent-muted text-accent"
-                      : "border-border-default text-text-secondary hover:border-border-strong"
+                      ? "border-line-strong bg-surface-2 text-text"
+                      : "border-line text-text-2 hover:bg-surface-2"
                   }`}
                 >
-                  <Send className="inline h-3.5 w-3.5 mr-1.5" />
+                  <Send className="h-3.5 w-3.5" />
                   Send now
                 </button>
                 <button
                   type="button"
                   onClick={() => setScheduleMode("later")}
-                  className={`rounded-lg border px-3 py-2 text-small font-medium transition-colors ${
+                  aria-pressed={scheduleMode === "later"}
+                  className={`flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-body-s font-medium transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] ${
                     scheduleMode === "later"
-                      ? "border-accent bg-accent-muted text-accent"
-                      : "border-border-default text-text-secondary hover:border-border-strong"
+                      ? "border-line-strong bg-surface-2 text-text"
+                      : "border-line text-text-2 hover:bg-surface-2"
                   }`}
                 >
-                  <Calendar className="inline h-3.5 w-3.5 mr-1.5" />
+                  <Calendar className="h-3.5 w-3.5" />
                   Schedule
                 </button>
               </div>
               {scheduleMode === "later" && (
-                <input
-                  type="datetime-local"
-                  min={minDateTime}
-                  value={scheduledFor}
-                  onChange={(e) => setScheduledFor(e.target.value)}
-                  className="w-full rounded-lg border border-border-default bg-surface-0 px-3 py-2 text-small text-text-primary focus:border-accent focus:outline-none"
-                />
+                <>
+                  <label htmlFor="broadcast-when" className="sr-only">
+                    Date and time
+                  </label>
+                  <input
+                    id="broadcast-when"
+                    type="datetime-local"
+                    min={minDateTime}
+                    value={scheduledFor}
+                    onChange={(e) => setScheduledFor(e.target.value)}
+                    className="h-10 w-full rounded-md border border-line-strong bg-surface px-3.5 text-[15px] text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  />
+                </>
               )}
             </div>
 
             {/* Quota note */}
-            <Badge variant="secondary" className="text-text-tertiary">
-              Counts against your monthly email quota.
-            </Badge>
+            <p className="text-caption text-text-3">
+              Counts toward your monthly email limit.
+            </p>
 
             {/* Actions */}
             <div className="flex justify-end gap-2 pt-2">
@@ -308,9 +319,7 @@ export function SendBroadcastModal({
                   (selectedAudience?.contact_count ?? 0) === 0
                 }
               >
-                {submitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : scheduleMode === "later" ? (
+                {submitting ? null : scheduleMode === "later" ? (
                   <Calendar className="h-4 w-4" />
                 ) : (
                   <Send className="h-4 w-4" />

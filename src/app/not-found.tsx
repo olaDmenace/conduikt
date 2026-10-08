@@ -1,24 +1,29 @@
-﻿import Link from "next/link";
+import Image from "next/image";
+import Link from "next/link";
+import { Button } from "@/src/components/ui/button";
 
 export default function NotFound() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface-0">
-      <div className="text-center max-w-md px-6">
-        <div className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-surface-2">
-          <span className="text-4xl font-mono font-bold text-text-tertiary">
-            404
-          </span>
-        </div>
-        <h1 className="text-h1 text-text-primary mb-2">Page not found</h1>
-        <p className="text-body text-text-secondary mb-8">
-          The page you&apos;re looking for doesn&apos;t exist or has been moved.
-        </p>
+    <div className="flex min-h-screen items-center justify-center bg-ground px-4 py-16">
+      <div className="w-full max-w-md text-center">
         <Link
           href="/"
-          className="inline-flex items-center justify-center rounded-lg bg-gradient-to-br from-[#D9663A] to-[#B24E27] px-6 py-3 text-[0.875rem] font-medium text-on-accent transition-all hover:brightness-110"
+          className="mx-auto mb-10 inline-flex items-center gap-2.5 text-text"
+          aria-label="Conduikt home"
         >
-          Back to Home
+          <Image src="/conduikt-icon.png" alt="" width={32} height={32} className="h-8 w-8" />
+          <span className="font-display text-lg font-medium tracking-tight">
+            Conduikt
+          </span>
         </Link>
+        <p className="mb-3 text-label text-text-3">404</p>
+        <h1 className="mb-4 text-display-s text-text">Page not found</h1>
+        <p className="mb-8 text-body text-text-2">
+          The page you&apos;re looking for doesn&apos;t exist or has moved.
+        </p>
+        <Button asChild>
+          <Link href="/">Back to home</Link>
+        </Button>
       </div>
     </div>
   );

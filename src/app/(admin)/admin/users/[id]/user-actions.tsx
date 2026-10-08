@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/src/components/ui/button";
 
 const PLANS = ["free", "pro", "growth", "agency"] as const;
 
@@ -31,7 +32,7 @@ export function UserActions({
       if (!res.ok) {
         setMessage({ text: data.error ?? "Something went wrong", type: "error" });
       } else {
-        setMessage({ text: "Done!", type: "success" });
+        setMessage({ text: "Done.", type: "success" });
         setPlanMode(false);
         router.refresh();
       }
@@ -44,14 +45,14 @@ export function UserActions({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-3 items-center">
+      <div className="flex flex-wrap items-center gap-3">
         {/* Change Plan */}
         {planMode ? (
           <div className="flex items-center gap-2">
             <select
               value={selectedPlan}
               onChange={(e) => setSelectedPlan(e.target.value)}
-              className="rounded-lg border border-border-default bg-surface-2 px-3 py-2 text-[0.8125rem] text-text-primary focus:outline-none focus:ring-1 focus:ring-accent"
+              className="h-9 rounded-md border border-line-strong bg-surface px-3 text-body-s text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               {PLANS.map((p) => (
                 <option key={p} value={p} className="capitalize">
@@ -59,72 +60,68 @@ export function UserActions({
                 </option>
               ))}
             </select>
-            <button
+            <Button
               onClick={() => callAction("change_plan", { plan: selectedPlan })}
               disabled={loading === "change_plan" || selectedPlan === currentPlan}
-              className="rounded-lg border border-accent bg-accent/10 px-4 py-2 text-[0.8125rem] font-medium text-accent hover:bg-accent/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading === "change_plan" ? "Saving…" : "Confirm"}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
               onClick={() => { setPlanMode(false); setSelectedPlan(currentPlan); }}
-              className="rounded-lg border border-border-default bg-surface-2 px-4 py-2 text-[0.8125rem] font-medium text-text-secondary hover:text-text-primary transition-colors"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         ) : (
-          <button
-            onClick={() => setPlanMode(true)}
-            className="rounded-lg border border-border-default bg-surface-2 px-4 py-2 text-[0.8125rem] font-medium text-text-secondary hover:text-text-primary hover:border-accent/40 transition-colors"
-          >
-            Change Plan
-          </button>
+          <Button variant="outline" onClick={() => setPlanMode(true)}>
+            Change plan
+          </Button>
         )}
 
         {/* Reset Count */}
-        <button
+        <Button
+          variant="outline"
           onClick={() => {
-            if (confirm("Reset this user's generation count to 0?")) {
+            if (confirm("Reset this user's content count to 0?")) {
               callAction("reset_count");
             }
           }}
           disabled={loading === "reset_count"}
-          className="rounded-lg border border-border-default bg-surface-2 px-4 py-2 text-[0.8125rem] font-medium text-text-secondary hover:text-text-primary hover:border-accent/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading === "reset_count" ? "Resetting…" : "Reset Generation Count"}
-        </button>
+          {loading === "reset_count" ? "Resetting…" : "Reset content count"}
+        </Button>
 
         {/* Disable Account */}
-        <button
+        <Button
+          variant="danger"
           onClick={() => {
             if (confirm("Disable this account? The user will be unable to sign in.")) {
               callAction("disable");
             }
           }}
           disabled={loading === "disable"}
-          className="rounded-lg border border-error/30 bg-error/5 px-4 py-2 text-[0.8125rem] font-medium text-error hover:bg-error/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading === "disable" ? "Disabling…" : "Disable Account"}
-        </button>
+          {loading === "disable" ? "Disabling…" : "Disable account"}
+        </Button>
 
         {/* Re-enable Account */}
-        <button
+        <Button
+          variant="outline"
           onClick={() => {
             if (confirm("Re-enable this account?")) {
               callAction("enable");
             }
           }}
           disabled={loading === "enable"}
-          className="rounded-lg border border-success/30 bg-success/5 px-4 py-2 text-[0.8125rem] font-medium text-success hover:bg-success/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading === "enable" ? "Enabling…" : "Re-enable Account"}
-        </button>
+          {loading === "enable" ? "Enabling…" : "Re-enable account"}
+        </Button>
       </div>
 
       {message && (
         <p
-          className={`text-small ${message.type === "success" ? "text-success" : "text-error"}`}
+          className={`text-body-s ${message.type === "success" ? "text-teal" : "text-danger"}`}
         >
           {message.text}
         </p>

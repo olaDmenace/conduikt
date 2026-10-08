@@ -4,17 +4,18 @@ import { useEffect, useState } from "react";
 import {
   Plus,
   Trash2,
-  Loader2,
   Globe,
   Zap,
   ToggleLeft,
   ToggleRight,
   Eye,
   EyeOff,
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
-import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
+} from "@/src/components/ui/lucide-icons";
+import { Card } from "@/src/components/ui/card";
+import { Button, IconButton } from "@/src/components/ui/button";
+import { Input, Field } from "@/src/components/ui/input";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { EmptyState } from "@/src/components/ui/empty-state";
 import { Badge } from "@/src/components/ui/badge";
 import { PageHeader } from "@/src/components/layout/page-header";
 import { useToast } from "@/src/components/ui/toast";
@@ -71,13 +72,13 @@ export default function WebhooksPage() {
       body: JSON.stringify(form),
     });
     if (res.ok) {
-      toast("Webhook created!", "success");
+      toast("Webhook created", "success");
       setForm({ name: "", type: "generic", endpoint_url: "", auth_token: "" });
       setShowForm(false);
       fetchWebhooks();
     } else {
       const err = await res.json();
-      toast(err.error || "Failed to create", "error");
+      toast(err.error || "We couldn't create the webhook. Try again.", "error");
     }
     setSaving(false);
   }
@@ -90,7 +91,7 @@ export default function WebhooksPage() {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      toast(err.error || "Failed to update webhook", "error");
+      toast(err.error || "We couldn't update the webhook. Try again.", "error");
       return;
     }
     setWebhooks((prev) =>
@@ -102,7 +103,7 @@ export default function WebhooksPage() {
     const res = await fetch(`/api/webhooks/${id}`, { method: "DELETE" });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      toast(err.error || "Failed to delete webhook", "error");
+      toast(err.error || "We couldn't delete the webhook. Try again.", "error");
       return;
     }
     setWebhooks((prev) => prev.filter((w) => w.id !== id));
@@ -113,143 +114,143 @@ export default function WebhooksPage() {
     <div>
       <PageHeader
         title="Webhooks"
-        description="Push generated content to external tools automatically"
+        description="Send what Conduikt writes to your other tools automatically."
       >
-        <Button size="sm" onClick={() => setShowForm(!showForm)}>
+        <Button onClick={() => setShowForm(!showForm)}>
           <Plus className="h-4 w-4" />
-          Add Webhook
+          Add webhook
         </Button>
       </PageHeader>
 
       {showForm && (
         <Card className="animate-in mb-6">
-          <CardContent className="p-5">
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="Name"
-                  placeholder="My WordPress blog"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  required
-                />
-                <div>
-                  <label className="text-small font-medium text-text-secondary block mb-1.5">
-                    Type
-                  </label>
-                  <select
-                    value={form.type}
-                    onChange={(e) => setForm({ ...form, type: e.target.value })}
-                    className="w-full rounded-lg border border-border-default bg-surface-1 px-3 py-2 text-body text-text-primary focus:outline-none focus:ring-1 focus:ring-accent"
-                  >
-                    {TYPE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label} — {opt.desc}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+          <form onSubmit={handleCreate} className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Input
-                label="Endpoint URL"
-                type="url"
-                placeholder="https://mysite.com/wp-json/wp/v2/posts"
-                value={form.endpoint_url}
-                onChange={(e) => setForm({ ...form, endpoint_url: e.target.value })}
+                label="Name"
+                placeholder="My WordPress blog"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
                 required
               />
-              <div className="relative">
-                <Input
-                  label="Auth Token (optional)"
-                  type={showAuthToken ? "text" : "password"}
-                  placeholder="Bearer token or application password"
-                  value={form.auth_token}
-                  onChange={(e) => setForm({ ...form, auth_token: e.target.value })}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowAuthToken((v) => !v)}
-                  className="absolute right-3 top-10 text-text-tertiary hover:text-text-primary transition-colors"
+              <Field label="Type" htmlFor="webhook-type">
+                <select
+                  id="webhook-type"
+                  value={form.type}
+                  onChange={(e) => setForm({ ...form, type: e.target.value })}
+                  className="h-10 w-full rounded-md border border-line-strong bg-surface px-3.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 >
-                  {showAuthToken ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setShowForm(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" size="sm" disabled={saving}>
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Webhook"}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
+                  {TYPE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}: {opt.desc}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+            <Input
+              label="Endpoint URL"
+              type="url"
+              placeholder="https://mysite.com/wp-json/wp/v2/posts"
+              value={form.endpoint_url}
+              onChange={(e) => setForm({ ...form, endpoint_url: e.target.value })}
+              required
+            />
+            <div className="relative">
+              <Input
+                label="Auth token (optional)"
+                type={showAuthToken ? "text" : "password"}
+                placeholder="Bearer token or application password"
+                className="pr-10"
+                value={form.auth_token}
+                onChange={(e) => setForm({ ...form, auth_token: e.target.value })}
+              />
+              <button
+                type="button"
+                onClick={() => setShowAuthToken((v) => !v)}
+                aria-label={showAuthToken ? "Hide token" : "Show token"}
+                className="absolute right-3 top-[37px] text-text-3 transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] hover:text-text"
+              >
+                {showAuthToken ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setShowForm(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={saving}>
+                {saving ? "Creating…" : "Create webhook"}
+              </Button>
+            </div>
+          </form>
         </Card>
       )}
 
       {loading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="h-6 w-6 text-accent animate-spin" />
+        <div className="space-y-3" role="status" aria-label="Loading webhooks">
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
         </div>
       ) : webhooks.length === 0 ? (
-        <Card className="animate-in">
-          <CardContent className="flex flex-col items-center py-16 text-center">
-            <Zap className="h-10 w-10 text-text-tertiary mb-4" />
-            <p className="text-body text-text-secondary">No webhooks configured</p>
-            <p className="text-small text-text-tertiary mt-1">
-              Connect WordPress, Webflow, Buffer, or any custom endpoint
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          className="animate-in"
+          icon={<Zap className="h-8 w-8" />}
+          title="No webhooks yet. Connect WordPress, Webflow, Buffer or any URL that accepts JSON."
+          action={
+            !showForm ? (
+              <Button onClick={() => setShowForm(true)}>
+                <Plus className="h-4 w-4" />
+                Add webhook
+              </Button>
+            ) : undefined
+          }
+        />
       ) : (
         <div className="space-y-3">
           {webhooks.map((webhook, i) => (
             <Card
               key={webhook.id}
-              className="animate-in"
+              className="animate-in flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
               style={{ animationDelay: `${i * 60}ms` }}
             >
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-surface-2 p-2">
-                    <Globe className="h-4 w-4 text-accent" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-body">{webhook.name}</CardTitle>
-                    <p className="text-caption text-text-tertiary truncate max-w-[300px]">
-                      {webhook.endpoint_url}
-                    </p>
-                  </div>
+              <div className="flex min-w-0 items-center gap-3">
+                <Globe className="h-4 w-4 shrink-0 text-text-3" aria-hidden />
+                <div className="min-w-0">
+                  <h3 className="text-title text-text">{webhook.name}</h3>
+                  <p className="max-w-[300px] truncate font-mono text-caption text-text-3">
+                    {webhook.endpoint_url}
+                  </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary">{webhook.type}</Badge>
-                  <button
-                    onClick={() => handleToggle(webhook.id, webhook.active)}
-                    className="text-text-tertiary hover:text-text-primary transition-colors"
-                  >
-                    {webhook.active ? (
-                      <ToggleRight className="h-5 w-5 text-success" />
-                    ) : (
-                      <ToggleLeft className="h-5 w-5" />
-                    )}
-                  </button>
-                  <button
-                    onClick={() => handleDelete(webhook.id)}
-                    className="rounded-lg p-1.5 text-text-tertiary hover:text-error hover:bg-error/10 transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </CardHeader>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">{webhook.type}</Badge>
+                <IconButton
+                  label={webhook.active ? `Turn off ${webhook.name}` : `Turn on ${webhook.name}`}
+                  aria-pressed={webhook.active}
+                  onClick={() => handleToggle(webhook.id, webhook.active)}
+                >
+                  {webhook.active ? (
+                    <ToggleRight className="h-5 w-5 text-teal" />
+                  ) : (
+                    <ToggleLeft className="h-5 w-5" />
+                  )}
+                </IconButton>
+                <IconButton
+                  label={`Delete ${webhook.name}`}
+                  onClick={() => handleDelete(webhook.id)}
+                  className="hover:text-danger"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </IconButton>
+              </div>
             </Card>
           ))}
         </div>

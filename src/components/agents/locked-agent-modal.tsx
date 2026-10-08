@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, Lock, Sparkles } from "lucide-react";
+import { ArrowUpRight, Lock, Sparkles } from "@/src/components/ui/lucide-icons";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import type { AgentDefinition } from "@/src/lib/ai/agents/registry";
+import { agentDisplay } from "@/src/lib/ai/agents/display";
 import { tierLabel, type PlanTier } from "@/src/lib/plans";
 
 const AGENT_PREVIEWS: Record<string, string[]> = {
@@ -97,6 +98,7 @@ export function LockedAgentModal({ agent, onOpenChange }: LockedAgentModalProps)
   const comingSoon = agent?.status === "coming_soon";
   const tier = (agent?.tier ?? "pro") as PlanTier;
   const preview = agent ? getPreview(agent.id) : [];
+  const displayName = agent ? agentDisplay(agent).name : "";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -104,21 +106,21 @@ export function LockedAgentModal({ agent, onOpenChange }: LockedAgentModalProps)
         {agent && (
           <>
             <DialogHeader>
-              <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <div className="mb-2 flex flex-wrap items-center gap-2">
                 <Badge variant="secondary">
                   <Lock className="h-3 w-3" />
                   {comingSoon ? "Coming soon" : tierLabel(tier)}
                 </Badge>
                 <Badge variant="secondary">{agent.category}</Badge>
               </div>
-              <DialogTitle>{agent.name}</DialogTitle>
+              <DialogTitle>{displayName}</DialogTitle>
               <DialogDescription>{agent.description}</DialogDescription>
             </DialogHeader>
 
-            <div className="mt-2 rounded-lg border border-dashed border-accent/40 bg-accent-muted/20 p-4">
-              <div className="flex items-center gap-1.5 mb-3">
+            <div className="mt-2 rounded-lg border border-dashed border-line-strong bg-surface-2 p-4">
+              <div className="mb-3 flex items-center gap-1.5">
                 <Sparkles className="h-3.5 w-3.5 text-accent" />
-                <span className="text-caption uppercase tracking-wide text-accent font-semibold">
+                <span className="text-label text-accent">
                   Preview
                 </span>
               </div>
@@ -126,9 +128,9 @@ export function LockedAgentModal({ agent, onOpenChange }: LockedAgentModalProps)
                 {preview.map((line, i) => (
                   <li
                     key={i}
-                    className="flex items-start gap-2 text-small text-text-secondary"
+                    className="flex items-start gap-2 text-body-s text-text-2"
                   >
-                    <span className="mt-1.5 h-1 w-1 rounded-full bg-accent shrink-0" />
+                    <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-accent" aria-hidden />
                     <span>{line}</span>
                   </li>
                 ))}
@@ -136,10 +138,10 @@ export function LockedAgentModal({ agent, onOpenChange }: LockedAgentModalProps)
             </div>
 
             <div className="mt-5 flex items-center justify-between gap-3">
-              <p className="text-small text-text-secondary flex-1">
+              <p className="flex-1 text-body-s text-text-2">
                 {comingSoon
                   ? "This agent is launching soon. You'll be notified when it's available."
-                  : `Upgrade to ${tierLabel(tier)} to unlock ${agent.shortName} and the full suite.`}
+                  : `Upgrade to ${tierLabel(tier)} to unlock ${displayName} and the full suite.`}
               </p>
               {!comingSoon && (
                 <Button asChild size="sm">

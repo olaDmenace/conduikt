@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/src/lib/supabase/client";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { useToast } from "@/src/components/ui/toast";
-import { Twitter, Linkedin, Eye, EyeOff } from "lucide-react";
+import { Twitter, Linkedin, Eye, EyeOff } from "@/src/components/ui/lucide-icons";
 import { GoogleIcon } from "@/src/components/icons/google-icon";
 import {
   mapSupabaseAuthError,
@@ -57,7 +56,7 @@ export default function LoginPage() {
       return;
     }
 
-    toast("Welcome back! Signed in successfully.", "success");
+    toast("Welcome back. You're signed in.", "success");
     router.push("/dashboard");
     router.refresh();
   }
@@ -80,100 +79,53 @@ export default function LoginPage() {
     if (resendError) {
       toast(mapSupabaseAuthError(resendError.message), "error");
     } else {
-      toast("Confirmation email sent! Check your inbox.", "success");
+      toast("Confirmation email sent. Check your inbox.", "success");
+    }
+  }
+
+  async function signInWith(provider: "google" | "twitter" | "linkedin_oidc", name: string) {
+    try {
+      const siteUrl = window.location.origin;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: `${siteUrl}/auth/confirm?next=/dashboard` },
+      });
+      if (error) toast(error.message === "Unsupported provider: provider is not enabled" ? `${name} login is not available right now. Please use email and password.` : error.message, "error");
+    } catch {
+      toast("Something went wrong. Please try again.", "error");
     }
   }
 
   return (
     <div className="animate-in">
-      {/* Logo — links back to the homepage so users can escape the
-          auth flow without using the browser back button. */}
       <div className="mb-8 text-center">
-        <Link href="/" aria-label="Conduikt home" className="inline-block mb-4">
-          <Image
-            src="/conduikt-icon.png"
-            alt="Conduikt"
-            width={72}
-            height={72}
-            priority
-            className="mx-auto h-[72px] w-[72px] transition-transform duration-300 hover:scale-105"
-          />
-        </Link>
-        <h1 className="text-h1">Welcome back</h1>
-        <p className="mt-2 text-body text-text-secondary">
-          Sign in to your Conduikt account
+        <h1 className="text-display-s text-text">Sign in</h1>
+        <p className="mt-3 text-body text-text-2">
+          Welcome back. Sign in to your Conduikt account.
         </p>
       </div>
 
       {/* Social login */}
-      <div className="mb-6 space-y-3">
-        <button
-          type="button"
-          onClick={async () => {
-            try {
-              const siteUrl = window.location.origin;
-              const { error } = await supabase.auth.signInWithOAuth({
-                provider: "google",
-                options: { redirectTo: `${siteUrl}/auth/confirm?next=/dashboard` },
-              });
-              if (error) toast(error.message === "Unsupported provider: provider is not enabled" ? "Google login is not available right now. Please use email and password." : error.message, "error");
-            } catch {
-              toast("Something went wrong. Please try again.", "error");
-            }
-          }}
-          className="flex w-full items-center justify-center gap-3 rounded-lg border border-surface-3 bg-surface-1 px-4 py-2.5 text-small font-medium text-text-primary hover:bg-surface-2 transition-colors"
-        >
+      <div className="mb-6 space-y-2.5">
+        <Button type="button" variant="quiet" className="w-full" onClick={() => signInWith("google", "Google")}>
           <GoogleIcon className="h-4 w-4" />
           Continue with Google
-        </button>
-        <button
-          type="button"
-          onClick={async () => {
-            try {
-              const siteUrl = window.location.origin;
-              const { error } = await supabase.auth.signInWithOAuth({
-                provider: "twitter",
-                options: { redirectTo: `${siteUrl}/auth/confirm?next=/dashboard` },
-              });
-              if (error) toast(error.message === "Unsupported provider: provider is not enabled" ? "X login is not available right now. Please use email and password." : error.message, "error");
-            } catch {
-              toast("Something went wrong. Please try again.", "error");
-            }
-          }}
-          className="flex w-full items-center justify-center gap-3 rounded-lg border border-surface-3 bg-surface-1 px-4 py-2.5 text-small font-medium text-text-primary hover:bg-surface-2 transition-colors"
-        >
+        </Button>
+        <Button type="button" variant="quiet" className="w-full" onClick={() => signInWith("twitter", "X")}>
           <Twitter className="h-4 w-4" />
           Continue with X
-        </button>
-        <button
-          type="button"
-          onClick={async () => {
-            try {
-              const siteUrl = window.location.origin;
-              const { error } = await supabase.auth.signInWithOAuth({
-                provider: "linkedin_oidc",
-                options: { redirectTo: `${siteUrl}/auth/confirm?next=/dashboard` },
-              });
-              if (error) toast(error.message === "Unsupported provider: provider is not enabled" ? "LinkedIn login is not available right now. Please use email and password." : error.message, "error");
-            } catch {
-              toast("Something went wrong. Please try again.", "error");
-            }
-          }}
-          className="flex w-full items-center justify-center gap-3 rounded-lg border border-surface-3 bg-surface-1 px-4 py-2.5 text-small font-medium text-text-primary hover:bg-surface-2 transition-colors"
-        >
+        </Button>
+        <Button type="button" variant="quiet" className="w-full" onClick={() => signInWith("linkedin_oidc", "LinkedIn")}>
           <Linkedin className="h-4 w-4" />
           Continue with LinkedIn
-        </button>
+        </Button>
       </div>
 
       {/* Divider */}
-      <div className="relative mb-6">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-surface-3" />
-        </div>
-        <div className="relative flex justify-center">
-          <span className="bg-surface-0 px-3 text-small text-text-tertiary">or</span>
-        </div>
+      <div className="mb-6 flex items-center gap-3" aria-hidden>
+        <div className="h-px flex-1 bg-line" />
+        <span className="text-label text-text-3">or</span>
+        <div className="h-px flex-1 bg-line" />
       </div>
 
       {/* Email / password form */}
@@ -195,8 +147,9 @@ export default function LoginPage() {
           <Input
             label="Password"
             type={showPassword ? "text" : "password"}
-            placeholder="Enter your password"
+            placeholder="Your password"
             autoComplete="current-password"
+            className="pr-10"
             value={password}
             onChange={(e) => {
               setPassword(e.target.value);
@@ -208,7 +161,7 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
-            className="absolute right-3 top-10 text-text-tertiary hover:text-text-primary transition-colors"
+            className="absolute right-3 top-[37px] text-text-3 transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] hover:text-text"
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
             {showPassword ? (
@@ -220,40 +173,40 @@ export default function LoginPage() {
         </div>
 
         {formError && (
-          <div className="rounded-lg border border-error/20 bg-error/10 px-4 py-3 text-small text-error">
+          <div role="alert" className="rounded-md border border-line bg-surface-2 px-4 py-3 text-body-s text-danger">
             <p>{formError}</p>
             {formErrorIsUnconfirmed && (
               <button
                 type="button"
                 onClick={handleResendConfirmation}
                 disabled={resending}
-                className="mt-2 font-medium text-accent-secondary hover:text-accent-secondary-hover transition-colors disabled:opacity-50"
+                className="hover-link mt-2 font-medium text-accent hover:text-accent-hover disabled:opacity-50"
               >
-                {resending ? "Sending..." : "Resend confirmation email"}
+                {resending ? "Sending…" : "Resend confirmation email"}
               </button>
             )}
           </div>
         )}
 
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Signing in..." : "Sign in"}
+          {loading ? "Signing in…" : "Sign in"}
         </Button>
       </form>
 
-      <div className="mt-4 text-center">
+      <div className="mt-5 text-center">
         <Link
           href="/forgot-password"
-          className="text-small text-accent-secondary hover:text-accent-secondary-hover transition-colors"
+          className="hover-link text-body-s text-accent hover:text-accent-hover"
         >
           Forgot your password?
         </Link>
       </div>
 
-      <p className="mt-4 text-center text-small text-text-secondary">
+      <p className="mt-3 text-center text-body-s text-text-2">
         Don&apos;t have an account?{" "}
         <Link
           href="/signup"
-          className="text-accent-secondary hover:text-accent-secondary-hover transition-colors"
+          className="hover-link text-accent hover:text-accent-hover"
         >
           Sign up
         </Link>

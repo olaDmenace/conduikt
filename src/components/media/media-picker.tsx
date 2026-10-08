@@ -8,12 +8,11 @@ import {
   Search,
   Type,
   X as XIcon,
-  Loader2,
   Check,
   ExternalLink,
   Video as VideoIcon,
   Sparkles,
-} from "lucide-react";
+} from "@/src/components/ui/lucide-icons";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +23,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/src/components/ui/tabs";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import { useToast } from "@/src/components/ui/toast";
 import type { PostMedia } from "@/src/lib/media/types";
 import { EMPTY_MEDIA, hasMedia } from "@/src/lib/media/types";
@@ -299,7 +299,7 @@ export function MediaPicker({
     <button
       type="button"
       onClick={() => setOpen(true)}
-      className="inline-flex items-center gap-1.5 rounded-md border border-border-default bg-surface-1 px-2.5 py-1.5 text-small text-text-secondary hover:text-text-primary hover:border-accent/50 transition-colors"
+      className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 py-1.5 text-body-s text-text-2 transition-colors delay-[var(--hover-delay)] duration-[var(--duration-fast)] hover:text-text hover:border-accent"
     >
       <ImageIcon className="h-3.5 w-3.5" />
       {hasMedia(value) ? "Change media" : "Add media"}
@@ -308,13 +308,13 @@ export function MediaPicker({
     <button
       type="button"
       onClick={() => setOpen(true)}
-      className="group w-full rounded-lg border border-dashed border-border-default bg-surface-0 hover:bg-surface-1 hover:border-accent/60 transition-colors p-4 text-left"
+      className="group w-full rounded-lg border border-dashed border-line bg-ground p-4 text-left transition-colors delay-[var(--hover-delay)] duration-[var(--duration-fast)] hover:bg-surface hover:border-accent"
     >
       {hasMedia(value) ? (
         <div className="flex items-center gap-3">
-          <div className="relative h-14 w-14 rounded-md overflow-hidden flex-shrink-0 border border-border-default bg-surface-2 flex items-center justify-center">
+          <div className="relative h-14 w-14 rounded-md overflow-hidden flex-shrink-0 border border-line bg-surface-2 flex items-center justify-center">
             {value.kind === "video" ? (
-              <VideoIcon className="h-5 w-5 text-text-secondary" />
+              <VideoIcon className="h-5 w-5 text-text-2" />
             ) : (
               <Image
                 src={value.thumb ?? value.url ?? ""}
@@ -327,15 +327,15 @@ export function MediaPicker({
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-small text-text-primary font-medium">
+            <p className="text-title text-text">
               {labelForSource(value.source, value.kind)}
             </p>
             {value.attribution ? (
-              <p className="text-xs text-text-tertiary truncate">
+              <p className="text-caption text-text-3 truncate">
                 Photo by {value.attribution.name}
               </p>
             ) : (
-              <p className="text-xs text-text-tertiary">Click to change</p>
+              <p className="text-caption text-text-3">Click to change</p>
             )}
           </div>
           <div
@@ -343,20 +343,18 @@ export function MediaPicker({
               e.stopPropagation();
               handleRemove();
             }}
-            className="p-1.5 rounded-md hover:bg-surface-2 text-text-tertiary hover:text-text-primary cursor-pointer"
+            className="p-1.5 rounded-md hover:bg-surface-2 text-text-3 hover:text-text cursor-pointer"
             aria-label="Remove media"
           >
             <XIcon className="h-4 w-4" />
           </div>
         </div>
       ) : (
-        <div className="flex items-center gap-3 text-text-secondary group-hover:text-text-primary">
-          <div className="h-10 w-10 rounded-md bg-surface-2 flex items-center justify-center">
-            <ImageIcon className="h-4 w-4" />
-          </div>
+        <div className="flex items-center gap-3 text-text-2 group-hover:text-text">
+          <ImageIcon className="h-5 w-5 shrink-0 text-text-3" />
           <div>
-            <p className="text-small font-medium">Add image or video</p>
-            <p className="text-xs text-text-tertiary">
+            <p className="text-title">Add image or video</p>
+            <p className="text-caption text-text-3">
               {projectId
                 ? "Stock photo, upload, video, generated, or text card"
                 : "Stock photo, image, video, or text card"}
@@ -377,42 +375,42 @@ export function MediaPicker({
             <DialogTitle>Add media to your post</DialogTitle>
             <DialogDescription>
               {projectId
-                ? "Pick a stock photo, upload an image, attach a video (MP4/MOV/WebM up to 200MB), choose an AI-generated video from this project, or generate a branded text card."
-                : "Pick a stock photo, upload an image, attach a video (MP4/MOV/WebM up to 200MB), or generate a branded text card."}
-              {" "}Videos auto-upload to X, LinkedIn, and Facebook when you publish or schedule the post.
+                ? "Pick a stock photo, upload an image, attach a video (MP4, MOV or WebM up to 200 MB), choose a video made in this project, or make a text card in your brand colours."
+                : "Pick a stock photo, upload an image, attach a video (MP4, MOV or WebM up to 200 MB), or make a text card in your brand colours."}
+              {" "}Videos upload to X, LinkedIn and Facebook automatically when you publish or schedule the post.
             </DialogDescription>
           </DialogHeader>
 
           <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="flex-1 flex flex-col min-h-0">
             <TabsList>
               <TabsTrigger value="unsplash">
-                <Search className="h-3.5 w-3.5 mr-1.5" />
+                <Search className="h-3.5 w-3.5" />
                 Stock
               </TabsTrigger>
               <TabsTrigger value="upload">
-                <Upload className="h-3.5 w-3.5 mr-1.5" />
+                <Upload className="h-3.5 w-3.5" />
                 Upload
               </TabsTrigger>
               <TabsTrigger value="video">
-                <VideoIcon className="h-3.5 w-3.5 mr-1.5" />
+                <VideoIcon className="h-3.5 w-3.5" />
                 Video
               </TabsTrigger>
               {projectId ? (
                 <TabsTrigger value="generated">
-                  <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-                  Generated
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Made here
                 </TabsTrigger>
               ) : null}
               <TabsTrigger value="overlay">
-                <Type className="h-3.5 w-3.5 mr-1.5" />
-                Text Card
+                <Type className="h-3.5 w-3.5" />
+                Text card
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="unsplash" className="flex-1 overflow-y-auto mt-4 space-y-3">
               {!configured ? (
-                <div className="text-small text-text-secondary p-4 rounded-md border border-border-default bg-surface-0">
-                  Unsplash is not configured. Set <code className="font-mono text-data">UNSPLASH_ACCESS_KEY</code> in your environment.
+                <div className="text-body-s text-text-2 p-4 rounded-md border border-line bg-ground">
+                  Stock photos aren&apos;t set up yet. Set <code className="font-mono text-body-s">UNSPLASH_ACCESS_KEY</code> in your environment.
                 </div>
               ) : (
                 <>
@@ -424,13 +422,13 @@ export function MediaPicker({
                       className="flex-1"
                     />
                     <Button type="submit" disabled={searching || query.trim().length < 2}>
-                      {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : "Search"}
+                      {searching ? "Searching…" : "Search"}
                     </Button>
                   </form>
 
                   {results.length === 0 && !searching && (
-                    <p className="text-small text-text-tertiary text-center py-8">
-                      Search to find stock photos from Unsplash
+                    <p className="text-body-s text-text-3 text-center py-8">
+                      Search to find stock photos from Unsplash.
                     </p>
                   )}
 
@@ -440,7 +438,7 @@ export function MediaPicker({
                         key={photo.id}
                         type="button"
                         onClick={() => handlePickStock(photo)}
-                        className="group relative aspect-video rounded-md overflow-hidden border border-border-default hover:border-accent transition-colors"
+                        className="group relative aspect-video rounded-md overflow-hidden border border-line transition-colors delay-[var(--hover-delay)] duration-[var(--duration-fast)] hover:border-accent"
                       >
                         <Image
                           src={photo.thumb}
@@ -450,8 +448,8 @@ export function MediaPicker({
                           className="object-cover"
                           unoptimized
                         />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-end p-2">
-                          <p className="text-xs text-white opacity-0 group-hover:opacity-100 truncate">
+                        <div className="absolute inset-0 bg-transparent group-hover:bg-overlay/60 transition-colors flex items-end p-2">
+                          <p className="text-caption text-on-photo opacity-0 group-hover:opacity-100 truncate">
                             {photo.attribution.name}
                           </p>
                         </div>
@@ -459,13 +457,13 @@ export function MediaPicker({
                     ))}
                   </div>
                   {results.length > 0 && (
-                    <p className="text-xs text-text-tertiary text-center">
+                    <p className="text-caption text-text-3 text-center">
                       Photos from{" "}
                       <a
                         href="https://unsplash.com/?utm_source=conduikt&utm_medium=referral"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="underline inline-flex items-center gap-0.5"
+                        className="hover-link underline inline-flex items-center gap-0.5 hover:text-text"
                       >
                         Unsplash <ExternalLink className="h-2.5 w-2.5" />
                       </a>
@@ -476,13 +474,13 @@ export function MediaPicker({
             </TabsContent>
 
             <TabsContent value="upload" className="flex-1 mt-4">
-              <div className="rounded-lg border border-dashed border-border-default bg-surface-0 p-12 text-center">
-                <Upload className="h-10 w-10 text-text-tertiary mx-auto mb-3" />
-                <p className="text-body text-text-primary mb-1">
+              <div className="rounded-lg border border-dashed border-line bg-ground p-12 text-center">
+                <Upload className="h-8 w-8 text-text-3 mx-auto mb-3" />
+                <p className="text-title text-text mb-1">
                   Upload an image
                 </p>
-                <p className="text-small text-text-secondary mb-4">
-                  PNG, JPEG, WebP, or GIF — up to 5 MB
+                <p className="text-body-s text-text-2 mb-4">
+                  PNG, JPEG, WebP or GIF, up to 5 MB
                 </p>
                 <input
                   ref={fileRef}
@@ -495,29 +493,22 @@ export function MediaPicker({
                   onClick={() => fileRef.current?.click()}
                   disabled={uploading}
                 >
-                  {uploading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Uploading...
-                    </>
-                  ) : (
-                    "Choose file"
-                  )}
+                  {uploading ? "Uploading…" : "Choose file"}
                 </Button>
               </div>
             </TabsContent>
 
             <TabsContent value="video" className="flex-1 mt-4">
-              <div className="rounded-lg border border-dashed border-border-default bg-surface-0 p-12 text-center">
-                <VideoIcon className="h-10 w-10 text-text-tertiary mx-auto mb-3" />
-                <p className="text-body text-text-primary mb-1">
+              <div className="rounded-lg border border-dashed border-line bg-ground p-12 text-center">
+                <VideoIcon className="h-8 w-8 text-text-3 mx-auto mb-3" />
+                <p className="text-title text-text mb-1">
                   Upload a video
                 </p>
-                <p className="text-small text-text-secondary mb-1">
-                  MP4, MOV, or WebM &mdash; up to 200 MB
+                <p className="text-body-s text-text-2 mb-1">
+                  MP4, MOV or WebM, up to 200 MB
                 </p>
-                <p className="text-xs text-text-tertiary mb-4">
-                  Platform limits: X 2:20, LinkedIn 200MB, Facebook 20min
+                <p className="text-caption text-text-3 mb-4">
+                  Platform limits: X 2:20, LinkedIn 200 MB, Facebook 20 min
                 </p>
                 <input
                   ref={videoFileRef}
@@ -530,36 +521,30 @@ export function MediaPicker({
                   onClick={() => videoFileRef.current?.click()}
                   disabled={uploadingVideo}
                 >
-                  {uploadingVideo ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Uploading...
-                    </>
-                  ) : (
-                    "Choose video"
-                  )}
+                  {uploadingVideo ? "Uploading…" : "Choose video"}
                 </Button>
-                <p className="text-xs text-text-tertiary mt-4">
-                  After upload, the video attaches to your post and uploads
-                  to X/LinkedIn/Facebook when you publish or schedule.
+                <p className="text-caption text-text-3 mt-4">
+                  Once uploaded, the video is attached to your post and goes
+                  to X, LinkedIn or Facebook when you publish or schedule.
                 </p>
               </div>
             </TabsContent>
 
             <TabsContent value="generated" className="flex-1 mt-4 overflow-y-auto">
               {loadingGenerated ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-5 w-5 animate-spin text-text-tertiary" />
+                <div className="grid grid-cols-2 gap-3" role="status" aria-label="Loading videos">
+                  <Skeleton className="aspect-video w-full" />
+                  <Skeleton className="aspect-video w-full" />
                 </div>
               ) : generatedVideos.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-border-default bg-surface-0 p-12 text-center">
-                  <Sparkles className="h-10 w-10 text-text-tertiary mx-auto mb-3" />
-                  <p className="text-body text-text-primary mb-1">
-                    No generated videos yet
+                <div className="rounded-lg border border-dashed border-line bg-ground p-12 text-center">
+                  <Sparkles className="h-8 w-8 text-text-3 mx-auto mb-3" />
+                  <p className="text-title text-text mb-1">
+                    No videos made yet
                   </p>
-                  <p className="text-small text-text-secondary">
-                    Generate a video from the project&rsquo;s Video page,
-                    then it&rsquo;ll show up here ready to attach to posts.
+                  <p className="text-body-s text-text-2">
+                    Make a video on the project&rsquo;s Video Ad page and
+                    it&rsquo;ll show up here, ready to attach to posts.
                   </p>
                 </div>
               ) : (
@@ -569,7 +554,7 @@ export function MediaPicker({
                       key={video.id}
                       type="button"
                       onClick={() => handlePickGenerated(video)}
-                      className="group relative rounded-md overflow-hidden border border-border-default hover:border-accent transition-colors text-left"
+                      className="group relative rounded-md overflow-hidden border border-line transition-colors delay-[var(--hover-delay)] duration-[var(--duration-fast)] hover:border-accent text-left"
                     >
                       <div className="relative aspect-video bg-surface-2 flex items-center justify-center">
                         {video.thumbnail_url ? (
@@ -580,19 +565,19 @@ export function MediaPicker({
                             className="absolute inset-0 h-full w-full object-cover"
                           />
                         ) : (
-                          <VideoIcon className="h-8 w-8 text-text-tertiary" />
+                          <VideoIcon className="h-8 w-8 text-text-3" />
                         )}
                         {video.duration_seconds ? (
-                          <span className="absolute bottom-1.5 right-1.5 rounded bg-surface-0/80 px-1.5 py-0.5 text-xs text-text-primary backdrop-blur-sm">
+                          <span className="absolute bottom-1.5 right-1.5 rounded-sm bg-overlay/80 px-1.5 py-0.5 font-mono text-caption text-on-photo">
                             {Math.round(video.duration_seconds)}s
                           </span>
                         ) : null}
                       </div>
                       <div className="p-2.5">
-                        <p className="text-small text-text-primary line-clamp-2">
+                        <p className="text-body-s text-text line-clamp-2">
                           {video.brief || "Untitled video"}
                         </p>
-                        <p className="text-xs text-text-tertiary mt-1">
+                        <p className="text-caption text-text-3 mt-1">
                           {new Date(video.created_at).toLocaleDateString()}
                         </p>
                       </div>
@@ -604,24 +589,24 @@ export function MediaPicker({
 
             <TabsContent value="overlay" className="flex-1 mt-4 space-y-4">
               <div>
-                <label className="text-small text-text-secondary mb-1.5 block">
-                  Text (max 280 chars)
+                <label className="text-body-s text-text-2 mb-1.5 block">
+                  Text (up to 280 characters)
                 </label>
                 <textarea
                   value={overlayText}
                   onChange={(e) => setOverlayText(e.target.value.slice(0, 280))}
                   rows={3}
-                  placeholder="A quote, stat, or key insight from your post..."
-                  className="w-full rounded-md border border-border-default bg-surface-0 px-3 py-2 text-body text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-accent resize-none"
+                  placeholder="A quote, number or key point from your post…"
+                  className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent resize-none"
                 />
-                <p className="text-xs text-text-tertiary mt-1">
+                <p className="font-mono text-caption text-text-3 mt-1">
                   {overlayText.length}/280
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-small text-text-secondary mb-1.5 block">
+                  <label className="text-body-s text-text-2 mb-1.5 block">
                     Style
                   </label>
                   <div className="flex gap-2">
@@ -630,10 +615,11 @@ export function MediaPicker({
                         key={s}
                         type="button"
                         onClick={() => setOverlayStyle(s)}
-                        className={`flex-1 rounded-md border px-3 py-2 text-small capitalize transition-colors ${
+                        aria-pressed={overlayStyle === s}
+                        className={`flex-1 rounded-md border px-3 py-2 text-body-s capitalize transition-colors delay-[var(--hover-delay)] duration-[var(--duration-fast)] ${
                           overlayStyle === s
-                            ? "border-accent bg-accent-muted text-accent"
-                            : "border-border-default text-text-secondary hover:text-text-primary"
+                            ? "border-accent bg-accent-soft text-text"
+                            : "border-line text-text-2 hover:text-text"
                         }`}
                       >
                         {s}
@@ -642,7 +628,7 @@ export function MediaPicker({
                   </div>
                 </div>
                 <div>
-                  <label className="text-small text-text-secondary mb-1.5 block">
+                  <label className="text-body-s text-text-2 mb-1.5 block">
                     Aspect
                   </label>
                   <div className="flex gap-2">
@@ -651,10 +637,11 @@ export function MediaPicker({
                         key={a}
                         type="button"
                         onClick={() => setOverlayAspect(a)}
-                        className={`flex-1 rounded-md border px-3 py-2 text-small capitalize transition-colors ${
+                        aria-pressed={overlayAspect === a}
+                        className={`flex-1 rounded-md border px-3 py-2 text-body-s capitalize transition-colors delay-[var(--hover-delay)] duration-[var(--duration-fast)] ${
                           overlayAspect === a
-                            ? "border-accent bg-accent-muted text-accent"
-                            : "border-border-default text-text-secondary hover:text-text-primary"
+                            ? "border-accent bg-accent-soft text-text"
+                            : "border-line text-text-2 hover:text-text"
                         }`}
                       >
                         {a}
@@ -665,26 +652,23 @@ export function MediaPicker({
               </div>
 
               <div className="flex justify-between items-center pt-2">
-                <p className="text-xs text-text-tertiary">
+                <p className="text-caption text-text-3">
                   Uses your{" "}
-                  <a href="/settings/brand" className="underline">
+                  <a href="/settings/brand" className="hover-link underline hover:text-text">
                     brand kit
                   </a>{" "}
-                  colors
+                  colours
                 </p>
                 <Button
                   onClick={handleGenerateOverlay}
                   disabled={generating || !overlayText.trim()}
                 >
                   {generating ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Generating...
-                    </>
+                    "Making card…"
                   ) : (
                     <>
                       <Check className="h-4 w-4" />
-                      Generate card
+                      Make card
                     </>
                   )}
                 </Button>

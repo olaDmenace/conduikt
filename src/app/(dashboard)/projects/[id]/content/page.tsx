@@ -14,21 +14,17 @@ import {
   Copy,
   Check,
   Save,
-  Loader2,
   Zap,
   ArrowUpRight,
   Clock,
   Map,
-  Calendar,
   ListChecks,
   Crosshair,
   Send,
   CalendarClock,
   ChevronDown,
-  GitBranch,
-  Download,
   Lock,
-} from "lucide-react";
+} from "@/src/components/ui/lucide-icons";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -39,6 +35,8 @@ import {
 } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
+import { Skeleton, PageSkeleton } from "@/src/components/ui/skeleton";
+import { EmptyState } from "@/src/components/ui/empty-state";
 import { PageHeader } from "@/src/components/layout/page-header";
 
 import { useToast } from "@/src/components/ui/toast";
@@ -100,7 +98,7 @@ interface SocialPost {
 const contentSkills = [
   {
     id: "copywriting",
-    name: "Copywriting",
+    name: "Copywriter",
     icon: FileText,
     assetType: "copy_block" as const,
     channel: "web" as const,
@@ -110,7 +108,7 @@ const contentSkills = [
   },
   {
     id: "social-content",
-    name: "Social Posts",
+    name: "Social",
     icon: Twitter,
     assetType: "social_post" as const,
     channel: "x" as const,
@@ -120,7 +118,7 @@ const contentSkills = [
   },
   {
     id: "email-sequence",
-    name: "Email Sequence",
+    name: "Email",
     icon: Mail,
     assetType: "email" as const,
     channel: "email" as const,
@@ -130,17 +128,17 @@ const contentSkills = [
   },
   {
     id: "page-cro",
-    name: "CRO Analysis",
+    name: "Conversion Check",
     icon: ArrowUpRight,
     assetType: "copy_block" as const,
     channel: "web" as const,
-    description: "Conversion rate optimization recommendations",
+    description: "Changes that get more visitors to sign up or buy",
     placeholder:
       "Which page or funnel to optimize?\n\ne.g. Analyze our signup flow and suggest copy + layout changes to improve conversions",
   },
   {
     id: "content-strategy",
-    name: "Content Strategy",
+    name: "Strategy",
     icon: Map,
     assetType: "copy_block" as const,
     channel: "web" as const,
@@ -154,23 +152,23 @@ const contentSkills = [
     icon: ListChecks,
     assetType: "copy_block" as const,
     channel: "x" as const,
-    description: "AI-generated 30-day X and LinkedIn posting plan with hooks and video briefs",
+    description: "A 30-day X and LinkedIn posting plan with hooks and video briefs",
     placeholder:
       "What's the angle for the next 30 days?\n\ne.g. Post-launch momentum for an AI marketing SaaS — mix of build-in-public lessons, walkthroughs of the platform's agents, and tactical playbooks for solo founders. Mirror the punchy lowercase style of @askokara on X.",
   },
   {
     id: "blog-post",
-    name: "Blog Post",
+    name: "Blog",
     icon: Globe,
     assetType: "blog_post" as const,
     channel: "web" as const,
-    description: "SEO-optimized long-form blog posts with meta tags and social snippets",
+    description: "Long-form blog posts written to rank, with meta tags and social snippets",
     placeholder:
       "What's the blog post about?\n\ne.g. How to automate your social media marketing with AI — target keyword: AI social media automation",
   },
   {
     id: "competitor-analysis",
-    name: "Competitor Intel",
+    name: "Competitor Watch",
     icon: Crosshair,
     assetType: "copy_block" as const,
     channel: "web" as const,
@@ -235,10 +233,10 @@ function formatTimestamp(iso: string) {
 
 const assetTypeLabels: Record<string, string> = {
   copy_block: "Copy",
-  social_post: "Social Post",
+  social_post: "Social post",
   email: "Email",
   headline: "Headline",
-  landing_page: "Landing Page",
+  landing_page: "Landing page",
   cta: "CTA",
 };
 
@@ -261,25 +259,25 @@ function ThreadPreview({ text }: { text: string }) {
   if (chunks.length <= 1) return null;
   const visible = expanded ? chunks : chunks.slice(0, 2);
   return (
-    <div className="rounded-lg border border-border-subtle bg-surface-2/30 p-3 space-y-2">
-      <p className="text-caption text-text-tertiary font-medium">
+    <div className="rounded-lg border border-line bg-surface-2 p-3 space-y-2">
+      <p className="text-label text-text-3">
         Thread preview · {chunks.length} tweets
       </p>
       <div className="space-y-1.5">
         {visible.map((chunk, i) => (
           <div
             key={i}
-            className="rounded-md border border-border-subtle bg-surface-0 p-2.5"
+            className="rounded-md border border-line bg-surface p-2.5"
           >
             <div className="flex items-center justify-between gap-2 mb-1">
-              <Badge variant="secondary" className="font-mono text-[10px]">
+              <Badge variant="secondary">
                 {i + 1}/{chunks.length}
               </Badge>
-              <span className="text-caption text-text-tertiary">
+              <span className="font-mono text-caption text-text-3">
                 {chunk.length}/280
               </span>
             </div>
-            <p className="text-small text-text-secondary whitespace-pre-line">
+            <p className="text-body-s text-text-2 whitespace-pre-line">
               {chunk}
             </p>
           </div>
@@ -288,7 +286,7 @@ function ThreadPreview({ text }: { text: string }) {
       {chunks.length > 2 && (
         <button
           onClick={() => setExpanded(!expanded)}
-          className="text-caption text-accent hover:text-accent-bright transition-colors"
+          className="text-caption text-accent hover-link hover:text-accent-hover"
         >
           {expanded ? "Hide" : `Show ${chunks.length - 2} more`}
         </button>
@@ -344,38 +342,38 @@ function SocialPostCard({
   function copyPost() {
     navigator.clipboard.writeText(post.text);
     setCardCopied(true);
-    toast("Copied!", "info");
+    toast("Copied", "info");
     setTimeout(() => setCardCopied(false), 2000);
   }
 
   return (
     <div
-      className="rounded-xl border border-border-default bg-surface-0 p-4 space-y-3 animate-in"
+      className="rounded-lg border border-line bg-ground p-4 space-y-3 animate-in"
       style={{ animationDelay: `${index * 60}ms` }}
     >
       {/* Header */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2">
           {isX ? (
-            <Twitter className="h-4 w-4 text-text-primary" />
+            <Twitter className="h-4 w-4 text-text" />
           ) : (
-            <Linkedin className="h-4 w-4 text-[#0A66C2]" />
+            <Linkedin className="h-4 w-4 text-text" />
           )}
           <Badge variant="secondary">{isX ? "X (Twitter)" : "LinkedIn"}</Badge>
           {post.angle && (
-            <Badge variant="secondary" className="text-text-tertiary">{post.angle}</Badge>
+            <Badge variant="secondary" className="text-text-3">{post.angle}</Badge>
           )}
         </div>
         <div className="flex items-center gap-1.5 flex-wrap">
           <Button size="sm" variant="ghost" onClick={copyPost}>
-            {cardCopied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
+            {cardCopied ? <Check className="h-3.5 w-3.5 text-teal" /> : <Copy className="h-3.5 w-3.5" />}
             {cardCopied ? "Copied" : "Copy"}
           </Button>
           {((isX && connectedPlatforms.includes("x")) ||
             (!isX && connectedPlatforms.includes("linkedin"))) && (
             <Button
               size="sm"
-              variant="secondary"
+              variant="outline"
               onClick={() =>
                 onSchedulingKeyChange(isScheduling ? null : publishKey)
               }
@@ -391,11 +389,7 @@ function SocialPostCard({
               onClick={() => onPublish("x", post.text, publishKey)}
               disabled={publishing !== null}
             >
-              {publishing === publishKey ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Twitter className="h-3.5 w-3.5" />
-              )}
+              {publishing !== publishKey && <Twitter className="h-3.5 w-3.5" />}
               {publishing === publishKey ? "Posting…" : "Post now"}
             </Button>
           )}
@@ -405,11 +399,7 @@ function SocialPostCard({
               onClick={() => onPublish("linkedin", post.text, publishKey)}
               disabled={publishing !== null}
             >
-              {publishing === publishKey ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Linkedin className="h-3.5 w-3.5" />
-              )}
+              {publishing !== publishKey && <Linkedin className="h-3.5 w-3.5" />}
               {publishing === publishKey ? "Posting…" : "Post now"}
             </Button>
           )}
@@ -418,8 +408,8 @@ function SocialPostCard({
 
       {/* Schedule picker — inline, only shows when active */}
       {isScheduling && (
-        <div className="rounded-lg border border-accent/30 bg-accent/5 p-3 space-y-2">
-          <p className="text-small font-medium text-text-primary flex items-center gap-1.5">
+        <div className="rounded-lg border border-line bg-accent-soft p-3 space-y-2">
+          <p className="text-body-s font-medium text-text flex items-center gap-1.5">
             <CalendarClock className="h-3.5 w-3.5 text-accent" />
             Schedule for later
           </p>
@@ -429,7 +419,7 @@ function SocialPostCard({
               min={minDateTime}
               value={scheduleDateTime}
               onChange={(e) => onScheduleDateTimeChange(e.target.value)}
-              className="flex-1 rounded-lg border border-border-strong bg-surface-0 px-3 py-1.5 text-small text-text-primary focus:border-accent focus:outline-none"
+              className="h-9 flex-1 rounded-md border border-line-strong bg-surface px-3.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             />
             <Button
               size="sm"
@@ -480,7 +470,7 @@ function SocialPostCard({
       />
 
       {/* Metadata row */}
-      <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border-default">
+      <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-line">
         <Badge
           variant={
             charCount <= charLimit ? "success" : isX ? "secondary" : "error"
@@ -491,15 +481,15 @@ function SocialPostCard({
             : `${charCount}/${charLimit}`}
         </Badge>
         {charCount > charLimit && !isX && (
-          <span className="text-small text-error">{charCount - charLimit} over</span>
+          <span className="text-body-s text-danger">{charCount - charLimit} over</span>
         )}
         {isX && charCount > charLimit && (
-          <span className="text-small text-text-tertiary">
+          <span className="text-body-s text-text-3">
             Auto-splits into a thread
           </span>
         )}
         {post.best_time && (
-          <span className="flex items-center gap-1 text-small text-text-tertiary">
+          <span className="flex items-center gap-1 text-body-s text-text-3">
             <Clock className="h-3 w-3" />
             {post.best_time}
           </span>
@@ -511,7 +501,7 @@ function SocialPostCard({
 
       {/* Image suggestion */}
       {post.image_suggestion && !hasMedia(postMedia[publishKey]) && (
-        <p className="text-small text-text-tertiary italic border-l-2 border-accent/30 pl-3">
+        <p className="text-body-s text-text-3 italic border-l-2 border-line-strong pl-3">
           {post.image_suggestion}
         </p>
       )}
@@ -546,7 +536,7 @@ function EmailPreview({ data, projectId, projectName, toast }: EmailPreviewProps
   function copyHtml() {
     navigator.clipboard.writeText(htmlBody);
     setEmailCopied(true);
-    toast("HTML copied!", "info");
+    toast("HTML copied", "info");
     setTimeout(() => setEmailCopied(false), 2000);
   }
 
@@ -562,7 +552,7 @@ function EmailPreview({ data, projectId, projectName, toast }: EmailPreviewProps
     />
     <div className="space-y-3">
       {data?.sequence_name ? (
-        <p className="text-small font-medium text-text-primary">{String(data.sequence_name)}</p>
+        <p className="text-body-s font-medium text-text">{String(data.sequence_name)}</p>
       ) : null}
       {/* Email step tabs */}
       <div className="flex gap-2 flex-wrap">
@@ -571,34 +561,34 @@ function EmailPreview({ data, projectId, projectName, toast }: EmailPreviewProps
             key={i}
             type="button"
             onClick={() => setActiveEmail(i)}
-            className={`px-3 py-1.5 rounded-lg text-small font-medium transition-colors ${
+            className={`px-3 py-1.5 rounded-md text-body-s font-medium transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] ${
               i === activeEmail
-                ? "bg-accent text-on-accent"
-                : "bg-surface-2 text-text-secondary hover:bg-surface-3"
+                ? "bg-ink text-ink-text"
+                : "bg-surface-2 text-text-2 hover:bg-line"
             }`}
           >
             Email {i + 1}
           </button>
         ))}
       </div>
-      <div className="rounded-xl border border-border-default bg-surface-0 overflow-hidden">
-        <div className="border-b border-border-default px-4 py-3 bg-surface-1 flex items-center justify-between">
+      <div className="rounded-lg border border-line bg-ground overflow-hidden">
+        <div className="border-b border-line px-4 py-3 bg-surface flex items-center justify-between">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-small text-text-secondary">
-              <span className="font-medium text-text-primary">Subject:</span>
+            <div className="flex items-center gap-2 text-body-s text-text-2">
+              <span className="font-medium text-text">Subject:</span>
               {email?.subject_line ?? "No subject"}
             </div>
-            <div className="flex items-center gap-2 text-small text-text-tertiary">
+            <div className="flex items-center gap-2 text-body-s text-text-3">
               <span>From:</span>
               {projectName || "Conduikt"} &lt;hello@contacts.conduikt.com&gt;
             </div>
             {email?.goal && (
-              <div className="flex items-center gap-2 text-small text-text-tertiary">
+              <div className="flex items-center gap-2 text-body-s text-text-3">
                 <span>Goal:</span> {email.goal}
               </div>
             )}
             {email?.delay_hours != null && (
-              <div className="flex items-center gap-2 text-small text-text-tertiary">
+              <div className="flex items-center gap-2 text-body-s text-text-3">
                 <Clock className="h-3 w-3" />
                 Send after {email.delay_hours}h
               </div>
@@ -608,19 +598,20 @@ function EmailPreview({ data, projectId, projectName, toast }: EmailPreviewProps
             <button
               type="button"
               onClick={() => setSendModalOpen(true)}
-              className="flex items-center gap-1.5 rounded-lg border border-border-default bg-surface-0 px-3 py-1.5 text-caption font-medium text-text-primary hover:border-accent hover:bg-accent-muted hover:text-accent transition-colors"
+              className="flex h-8 items-center gap-1.5 rounded-md border border-line-strong bg-transparent px-3 text-[13px] font-medium text-text hover:bg-surface-2 transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)]"
               title="Send this email to an audience"
             >
               <Send className="h-3.5 w-3.5" />
-              Send Broadcast
+              Send broadcast
             </button>
             <button
               type="button"
               onClick={copyHtml}
-              className="p-2 rounded-lg hover:bg-surface-2 text-text-tertiary hover:text-text-primary transition-colors"
+              className="p-2 rounded-md hover:bg-surface-2 text-text-3 hover:text-text transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)]"
               title="Copy HTML"
+              aria-label="Copy HTML"
             >
-              {emailCopied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
+              {emailCopied ? <Check className="h-4 w-4 text-teal" /> : <Copy className="h-4 w-4" />}
             </button>
           </div>
         </div>
@@ -628,14 +619,14 @@ function EmailPreview({ data, projectId, projectName, toast }: EmailPreviewProps
           <iframe
             srcDoc={htmlBody}
             title="Email preview"
-            className="w-full min-h-[400px] border-0 rounded-lg"
+            className="w-full min-h-[400px] border-0 rounded-md"
             sandbox=""
           />
         </div>
       </div>
       {Array.isArray(data?.exit_conditions) && (data.exit_conditions as string[]).length > 0 && (
-        <div className="text-small text-text-tertiary">
-          <span className="font-medium text-text-secondary">Exit conditions: </span>
+        <div className="text-body-s text-text-3">
+          <span className="font-medium text-text-2">Exit conditions: </span>
           {(data.exit_conditions as string[]).join(" · ")}
         </div>
       )}
@@ -661,36 +652,36 @@ function CopywritingPreview({ data }: { data: Record<string, any> }) {
       {variants.map((v: { text: string; rationale?: string; tone?: string }, i: number) => (
         <div
           key={i}
-          className="rounded-xl border border-border-default bg-surface-0 p-4 space-y-3 animate-in"
+          className="rounded-lg border border-line bg-ground p-4 space-y-3 animate-in"
           style={{ animationDelay: `${i * 60}ms` }}
         >
           <div className="flex items-center justify-between gap-2">
             <Badge variant="secondary">Variant {i + 1}</Badge>
-            {data?.type && <Badge variant="secondary" className="text-text-tertiary">{data.type}</Badge>}
+            {data?.type && <Badge variant="secondary" className="text-text-3">{data.type}</Badge>}
           </div>
-          <p className="text-body text-text-primary font-medium leading-relaxed">
+          <p className="text-body text-text font-medium leading-relaxed">
             {v.text}
           </p>
           {v.rationale && (
-            <p className="text-small text-text-secondary">
-              <span className="font-medium text-text-primary">Why it works: </span>
+            <p className="text-body-s text-text-2">
+              <span className="font-medium text-text">Why it works: </span>
               {v.rationale}
             </p>
           )}
           {v.tone && (
-            <p className="text-small text-text-tertiary">
-              <span className="font-medium text-text-secondary">Tone: </span>
+            <p className="text-body-s text-text-3">
+              <span className="font-medium text-text-2">Tone: </span>
               {v.tone}
             </p>
           )}
         </div>
       ))}
       {recommendations.length > 0 && (
-        <div className="rounded-xl border border-border-default bg-surface-1 p-4 space-y-2">
-          <p className="text-small font-medium text-text-primary">Recommendations</p>
+        <div className="rounded-lg border border-line bg-surface p-4 space-y-2">
+          <p className="text-label text-text-3">Recommendations</p>
           <ul className="space-y-1.5">
             {recommendations.map((r: string, i: number) => (
-              <li key={i} className="text-small text-text-secondary flex gap-2">
+              <li key={i} className="text-body-s text-text-2 flex gap-2">
                 <span className="text-accent shrink-0">•</span>
                 <span>{r}</span>
               </li>
@@ -713,20 +704,20 @@ function ContentStrategyPreview({ data }: { data: Record<string, any> }) {
     <div className="space-y-5 max-h-[600px] overflow-y-auto pr-1">
       {data?.strategy_name && (
         <div className="space-y-1">
-          <h3 className="text-body font-medium text-text-primary">{data.strategy_name}</h3>
+          <h3 className="text-title text-text">{data.strategy_name}</h3>
           {data?.time_horizon && (
-            <p className="text-small text-text-tertiary">Timeline: {data.time_horizon}</p>
+            <p className="text-body-s text-text-3">Timeline: {data.time_horizon}</p>
           )}
         </div>
       )}
 
       {/* Quick wins */}
       {quickWins.length > 0 && (
-        <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 space-y-2">
-          <p className="text-small font-medium text-accent">Quick Wins</p>
+        <div className="rounded-lg border border-line bg-accent-soft p-4 space-y-2">
+          <p className="text-label text-text-2">Quick wins</p>
           <ul className="space-y-1.5">
             {quickWins.map((w: string, i: number) => (
-              <li key={i} className="text-small text-text-secondary flex gap-2">
+              <li key={i} className="text-body-s text-text-2 flex gap-2">
                 <span className="text-accent shrink-0">{i + 1}.</span>
                 <span>{w}</span>
               </li>
@@ -737,27 +728,27 @@ function ContentStrategyPreview({ data }: { data: Record<string, any> }) {
 
       {/* Content pillars */}
       {pillars.map((pillar: { topic: string; intent?: string; search_opportunity?: string; content_pieces?: { title: string; format?: string; channel?: string; priority?: string; brief?: string }[] }, pi: number) => (
-        <div key={pi} className="rounded-xl border border-border-default bg-surface-0 p-4 space-y-3 animate-in" style={{ animationDelay: `${pi * 60}ms` }}>
+        <div key={pi} className="rounded-lg border border-line bg-ground p-4 space-y-3 animate-in" style={{ animationDelay: `${pi * 60}ms` }}>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-body font-medium text-text-primary">{pillar.topic}</span>
+            <span className="text-title text-text">{pillar.topic}</span>
             {pillar.intent && <Badge variant="secondary">{pillar.intent}</Badge>}
             {pillar.search_opportunity && (
-              <Badge variant="secondary" className="text-text-tertiary">SEO: {pillar.search_opportunity}</Badge>
+              <Badge variant="secondary" className="text-text-3">SEO: {pillar.search_opportunity}</Badge>
             )}
           </div>
           {pillar.content_pieces?.map((piece, ci: number) => (
-            <div key={ci} className="ml-3 pl-3 border-l border-border-subtle space-y-1">
+            <div key={ci} className="ml-3 pl-3 border-l border-line space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-small font-medium text-text-primary">{piece.title}</span>
-                {piece.format && <Badge variant="secondary" className="text-[0.65rem]">{piece.format}</Badge>}
-                {piece.channel && <Badge variant="secondary" className="text-[0.65rem] text-text-tertiary">{piece.channel}</Badge>}
+                <span className="text-body-s font-medium text-text">{piece.title}</span>
+                {piece.format && <Badge variant="secondary">{piece.format}</Badge>}
+                {piece.channel && <Badge variant="secondary" className="text-text-3">{piece.channel}</Badge>}
                 {piece.priority && (
-                  <Badge variant="secondary" className={`text-[0.65rem] ${piece.priority === "high" ? "text-error" : piece.priority === "medium" ? "text-warning" : "text-text-tertiary"}`}>
+                  <Badge variant="secondary" className={`${piece.priority === "high" ? "text-danger" : piece.priority === "medium" ? "text-accent" : "text-text-3"}`}>
                     {piece.priority}
                   </Badge>
                 )}
               </div>
-              {piece.brief && <p className="text-small text-text-tertiary">{piece.brief}</p>}
+              {piece.brief && <p className="text-body-s text-text-3">{piece.brief}</p>}
             </div>
           ))}
         </div>
@@ -765,18 +756,18 @@ function ContentStrategyPreview({ data }: { data: Record<string, any> }) {
 
       {/* Calendar */}
       {calendar.length > 0 && (
-        <div className="rounded-xl border border-border-default bg-surface-0 p-4 space-y-3">
-          <p className="text-small font-medium text-text-primary">Content Calendar</p>
+        <div className="rounded-lg border border-line bg-ground p-4 space-y-3">
+          <p className="text-label text-text-3">Content calendar</p>
           {calendar.map((week: { week: number; pieces: string[]; theme?: string }, wi: number) => (
             <div key={wi} className="space-y-1">
               <div className="flex items-center gap-2">
                 <Badge variant="secondary">Week {week.week}</Badge>
-                {week.theme && <span className="text-small text-text-tertiary">{week.theme}</span>}
+                {week.theme && <span className="text-body-s text-text-3">{week.theme}</span>}
               </div>
               <ul className="ml-4 space-y-0.5">
                 {week.pieces.map((p, pi: number) => (
-                  <li key={pi} className="text-small text-text-secondary flex gap-2">
-                    <span className="text-text-tertiary shrink-0">•</span>{p}
+                  <li key={pi} className="text-body-s text-text-2 flex gap-2">
+                    <span className="text-text-3 shrink-0">•</span>{p}
                   </li>
                 ))}
               </ul>
@@ -787,11 +778,11 @@ function ContentStrategyPreview({ data }: { data: Record<string, any> }) {
 
       {/* KPIs */}
       {kpis.length > 0 && (
-        <div className="rounded-xl border border-border-default bg-surface-1 p-4 space-y-2">
-          <p className="text-small font-medium text-text-primary">KPIs</p>
+        <div className="rounded-lg border border-line bg-surface p-4 space-y-2">
+          <p className="text-label text-text-3">KPIs</p>
           <ul className="space-y-1">
             {kpis.map((kpi: string, i: number) => (
-              <li key={i} className="text-small text-text-secondary flex gap-2">
+              <li key={i} className="text-body-s text-text-2 flex gap-2">
                 <span className="text-accent shrink-0">•</span>{kpi}
               </li>
             ))}
@@ -810,24 +801,24 @@ function PostingPlanPreview({ data }: { data: Record<string, any> }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const days: any[] = Array.isArray(data?.days) ? data.days : [];
   const platformBadge: Record<string, string> = {
-    x: "bg-surface-2 text-text-primary",
-    linkedin: "bg-accent/15 text-accent",
-    both: "bg-accent-secondary/15 text-accent-secondary",
+    x: "bg-surface-2 text-text",
+    linkedin: "bg-accent-soft text-accent-hover",
+    both: "bg-teal-soft text-teal",
   };
   const videoBadge: Record<string, string> = {
-    none: "text-text-tertiary",
+    none: "text-text-3",
     screen_recording: "text-accent",
-    heygen_avatar: "text-accent-secondary",
-    either: "text-warning",
+    heygen_avatar: "text-teal",
+    either: "text-text-2",
   };
 
   return (
     <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
       {data?.calendar_name && (
         <div>
-          <p className="text-h3 text-text-primary">{data.calendar_name}</p>
+          <p className="text-title text-text">{data.calendar_name}</p>
           {data?.starts_on && (
-            <p className="text-caption text-text-tertiary">
+            <p className="text-caption text-text-3">
               Starts {data.starts_on} · {days.length} entries
             </p>
           )}
@@ -835,11 +826,11 @@ function PostingPlanPreview({ data }: { data: Record<string, any> }) {
       )}
 
       {data?.notes && (
-        <div className="rounded-lg border border-border-default bg-surface-1 p-4">
-          <p className="text-caption text-text-tertiary mb-1 uppercase tracking-wider">
+        <div className="rounded-lg border border-line bg-surface p-4">
+          <p className="text-label text-text-3 mb-2">
             Strategic bet
           </p>
-          <p className="text-small text-text-secondary leading-relaxed">
+          <p className="text-body-s text-text-2 leading-relaxed">
             {data.notes}
           </p>
         </div>
@@ -849,33 +840,33 @@ function PostingPlanPreview({ data }: { data: Record<string, any> }) {
         {days.map((day, i) => (
           <div
             key={i}
-            className="rounded-lg border border-border-default bg-surface-1 p-4"
+            className="rounded-lg border border-line bg-surface p-4"
           >
             <div className="flex items-center gap-2 flex-wrap mb-2">
-              <span className="text-small font-mono text-text-primary">
+              <span className="text-body-s font-mono text-text">
                 {day.date}
               </span>
               <span
-                className={`text-xs px-2 py-0.5 rounded font-mono ${
+                className={`text-caption px-2 py-0.5 rounded-sm font-mono ${
                   platformBadge[day.platform] ?? "bg-surface-2"
                 }`}
               >
                 {day.platform}
               </span>
               {day.template && (
-                <span className="text-xs px-2 py-0.5 rounded bg-surface-2 text-text-secondary font-mono">
+                <span className="text-caption px-2 py-0.5 rounded-sm bg-surface-2 text-text-2 font-mono">
                   {day.template}
                 </span>
               )}
               {day.theme && (
-                <span className="text-xs text-text-tertiary">
+                <span className="text-caption text-text-3">
                   {day.theme}
                 </span>
               )}
               {day.video && day.video !== "none" && (
                 <span
-                  className={`text-xs ml-auto ${
-                    videoBadge[day.video] ?? "text-text-tertiary"
+                  className={`text-caption ml-auto ${
+                    videoBadge[day.video] ?? "text-text-3"
                   }`}
                 >
                   ▶ {day.video.replace("_", " ")}
@@ -883,23 +874,23 @@ function PostingPlanPreview({ data }: { data: Record<string, any> }) {
               )}
             </div>
             {day.hook && (
-              <p className="text-body text-text-primary whitespace-pre-line leading-relaxed mb-2 font-mono text-small">
+              <p className="text-body text-text whitespace-pre-line leading-relaxed mb-2">
                 {day.hook}
               </p>
             )}
             {day.summary && (
-              <p className="text-small text-text-secondary leading-relaxed">
+              <p className="text-body-s text-text-2 leading-relaxed">
                 {day.summary}
               </p>
             )}
             {day.video_brief && (
-              <p className="text-xs text-text-tertiary mt-2 italic">
+              <p className="text-caption text-text-3 mt-2 italic">
                 Video: {day.video_brief}
               </p>
             )}
             {day.why_this_week && (
-              <p className="text-xs text-text-tertiary mt-2">
-                <span className="text-text-secondary">Why now:</span>{" "}
+              <p className="text-caption text-text-3 mt-2">
+                <span className="text-text-2">Why now:</span>{" "}
                 {day.why_this_week}
               </p>
             )}
@@ -921,25 +912,25 @@ function CompetitorAnalysisPreview({ data }: { data: Record<string, any> }) {
   return (
     <div className="space-y-5 max-h-[600px] overflow-y-auto pr-1">
       {data?.analysis_name && (
-        <h3 className="text-body font-medium text-text-primary">{data.analysis_name}</h3>
+        <h3 className="text-title text-text">{data.analysis_name}</h3>
       )}
 
       {/* Competitors */}
       {competitors.map((c: { name: string; url?: string; positioning?: string; strengths?: string[]; weaknesses?: string[]; messaging_analysis?: string; pricing_model?: string }, i: number) => (
-        <div key={i} className="rounded-xl border border-border-default bg-surface-0 p-4 space-y-3 animate-in" style={{ animationDelay: `${i * 60}ms` }}>
+        <div key={i} className="rounded-lg border border-line bg-ground p-4 space-y-3 animate-in" style={{ animationDelay: `${i * 60}ms` }}>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-body font-medium text-text-primary">{c.name}</span>
-            {c.url && <Badge variant="secondary" className="text-text-tertiary text-[0.65rem]">{c.url}</Badge>}
+            <span className="text-title text-text">{c.name}</span>
+            {c.url && <Badge variant="secondary" className="text-text-3 normal-case">{c.url}</Badge>}
           </div>
-          {c.positioning && <p className="text-small text-text-secondary">{c.positioning}</p>}
+          {c.positioning && <p className="text-body-s text-text-2">{c.positioning}</p>}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {c.strengths && c.strengths.length > 0 && (
               <div className="space-y-1">
-                <p className="text-small font-medium text-success">Strengths</p>
+                <p className="text-body-s font-medium text-teal">Strengths</p>
                 <ul className="space-y-1">
                   {c.strengths.map((s: string, si: number) => (
-                    <li key={si} className="text-small text-text-secondary flex gap-2">
-                      <span className="text-success shrink-0">+</span><span>{s}</span>
+                    <li key={si} className="text-body-s text-text-2 flex gap-2">
+                      <span className="text-teal shrink-0">+</span><span>{s}</span>
                     </li>
                   ))}
                 </ul>
@@ -947,11 +938,11 @@ function CompetitorAnalysisPreview({ data }: { data: Record<string, any> }) {
             )}
             {c.weaknesses && c.weaknesses.length > 0 && (
               <div className="space-y-1">
-                <p className="text-small font-medium text-error">Weaknesses</p>
+                <p className="text-body-s font-medium text-danger">Weaknesses</p>
                 <ul className="space-y-1">
                   {c.weaknesses.map((w: string, wi: number) => (
-                    <li key={wi} className="text-small text-text-secondary flex gap-2">
-                      <span className="text-error shrink-0">−</span><span>{w}</span>
+                    <li key={wi} className="text-body-s text-text-2 flex gap-2">
+                      <span className="text-danger shrink-0">−</span><span>{w}</span>
                     </li>
                   ))}
                 </ul>
@@ -959,8 +950,8 @@ function CompetitorAnalysisPreview({ data }: { data: Record<string, any> }) {
             )}
           </div>
           {c.messaging_analysis && (
-            <p className="text-small text-text-tertiary">
-              <span className="font-medium text-text-secondary">Messaging: </span>{c.messaging_analysis}
+            <p className="text-body-s text-text-3">
+              <span className="font-medium text-text-2">Messaging: </span>{c.messaging_analysis}
             </p>
           )}
         </div>
@@ -968,16 +959,16 @@ function CompetitorAnalysisPreview({ data }: { data: Record<string, any> }) {
 
       {/* Positioning gaps */}
       {gaps.length > 0 && (
-        <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 space-y-3">
-          <p className="text-small font-medium text-accent">Positioning Gaps</p>
+        <div className="rounded-lg border border-line bg-accent-soft p-4 space-y-3">
+          <p className="text-label text-text-2">Positioning gaps</p>
           {gaps.map((g: { gap: string; opportunity: string; impact?: string; effort?: string }, i: number) => (
-            <div key={i} className="space-y-1 pb-3 border-b border-border-subtle last:border-0 last:pb-0">
+            <div key={i} className="space-y-1 pb-3 border-b border-line last:border-0 last:pb-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-small font-medium text-text-primary">{g.gap}</span>
-                {g.impact && <Badge variant="secondary" className={`text-[0.65rem] ${g.impact === "high" ? "text-error" : g.impact === "medium" ? "text-warning" : "text-text-tertiary"}`}>{g.impact} impact</Badge>}
-                {g.effort && <Badge variant="secondary" className="text-[0.65rem] text-text-tertiary">{g.effort} effort</Badge>}
+                <span className="text-body-s font-medium text-text">{g.gap}</span>
+                {g.impact && <Badge variant="secondary" className={`${g.impact === "high" ? "text-danger" : g.impact === "medium" ? "text-accent" : "text-text-3"}`}>{g.impact} impact</Badge>}
+                {g.effort && <Badge variant="secondary" className="text-text-3">{g.effort} effort</Badge>}
               </div>
-              <p className="text-small text-text-secondary">{g.opportunity}</p>
+              <p className="text-body-s text-text-2">{g.opportunity}</p>
             </div>
           ))}
         </div>
@@ -985,16 +976,16 @@ function CompetitorAnalysisPreview({ data }: { data: Record<string, any> }) {
 
       {/* Content opportunities */}
       {contentOpps.length > 0 && (
-        <div className="rounded-xl border border-border-default bg-surface-0 p-4 space-y-3">
-          <p className="text-small font-medium text-text-primary">Content Opportunities</p>
+        <div className="rounded-lg border border-line bg-ground p-4 space-y-3">
+          <p className="text-label text-text-3">Content opportunities</p>
           {contentOpps.map((c: { topic: string; rationale: string; suggested_format?: string; priority?: string }, i: number) => (
-            <div key={i} className="space-y-1 pb-3 border-b border-border-subtle last:border-0 last:pb-0">
+            <div key={i} className="space-y-1 pb-3 border-b border-line last:border-0 last:pb-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-small font-medium text-text-primary">{c.topic}</span>
-                {c.priority && <Badge variant="secondary" className={`text-[0.65rem] ${c.priority === "high" ? "text-error" : "text-text-tertiary"}`}>{c.priority}</Badge>}
-                {c.suggested_format && <Badge variant="secondary" className="text-[0.65rem] text-text-tertiary">{c.suggested_format}</Badge>}
+                <span className="text-body-s font-medium text-text">{c.topic}</span>
+                {c.priority && <Badge variant="secondary" className={`${c.priority === "high" ? "text-danger" : "text-text-3"}`}>{c.priority}</Badge>}
+                {c.suggested_format && <Badge variant="secondary" className="text-text-3">{c.suggested_format}</Badge>}
               </div>
-              <p className="text-small text-text-secondary">{c.rationale}</p>
+              <p className="text-body-s text-text-2">{c.rationale}</p>
             </div>
           ))}
         </div>
@@ -1002,14 +993,14 @@ function CompetitorAnalysisPreview({ data }: { data: Record<string, any> }) {
 
       {/* Messaging recommendations */}
       {messagingRecs.length > 0 && (
-        <div className="rounded-xl border border-border-default bg-surface-1 p-4 space-y-3">
-          <p className="text-small font-medium text-text-primary">Messaging Recommendations</p>
+        <div className="rounded-lg border border-line bg-surface p-4 space-y-3">
+          <p className="text-label text-text-3">Messaging recommendations</p>
           {messagingRecs.map((r: { area: string; current_issue?: string; recommendation: string; example?: string }, i: number) => (
-            <div key={i} className="space-y-1 pb-3 border-b border-border-subtle last:border-0 last:pb-0">
+            <div key={i} className="space-y-1 pb-3 border-b border-line last:border-0 last:pb-0">
               <Badge variant="secondary">{r.area}</Badge>
-              {r.current_issue && <p className="text-small text-error">{r.current_issue}</p>}
-              <p className="text-small text-text-secondary">{r.recommendation}</p>
-              {r.example && <p className="text-small text-accent italic">&ldquo;{r.example}&rdquo;</p>}
+              {r.current_issue && <p className="text-body-s text-danger">{r.current_issue}</p>}
+              <p className="text-body-s text-text-2">{r.recommendation}</p>
+              {r.example && <p className="text-body-s text-accent italic">&ldquo;{r.example}&rdquo;</p>}
             </div>
           ))}
         </div>
@@ -1017,11 +1008,11 @@ function CompetitorAnalysisPreview({ data }: { data: Record<string, any> }) {
 
       {/* Quick wins */}
       {quickWins.length > 0 && (
-        <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 space-y-2">
-          <p className="text-small font-medium text-accent">Quick Wins</p>
+        <div className="rounded-lg border border-line bg-accent-soft p-4 space-y-2">
+          <p className="text-label text-text-2">Quick wins</p>
           <ul className="space-y-1.5">
             {quickWins.map((w: string, i: number) => (
-              <li key={i} className="text-small text-text-secondary flex gap-2">
+              <li key={i} className="text-body-s text-text-2 flex gap-2">
                 <span className="text-accent shrink-0">{i + 1}.</span><span>{w}</span>
               </li>
             ))}
@@ -1040,17 +1031,17 @@ function BlogPostPreview({ data }: { data: Record<string, any> }) {
   return (
     <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
       {/* Meta info */}
-      <div className="rounded-xl border border-border-default bg-surface-1 p-4 space-y-2">
+      <div className="rounded-lg border border-line bg-surface p-4 space-y-2">
         {data?.meta_title && (
           <div>
-            <span className="text-small font-medium text-text-tertiary">SEO Title: </span>
-            <span className="text-small text-text-primary">{data.meta_title}</span>
+            <span className="text-body-s font-medium text-text-3">Search title: </span>
+            <span className="text-body-s text-text">{data.meta_title}</span>
           </div>
         )}
         {data?.meta_description && (
           <div>
-            <span className="text-small font-medium text-text-tertiary">Meta Description: </span>
-            <span className="text-small text-text-secondary">{data.meta_description}</span>
+            <span className="text-body-s font-medium text-text-3">Search description: </span>
+            <span className="text-body-s text-text-2">{data.meta_description}</span>
           </div>
         )}
         <div className="flex gap-3 flex-wrap">
@@ -1061,9 +1052,9 @@ function BlogPostPreview({ data }: { data: Record<string, any> }) {
       </div>
 
       {/* Blog content rendered from markdown */}
-      <div className="rounded-xl border border-border-default bg-surface-0 p-6">
-        <div className="prose prose-invert max-w-none text-text-primary">
-          <div className="whitespace-pre-wrap text-body font-sans leading-relaxed">
+      <div className="rounded-lg border border-line bg-ground p-6">
+        <div className="prose-conduikt max-w-none">
+          <div>
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
           </div>
         </div>
@@ -1071,33 +1062,33 @@ function BlogPostPreview({ data }: { data: Record<string, any> }) {
 
       {/* Social promotion */}
       {socialPromo && (
-        <div className="rounded-xl border border-border-default bg-surface-1 p-4 space-y-3">
-          <p className="text-small font-medium text-text-primary">Social Promotion</p>
+        <div className="rounded-lg border border-line bg-surface p-4 space-y-3">
+          <p className="text-label text-text-3">Social promotion</p>
           {socialPromo.x_post && (
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <Twitter className="h-3.5 w-3.5 text-text-primary" />
-                <span className="text-small font-medium text-text-secondary">X Post</span>
+                <Twitter className="h-3.5 w-3.5 text-text" />
+                <span className="text-body-s font-medium text-text-2">X post</span>
               </div>
-              <p className="text-small text-text-secondary bg-surface-0 rounded-lg p-3">{socialPromo.x_post}</p>
+              <p className="text-body-s text-text-2 bg-ground rounded-md p-3">{socialPromo.x_post}</p>
             </div>
           )}
           {socialPromo.linkedin_post && (
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <Linkedin className="h-3.5 w-3.5 text-[#0A66C2]" />
-                <span className="text-small font-medium text-text-secondary">LinkedIn</span>
+                <Linkedin className="h-3.5 w-3.5 text-text" />
+                <span className="text-body-s font-medium text-text-2">LinkedIn</span>
               </div>
-              <p className="text-small text-text-secondary bg-surface-0 rounded-lg p-3 whitespace-pre-line">{socialPromo.linkedin_post}</p>
+              <p className="text-body-s text-text-2 bg-ground rounded-md p-3 whitespace-pre-line">{socialPromo.linkedin_post}</p>
             </div>
           )}
           {socialPromo.email_subject && (
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <Mail className="h-3.5 w-3.5 text-text-tertiary" />
-                <span className="text-small font-medium text-text-secondary">Email Subject</span>
+                <Mail className="h-3.5 w-3.5 text-text-3" />
+                <span className="text-body-s font-medium text-text-2">Email subject</span>
               </div>
-              <p className="text-small text-text-secondary bg-surface-0 rounded-lg p-3">{socialPromo.email_subject}</p>
+              <p className="text-body-s text-text-2 bg-ground rounded-md p-3">{socialPromo.email_subject}</p>
             </div>
           )}
         </div>
@@ -1110,34 +1101,34 @@ function BlogPostPreview({ data }: { data: Record<string, any> }) {
 function CroReportPreview({ data }: { data: Record<string, any> }) {
   const findings = data?.findings ?? [];
   const quickWins = data?.quick_wins ?? [];
-  const severityColor: Record<string, string> = { critical: "text-error", warning: "text-warning", info: "text-info" };
+  const severityColor: Record<string, string> = { critical: "text-danger", warning: "text-accent", info: "text-text-2" };
 
   return (
     <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
       {data?.score != null && (
         <div className="flex items-center gap-4">
-          <div className={`text-h1 font-bold font-mono ${data.score >= 70 ? "text-success" : data.score >= 40 ? "text-warning" : "text-error"}`}>
+          <div className={`text-numeric text-[2.5rem] ${data.score >= 70 ? "text-teal" : data.score >= 40 ? "text-accent" : "text-danger"}`}>
             {data.score}
           </div>
           <div>
-            <p className="text-body font-medium text-text-primary">CRO Score</p>
-            <p className="text-small text-text-tertiary">out of 100</p>
+            <p className="text-title text-text">Conversion score</p>
+            <p className="text-body-s text-text-3">out of 100</p>
           </div>
         </div>
       )}
-      {data?.summary && <p className="text-small text-text-secondary">{data.summary}</p>}
+      {data?.summary && <p className="text-body-s text-text-2">{data.summary}</p>}
 
       {findings.map((f: { severity: string; category?: string; title: string; detail?: string; recommendation?: string; impact?: string }, i: number) => (
-        <div key={i} className="rounded-xl border border-border-default bg-surface-0 p-4 space-y-2 animate-in" style={{ animationDelay: `${i * 40}ms` }}>
+        <div key={i} className="rounded-lg border border-line bg-ground p-4 space-y-2 animate-in" style={{ animationDelay: `${i * 40}ms` }}>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className={`text-small font-bold uppercase ${severityColor[f.severity] ?? "text-text-tertiary"}`}>{f.severity}</span>
+            <span className={`text-label ${severityColor[f.severity] ?? "text-text-3"}`}>{f.severity}</span>
             {f.category && <Badge variant="secondary">{f.category}</Badge>}
-            {f.impact && <Badge variant="secondary" className="text-text-tertiary">{f.impact} impact</Badge>}
+            {f.impact && <Badge variant="secondary" className="text-text-3">{f.impact} impact</Badge>}
           </div>
-          <p className="text-small font-medium text-text-primary">{f.title}</p>
-          {f.detail && <p className="text-small text-text-secondary">{f.detail}</p>}
+          <p className="text-body-s font-medium text-text">{f.title}</p>
+          {f.detail && <p className="text-body-s text-text-2">{f.detail}</p>}
           {f.recommendation && (
-            <p className="text-small text-accent">
+            <p className="text-body-s text-accent">
               <span className="font-medium">Fix: </span>{f.recommendation}
             </p>
           )}
@@ -1145,11 +1136,11 @@ function CroReportPreview({ data }: { data: Record<string, any> }) {
       ))}
 
       {quickWins.length > 0 && (
-        <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 space-y-2">
-          <p className="text-small font-medium text-accent">Quick Wins</p>
+        <div className="rounded-lg border border-line bg-accent-soft p-4 space-y-2">
+          <p className="text-label text-text-2">Quick wins</p>
           <ul className="space-y-1.5">
             {quickWins.map((w: string, i: number) => (
-              <li key={i} className="text-small text-text-secondary flex gap-2">
+              <li key={i} className="text-body-s text-text-2 flex gap-2">
                 <span className="text-accent shrink-0">{i + 1}.</span><span>{w}</span>
               </li>
             ))}
@@ -1174,14 +1165,16 @@ function GeneratingIndicator({ label }: { label: string }) {
   }, []);
 
   return (
-    <div className="rounded-xl border border-border-default bg-surface-0 p-8 flex flex-col items-center text-center">
-      <Loader2 className="h-8 w-8 animate-spin text-accent mb-4" />
-      <p className="text-body text-text-primary font-medium">{label}</p>
-      <p className="text-small text-text-tertiary mt-2">
-        Streaming in — most generations complete in 15–35 seconds.
+    <div className="rounded-lg border border-line bg-ground p-8 flex flex-col items-center text-center" role="status">
+      <p className="flex items-center gap-2 text-title text-text">
+        <span className="live-dot" aria-hidden />
+        {label}
+      </p>
+      <p className="text-body-s text-text-3 mt-2">
+        Writing now. Most pieces finish in 15 to 35 seconds.
       </p>
       <p
-        className="mt-3 font-mono text-caption text-text-tertiary tabular-nums"
+        className="mt-3 font-mono text-caption text-text-3 tabular-nums"
         aria-live="polite"
       >
         {elapsed}s elapsed
@@ -1231,30 +1224,30 @@ function SequenceScheduleAction({
       : `${Math.round(cumulativeHours / 24)}d`;
 
   return (
-    <div className="rounded-xl border border-border-default bg-surface-0 p-5 space-y-4">
+    <div className="rounded-lg border border-line bg-ground p-5 space-y-4">
       <div>
-        <p className="text-small font-medium text-text-primary mb-1.5">
+        <p className="text-body-s font-medium text-text mb-1.5">
           {emails.length} email{emails.length === 1 ? "" : "s"} over ~{totalDays}
         </p>
-        <p className="text-caption text-text-tertiary font-mono break-words">
+        <p className="text-caption text-text-3 font-mono break-words">
           {summaryParts.join(" → ")}
         </p>
       </div>
-      <div className="rounded-lg bg-surface-2 px-4 py-3 text-caption text-text-secondary leading-relaxed">
-        <span className="text-text-primary font-medium">
-          Save &amp; Schedule Drip
+      <div className="rounded-md bg-surface-2 px-4 py-3 text-caption text-text-2 leading-relaxed">
+        <span className="text-text font-medium">
+          Save and schedule
         </span>{" "}
         promotes this into a real sequence and asks you to pick an audience.
         Once you confirm, the runner sends each email on its delay
         automatically. Pick{" "}
-        <span className="text-text-primary font-medium">Save Draft</span> if
-        you want to edit before going live — nothing fires until you enrol an
+        <span className="text-text font-medium">Save draft</span> if
+        you want to edit before going live. Nothing sends until you enrol an
         audience.
       </div>
       {userPlan === "free" ? (
         <Link href="/settings/billing" className="block">
-          <Button size="sm" className="w-full" variant="secondary">
-            <Lock className="h-4 w-4 mr-1.5" />
+          <Button size="sm" className="w-full" variant="outline">
+            <Lock className="h-4 w-4" />
             Upgrade to schedule the drip
           </Button>
         </Link>
@@ -1266,14 +1259,11 @@ function SequenceScheduleAction({
           disabled={scheduling}
         >
           {scheduling ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-              Saving sequence...
-            </>
+            "Saving sequence…"
           ) : (
             <>
-              <Send className="h-4 w-4 mr-1.5" />
-              Save &amp; Schedule Drip
+              <Send className="h-4 w-4" />
+              Save and schedule
             </>
           )}
         </Button>
@@ -1295,20 +1285,20 @@ function ParseFailureNotice({
   // generation thinking the parser is broken.
   if (truncationMessage) {
     return (
-      <div className="rounded-xl border border-warning/30 bg-surface-0 p-4 space-y-2">
-        <p className="text-small text-text-primary font-medium">
-          The AI ran out of space before it could finish.
+      <div className="rounded-lg border border-line-strong bg-accent-soft p-4 space-y-2">
+        <p className="text-body-s text-text font-medium">
+          The answer was cut off before it finished.
         </p>
-        <p className="text-caption text-text-tertiary">
-          {truncationMessage} Your generation count was still used for this
-          attempt — sorry about that. Click Regenerate to retry; we&apos;ve
-          adjusted the limits so this should be rare.
+        <p className="text-caption text-text-3">
+          {truncationMessage} This attempt still counted toward your pieces of content.
+          Sorry about that. Click Regenerate to try again; this should be
+          rare now.
         </p>
-        <details className="text-small">
-          <summary className="cursor-pointer text-text-tertiary hover:text-text-secondary">
+        <details className="text-body-s">
+          <summary className="cursor-pointer text-text-3 hover-link hover:text-text">
             Show partial output
           </summary>
-          <pre className="mt-2 whitespace-pre-wrap text-caption text-text-secondary font-mono break-words max-h-[320px] overflow-y-auto">
+          <pre className="mt-2 whitespace-pre-wrap text-caption text-text-2 font-mono break-words max-h-[320px] overflow-y-auto">
             {text}
           </pre>
         </details>
@@ -1316,15 +1306,15 @@ function ParseFailureNotice({
     );
   }
   return (
-    <div className="rounded-xl border border-warning/30 bg-surface-0 p-4 space-y-2">
-      <p className="text-small text-text-primary font-medium">
+    <div className="rounded-lg border border-line-strong bg-accent-soft p-4 space-y-2">
+      <p className="text-body-s text-text font-medium">
         We got a response but couldn&apos;t format it. You can regenerate below.
       </p>
-      <details className="text-small">
-        <summary className="cursor-pointer text-text-tertiary hover:text-text-secondary">
+      <details className="text-body-s">
+        <summary className="cursor-pointer text-text-3 hover-link hover:text-text">
           Show raw output
         </summary>
-        <pre className="mt-2 whitespace-pre-wrap text-caption text-text-secondary font-mono break-words max-h-[320px] overflow-y-auto">
+        <pre className="mt-2 whitespace-pre-wrap text-caption text-text-2 font-mono break-words max-h-[320px] overflow-y-auto">
           {text}
         </pre>
       </details>
@@ -1506,19 +1496,19 @@ function ContentPageInner({
           "warning"
         );
       } else if (platform === "x" && (data.posted ?? 1) > 1) {
-        toast(`Thread of ${data.posted} tweets posted to X!`, "success");
+        toast(`Thread of ${data.posted} tweets posted to X`, "success");
       } else {
         toast(
           platform === "x"
-            ? `Posted to X!${data.tweetUrl ? ` View it →` : ""}`
-            : "Posted to LinkedIn!",
+            ? "Posted to X"
+            : "Posted to LinkedIn",
           "success"
         );
       }
       fetchAssets();
     } else {
       if (data.reconnect) {
-        toast(`${platform === "x" ? "X" : "LinkedIn"} token expired — reconnect in Settings → Integrations`, "error");
+        toast(`${platform === "x" ? "X" : "LinkedIn"} connection expired. Reconnect it in Settings, Integrations.`, "error");
         setConnectedPlatforms((prev) => prev.filter((p) => p !== platform));
       } else {
         toast(data.error || "Publish failed", "error");
@@ -1666,7 +1656,7 @@ function ContentPageInner({
               // partial output below isn't a parser bug.
               setTruncationNotice(
                 data.error ||
-                  "The AI ran out of space before finishing. Try again, or shorten your prompt."
+                  "The answer was cut off before it finished. Try again, or shorten your brief."
               );
             } else {
               toast(data.error, "error");
@@ -1692,7 +1682,7 @@ function ContentPageInner({
         setParsedContent(parsed);
       }
     } catch {
-      toast("Failed to connect to AI service", "error");
+      toast("Couldn't reach the writing service. Try again.", "error");
     }
 
     setGenerating(false);
@@ -1737,7 +1727,7 @@ function ContentPageInner({
         body: JSON.stringify({ content, source: "manual_edit" }),
       }).catch(() => {});
 
-      toast("Asset saved as draft!", "success");
+      toast("Saved as a draft", "success");
       fetchAssets();
     } else {
       const err = await res.json();
@@ -1760,7 +1750,7 @@ function ContentPageInner({
       ? parsedContent.emails
       : null;
     if (!emails || emails.length === 0) {
-      toast("Couldn't read the generated emails — try regenerating", "error");
+      toast("Couldn't read the generated emails. Try regenerating.", "error");
       return;
     }
     setScheduling(true);
@@ -1795,7 +1785,7 @@ function ContentPageInner({
     if (result) {
       navigator.clipboard.writeText(result);
       setCopied(true);
-      toast("Copied to clipboard!", "info");
+      toast("Copied to clipboard", "info");
       setTimeout(() => setCopied(false), 2000);
     }
   }
@@ -1808,36 +1798,36 @@ function ContentPageInner({
         title={skill.name}
         description={
           project
-            ? `${skill.description} — ${project.name}`
+            ? `${skill.description} · ${project.name}`
             : skill.description
         }
       />
 
       <ExpectationBanner
         storageKey="conduikt-expect-content"
-        message="Great content builds momentum over time. A single post won't move the needle — but consistent, strategic output compounds into real traffic and conversions within weeks."
+        message="Content builds momentum over time. A single post won't move the needle, but steady, planned output adds up to real traffic and sign-ups within weeks."
         details={[
-          "SEO-focused blog posts typically take 4-12 weeks to rank and drive organic traffic.",
-          "Social content works best as a steady cadence — 3-5 posts per week builds audience trust.",
-          "Email sequences convert better after 2-3 touchpoints. One email rarely closes the deal.",
+          "Blog posts written for search usually take 4 to 12 weeks to rank and bring in visitors.",
+          "Social works best at a steady pace. 3 to 5 posts a week builds trust with your audience.",
+          "Email sequences convert better after 2 or 3 emails. One email rarely closes the deal.",
         ]}
       />
 
       {/* Project context banner */}
       {project && (
-        <div className="mb-6 rounded-lg border border-border-default bg-surface-1 px-4 py-3 flex items-start gap-4 text-small animate-in">
+        <div className="mb-6 rounded-lg border border-line bg-surface px-4 py-3 flex items-start gap-4 text-body-s animate-in">
           <div className="space-y-1 flex-1 min-w-0">
-            <p className="text-text-secondary">
-              <span className="font-medium text-text-primary">Context loaded:</span>{" "}
-              {project.description || "No description"}
+            <p className="text-text-2">
+              <span className="font-medium text-text">Using your project details:</span>{" "}
+              {project.description || "No description yet"}
             </p>
             {project.value_proposition && (
-              <p className="text-text-tertiary truncate">
-                Value prop: {project.value_proposition}
+              <p className="text-text-3 truncate">
+                Value proposition: {project.value_proposition}
               </p>
             )}
             {project.target_audience != null && (
-              <p className="text-text-tertiary truncate">
+              <p className="text-text-3 truncate">
                 Audience:{" "}
                 {(() => {
                   const ta = project.target_audience as { personas?: string[]; pain_points?: string[] } | null;
@@ -1857,8 +1847,8 @@ function ContentPageInner({
             )}
           </div>
           <Badge variant="secondary">
-            <Globe className="h-3 w-3 mr-1" />
-            {project.website_url || "No URL"}
+            <Globe className="h-3 w-3" />
+            {project.website_url || "No website set"}
           </Badge>
         </div>
       )}
@@ -1869,8 +1859,8 @@ function ContentPageInner({
           <Card className="animate-in">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-accent" />
-                Generate Content
+                <Sparkles className="h-4 w-4 text-text-3" />
+                Generate content
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -1879,23 +1869,24 @@ function ContentPageInner({
                 <select
                   value={selectedSkill}
                   onChange={(e) => { setSelectedSkill(e.target.value); setResult(""); setParsedPosts(null); setParsedContent(null); }}
-                  className="w-full rounded-lg border border-border-strong bg-surface-0 px-4 py-2.5 text-text-primary text-small font-medium transition-all duration-150 focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-glow)] appearance-none cursor-pointer"
+                  aria-label="Choose what to write"
+                  className="h-10 w-full cursor-pointer rounded-md border border-line-strong bg-surface px-3.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 >
                   {contentSkills.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name} — {s.description}</option>
+                    <option key={s.id} value={s.id}>{s.name}: {s.description}</option>
                   ))}
                 </select>
               </div>
 
-              <p className="text-small text-text-tertiary mb-3">
+              <p className="text-body-s text-text-3 mb-3">
                 {skill.description}
               </p>
 
               <form onSubmit={handleGenerate} className="space-y-4">
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-small text-text-secondary">
-                      Brief / Prompt
+                    <label htmlFor="content-brief" className="text-body-s font-medium text-text-2">
+                      Brief
                     </label>
                     <PromptRecipePicker
                       hasPrompt={prompt.trim().length > 0}
@@ -1903,11 +1894,12 @@ function ContentPageInner({
                     />
                   </div>
                   <textarea
+                    id="content-brief"
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     placeholder={skill.placeholder}
                     rows={6}
-                    className="w-full rounded-lg border border-border-strong bg-surface-0 px-4 py-3 text-text-primary placeholder:text-text-tertiary font-sans text-[0.9375rem] transition-all duration-150 focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-glow)] resize-none"
+                    className="w-full resize-none rounded-md border border-line-strong bg-surface px-3.5 py-3 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                   />
                 </div>
 
@@ -1919,10 +1911,7 @@ function ContentPageInner({
                   disabled={generating || !prompt.trim()}
                 >
                   {generating ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Generating...
-                    </>
+                    "Writing…"
                   ) : (
                     <>
                       <Sparkles className="h-4 w-4" />
@@ -1933,12 +1922,12 @@ function ContentPageInner({
 
                 <Button
                   type="button"
-                  variant="secondary"
+                  variant="outline"
                   className="w-full"
                   onClick={() => setBulkOpen(true)}
                 >
                   <Zap className="h-4 w-4" />
-                  Bulk Generate
+                  Bulk generate
                 </Button>
               </form>
             </CardContent>
@@ -1948,39 +1937,39 @@ function ContentPageInner({
           <Card className="animate-in" style={{ animationDelay: "120ms" }}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                <span>Saved Assets</span>
+                <span>Saved content</span>
                 <Badge variant="secondary">{assets.length}</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
               {loadingAssets ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="h-6 w-6 text-accent animate-spin" />
+                <div className="space-y-2" role="status" aria-label="Loading saved content">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} className="h-[62px]" />
+                  ))}
                 </div>
               ) : assets.length === 0 ? (
-                <p className="text-body text-text-tertiary text-center py-6">
-                  No assets yet. Generate content and save it here.
-                </p>
+                <EmptyState title="Nothing saved yet. Generate something and save it here." />
               ) : (
                 <div className="space-y-2 max-h-[400px] overflow-y-auto">
                   {assets.map((asset) => {
                     const ChannelIcon =
                       channelIcons[asset.channel ?? "web"] ?? Globe;
                     const hasRaw = typeof asset.content?.raw === "string" && asset.content.raw.length > 0;
-                    const itemClass = "w-full text-left rounded-lg border border-border-default p-3 hover:bg-surface-2 transition-colors block";
+                    const itemClass = "hover-card hover-card-quiet block w-full rounded-lg border border-line bg-surface p-3 text-left";
 
                     const itemContent = (
                       <>
                         <div className="flex items-center gap-2 mb-1">
-                          <ChannelIcon className="h-3.5 w-3.5 text-text-tertiary" />
-                          <span className="text-small font-medium text-text-primary truncate">
+                          <ChannelIcon className="h-3.5 w-3.5 text-text-3" />
+                          <span className="text-body-s font-medium text-text truncate">
                             {asset.title || "Untitled"}
                           </span>
                           <Badge variant="secondary" className="ml-auto shrink-0">
                             {assetTypeLabels[asset.type] ?? asset.type}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-2 text-small text-text-tertiary">
+                        <div className="flex items-center gap-2 text-body-s text-text-3">
                           <Clock className="h-3 w-3" />
                           {formatTimestamp(asset.created_at)}
                           <Badge
@@ -2058,7 +2047,7 @@ function ContentPageInner({
                     {selectedSkill !== "social-content" && (
                       <Button variant="ghost" size="sm" onClick={handleCopy}>
                         {copied ? (
-                          <Check className="h-4 w-4 text-success" />
+                          <Check className="h-4 w-4 text-teal" />
                         ) : (
                           <Copy className="h-4 w-4" />
                         )}
@@ -2067,25 +2056,21 @@ function ContentPageInner({
                     )}
                     {userPlan === "free" ? (
                       <Link href="/settings/billing">
-                        <Button size="sm" variant="secondary">
+                        <Button size="sm" variant="outline">
                           <Lock className="h-4 w-4" />
-                          Upgrade to Save
+                          Upgrade to save
                         </Button>
                       </Link>
                     ) : (
                       <>
                         <Button
                           size="sm"
-                          variant="secondary"
+                          variant="outline"
                           onClick={handleSave}
                           disabled={saving}
                         >
-                          {saving ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Save className="h-4 w-4" />
-                          )}
-                          {saving ? "Saving..." : "Save Draft"}
+                          {!saving && <Save className="h-4 w-4" />}
+                          {saving ? "Saving…" : "Save draft"}
                         </Button>
                         {savedAssetId && (
                           <PdfDownloadButton
@@ -2116,7 +2101,7 @@ function ContentPageInner({
                                   : (c?.raw as string | undefined) ?? "";
                               setResult(restored);
                               toast(
-                                "Restored an earlier version. The current text was snapshotted first.",
+                                "Restored an earlier version. Your current text was saved first.",
                                 "success"
                               );
                             }}
@@ -2132,7 +2117,7 @@ function ContentPageInner({
                     />
                     {/* Connect nudge if social content and no accounts */}
                     {selectedSkill === "social-content" && connectedPlatforms.length === 0 && (
-                      <Button size="sm" variant="secondary" asChild>
+                      <Button size="sm" variant="outline" asChild>
                         <a href="/settings/integrations">
                           <Send className="h-4 w-4" />
                           Connect to publish
@@ -2158,7 +2143,7 @@ function ContentPageInner({
                   {selectedSkill === "social-content" ? (
                     generating && !parsedPosts ? (
                       <div ref={outputRef}>
-                        <GeneratingIndicator label="Writing your social posts..." />
+                        <GeneratingIndicator label="Writing your social posts…" />
                       </div>
                     ) : parsedPosts ? (
                       <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
@@ -2192,7 +2177,7 @@ function ContentPageInner({
                   ) : selectedSkill === "email-sequence" ? (
                     generating && !parsedContent ? (
                       <div ref={outputRef}>
-                        <GeneratingIndicator label="Drafting your email sequence..." />
+                        <GeneratingIndicator label="Drafting your email sequence…" />
                       </div>
                     ) : parsedContent ? (
                       <div className="space-y-4">
@@ -2217,7 +2202,7 @@ function ContentPageInner({
                   ) : selectedSkill === "copywriting" ? (
                     generating && !parsedContent ? (
                       <div ref={outputRef}>
-                        <GeneratingIndicator label="Writing copy variants..." />
+                        <GeneratingIndicator label="Writing copy variants…" />
                       </div>
                     ) : parsedContent ? (
                       <CopywritingPreview data={parsedContent} />
@@ -2229,7 +2214,7 @@ function ContentPageInner({
                   ) : selectedSkill === "content-strategy" ? (
                     generating && !parsedContent ? (
                       <div ref={outputRef}>
-                        <GeneratingIndicator label="Building your content strategy..." />
+                        <GeneratingIndicator label="Building your content strategy…" />
                       </div>
                     ) : parsedContent ? (
                       <ContentStrategyPreview data={parsedContent} />
@@ -2241,7 +2226,7 @@ function ContentPageInner({
                   ) : selectedSkill === "posting-plan" ? (
                     generating && !parsedContent ? (
                       <div ref={outputRef}>
-                        <GeneratingIndicator label="Planning 30 days of posts..." />
+                        <GeneratingIndicator label="Planning 30 days of posts…" />
                       </div>
                     ) : parsedContent ? (
                       <PostingPlanPreview data={parsedContent} />
@@ -2253,7 +2238,7 @@ function ContentPageInner({
                   ) : selectedSkill === "competitor-analysis" ? (
                     generating && !parsedContent ? (
                       <div ref={outputRef}>
-                        <GeneratingIndicator label="Analysing competitors..." />
+                        <GeneratingIndicator label="Looking at your competitors…" />
                       </div>
                     ) : parsedContent ? (
                       <CompetitorAnalysisPreview data={parsedContent} />
@@ -2265,7 +2250,7 @@ function ContentPageInner({
                   ) : selectedSkill === "blog-post" ? (
                     generating && !parsedContent ? (
                       <div ref={outputRef}>
-                        <GeneratingIndicator label="Writing your blog post..." />
+                        <GeneratingIndicator label="Writing your blog post…" />
                       </div>
                     ) : parsedContent ? (
                       <BlogPostPreview data={parsedContent} />
@@ -2277,7 +2262,7 @@ function ContentPageInner({
                   ) : selectedSkill === "page-cro" ? (
                     generating && !parsedContent ? (
                       <div ref={outputRef}>
-                        <GeneratingIndicator label="Auditing the page..." />
+                        <GeneratingIndicator label="Checking the page…" />
                       </div>
                     ) : parsedContent ? (
                       <CroReportPreview data={parsedContent} />
@@ -2288,14 +2273,14 @@ function ContentPageInner({
                     )
                   ) : generating ? (
                     <div ref={outputRef}>
-                      <GeneratingIndicator label="Generating..." />
+                      <GeneratingIndicator label="Writing…" />
                     </div>
                   ) : (
                     <div
                       ref={outputRef}
-                      className="rounded-xl border border-border-default bg-surface-0 p-6 max-h-[500px] overflow-y-auto"
+                      className="rounded-lg border border-line bg-ground p-6 max-h-[500px] overflow-y-auto"
                     >
-                      <p className="whitespace-pre-wrap text-body text-text-primary">
+                      <p className="whitespace-pre-wrap text-body text-text">
                         {result}
                       </p>
                     </div>
@@ -2303,39 +2288,32 @@ function ContentPageInner({
 
                   {/* Streaming cursor */}
                   {generating && (
-                    <div className="flex items-center gap-2 text-small text-accent">
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      Generating...
+                    <div className="flex items-center gap-2 text-body-s text-text-2">
+                      <span className="live-dot" aria-hidden />
+                      Writing…
                     </div>
                   )}
 
                   {/* Usage stats */}
                   {usage && (
-                    <div className="flex items-center gap-3 text-small text-text-tertiary">
+                    <div className="flex items-center gap-3 text-body-s text-text-3">
                       <Badge variant="secondary">
-                        <Zap className="h-3 w-3 mr-1" />
+                        <Zap className="h-3 w-3" />
                         {usage.inputTokens + usage.outputTokens} tokens
                       </Badge>
-                      <span>{(usage.durationMs / 1000).toFixed(1)}s</span>
-                      <span className="text-text-tertiary">
+                      <span className="font-mono">{(usage.durationMs / 1000).toFixed(1)}s</span>
+                      <span className="text-text-3">
                         {skill.name}
                       </span>
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="flex flex-col items-center py-16 text-center">
-                  <Sparkles className="h-10 w-10 text-text-tertiary mb-4" />
-                  <p className="text-body text-text-secondary">
-                    Generated content will preview here
-                  </p>
-                  <p className="text-small text-text-tertiary mt-1">
-                    Select a skill, write your brief, and click Generate
-                  </p>
-                  <p className="text-small text-text-tertiary mt-3">
-                    Project context is automatically injected into prompts
-                  </p>
-                </div>
+                <EmptyState
+                  icon={<Sparkles className="h-8 w-8" />}
+                  title="Pick what to write, add a brief and click Generate. Your project details are added for you."
+                  className="py-16"
+                />
               )}
             </CardContent>
           </Card>
@@ -2359,7 +2337,7 @@ export default function ContentPage({
   params: Promise<{ id: string }>;
 }) {
   return (
-    <Suspense fallback={<div className="flex justify-center py-16"><div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" /></div>}>
+    <Suspense fallback={<PageSkeleton />}>
       <ContentPageInner params={params} />
     </Suspense>
   );

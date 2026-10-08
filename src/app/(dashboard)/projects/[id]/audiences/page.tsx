@@ -5,14 +5,16 @@ import Link from "next/link";
 import {
   Users,
   Plus,
-  Loader2,
   X,
   Mail,
   ArrowRight,
-} from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+} from "@/src/components/ui/lucide-icons";
+import { Card } from "@/src/components/ui/card";
+import { EmptyState } from "@/src/components/ui/empty-state";
+import { Field, Input } from "@/src/components/ui/input";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import { Badge } from "@/src/components/ui/badge";
-import { Button } from "@/src/components/ui/button";
+import { Button, IconButton } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
 import { useToast } from "@/src/components/ui/toast";
 
@@ -57,7 +59,7 @@ export default function AudiencesPage({
 
   async function handleCreate() {
     if (!name.trim()) {
-      toast("Name is required", "warning");
+      toast("Give the list a name first", "warning");
       return;
     }
     setCreating(true);
@@ -72,10 +74,10 @@ export default function AudiencesPage({
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        toast(err.error ?? "Failed to create audience", "error");
+        toast(err.error ?? "Couldn't make the list. Try again.", "error");
         return;
       }
-      toast("Audience created", "success");
+      toast("List made", "success");
       setCreateOpen(false);
       setName("");
       setDescription("");
@@ -88,36 +90,33 @@ export default function AudiencesPage({
   return (
     <div>
       <PageHeader
-        title="Audiences"
-        description="Mailing lists for email broadcasts. Each audience holds contacts you can send to."
+        title="Subscribers"
+        description="Your email lists. Each list holds the people you can send one-off emails to."
       >
         <Button onClick={() => setCreateOpen(true)}>
           <Plus className="h-4 w-4" />
-          New Audience
+          New list
         </Button>
       </PageHeader>
 
       {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 text-accent animate-spin" />
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3" role="status" aria-label="Loading">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-36" />
+          ))}
         </div>
       ) : audiences.length === 0 ? (
-        <Card className="border-dashed border-border-strong animate-in">
-          <CardContent className="flex flex-col items-center py-12 text-center">
-            <div className="mb-4 rounded-xl bg-accent-muted p-4">
-              <Users className="h-8 w-8 text-accent" />
-            </div>
-            <h3 className="text-h2 text-text-primary">No audiences yet</h3>
-            <p className="mt-2 max-w-md text-body text-text-secondary">
-              Create an audience to start collecting contacts. Once you have one,
-              you can send broadcasts from any generated email.
-            </p>
-            <Button className="mt-6" onClick={() => setCreateOpen(true)}>
+        <EmptyState
+          className="animate-in"
+          icon={<Users className="h-6 w-6" />}
+          title="No subscriber lists yet. Make one to start collecting emails, then send to it from any email we write."
+          action={
+            <Button onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4" />
-              Create your first audience
+              Make your first list
             </Button>
-          </CardContent>
-        </Card>
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {audiences.map((aud, i) => (
@@ -125,36 +124,32 @@ export default function AudiencesPage({
               key={aud.id}
               href={`/projects/${projectId}/audiences/${aud.id}`}
               className="group block animate-in"
-              style={{ animationDelay: `${i * 60}ms` }}
+              style={{ animationDelay: `${Math.min(i, 5) * 80}ms` }}
             >
-              <Card className="h-full transition-colors group-hover:border-accent">
-                <CardContent>
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <Mail className="h-5 w-5 text-accent" />
-                    <Badge variant="secondary">
-                      {aud.contact_count}{" "}
-                      {aud.contact_count === 1 ? "contact" : "contacts"}
-                    </Badge>
-                  </div>
-                  <h3 className="text-h3 text-text-primary truncate">
-                    {aud.name}
-                  </h3>
-                  {aud.description && (
-                    <p className="mt-1 text-small text-text-secondary line-clamp-2">
-                      {aud.description}
-                    </p>
-                  )}
-                  <div className="mt-4 flex items-center justify-between text-caption text-text-tertiary">
-                    <span>
-                      Created{" "}
-                      {new Date(aud.created_at).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </span>
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                  </div>
-                </CardContent>
+              <Card className="hover-card hover-card-quiet h-full">
+                <div className="mb-2 flex items-start justify-between gap-2">
+                  <Mail className="h-5 w-5 text-text-3" />
+                  <Badge variant="secondary">
+                    {aud.contact_count}{" "}
+                    {aud.contact_count === 1 ? "person" : "people"}
+                  </Badge>
+                </div>
+                <h3 className="truncate text-title text-text">{aud.name}</h3>
+                {aud.description && (
+                  <p className="mt-1 line-clamp-2 text-body-s text-text-2">
+                    {aud.description}
+                  </p>
+                )}
+                <div className="mt-4 flex items-center justify-between text-caption text-text-3">
+                  <span>
+                    Made{" "}
+                    {new Date(aud.created_at).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </span>
+                  <ArrowRight className="h-4 w-4" />
+                </div>
               </Card>
             </Link>
           ))}
@@ -162,54 +157,54 @@ export default function AudiencesPage({
       )}
 
       {createOpen && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-surface-0/80 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-md rounded-2xl border border-border-default bg-surface-1 p-6 shadow-[var(--shadow-elevated)]">
-            <button
-              type="button"
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-overlay/60 p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="new-list-title"
+            className="relative w-full max-w-md rounded-lg border border-line bg-surface p-6 shadow-[var(--shadow-float)]"
+          >
+            <IconButton
+              label="Close"
+              size="sm"
               onClick={() => setCreateOpen(false)}
-              className="absolute right-4 top-4 rounded-lg p-1.5 text-text-tertiary hover:text-text-primary hover:bg-surface-2 transition-colors"
-              aria-label="Close"
+              className="absolute right-4 top-4"
             >
               <X className="h-4 w-4" />
-            </button>
-            <h2 className="text-h2 text-text-primary mb-1">New Audience</h2>
-            <p className="text-small text-text-secondary mb-6">
-              Give your list a name. You can import contacts from CSV after creating it.
+            </IconButton>
+            <h2 id="new-list-title" className="mb-1 text-heading text-text">
+              New list
+            </h2>
+            <p className="mb-6 text-body-s text-text-2">
+              Give your list a name. You can import people from a CSV once it&apos;s made.
             </p>
             <div className="space-y-4">
-              <div>
-                <label className="text-caption text-text-tertiary mb-2 block">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  maxLength={200}
-                  placeholder="e.g., Newsletter, Beta Users"
-                  className="w-full rounded-lg border border-border-default bg-surface-0 px-3 py-2 text-small text-text-primary focus:border-accent focus:outline-none"
-                  autoFocus
-                />
-              </div>
-              <div>
-                <label className="text-caption text-text-tertiary mb-2 block">
-                  Description <span className="text-text-tertiary">(optional)</span>
-                </label>
+              <Input
+                label="Name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={200}
+                placeholder="Try: Newsletter"
+                autoFocus
+              />
+              <Field label="Description (optional)" htmlFor="new-list-description">
                 <textarea
+                  id="new-list-description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={3}
                   placeholder="Who's on this list? What kind of emails go to them?"
-                  className="w-full rounded-lg border border-border-default bg-surface-0 px-3 py-2 text-small text-text-primary focus:border-accent focus:outline-none resize-none"
+                  className="w-full resize-none rounded-md border border-line-strong bg-surface px-3.5 py-2 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 />
-              </div>
+              </Field>
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="ghost" size="sm" onClick={() => setCreateOpen(false)} disabled={creating}>
                   Cancel
                 </Button>
                 <Button size="sm" onClick={handleCreate} disabled={creating || !name.trim()}>
-                  {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                  {creating ? "Creating…" : "Create"}
+                  {!creating && <Plus className="h-4 w-4" />}
+                  {creating ? "Making…" : "Make list"}
                 </Button>
               </div>
             </div>

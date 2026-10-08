@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Copy, Trophy, Sparkles } from "lucide-react";
+import { Copy, Trophy, Sparkles } from "@/src/components/ui/lucide-icons";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { useToast } from "@/src/components/ui/toast";
@@ -57,7 +57,7 @@ export function VariantPanel({
 
       const data = await res.json();
       setVariants(data.variants);
-      toast("2 variants generated!", "success");
+      toast("2 variants ready", "success");
     } catch {
       toast("Failed to generate variants", "error");
     } finally {
@@ -80,42 +80,38 @@ export function VariantPanel({
     return (
       <Button
         size="sm"
-        variant="secondary"
+        variant="outline"
         onClick={handleGenerate}
         disabled={generating || !originalContent}
       >
-        {generating ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
-        ) : (
-          <Sparkles className="h-3.5 w-3.5 mr-1" />
-        )}
-        {generating ? "Generating Variants..." : "Generate Variants"}
+        {!generating && <Sparkles className="h-3.5 w-3.5" />}
+        {generating ? "Writing variants…" : "Generate variants"}
       </Button>
     );
   }
 
   return (
-    <div className="rounded-lg border border-border-default bg-surface-0 overflow-hidden">
+    <div className="rounded-lg border border-line bg-ground overflow-hidden">
       {/* Variant tabs */}
-      <div className="flex items-center border-b border-border-default bg-surface-1">
+      <div className="flex items-center border-b border-line bg-surface">
         {allVariants.map((_, i) => (
           <button
             key={i}
             onClick={() => setActiveTab(i)}
-            className={`relative px-4 py-2.5 text-small font-medium transition-colors ${
+            className={`relative px-4 py-2.5 text-body-s font-medium transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] ${
               activeTab === i
-                ? "text-accent bg-surface-0"
-                : "text-text-tertiary hover:text-text-secondary"
+                ? "bg-ground text-accent"
+                : "text-text-3 hover:text-text-2"
             }`}
           >
             Variant {labels[i]}
             {i === 0 && (
-              <Badge variant="secondary" className="ml-1.5 text-[9px] px-1 py-0">
+              <Badge variant="secondary" className="ml-1.5">
                 Original
               </Badge>
             )}
             {winner === i && (
-              <Trophy className="inline ml-1 h-3 w-3 text-warning" />
+              <Trophy className="inline ml-1 h-3 w-3 text-accent" />
             )}
           </button>
         ))}
@@ -123,17 +119,17 @@ export function VariantPanel({
 
       {/* Content */}
       <div className="p-4">
-        <div className="whitespace-pre-wrap text-body text-text-secondary max-h-[300px] overflow-y-auto">
+        <div className="whitespace-pre-wrap text-body text-text-2 max-h-[300px] overflow-y-auto">
           {allVariants[activeTab]}
         </div>
 
-        <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border-default">
+        <div className="flex items-center gap-2 mt-4 pt-3 border-t border-line">
           <Button
             size="sm"
-            variant="secondary"
+            variant="outline"
             onClick={() => handleCopy(allVariants[activeTab])}
           >
-            <Copy className="h-3.5 w-3.5 mr-1" />
+            <Copy className="h-3.5 w-3.5" />
             Copy
           </Button>
           {winner !== activeTab && (
@@ -141,8 +137,8 @@ export function VariantPanel({
               size="sm"
               onClick={() => handlePickWinner(activeTab)}
             >
-              <Trophy className="h-3.5 w-3.5 mr-1" />
-              Pick as Winner
+              <Trophy className="h-3.5 w-3.5" />
+              Pick as winner
             </Button>
           )}
           {winner === activeTab && (

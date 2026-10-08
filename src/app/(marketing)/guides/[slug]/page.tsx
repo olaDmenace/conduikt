@@ -1,9 +1,7 @@
 import Link from "next/link";
 import { Metadata } from "next";
-import { ArrowRight, BookOpen } from "lucide-react";
+import { ArrowRight, BookOpen } from "@/src/components/ui/lucide-icons";
 import { Button } from "@/src/components/ui/button";
-import { Card, CardContent } from "@/src/components/ui/card";
-import { Badge } from "@/src/components/ui/badge";
 
 interface GuideSection {
   heading: string;
@@ -24,7 +22,7 @@ const GUIDES: Guide[] = [
     title: "How to Automate Social Media Marketing with AI",
     intro:
       "Social media marketing is time-consuming. Between creating content, scheduling posts, and analyzing performance, it can eat up 10+ hours per week. AI automation changes that equation entirely.",
-    agentCta: { label: "Try the Social Agent", href: "/signup" },
+    agentCta: { label: "Try Social", href: "/signup" },
     sections: [
       {
         heading: "Why Automate Social Media?",
@@ -34,7 +32,7 @@ const GUIDES: Guide[] = [
       {
         heading: "Step 1: Audit Your Current Presence",
         content:
-          "Before automating anything, understand where you stand. Run an SEO audit on your website to identify your strongest messaging and keywords. These become the foundation for all social content. Tools like Conduikt's SEO Audit Agent analyze your site and surface the insights that matter for content creation.",
+          "Before automating anything, understand where you stand. Run an SEO audit on your website to identify your strongest messaging and keywords. These become the foundation for all social content. Tools like Conduikt's Site Audit agent analyze your site and surface the insights that matter for content creation.",
       },
       {
         heading: "Step 2: Create Platform-Specific Content",
@@ -63,7 +61,7 @@ const GUIDES: Guide[] = [
     title: "How to Build an AI-Powered SEO Content Strategy",
     intro:
       "SEO content strategy used to require expensive consultants and months of planning. AI agents can now audit your site, research keywords, analyze competitors, and generate a full content strategy in minutes.",
-    agentCta: { label: "Try the Strategy Agent", href: "/signup" },
+    agentCta: { label: "Try Strategy", href: "/signup" },
     sections: [
       {
         heading: "Start with a Technical Audit",
@@ -102,7 +100,7 @@ const GUIDES: Guide[] = [
     title: "How to Automate Email Marketing with AI Agents",
     intro:
       "Email marketing remains the highest-ROI channel for most businesses. AI automation lets you create personalized, high-converting email sequences without a dedicated email marketer.",
-    agentCta: { label: "Try the Email Agent", href: "/signup" },
+    agentCta: { label: "Try Email", href: "/signup" },
     sections: [
       {
         heading: "Why AI Email Automation?",
@@ -171,10 +169,10 @@ export default async function GuidePage({
 
   if (!guide) {
     return (
-      <div className="py-32 text-center">
-        <h1 className="text-h1 text-text-primary">Guide not found</h1>
-        <p className="mt-4 text-text-secondary">
-          <Link href="/" className="text-accent hover:underline">
+      <div className="mx-auto w-full max-w-[1200px] px-4 py-32 md:px-10">
+        <h1 className="text-display-s text-text">Guide not found</h1>
+        <p className="mt-4 text-body text-text-2">
+          <Link href="/" className="hover-link text-accent-hover hover:text-accent hover:underline">
             Go back home
           </Link>
         </p>
@@ -222,90 +220,82 @@ export default async function GuidePage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
       />
       {/* Hero */}
-      <section className="pt-8 pb-20">
-        <div className="mx-auto max-w-3xl px-6">
-          <div className="flex items-center gap-2 mb-6">
-            <Badge>
-              <BookOpen className="h-3 w-3 mr-1" />
-              Guide
-            </Badge>
-          </div>
-          <h1 className="text-hero text-text-primary leading-tight">
-            {guide.title}
-          </h1>
-          <p className="mt-6 text-lg text-text-secondary leading-relaxed">
+      <section className="mx-auto w-full max-w-[1200px] px-4 pb-10 pt-12 md:px-10 md:pt-16">
+        <div className="max-w-[760px]">
+          <nav aria-label="Breadcrumb" className="mb-6 text-body-s text-text-3">
+            <Link href="/" className="hover-link hover:text-text">
+              Home
+            </Link>
+            <span className="mx-2" aria-hidden>/</span>
+            <Link href="/guides" className="hover-link hover:text-text">
+              Guides
+            </Link>
+          </nav>
+          <p className="mb-4 flex items-center gap-2 text-label text-accent">
+            <BookOpen className="h-3.5 w-3.5" />
+            Guide
+          </p>
+          <h1 className="text-display-m text-text">{guide.title}</h1>
+          <p className="mt-6 text-lg leading-relaxed text-text-2">
             {guide.intro}
           </p>
         </div>
       </section>
 
       {/* Content */}
-      <section className="pb-20">
-        <div className="mx-auto max-w-3xl px-6 space-y-8">
+      <section className="mx-auto w-full max-w-[1200px] px-4 pb-16 md:px-10">
+        <div className="prose-conduikt">
           {guide.sections.map((section, i) => (
-            <Card
+            <section
               key={i}
               className="animate-in"
               style={{ animationDelay: `${i * 60}ms` }}
             >
-              <CardContent>
-                <h2 className="text-h2 text-text-primary mb-3">
-                  {section.heading}
-                </h2>
-                <p className="text-body text-text-secondary leading-relaxed">
-                  {section.content}
-                </p>
-              </CardContent>
-            </Card>
+              <h2>{section.heading}</h2>
+              <p>{section.content}</p>
+            </section>
           ))}
         </div>
       </section>
 
       {/* Agent CTA */}
-      <section className="pb-20">
-        <div className="mx-auto max-w-3xl px-6">
-          <Card className="border-accent shadow-[0_0_30px_var(--accent-glow)]">
-            <CardContent className="text-center py-10">
-              <h2 className="text-h1 text-text-primary mb-2">
-                Ready to automate?
-              </h2>
-              <p className="text-lg text-text-secondary mb-6">
-                Conduikt&apos;s AI agents handle the entire workflow — audit,
-                create, publish, and optimize.
-              </p>
-              <Button size="lg" asChild>
-                <Link href={guide.agentCta.href}>
-                  {guide.agentCta.label}
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
+      <section className="band-ink">
+        <div className="mx-auto flex w-full max-w-[1200px] flex-col items-start gap-5 px-4 py-14 md:px-10 md:py-[72px]">
+          <p className="text-label text-ink-accent">Try it</p>
+          <h2 className="max-w-[760px] text-display-s text-ink-text">
+            Ready to automate?
+          </h2>
+          <p className="max-w-[560px] text-lg leading-relaxed text-ink-text-2">
+            Conduikt&apos;s AI agents handle the entire workflow: audit,
+            create, publish, and optimize.
+          </p>
+          <Button size="lg" asChild>
+            <Link href={guide.agentCta.href}>
+              {guide.agentCta.label}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
         </div>
       </section>
 
-      {/* Related Guides */}
-      <section className="pb-20">
-        <div className="mx-auto max-w-3xl px-6">
-          <h3 className="text-h2 text-text-primary mb-4">More Guides</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {GUIDES.filter((g) => g.slug !== slug)
-              .slice(0, 2)
-              .map((g) => (
-                <Link key={g.slug} href={`/guides/${g.slug}`}>
-                  <Card hover className="h-full">
-                    <CardContent>
-                      <h4 className="text-h3 text-text-primary mb-2">
-                        {g.title}
-                      </h4>
-                      <p className="text-small text-text-secondary line-clamp-2">
-                        {g.intro}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-          </div>
+      {/* Related guides */}
+      <section className="mx-auto w-full max-w-[1200px] px-4 py-16 md:px-10 md:py-20">
+        <h2 className="mb-5 text-heading text-text">More guides</h2>
+        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+          {GUIDES.filter((g) => g.slug !== slug)
+            .slice(0, 2)
+            .map((g) => (
+              <Link
+                key={g.slug}
+                href={`/guides/${g.slug}`}
+                className="hover-card hover-card-quiet flex h-full flex-col rounded-lg border border-line bg-surface p-6"
+              >
+                <h3 className="mb-2 text-title text-text">{g.title}</h3>
+                <p className="line-clamp-2 text-body-s text-text-2">
+                  {g.intro}
+                </p>
+              </Link>
+            ))}
         </div>
       </section>
     </div>

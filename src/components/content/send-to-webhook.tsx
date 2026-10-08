@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Send, Loader2, Check, Globe, ChevronDown } from "lucide-react";
+import { Send, Check, Globe, ChevronDown } from "@/src/components/ui/lucide-icons";
 import { Button } from "@/src/components/ui/button";
 import { useToast } from "@/src/components/ui/toast";
 
@@ -69,12 +69,12 @@ export function SendToWebhook({
   return (
     <div className="relative">
       <Button
-        variant="secondary"
+        variant="outline"
         size="sm"
         onClick={() => setOpen(!open)}
       >
         <Send className="h-4 w-4" />
-        Send to...
+        Send to…
         <ChevronDown className="h-3 w-3 ml-1" />
       </Button>
 
@@ -84,8 +84,8 @@ export function SendToWebhook({
             className="fixed inset-0 z-40"
             onClick={() => setOpen(false)}
           />
-          <div className="absolute right-0 top-full mt-1 z-50 w-56 rounded-lg border border-border-default bg-surface-2 shadow-xl py-1 animate-in">
-            <p className="px-3 py-1.5 text-[11px] font-medium text-text-tertiary uppercase tracking-wider">
+          <div className="absolute right-0 top-full mt-1 z-50 w-56 rounded-lg border border-line bg-surface py-1 shadow-[var(--shadow-float)] animate-in">
+            <p className="px-3 py-1.5 text-label text-text-3">
               Send content to
             </p>
             {webhooks.map((wh) => {
@@ -96,17 +96,17 @@ export function SendToWebhook({
                   key={wh.id}
                   onClick={() => handleSend(wh)}
                   disabled={isSending}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-small text-text-secondary hover:bg-surface-1 hover:text-text-primary transition-colors disabled:opacity-50"
+                  className="flex items-center gap-2 w-full px-3 py-2 text-body-s text-text-2 hover:bg-surface-2 hover:text-text transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] disabled:opacity-50"
                 >
                   {isSending ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+                    <span className="live-dot shrink-0" aria-hidden />
                   ) : isSent ? (
-                    <Check className="h-3.5 w-3.5 text-success shrink-0" />
+                    <Check className="h-3.5 w-3.5 text-teal shrink-0" />
                   ) : (
                     <Globe className="h-3.5 w-3.5 shrink-0" />
                   )}
                   <span className="truncate">{wh.name}</span>
-                  <span className="ml-auto text-[10px] text-text-tertiary uppercase">
+                  <span className="ml-auto text-label text-text-3">
                     {wh.type}
                   </span>
                 </button>

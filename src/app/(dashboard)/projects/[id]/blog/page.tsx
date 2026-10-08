@@ -7,7 +7,6 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
   Sparkles,
-  Loader2,
   Copy,
   Check,
   Save,
@@ -16,13 +15,13 @@ import {
   Linkedin,
   Mail,
   Globe,
-  Zap,
+  Search,
   Image as ImageIcon,
   X as CloseIcon,
   ChevronRight,
   Download,
   Lock,
-} from "lucide-react";
+} from "@/src/components/ui/lucide-icons";
 import { QuotaBadge } from "@/src/components/generation/quota-badge";
 import {
   Card,
@@ -31,8 +30,10 @@ import {
   CardTitle,
 } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
-import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
+import { Button, IconButton } from "@/src/components/ui/button";
+import { EmptyState } from "@/src/components/ui/empty-state";
+import { Field, Input } from "@/src/components/ui/input";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import {
   Tabs,
   TabsList,
@@ -140,7 +141,7 @@ function BlogPageInner({
   function copy(text: string, key: string) {
     navigator.clipboard.writeText(text);
     setCopied(key);
-    toast("Copied!", "info");
+    toast("Copied", "info");
     setTimeout(() => setCopied(null), 2000);
   }
 
@@ -161,10 +162,10 @@ function BlogPageInner({
         setImagePhotos(data.photos);
         setShowImagePicker(true);
       } else {
-        toast(data.error || "No images found", "warning");
+        toast(data.error || "No images found. Try another search.", "warning");
       }
     } catch {
-      toast("Image search failed", "error");
+      toast("Image search failed. Try again.", "error");
     } finally {
       setImageLoading(false);
     }
@@ -212,7 +213,7 @@ function BlogPageInner({
 
       if (!res.ok) {
         const err = await res.json();
-        toast(err.error || "Generation failed", "error");
+        toast(err.error || "Couldn't write the post. Try again.", "error");
         setGenerating(false);
         return;
       }
@@ -256,10 +257,10 @@ function BlogPageInner({
         setParsed(post);
       } catch (parseErr) {
         console.warn("[blog] parse failed:", parseErr, "raw head:", fullText.slice(0, 300));
-        toast("Blog post generated but formatting looked off — check Raw tab", "warning");
+        toast("The post is written but the layout came out wrong. Open the raw text below.", "warning");
       }
     } catch {
-      toast("Failed to connect to AI service", "error");
+      toast("Couldn't reach the writer. Try again.", "error");
     }
 
     setGenerating(false);
@@ -297,9 +298,9 @@ function BlogPageInner({
     if (res.ok) {
       const saved = await res.json();
       setSavedId(saved.id);
-      toast("Blog post saved as draft!", "success");
+      toast("Saved as a draft", "success");
     } else {
-      toast("Failed to save", "error");
+      toast("Couldn't save. Try again.", "error");
     }
     setSaving(false);
   }
@@ -309,18 +310,17 @@ function BlogPageInner({
   return (
     <div>
       <PageHeader
-        title="Blog Post Generator"
-        description="Generate SEO-optimized long-form content with meta tags and social promotion snippets"
+        title="Blog"
+        description="Full articles, ready to publish, with the text Google shows and posts to share them."
       />
-
 
       <ExpectationBanner
         storageKey="conduikt-expect-blog"
-        message="A single blog post won't transform your rankings overnight. SEO-optimized content builds authority over weeks as search engines crawl and index it."
+        message="One post won't move you up Google overnight. Posts build trust with Google over weeks as it finds and reads them."
         details={[
-          "Publish consistently — 2-4 posts per month builds topical authority faster.",
-          "Promote each post on social media and email to generate initial traffic signals.",
-          "Update and refresh older posts every few months to maintain rankings.",
+          "Post often. 2 to 4 posts a month helps Google see you as an expert faster.",
+          "Share each post on social and by email to bring the first visitors.",
+          "Refresh older posts every few months so they keep their place.",
         ]}
       />
 
@@ -328,11 +328,11 @@ function BlogPageInner({
         <SavedAssetsPanel
           projectId={projectId}
           assetType="blog_post"
-          title="Your Saved Blog Posts"
+          title="Your saved blog posts"
           linkBuilder={(assetId) => `/projects/${projectId}/blog?assetId=${assetId}`}
           libraryHref={`/projects/${projectId}/library`}
           currentAssetId={savedId ?? undefined}
-          emptyHint="Saved blog posts will appear here. Click Save on any generated post to keep it for later."
+          emptyHint="Saved posts show up here. Press Save draft on any post to keep it."
         />
       </div>
 
@@ -342,46 +342,46 @@ function BlogPageInner({
           <Card className="animate-in">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-accent" />
-                Post Setup
+                <Sparkles className="h-4 w-4 text-text-3" />
+                What to write about
               </CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleGenerate} className="space-y-4">
-                <div>
-                  <label className="text-small text-text-secondary block mb-1.5">
-                    Topic / Title *
-                  </label>
+                <Field label="Topic or title" htmlFor="blog-topic">
                   <textarea
+                    id="blog-topic"
                     value={topic}
                     onChange={(e) => setTopic(e.target.value)}
-                    placeholder="e.g. How to automate your marketing with AI in 2025"
+                    placeholder="Try: How to plan a month of posts in one afternoon"
                     rows={3}
-                    className="w-full rounded-lg border border-border-strong bg-surface-0 px-4 py-3 text-text-primary placeholder:text-text-tertiary font-sans text-[0.9375rem] transition-all duration-150 focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-glow)] resize-none"
+                    required
+                    className="w-full resize-none rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                   />
-                </div>
+                </Field>
 
                 <Input
-                  label="Target Keyword (optional)"
-                  placeholder="e.g. marketing automation for startups"
+                  label="Search phrase to rank for (optional)"
+                  placeholder="Try: marketing automation for startups"
                   value={targetKeyword}
                   onChange={(e) => setTargetKeyword(e.target.value)}
                 />
 
                 <div>
-                  <label className="text-small text-text-secondary block mb-2">
-                    Word Count: <span className="text-accent font-mono">{wordCount}</span>
-                  </label>
-                  <div className="flex gap-2 flex-wrap">
+                  <p className="mb-2 text-body-s text-text-2">
+                    Length: <span className="font-mono text-text">{wordCount} words</span>
+                  </p>
+                  <div className="flex gap-2 flex-wrap" role="group" aria-label="Length">
                     {wordCounts.map((wc) => (
                       <button
                         key={wc}
                         type="button"
                         onClick={() => setWordCount(wc)}
-                        className={`rounded-lg border px-3 py-1.5 text-small font-medium transition-all ${
+                        aria-pressed={wordCount === wc}
+                        className={`rounded-md border px-3 py-1.5 font-mono text-body-s transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] ${
                           wordCount === wc
-                            ? "border-accent bg-accent-muted text-accent"
-                            : "border-border-default text-text-secondary hover:border-border-strong hover:text-text-primary"
+                            ? "border-line-strong bg-surface-2 text-text"
+                            : "border-line text-text-2 hover:bg-surface-2 hover:text-text"
                         }`}
                       >
                         {wc >= 1000 ? `${wc / 1000}k` : wc}
@@ -392,7 +392,7 @@ function BlogPageInner({
 
                 <Input
                   label="Tone (optional)"
-                  placeholder="e.g. conversational, authoritative, beginner-friendly"
+                  placeholder="Try: friendly, for beginners"
                   value={tone}
                   onChange={(e) => setTone(e.target.value)}
                 />
@@ -403,14 +403,11 @@ function BlogPageInner({
                   disabled={generating || !topic.trim()}
                 >
                   {generating ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Writing...
-                    </>
+                    "Writing…"
                   ) : (
                     <>
                       <Sparkles className="h-4 w-4" />
-                      Generate Blog Post
+                      Write the post
                     </>
                   )}
                 </Button>
@@ -426,41 +423,40 @@ function BlogPageInner({
           <Card className="animate-in" style={{ animationDelay: "60ms" }}>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Preview</CardTitle>
+                <CardTitle>Your post</CardTitle>
                 {parsed && !generating && (
                   <div className="flex items-center gap-2 flex-wrap">
                     {savedId && (
-                      <Link
-                        href={`/projects/${projectId}/content?skill=social-content&prompt=${encodeURIComponent(`Promote this blog post: ${parsed.meta_title || topic}`)}`}
-                        className="flex items-center gap-1.5 rounded-lg border border-accent/30 bg-accent-muted px-3 py-1.5 text-small font-medium text-accent hover:bg-accent/20 transition-colors"
-                      >
-                        <Sparkles className="h-3.5 w-3.5" />
-                        Generate Social Posts
-                      </Link>
+                      <Button size="sm" variant="outline" asChild>
+                        <Link
+                          href={`/projects/${projectId}/content?skill=social-content&prompt=${encodeURIComponent(`Promote this blog post: ${parsed.meta_title || topic}`)}`}
+                        >
+                          <Sparkles className="h-3.5 w-3.5" />
+                          Write posts to share it
+                        </Link>
+                      </Button>
                     )}
                     {userPlan === "free" ? (
                       <Link href="/settings/billing">
-                        <Button size="sm" variant="secondary">
+                        <Button size="sm" variant="outline">
                           <Lock className="h-4 w-4" />
-                          Upgrade to Save
+                          Upgrade to save
                         </Button>
                       </Link>
                     ) : (
                       <>
                         <Button
                           size="sm"
-                          variant="secondary"
+                          variant="outline"
                           onClick={handleSave}
                           disabled={saving || !!savedId}
                         >
-                          {saving ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : savedId ? (
-                            <Check className="h-4 w-4 text-success" />
+                          {saving ? null : savedId ? (
+                            <Check className="h-4 w-4 text-teal" />
                           ) : (
                             <Save className="h-4 w-4" />
                           )}
-                          {saving ? "Saving..." : savedId ? "Saved" : "Save Draft"}
+                          {saving ? "Saving…" : savedId ? "Saved" : "Save draft"}
                         </Button>
                         {savedId && (
                           <PdfDownloadButton
@@ -476,26 +472,24 @@ function BlogPageInner({
             </CardHeader>
             <CardContent>
               {!rawResult && !generating ? (
-                <div className="flex flex-col items-center py-16 text-center">
-                  <FileText className="h-10 w-10 text-text-tertiary mb-4" />
-                  <p className="text-body text-text-secondary">
-                    Your blog post will preview here
-                  </p>
-                  <p className="text-small text-text-tertiary mt-1">
-                    Fill in the topic and click Generate
-                  </p>
-                </div>
+                <EmptyState
+                  icon={<FileText className="h-6 w-6" />}
+                  title="Your post shows up here. Add a topic and press Write the post."
+                />
               ) : generating && !parsed ? (
-                <div className="rounded-xl border border-border-default bg-surface-0 p-10 text-center">
-                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-accent-muted mb-4">
-                    <Loader2 className="h-6 w-6 text-accent animate-spin" />
+                <div className="rounded-md border border-line bg-ground p-6" role="status">
+                  <p className="flex items-center gap-2 text-title text-text">
+                    <span className="live-dot" aria-hidden />
+                    Writing your blog post…
+                  </p>
+                  <p className="mt-2 text-body-s text-text-3">
+                    We&apos;ll lay out the article, the text Google shows, and posts to share it once it&apos;s ready.
+                  </p>
+                  <div className="mt-5 space-y-2" aria-hidden>
+                    <Skeleton className="h-4 w-11/12" />
+                    <Skeleton className="h-4 w-4/5" />
+                    <Skeleton className="h-4 w-2/3" />
                   </div>
-                  <p className="text-body font-semibold text-text-primary">
-                    Writing your blog post...
-                  </p>
-                  <p className="text-small text-text-tertiary mt-2 max-w-sm mx-auto">
-                    We&apos;ll format the article, SEO meta, and social posts once it&apos;s ready.
-                  </p>
                 </div>
               ) : parsed ? (
                 <Tabs defaultValue="preview">
@@ -505,18 +499,18 @@ function BlogPageInner({
                       Article
                     </TabsTrigger>
                     <TabsTrigger value="seo">
-                      <Zap className="h-3.5 w-3.5 mr-1.5" />
-                      SEO Meta
+                      <Search className="h-3.5 w-3.5 mr-1.5" />
+                      On Google
                     </TabsTrigger>
                     <TabsTrigger value="social">
                       <Twitter className="h-3.5 w-3.5 mr-1.5" />
-                      Promote
+                      Share it
                     </TabsTrigger>
                   </TabsList>
 
                   {/* Article preview */}
                   <TabsContent value="preview">
-                    <div className="rounded-xl border border-border-default bg-surface-0 overflow-hidden max-h-[600px] overflow-y-auto">
+                    <div className="max-h-[600px] overflow-hidden overflow-y-auto rounded-md border border-line bg-ground">
                       {/* Hero image area */}
                       {selectedImage ? (
                         <div className="relative group">
@@ -526,26 +520,29 @@ function BlogPageInner({
                             alt={selectedImage.alt_description || parsed.meta_title}
                             className="w-full h-48 object-cover"
                           />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                            <button
+                          <div className="absolute right-2 top-2 flex items-center gap-2 opacity-0 transition-opacity duration-[var(--duration-fast)] group-hover:opacity-100 group-focus-within:opacity-100">
+                            <Button
+                              size="sm"
+                              variant="quiet"
                               onClick={() => fetchImages(parsed.featured_image_query)}
-                              className="rounded-lg bg-surface-1/90 px-3 py-1.5 text-small text-text-primary hover:bg-surface-2 transition-colors"
                             >
                               Change image
-                            </button>
-                            <button
+                            </Button>
+                            <IconButton
+                              label="Remove image"
+                              size="sm"
+                              variant="quiet"
                               onClick={() => setSelectedImage(null)}
-                              className="rounded-lg bg-surface-1/90 p-1.5 text-text-primary hover:bg-surface-2 transition-colors"
                             >
                               <CloseIcon className="h-3.5 w-3.5" />
-                            </button>
+                            </IconButton>
                           </div>
                           {/* Attribution */}
                           <a
                             href={`${selectedImage.user.links.html}?utm_source=conduikt&utm_medium=referral`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="absolute bottom-2 right-2 text-[10px] text-white/70 bg-black/40 px-1.5 py-0.5 rounded hover:text-white/100 transition-colors"
+                            className="absolute bottom-2 right-2 rounded-sm bg-overlay px-1.5 py-0.5 text-caption text-on-photo"
                           >
                             Photo by {selectedImage.user.name} on Unsplash
                           </a>
@@ -556,14 +553,10 @@ function BlogPageInner({
                             <button
                               onClick={() => fetchImages(parsed.featured_image_query)}
                               disabled={imageLoading}
-                              className="flex items-center gap-2 rounded-lg border border-border-default bg-surface-1 px-3 py-2 text-small text-text-secondary hover:border-accent/40 hover:text-text-primary transition-colors"
+                              className="flex items-center gap-2 rounded-md border border-line bg-surface px-3 py-2 text-body-s text-text-2 transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] hover:bg-surface-2 hover:text-text disabled:opacity-50"
                             >
-                              {imageLoading ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              ) : (
-                                <ImageIcon className="h-3.5 w-3.5" />
-                              )}
-                              {imageLoading ? "Searching…" : `Find hero image: "${parsed.featured_image_query}"`}
+                              {!imageLoading && <ImageIcon className="h-3.5 w-3.5" />}
+                              {imageLoading ? "Searching…" : `Find a header image: "${parsed.featured_image_query}"`}
                             </button>
                           )}
                         </div>
@@ -573,26 +566,27 @@ function BlogPageInner({
                       {showImagePicker && imagePhotos.length > 0 && (
                         <div className="mx-5 mt-3 mb-1">
                           <div className="flex items-center justify-between mb-2">
-                            <p className="text-small text-text-tertiary">Select a hero image</p>
-                            <button
+                            <p className="text-body-s text-text-3">Pick a header image</p>
+                            <IconButton
+                              label="Close image picker"
+                              size="sm"
                               onClick={() => setShowImagePicker(false)}
-                              className="p-1 text-text-tertiary hover:text-text-primary"
                             >
                               <CloseIcon className="h-3.5 w-3.5" />
-                            </button>
+                            </IconButton>
                           </div>
                           <div className="grid grid-cols-3 gap-2">
                             {imagePhotos.map((photo) => (
                               <button
                                 key={photo.id}
                                 onClick={() => selectImage(photo)}
-                                className="group relative rounded-lg overflow-hidden border-2 border-transparent hover:border-accent transition-all aspect-video"
+                                className="relative aspect-video overflow-hidden rounded-md border border-line transition-colors duration-[var(--duration-fast)] hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                               >
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
                                   src={photo.urls.small}
                                   alt={photo.alt_description || ""}
-                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                  className="h-full w-full object-cover"
                                 />
                               </button>
                             ))}
@@ -601,12 +595,12 @@ function BlogPageInner({
                       )}
 
                       <div className="p-6">
-                        <div className="flex items-center gap-3 mb-5 pb-4 border-b border-border-subtle">
+                        <div className="flex items-center gap-3 mb-5 pb-4 border-b border-line">
                           <Badge variant="secondary">
-                            ~{parsed.word_count?.toLocaleString() ?? "—"} words
+                            ~{parsed.word_count?.toLocaleString() ?? "?"} words
                           </Badge>
                           <Badge variant="secondary">
-                            {parsed.reading_time_minutes ?? "—"} min read
+                            {parsed.reading_time_minutes ?? "?"} min read
                           </Badge>
                         </div>
                         <div className="prose-conduikt">
@@ -622,15 +616,15 @@ function BlogPageInner({
                   <TabsContent value="seo">
                     <div className="space-y-4">
                       {/* SERP preview */}
-                      <div className="rounded-xl border border-border-default bg-surface-0 p-5">
-                        <p className="text-small text-text-tertiary mb-3">SERP Preview</p>
-                        <p className="text-accent text-body font-medium leading-tight mb-1">
+                      <div className="rounded-md border border-line bg-ground p-5">
+                        <p className="mb-3 text-label text-text-3">How it shows on Google</p>
+                        <p className="mb-1 text-title text-accent-hover">
                           {parsed.meta_title}
                         </p>
-                        <p className="text-small text-success text-[0.75rem] mb-1">
+                        <p className="mb-1 font-mono text-caption text-teal">
                           {`https://yoursite.com/blog/${parsed.slug}`}
                         </p>
-                        <p className="text-small text-text-secondary">
+                        <p className="text-body-s text-text-2">
                           {parsed.meta_description}
                         </p>
                       </div>
@@ -638,13 +632,13 @@ function BlogPageInner({
                       {/* Meta fields */}
                       <div className="space-y-3">
                         {[
-                          { label: "Meta Title", value: parsed.meta_title, limit: 60, key: "title" },
-                          { label: "Meta Description", value: parsed.meta_description, limit: 160, key: "desc" },
-                          { label: "URL Slug", value: parsed.slug, limit: null, key: "slug" },
+                          { label: "Title on Google", value: parsed.meta_title, limit: 60, key: "title" },
+                          { label: "Description on Google", value: parsed.meta_description, limit: 160, key: "desc" },
+                          { label: "Web address", value: parsed.slug, limit: null, key: "slug" },
                         ].map((field) => (
-                          <div key={field.key} className="rounded-lg border border-border-default bg-surface-0 p-4">
+                          <div key={field.key} className="rounded-md border border-line bg-ground p-4">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-small font-medium text-text-secondary">
+                              <span className="text-label text-text-3">
                                 {field.label}
                               </span>
                               <div className="flex items-center gap-2">
@@ -655,20 +649,20 @@ function BlogPageInner({
                                     {field.value.length}/{field.limit}
                                   </Badge>
                                 )}
-                                <Button
+                                <IconButton
+                                  label={`Copy ${field.label.toLowerCase()}`}
                                   size="sm"
-                                  variant="ghost"
                                   onClick={() => copy(field.value, field.key)}
                                 >
                                   {copied === field.key ? (
-                                    <Check className="h-3.5 w-3.5 text-success" />
+                                    <Check className="h-3.5 w-3.5 text-teal" />
                                   ) : (
                                     <Copy className="h-3.5 w-3.5" />
                                   )}
-                                </Button>
+                                </IconButton>
                               </div>
                             </div>
-                            <p className="text-small text-text-primary font-mono">{field.value}</p>
+                            <p className="text-body-s text-text font-mono">{field.value}</p>
                           </div>
                         ))}
                       </div>
@@ -681,7 +675,7 @@ function BlogPageInner({
                       {[
                         {
                           key: "x",
-                          label: "X (Twitter)",
+                          label: "X",
                           icon: Twitter,
                           text: parsed.social_promotion?.x_post ?? "",
                           limit: 280,
@@ -695,17 +689,17 @@ function BlogPageInner({
                         },
                         {
                           key: "email",
-                          label: "Email Subject",
+                          label: "Email subject",
                           icon: Mail,
                           text: parsed.social_promotion?.email_subject ?? "",
                           limit: null,
                         },
                       ].map((item) => (
-                        <div key={item.key} className="rounded-xl border border-border-default bg-surface-0 p-4">
+                        <div key={item.key} className="rounded-md border border-line bg-ground p-4">
                           <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-2">
-                              <item.icon className="h-4 w-4 text-text-secondary" />
-                              <span className="text-small font-medium text-text-secondary">
+                              <item.icon className="h-4 w-4 text-text-3" />
+                              <span className="text-label text-text-3">
                                 {item.label}
                               </span>
                             </div>
@@ -717,20 +711,20 @@ function BlogPageInner({
                                   {item.text.length}/{item.limit}
                                 </Badge>
                               )}
-                              <Button
+                              <IconButton
+                                label={`Copy ${item.label} text`}
                                 size="sm"
-                                variant="ghost"
                                 onClick={() => copy(item.text, item.key)}
                               >
                                 {copied === item.key ? (
-                                  <Check className="h-3.5 w-3.5 text-success" />
+                                  <Check className="h-3.5 w-3.5 text-teal" />
                                 ) : (
                                   <Copy className="h-3.5 w-3.5" />
                                 )}
-                              </Button>
+                              </IconButton>
                             </div>
                           </div>
-                          <p className="text-small text-text-primary whitespace-pre-line">
+                          <p className="text-body-s text-text whitespace-pre-line">
                             {item.text}
                           </p>
                         </div>
@@ -740,15 +734,15 @@ function BlogPageInner({
 
                 </Tabs>
               ) : !generating && rawResult ? (
-                <div className="rounded-xl border border-warning/30 bg-surface-1 p-6 space-y-2">
-                  <p className="text-small text-text-primary font-medium">
-                    We got a response but couldn&apos;t format it into an article. Try regenerating.
+                <div className="space-y-2 rounded-md border border-line bg-accent-soft p-6">
+                  <p className="text-title text-text">
+                    The post came back but we couldn&apos;t lay it out as an article. Try again.
                   </p>
-                  <details className="text-small">
-                    <summary className="cursor-pointer text-text-tertiary hover:text-text-secondary">
+                  <details className="text-body-s">
+                    <summary className="cursor-pointer text-text-3 hover:text-text">
                       Show raw output
                     </summary>
-                    <pre className="mt-2 whitespace-pre-wrap text-caption text-text-secondary font-mono break-words max-h-[320px] overflow-y-auto">
+                    <pre className="mt-2 whitespace-pre-wrap text-caption text-text-2 font-mono break-words max-h-[320px] overflow-y-auto">
                       {rawResult}
                     </pre>
                   </details>
@@ -757,13 +751,9 @@ function BlogPageInner({
 
               {/* Usage stats */}
               {usage && (
-                <div className="flex items-center gap-3 text-small text-text-tertiary mt-4">
-                  <Badge variant="secondary">
-                    <Zap className="h-3 w-3 mr-1" />
-                    {(usage.inputTokens + usage.outputTokens).toLocaleString()} tokens
-                  </Badge>
-                  <span>{(usage.durationMs / 1000).toFixed(1)}s</span>
-                </div>
+                <p className="mt-4 font-mono text-caption text-text-3">
+                  Written in {(usage.durationMs / 1000).toFixed(1)}s
+                </p>
               )}
             </CardContent>
           </Card>
@@ -779,7 +769,7 @@ export default function BlogPage({
   params: Promise<{ id: string }>;
 }) {
   return (
-    <Suspense fallback={<div className="flex justify-center py-16"><div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" /></div>}>
+    <Suspense fallback={<div className="space-y-6" role="status" aria-label="Loading"><Skeleton className="h-10 w-48" /><Skeleton className="h-96" /></div>}>
       <BlogPageInner params={params} />
     </Suspense>
   );

@@ -18,9 +18,8 @@ import {
   Twitter,
   Linkedin,
   GripVertical,
-} from "lucide-react";
-import { Button } from "@/src/components/ui/button";
-import { Badge } from "@/src/components/ui/badge";
+} from "@/src/components/ui/lucide-icons";
+import { Button, IconButton } from "@/src/components/ui/button";
 
 export interface ScheduledPost {
   id: string;
@@ -59,15 +58,15 @@ function isSameDay(a: Date, b: Date) {
 
 function channelIcon(channel: string) {
   if (channel === "linkedin")
-    return <Linkedin className="h-3 w-3 text-[#0A66C2]" />;
-  return <Twitter className="h-3 w-3 text-accent" />;
+    return <Linkedin className="h-3 w-3 text-text-2" />;
+  return <Twitter className="h-3 w-3 text-text-2" />;
 }
 
-function statusColor(status: string) {
-  if (status === "posted") return "success";
-  if (status === "failed") return "error";
-  if (status === "cancelled") return "secondary";
-  return "warning";
+function statusDot(status: string) {
+  if (status === "posted") return "bg-teal";
+  if (status === "failed") return "bg-danger";
+  if (status === "cancelled") return "bg-line";
+  return "bg-accent";
 }
 
 /* ---- Draggable Post Card ---- */
@@ -92,10 +91,10 @@ function DraggablePostCard({
   return (
     <div
       ref={setNodeRef}
-      className={`group flex items-center gap-1 rounded px-1.5 py-1 text-[11px] leading-tight cursor-pointer transition-all ${
+      className={`group flex cursor-pointer items-center gap-1 rounded-sm border px-1.5 py-1 text-caption leading-tight transition-colors duration-[var(--duration-fast)] ${
         isDragging
-          ? "opacity-30"
-          : "bg-surface-2 hover:bg-surface-1 border border-transparent hover:border-border-default"
+          ? "border-transparent opacity-30"
+          : "border-line bg-surface hover:border-line-strong"
       }`}
       onClick={(e) => {
         e.stopPropagation();
@@ -108,17 +107,18 @@ function DraggablePostCard({
           {...listeners}
           className="shrink-0 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
         >
-          <GripVertical className="h-3 w-3 text-text-tertiary" />
+          <GripVertical className="h-3 w-3 text-text-3" />
         </span>
       )}
       <span className="shrink-0">{channelIcon(post.channel)}</span>
-      <span className="truncate text-text-secondary flex-1">{preview}</span>
-      <Badge
-        variant={statusColor(post.status) as "success" | "error" | "warning" | "secondary"}
-        className="text-[9px] px-1 py-0 leading-none shrink-0"
-      >
-        {post.status === "pending" ? "sched" : post.status.slice(0, 4)}
-      </Badge>
+      <span className="truncate text-text-2 flex-1">{preview}</span>
+      <span
+        className={`h-1.5 w-1.5 shrink-0 rounded-full ${statusDot(post.status)}`}
+        aria-hidden
+      />
+      <span className="sr-only">
+        {post.status === "pending" ? "scheduled" : post.status}
+      </span>
     </div>
   );
 }
@@ -143,9 +143,9 @@ function DragOverlayCard({ post }: { post: ScheduledPost }) {
     "Untitled post";
 
   return (
-    <div className="flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-[11px] bg-surface-1 border border-accent shadow-lg shadow-accent/10 max-w-[200px]">
+    <div className="flex max-w-[200px] items-center gap-1.5 rounded-md border border-accent bg-surface px-2.5 py-2 text-caption shadow-[var(--shadow-float)]">
       {channelIcon(post.channel)}
-      <span className="truncate text-text-primary">{preview}</span>
+      <span className="truncate text-text">{preview}</span>
     </div>
   );
 }
@@ -174,19 +174,17 @@ function DroppableDay({
     <div
       ref={setNodeRef}
       onClick={() => onDayClick(new Date(dateKey))}
-      className={`min-h-[90px] p-1.5 text-left transition-colors cursor-pointer ${
-        isCurrentMonth ? "bg-surface-0" : "bg-surface-0/50"
-      } ${isToday ? "ring-1 ring-inset ring-accent" : ""} ${
-        isOver ? "bg-accent/10" : "hover:bg-surface-1"
-      }`}
+      className={`min-h-[90px] cursor-pointer p-1.5 text-left transition-colors duration-[var(--duration-fast)] ${
+        isOver ? "bg-accent-soft" : isCurrentMonth ? "bg-ground hover:bg-surface" : "bg-surface-2 hover:bg-surface"
+      } ${isToday ? "ring-1 ring-inset ring-accent" : ""}`}
     >
       <span
-        className={`text-small font-mono block mb-1 ${
+        className={`mb-1 block font-mono text-body-s ${
           isToday
-            ? "text-accent font-bold"
+            ? "font-medium text-accent"
             : isCurrentMonth
-            ? "text-text-secondary"
-            : "text-text-tertiary"
+            ? "text-text-2"
+            : "text-text-3"
         }`}
       >
         {day}
@@ -200,7 +198,7 @@ function DroppableDay({
           />
         ))}
         {posts.length > 3 && (
-          <span className="text-[10px] text-text-tertiary font-mono pl-1">
+          <span className="pl-1 font-mono text-caption text-text-3">
             +{posts.length - 3} more
           </span>
         )}
@@ -280,11 +278,11 @@ export function CalendarGrid({
       >
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-h2 text-text-primary">{weekLabel}</h3>
+            <h3 className="text-heading text-text">{weekLabel}</h3>
             <div className="flex items-center gap-1">
-              <Button
+              <IconButton
+                label="Previous week"
                 size="sm"
-                variant="ghost"
                 onClick={() => {
                   const d = new Date(currentDate);
                   d.setDate(d.getDate() - 7);
@@ -292,7 +290,7 @@ export function CalendarGrid({
                 }}
               >
                 <ChevronLeft className="h-4 w-4" />
-              </Button>
+              </IconButton>
               <Button
                 size="sm"
                 variant="ghost"
@@ -300,9 +298,9 @@ export function CalendarGrid({
               >
                 Today
               </Button>
-              <Button
+              <IconButton
+                label="Next week"
                 size="sm"
-                variant="ghost"
                 onClick={() => {
                   const d = new Date(currentDate);
                   d.setDate(d.getDate() + 7);
@@ -310,11 +308,11 @@ export function CalendarGrid({
                 }}
               >
                 <ChevronRight className="h-4 w-4" />
-              </Button>
+              </IconButton>
             </div>
           </div>
 
-          <div className="grid grid-cols-7 gap-px rounded-lg border border-border-default overflow-hidden bg-border-default">
+          <div className="grid grid-cols-7 gap-px rounded-lg border border-line overflow-hidden bg-line">
             {weekDays.map((date) => {
               const dateKey = date.toISOString().split("T")[0];
               const dayPosts = getPostsForDay(date);
@@ -340,7 +338,7 @@ export function CalendarGrid({
             {weekDays.map((date, i) => (
               <div
                 key={i}
-                className="text-caption text-text-tertiary font-medium text-center"
+                className="text-center text-label text-text-3"
               >
                 {DAY_NAMES[i]}
               </div>
@@ -389,20 +387,20 @@ export function CalendarGrid({
     >
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-h2 text-text-primary">
+          <h3 className="text-heading text-text">
             {new Date(year, month).toLocaleDateString(undefined, {
               month: "long",
               year: "numeric",
             })}
           </h3>
           <div className="flex items-center gap-1">
-            <Button
+            <IconButton
+              label="Previous month"
               size="sm"
-              variant="ghost"
               onClick={() => setCurrentDate(new Date(year, month - 1, 1))}
             >
               <ChevronLeft className="h-4 w-4" />
-            </Button>
+            </IconButton>
             <Button
               size="sm"
               variant="ghost"
@@ -410,13 +408,13 @@ export function CalendarGrid({
             >
               Today
             </Button>
-            <Button
+            <IconButton
+              label="Next month"
               size="sm"
-              variant="ghost"
               onClick={() => setCurrentDate(new Date(year, month + 1, 1))}
             >
               <ChevronRight className="h-4 w-4" />
-            </Button>
+            </IconButton>
           </div>
         </div>
 
@@ -424,14 +422,14 @@ export function CalendarGrid({
           {DAY_NAMES.map((name) => (
             <div
               key={name}
-              className="text-caption text-text-tertiary font-medium text-center py-2"
+              className="py-2 text-center text-label text-text-3"
             >
               {name}
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-px rounded-lg border border-border-default overflow-hidden bg-border-default">
+        <div className="grid grid-cols-7 gap-px rounded-lg border border-line overflow-hidden bg-line">
           {cells.map((cell) => {
             const dateKey = cell.date.toISOString().split("T")[0];
             const dayPosts = getPostsForDay(cell.date);
@@ -452,15 +450,18 @@ export function CalendarGrid({
           })}
         </div>
 
-        <div className="flex items-center gap-4 mt-3 text-caption text-text-tertiary">
+        <div className="mt-3 flex flex-wrap items-center gap-4 text-caption text-text-3">
           <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-accent" /> X
+            <span className="h-2 w-2 rounded-full bg-accent" /> Scheduled
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-[#0A66C2]" /> LinkedIn
+            <span className="h-2 w-2 rounded-full bg-teal" /> Posted
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-success" /> Email
+            <span className="h-2 w-2 rounded-full bg-danger" /> Failed
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-line" /> Cancelled
           </span>
         </div>
       </div>

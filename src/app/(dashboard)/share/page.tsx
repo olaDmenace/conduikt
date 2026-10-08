@@ -8,9 +8,8 @@
 //   2. Two social cards (square 1080×1080 + landscape 1200×627)
 //   3. Three copy-paste pitch templates (X, LinkedIn, WhatsApp)
 //
-// Visual goals: showcase the brand teal as primary and copper as the
-// secondary accent. The page itself doubles as a brand sample so an
-// advocate can see the palette before they share.
+// Visual goals: show the v2 palette (one orange accent, teal for data,
+// ink and sand surfaces) so an advocate can see it before they share.
 
 import { useState } from "react";
 import {
@@ -23,8 +22,8 @@ import {
   Twitter,
   Linkedin,
   MessageCircle,
-} from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+} from "@/src/components/ui/lucide-icons";
+import { Card } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { PageHeader } from "@/src/components/layout/page-header";
@@ -58,7 +57,7 @@ Conduikt automates the parts of marketing that eat the most time: SEO audits, AI
 You stay in your codebase. Conduikt runs the marketing motion.
 
 Free tier to try. Pro at $49/mo. → https://conduikt.com`,
-    hint: "LinkedIn rewards posts with whitespace — keep the line breaks.",
+    hint: "LinkedIn rewards posts with white space, so keep the line breaks.",
   },
   {
     id: "whatsapp",
@@ -94,71 +93,65 @@ export default function SharePage() {
   }
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-10 pb-12">
       <PageHeader
         title="Share Conduikt"
-        description="A ready-made marketing kit you can DM, post, or forward to anyone. Every asset is on-brand and free to use."
+        description="A ready-made kit you can DM, post or forward to anyone. Every asset is on-brand and free to use."
       />
 
-      {/* Brand palette banner — satisfies the "show primary + secondary"
-          requirement and reassures advocates the kit is on-brand. */}
-      <Card className="border-accent/20 bg-gradient-to-br from-surface-1 to-surface-0 overflow-hidden p-0">
-        <CardContent>
-          <div className="grid grid-cols-1 lg:grid-cols-2">
-            {/* Left: copy */}
-            <div className="p-6 lg:p-8 space-y-3">
-              <div className="flex items-center gap-2 text-text-tertiary">
-                <Megaphone className="h-4 w-4" />
-                <span className="text-caption uppercase tracking-wider">
-                  Brand kit
-                </span>
-              </div>
-              <h2 className="text-h2 text-text-primary">
-                Conduikt&apos;s palette, ready to share
-              </h2>
-              <p className="text-body text-text-secondary leading-relaxed">
-                Brand teal is our primary; copper is the secondary accent
-                — used sparingly for warmth and texture. Every asset on
-                this page already uses both.
-              </p>
-            </div>
-
-            {/* Right: swatches */}
-            <div className="p-6 lg:p-8 bg-surface-1/40 border-t lg:border-t-0 lg:border-l border-border-subtle space-y-4">
-              <SwatchRow
-                label="Primary"
-                role="Teal"
-                swatches={[
-                  { hex: "#2F8C85", token: "accent-400" },
-                  { hex: "#1F6B66", token: "accent-500" },
-                ]}
-              />
-              <SwatchRow
-                label="Secondary"
-                role="Copper"
-                swatches={[
-                  { hex: "#D9663A", token: "accent-secondary" },
-                  { hex: "#F4E2C9", token: "accent-cream" },
-                ]}
-              />
-            </div>
+      {/* Brand palette: reassures advocates the kit is on-brand. */}
+      <section className="grid grid-cols-1 overflow-hidden rounded-lg border border-line bg-surface lg:grid-cols-2">
+        {/* Left: copy */}
+        <div className="space-y-3 p-6 lg:p-8">
+          <div className="flex items-center gap-2 text-text-3">
+            <Megaphone className="h-4 w-4" aria-hidden />
+            <span className="text-label">
+              Brand kit
+            </span>
           </div>
-        </CardContent>
-      </Card>
+          <h2 className="text-heading text-text">
+            Conduikt&apos;s palette, ready to share
+          </h2>
+          <p className="max-w-[64ch] text-body text-text-2">
+            One orange accent for actions, teal for data and good news, on
+            warm sand and deep ink. Every asset on this page already uses them.
+          </p>
+        </div>
+
+        {/* Right: swatches */}
+        <div className="space-y-4 border-t border-line bg-ground p-6 lg:border-l lg:border-t-0 lg:p-8">
+          <SwatchRow
+            label="Accent"
+            role="Orange"
+            swatches={[
+              { hex: "#B24E27", token: "accent" },
+              { hex: "#D9663A", token: "accent-display" },
+            ]}
+          />
+          <SwatchRow
+            label="Data and surfaces"
+            role="Teal and ink"
+            swatches={[
+              { hex: "#1F6B66", token: "teal" },
+              { hex: "#1E2A2E", token: "ink" },
+            ]}
+          />
+        </div>
+      </section>
 
       {/* Asset downloads */}
       <section className="space-y-4">
         <div>
-          <h2 className="text-h2 text-text-primary">Downloadable assets</h2>
-          <p className="text-small text-text-secondary mt-1">
-            Click to download. Drag straight into a DM, post, or email.
+          <h2 className="text-heading text-text">Downloadable assets</h2>
+          <p className="mt-1 text-body-s text-text-2">
+            Download, then drag straight into a DM, post or email.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <AssetCard
             title="One-pager PDF"
-            description="A4 portrait. The full pitch — features, pricing, CTA — for DMs, email attachments, or print."
+            description="A4 portrait. The full pitch (features, pricing, how to start) for DMs, email attachments or print."
             badge="A4 · 1 page"
             icon={FileText}
             preview={
@@ -166,10 +159,10 @@ export default function SharePage() {
                 data="/api/marketing-kit/pdf"
                 type="application/pdf"
                 aria-label="Conduikt one-pager PDF preview"
-                className="w-full h-full"
+                className="h-full w-full"
               >
-                <div className="flex h-full items-center justify-center text-text-tertiary text-caption">
-                  PDF preview unavailable — click download.
+                <div className="flex h-full items-center justify-center text-caption text-text-3">
+                  The preview isn&apos;t available here. Use Download.
                 </div>
               </object>
             }
@@ -187,7 +180,7 @@ export default function SharePage() {
               <img
                 src="/api/marketing-kit/social-card?variant=square"
                 alt="Conduikt square social card preview"
-                className="w-full h-full object-cover"
+                className="h-full w-full object-cover"
               />
             }
             downloadHref="/api/marketing-kit/social-card?variant=square"
@@ -196,7 +189,7 @@ export default function SharePage() {
 
           <AssetCard
             title="Landscape card"
-            description="1200 × 627 PNG. Optimised for X, LinkedIn, Facebook share previews."
+            description="1200 × 627 PNG. Sized for X, LinkedIn and Facebook link previews."
             badge="1200 × 627"
             icon={ImageIcon}
             preview={
@@ -204,7 +197,7 @@ export default function SharePage() {
               <img
                 src="/api/marketing-kit/social-card?variant=landscape"
                 alt="Conduikt landscape social card preview"
-                className="w-full h-full object-cover"
+                className="h-full w-full object-cover"
               />
             }
             downloadHref="/api/marketing-kit/social-card?variant=landscape"
@@ -216,10 +209,10 @@ export default function SharePage() {
       {/* Pitch templates */}
       <section className="space-y-4">
         <div>
-          <h2 className="text-h2 text-text-primary">Pitch templates</h2>
-          <p className="text-small text-text-secondary mt-1">
-            Copy, paste, personalise. Tweak as you like — the heart of
-            the pitch is the link to conduikt.com.
+          <h2 className="text-heading text-text">Pitch templates</h2>
+          <p className="mt-1 text-body-s text-text-2">
+            Copy, paste, make it yours. Change anything you like. The part
+            that matters is the link to conduikt.com.
           </p>
         </div>
 
@@ -231,47 +224,43 @@ export default function SharePage() {
             const overLimit = p.charLimit ? charCount > p.charLimit : false;
             return (
               <Card key={p.id}>
-                <CardContent>
-                  <div className="flex items-center justify-between gap-3 mb-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="rounded-md bg-accent-muted p-1.5">
-                        <Icon className="h-4 w-4 text-accent" />
-                      </div>
-                      <span className="text-body font-medium text-text-primary">
-                        {p.channel}
-                      </span>
-                      {p.charLimit && (
-                        <Badge variant={overLimit ? "error" : "secondary"}>
-                          {charCount}/{p.charLimit}
-                        </Badge>
-                      )}
-                    </div>
-                    <Button
-                      onClick={() => copyTo(p.text, p.id)}
-                      variant={copied ? "secondary" : "primary"}
-                      size="sm"
-                      className="shrink-0"
-                    >
-                      {copied ? (
-                        <>
-                          <Check className="h-4 w-4 mr-1.5" />
-                          Copied
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="h-4 w-4 mr-1.5" />
-                          Copy
-                        </>
-                      )}
-                    </Button>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+                    <Icon className="h-4 w-4 shrink-0 text-text-3" aria-hidden />
+                    <span className="text-title text-text">
+                      {p.channel}
+                    </span>
+                    {p.charLimit && (
+                      <Badge variant={overLimit ? "error" : "secondary"}>
+                        {charCount}/{p.charLimit}
+                      </Badge>
+                    )}
                   </div>
-                  <pre className="whitespace-pre-wrap break-words font-sans text-body text-text-secondary leading-relaxed bg-surface-1 rounded-md p-4 border border-border-subtle">
-                    {p.text}
-                  </pre>
-                  <p className="mt-2 text-caption text-text-tertiary">
-                    {p.hint}
-                  </p>
-                </CardContent>
+                  <Button
+                    onClick={() => copyTo(p.text, p.id)}
+                    variant={copied ? "outline" : "quiet"}
+                    size="sm"
+                    className="shrink-0"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="h-4 w-4 text-teal" />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4" />
+                        Copy
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <pre className="whitespace-pre-wrap break-words rounded-md border border-line bg-ground p-4 font-sans text-body text-text">
+                  {p.text}
+                </pre>
+                <p className="mt-2 text-caption text-text-3">
+                  {p.hint}
+                </p>
               </Card>
             );
           })}
@@ -292,11 +281,11 @@ function SwatchRow({
 }) {
   return (
     <div>
-      <div className="flex items-baseline justify-between mb-2">
-        <span className="text-caption uppercase tracking-wider text-text-tertiary">
+      <div className="mb-2 flex items-baseline justify-between">
+        <span className="text-label text-text-3">
           {label}
         </span>
-        <span className="text-caption text-text-secondary font-medium">
+        <span className="text-caption font-medium text-text-2">
           {role}
         </span>
       </div>
@@ -304,18 +293,19 @@ function SwatchRow({
         {swatches.map((sw) => (
           <div
             key={sw.hex}
-            className="flex-1 rounded-md border border-border-subtle overflow-hidden"
+            className="flex-1 overflow-hidden rounded-md border border-line"
           >
+            {/* Swatch fill is the brand value being shown, not UI colour. */}
             <div
               className="h-12"
               style={{ backgroundColor: sw.hex }}
               aria-label={`${role} ${sw.token}`}
             />
-            <div className="px-2 py-1.5 bg-surface-0">
-              <p className="text-caption text-text-tertiary uppercase tracking-wide">
+            <div className="bg-surface px-2 py-1.5">
+              <p className="text-label text-text-3">
                 {sw.token}
               </p>
-              <p className="text-caption font-mono text-text-secondary">
+              <p className="mt-1 font-mono text-caption text-text-2">
                 {sw.hex}
               </p>
             </div>
@@ -344,36 +334,32 @@ function AssetCard({
   downloadName: string;
 }) {
   return (
-    <Card className="overflow-hidden p-0">
-      <CardContent>
-        <div className="aspect-square bg-surface-1 border-b border-border-subtle relative overflow-hidden">
-          {preview}
-        </div>
-        <div className="p-4 space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Icon className="h-4 w-4 text-accent shrink-0" />
-              <h3 className="text-body font-medium text-text-primary truncate">
-                {title}
-              </h3>
-            </div>
-            <Badge variant="secondary" className="shrink-0">
-              {badge}
-            </Badge>
+    <div className="flex flex-col overflow-hidden rounded-lg border border-line bg-surface">
+      <div className="relative aspect-square overflow-hidden border-b border-line bg-ground">
+        {preview}
+      </div>
+      <div className="flex flex-1 flex-col gap-3 p-4">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <Icon className="h-4 w-4 shrink-0 text-text-3" aria-hidden />
+            <h3 className="truncate text-title text-text">
+              {title}
+            </h3>
           </div>
-          <p className="text-small text-text-secondary leading-relaxed">
-            {description}
-          </p>
-          <a
-            href={downloadHref}
-            download={downloadName}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-accent px-3 py-2 text-small font-medium text-surface-0 hover:bg-accent-hover transition-colors"
-          >
+          <Badge variant="secondary" className="shrink-0">
+            {badge}
+          </Badge>
+        </div>
+        <p className="text-body-s text-text-2">
+          {description}
+        </p>
+        <Button asChild variant="outline" className="mt-auto w-full">
+          <a href={downloadHref} download={downloadName}>
             <Download className="h-4 w-4" />
             Download
           </a>
-        </div>
-      </CardContent>
-    </Card>
+        </Button>
+      </div>
+    </div>
   );
 }

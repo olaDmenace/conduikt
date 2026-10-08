@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Metadata } from "next";
-import { ArrowRight, Calendar, Clock } from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+import { ArrowRight, Calendar, Clock } from "@/src/components/ui/lucide-icons";
 import { Badge } from "@/src/components/ui/badge";
 import { listPublishedBlogPosts } from "@/src/lib/blog/queries";
 
@@ -66,70 +65,61 @@ export default async function BlogIndexPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(blogJsonLd) }}
       />
 
-      <section className="pt-16 pb-12">
-        <div className="mx-auto max-w-4xl px-6 text-center">
-          <h1 className="text-hero text-text-primary leading-tight">
-            The Conduikt Blog
-          </h1>
-          <p className="mt-6 text-lg text-text-secondary max-w-2xl mx-auto leading-relaxed">
+      <section className="mx-auto w-full max-w-[1200px] px-4 pb-12 pt-16 md:px-10 md:pt-24">
+        <div className="flex max-w-[760px] flex-col gap-4">
+          <p className="text-label text-accent">Blog</p>
+          <h1 className="text-display-m text-text">The Conduikt blog</h1>
+          <p className="text-lg leading-relaxed text-text-2">
             Playbooks, teardowns, and field reports on running lean SaaS
             marketing with AI agents. Written for founders who ship.
           </p>
         </div>
       </section>
 
-      <section className="pb-24">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
-            {posts.map((post, i) => (
+      <section className="mx-auto w-full max-w-[1200px] px-4 pb-24 md:px-10">
+        <ul className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
+          {posts.map((post, i) => (
+            <li key={post.slug} className="flex">
               <Link
-                key={post.slug}
                 href={`/blog/${post.slug}`}
-                className="group block h-full"
+                className="group hover-card hover-card-quiet animate-in flex w-full flex-col rounded-lg border border-line bg-surface p-6 md:p-7"
+                style={{ animationDelay: `${i * 80}ms` }}
               >
-                <Card
-                  hover
-                  className="animate-in h-full flex flex-col group-hover:-translate-y-1"
-                  style={{ animationDelay: `${i * 80}ms` }}
-                >
-                  <CardContent className="flex flex-col h-full">
-                    <div className="flex flex-wrap items-center gap-2 mb-4">
-                      {post.tags.slice(0, 3).map((tag) => (
-                        <Badge key={tag} variant="secondary">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                    <h2 className="text-h2 text-text-primary mb-3 group-hover:text-accent transition-colors">
-                      {post.title}
-                    </h2>
-                    <p className="text-body text-text-secondary leading-relaxed mb-5 line-clamp-3">
-                      {post.excerpt}
-                    </p>
-                    <div className="mt-auto flex items-center justify-between flex-wrap gap-3 pt-2">
-                      <div className="flex items-center gap-4 text-small text-text-tertiary">
-                        <span className="flex items-center gap-1.5">
-                          <Calendar className="h-3.5 w-3.5" />
-                          {formatDate(post.date_published)}
-                        </span>
-                        {post.reading_time_minutes && (
-                          <span className="flex items-center gap-1.5">
-                            <Clock className="h-3.5 w-3.5" />
-                            {post.reading_time_minutes} min read
-                          </span>
-                        )}
-                      </div>
-                      <span className="inline-flex items-center gap-1.5 text-small font-medium text-accent">
-                        Read post
-                        <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+                <div className="mb-4 flex flex-wrap items-center gap-2">
+                  {post.tags.slice(0, 3).map((tag) => (
+                    <Badge key={tag} variant="secondary">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+                <h2 className="mb-3 text-heading text-text transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] group-hover:text-accent-hover">
+                  {post.title}
+                </h2>
+                <p className="mb-5 line-clamp-3 text-body text-text-2">
+                  {post.excerpt}
+                </p>
+                <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-2">
+                  <div className="flex items-center gap-4 text-caption text-text-3">
+                    <span className="flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {formatDate(post.date_published)}
+                    </span>
+                    {post.reading_time_minutes && (
+                      <span className="flex items-center gap-1.5">
+                        <Clock className="h-3.5 w-3.5" />
+                        {post.reading_time_minutes} min read
                       </span>
-                    </div>
-                  </CardContent>
-                </Card>
+                    )}
+                  </div>
+                  <span className="inline-flex items-center gap-1.5 text-body-s font-medium text-accent-hover">
+                    Read post
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </span>
+                </div>
               </Link>
-            ))}
-          </div>
-        </div>
+            </li>
+          ))}
+        </ul>
       </section>
     </div>
   );

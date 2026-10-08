@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/src/lib/supabase/client";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import { useToast } from "@/src/components/ui/toast";
-import { KeyRound, Eye, EyeOff, CheckCircle2, Loader2 } from "lucide-react";
+import { KeyRound, Eye, EyeOff, CheckCircle2 } from "@/src/components/ui/lucide-icons";
 import { mapSupabaseAuthError } from "@/src/lib/auth/error-map";
 
 interface ResetFieldErrors {
@@ -113,48 +112,44 @@ export default function ResetPasswordPage() {
     }
 
     setDone(true);
-    toast("Password updated successfully!", "success");
+    toast("Password updated.", "success");
     setTimeout(() => router.push("/dashboard"), 1500);
   }
 
   return (
     <div className="animate-in">
-      {/* Logo — links back to the homepage. */}
       <div className="mb-8 text-center">
-        <Link href="/" aria-label="Conduikt home" className="inline-block mb-4">
-          <Image
-            src="/conduikt-icon.png"
-            alt="Conduikt"
-            width={72}
-            height={72}
-            priority
-            className="mx-auto h-[72px] w-[72px] transition-transform duration-300 hover:scale-105"
-          />
-        </Link>
-        <h1 className="text-h1">Set new password</h1>
-        <p className="mt-2 text-body text-text-secondary">
+        <h1 className="text-display-s text-text">Set a new password</h1>
+        <p className="mt-3 text-body text-text-2">
           {done
-            ? "Password updated — redirecting you to the dashboard"
-            : "Choose a strong password for your account"}
+            ? "Password updated. Taking you to your dashboard."
+            : "Choose a strong password for your account."}
         </p>
       </div>
 
       {/* Verifying token */}
       {verifying && (
-        <div className="flex flex-col items-center gap-3 py-8 text-center">
-          <Loader2 className="h-8 w-8 text-accent animate-spin" />
-          <p className="text-body text-text-secondary">Verifying reset link…</p>
+        <div className="space-y-4" role="status" aria-label="Checking your reset link">
+          <div className="space-y-1.5">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div className="space-y-1.5">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <p className="text-center text-body-s text-text-3">Checking your reset link…</p>
         </div>
       )}
 
       {/* Invalid / expired link */}
       {!verifying && !sessionReady && !done && (
         <div className="space-y-6">
-          <div className="rounded-xl border border-error/20 bg-error/10 px-4 py-4 text-small text-error text-center">
+          <div role="alert" className="rounded-md border border-line bg-surface-2 px-4 py-4 text-center text-body-s text-danger">
             {error}
           </div>
           <Button
-            variant="secondary"
+            variant="outline"
             className="w-full"
             onClick={() => router.push("/forgot-password")}
           >
@@ -166,8 +161,8 @@ export default function ResetPasswordPage() {
       {/* Success */}
       {done && (
         <div className="flex flex-col items-center gap-3 py-8 text-center">
-          <CheckCircle2 className="h-12 w-12 text-success" />
-          <p className="text-body text-text-primary">
+          <CheckCircle2 className="h-6 w-6 text-teal" aria-hidden />
+          <p className="text-body text-text">
             Your password has been updated.
           </p>
         </div>
@@ -182,6 +177,7 @@ export default function ResetPasswordPage() {
               type={showPassword ? "text" : "password"}
               placeholder="At least 8 characters"
               autoComplete="new-password"
+              className="pr-10"
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
@@ -193,7 +189,7 @@ export default function ResetPasswordPage() {
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
-              className="absolute right-3 top-9 text-text-tertiary hover:text-text-primary transition-colors"
+              className="absolute right-3 top-[37px] text-text-3 transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] hover:text-text"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? (
@@ -221,21 +217,21 @@ export default function ResetPasswordPage() {
 
           {/* Strength hints */}
           {password.length > 0 && (
-            <ul className="space-y-1 text-small">
-              <li className={password.length >= 8 ? "text-success" : "text-text-tertiary"}>
+            <ul className="space-y-1 text-body-s">
+              <li className={password.length >= 8 ? "text-teal" : "text-text-3"}>
                 {password.length >= 8 ? "✓" : "·"} At least 8 characters
               </li>
-              <li className={/[A-Z]/.test(password) ? "text-success" : "text-text-tertiary"}>
+              <li className={/[A-Z]/.test(password) ? "text-teal" : "text-text-3"}>
                 {/[A-Z]/.test(password) ? "✓" : "·"} One uppercase letter
               </li>
-              <li className={/[0-9]/.test(password) ? "text-success" : "text-text-tertiary"}>
+              <li className={/[0-9]/.test(password) ? "text-teal" : "text-text-3"}>
                 {/[0-9]/.test(password) ? "✓" : "·"} One number
               </li>
             </ul>
           )}
 
           {error && (
-            <div className="rounded-lg border border-error/20 bg-error/10 px-4 py-3 text-small text-error">
+            <div role="alert" className="rounded-md border border-line bg-surface-2 px-4 py-3 text-body-s text-danger">
               {error}
             </div>
           )}
@@ -246,10 +242,7 @@ export default function ResetPasswordPage() {
             disabled={loading || !password || !confirmPassword}
           >
             {loading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Updating…
-              </>
+              "Updating…"
             ) : (
               <>
                 <KeyRound className="h-4 w-4" />

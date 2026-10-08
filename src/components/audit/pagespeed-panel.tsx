@@ -1,7 +1,7 @@
 "use client";
 
-import { Smartphone, Monitor, Zap } from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+import { Smartphone, Monitor, Zap } from "@/src/components/ui/lucide-icons";
+import { Card } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 
 interface PageSpeedMetrics {
@@ -41,23 +41,23 @@ function ScoreRing({ score, label }: { score: number | null; label: string }) {
   const tone = scoreTone(score);
   const colorVar =
     tone === "success"
-      ? "var(--success)"
+      ? "var(--teal)"
       : tone === "warning"
-      ? "var(--warning)"
+      ? "var(--accent)"
       : tone === "error"
-      ? "var(--error)"
-      : "var(--text-tertiary)";
+      ? "var(--danger)"
+      : "var(--text-3)";
   const pct = score ?? 0;
   return (
-    <div className="flex flex-col items-center gap-1">
+    <div className="flex flex-col items-center gap-1.5">
       <div className="relative flex h-16 w-16 items-center justify-center">
-        <svg viewBox="0 0 120 120" className="absolute inset-0">
+        <svg viewBox="0 0 120 120" className="absolute inset-0" aria-hidden>
           <circle
             cx="60"
             cy="60"
             r="52"
             fill="none"
-            stroke="var(--border-default)"
+            stroke="var(--surface-2)"
             strokeWidth="10"
           />
           <circle
@@ -68,26 +68,36 @@ function ScoreRing({ score, label }: { score: number | null; label: string }) {
             stroke={colorVar}
             strokeWidth="10"
             strokeDasharray={`${(pct / 100) * 327} 327`}
-            strokeLinecap="round"
             transform="rotate(-90 60 60)"
             className="transition-all duration-700"
           />
         </svg>
-        <span className="text-sm font-mono font-bold text-text-primary">
-          {score ?? "—"}
+        <span className="text-numeric text-xl text-text">
+          {score ?? "–"}
         </span>
       </div>
-      <span className="text-caption text-text-tertiary">{label}</span>
+      <span className="text-caption text-text-3">{label}</span>
     </div>
   );
 }
 
-function Metric({ label, value }: { label: string; value: string | null }) {
+function Metric({
+  label,
+  code,
+  value,
+}: {
+  label: string;
+  code: string;
+  value: string | null;
+}) {
   return (
-    <div className="rounded-lg border border-border-subtle bg-surface-0 px-3 py-2">
-      <p className="text-caption text-text-tertiary">{label}</p>
-      <p className="text-small font-mono text-text-primary mt-0.5">
-        {value ?? "—"}
+    <div className="rounded-md border border-line bg-ground px-3 py-2">
+      <p className="flex items-baseline justify-between gap-2 text-caption text-text-3">
+        <span>{label}</span>
+        <span className="font-mono">{code}</span>
+      </p>
+      <p className="mt-0.5 font-mono text-body-s text-text">
+        {value ?? "Not measured"}
       </p>
     </div>
   );
@@ -104,51 +114,51 @@ function StrategyBlock({
 }) {
   if (!metrics) {
     return (
-      <div className="rounded-lg border border-dashed border-border-default p-4">
-        <div className="flex items-center gap-2 mb-2">
-          <Icon className="h-4 w-4 text-text-tertiary" />
-          <h4 className="text-body font-medium text-text-secondary">{title}</h4>
+      <div className="rounded-md border border-dashed border-line p-4">
+        <div className="mb-2 flex items-center gap-2">
+          <Icon className="h-4 w-4 text-text-3" />
+          <h4 className="text-title text-text-2">{title}</h4>
         </div>
-        <p className="text-small text-text-tertiary">Not available</p>
+        <p className="text-body-s text-text-3">Google couldn&apos;t measure this one.</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg border border-border-default bg-surface-1 p-4">
-      <div className="flex items-center gap-2 mb-4">
-        <Icon className="h-4 w-4 text-accent" />
-        <h4 className="text-body font-medium text-text-primary">{title}</h4>
+    <div className="rounded-md border border-line p-4">
+      <div className="mb-4 flex items-center gap-2">
+        <Icon className="h-4 w-4 text-text-3" />
+        <h4 className="text-title text-text">{title}</h4>
       </div>
-      <div className="flex items-center justify-between gap-2 mb-4">
-        <ScoreRing score={metrics.performanceScore} label="Perf" />
-        <ScoreRing score={metrics.seoScore} label="SEO" />
-        <ScoreRing score={metrics.accessibilityScore} label="A11y" />
-        <ScoreRing score={metrics.bestPracticesScore} label="Best" />
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <ScoreRing score={metrics.performanceScore} label="Speed" />
+        <ScoreRing score={metrics.seoScore} label="Search" />
+        <ScoreRing score={metrics.accessibilityScore} label="Access" />
+        <ScoreRing score={metrics.bestPracticesScore} label="Build" />
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <Metric label="LCP" value={metrics.lcp} />
-        <Metric label="FCP" value={metrics.fcp} />
-        <Metric label="CLS" value={metrics.cls} />
-        <Metric label="TBT" value={metrics.tbt} />
-        {metrics.inp && <Metric label="INP" value={metrics.inp} />}
+        <Metric label="Main content shows" code="LCP" value={metrics.lcp} />
+        <Metric label="First paint" code="FCP" value={metrics.fcp} />
+        <Metric label="Layout shift" code="CLS" value={metrics.cls} />
+        <Metric label="Blocked time" code="TBT" value={metrics.tbt} />
+        {metrics.inp && (
+          <Metric label="Reacts to clicks" code="INP" value={metrics.inp} />
+        )}
         {metrics.speedIndex && (
-          <Metric label="Speed Index" value={metrics.speedIndex} />
+          <Metric label="Visual speed" code="SI" value={metrics.speedIndex} />
         )}
       </div>
       {metrics.opportunities.length > 0 && (
         <div className="mt-4">
-          <p className="text-caption text-text-tertiary mb-2">
-            Top opportunities
-          </p>
+          <p className="mb-2 text-label text-text-3">Biggest time savers</p>
           <ul className="space-y-1.5">
             {metrics.opportunities.slice(0, 3).map((opp) => (
               <li
                 key={opp.id}
-                className="flex items-start justify-between gap-3 text-small"
+                className="flex items-start justify-between gap-3 text-body-s"
               >
-                <span className="text-text-secondary">{opp.title}</span>
-                <Badge variant="secondary">
+                <span className="text-text-2">{opp.title}</span>
+                <Badge variant="success">
                   -{(opp.savingsMs / 1000).toFixed(1)}s
                 </Badge>
               </li>
@@ -165,28 +175,18 @@ export function PageSpeedPanel({ data }: { data: PageSpeedData }) {
 
   return (
     <Card className="mb-8 animate-in">
-      <CardContent className="py-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Zap className="h-5 w-5 text-accent" />
-          <h3 className="text-h3 text-text-primary">Page Speed (Lighthouse)</h3>
-        </div>
-        <p className="text-small text-text-secondary mb-5">
-          Real Core Web Vitals from Google PageSpeed Insights. Green is 90+,
-          orange 50–89, red below 50.
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <StrategyBlock
-            metrics={data.mobile}
-            icon={Smartphone}
-            title="Mobile"
-          />
-          <StrategyBlock
-            metrics={data.desktop}
-            icon={Monitor}
-            title="Desktop"
-          />
-        </div>
-      </CardContent>
+      <div className="mb-2 flex items-center gap-2">
+        <Zap className="h-5 w-5 text-text-3" />
+        <h3 className="text-heading text-text">How fast your site loads</h3>
+      </div>
+      <p className="mb-5 text-body-s text-text-2">
+        Measured by Google on real phones and computers. Each score is out of
+        100: 90 or more is good, 50 to 89 needs work, below 50 is poor.
+      </p>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <StrategyBlock metrics={data.mobile} icon={Smartphone} title="On phones" />
+        <StrategyBlock metrics={data.desktop} icon={Monitor} title="On computers" />
+      </div>
     </Card>
   );
 }

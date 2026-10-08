@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Loader2, Sparkles, Calendar, Save, Check } from "lucide-react";
+import { Sparkles, Calendar, Save, Check } from "@/src/components/ui/lucide-icons";
 import { Card, CardContent } from "@/src/components/ui/card";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { EmptyState } from "@/src/components/ui/empty-state";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -119,69 +121,61 @@ export default function XPlaybookPage() {
   return (
     <div>
       <PageHeader
-        title="X Playbook — bracket inputs"
+        title="X playbook: bracket inputs"
         description="Human-input values the daily cron substitutes into the X playbook's bracket posts. Fill these any time before the post fires; empty means the post is skipped that day."
       />
 
       <div className="space-y-6">
         {items === null ? (
-          <Card>
-            <CardContent className="flex justify-center py-12">
-              <Loader2 className="h-6 w-6 text-accent animate-spin" />
-            </CardContent>
-          </Card>
+          <div className="space-y-6" role="status" aria-label="Loading">
+            <Skeleton className="h-40 w-full" />
+            <Skeleton className="h-56 w-full" />
+            <Skeleton className="h-56 w-full" />
+          </div>
         ) : items.length === 0 ? (
-          <Card>
-            <CardContent className="p-6 text-text-secondary">
-              No bracket templates need human input right now.
-            </CardContent>
-          </Card>
+          <EmptyState title="No bracket templates need human input right now." />
         ) : (
           <>
             <Card className="animate-in">
-              <CardContent className="space-y-3 p-6">
-                <div className="flex items-center justify-between">
+              <CardContent className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <h2 className="text-h3 text-text-primary">Shipping digest</h2>
-                    <p className="text-small text-text-secondary mt-1">
+                    <h2 className="text-title text-text">Shipping digest</h2>
+                    <p className="mt-1 text-body-s text-text-2">
                       Tweet-worthy commits from Conduikt + PitchOdds, grouped by week. {suggestionsGeneratedAt && (
-                        <>Last refreshed {new Date(suggestionsGeneratedAt).toLocaleString()} — re-run <code className="font-mono text-data">node scripts/x-playbook/git-shipping-digest.mjs</code> to update.</>
+                        <>Last refreshed {new Date(suggestionsGeneratedAt).toLocaleString()} — re-run <code className="font-mono text-body-s">node scripts/x-playbook/git-shipping-digest.mjs</code> to update.</>
                       )}
                     </p>
                   </div>
                   <Button
                     size="sm"
-                    variant="secondary"
+                    variant="outline"
                     onClick={loadSuggestions}
                     disabled={suggestionsLoading}
                   >
-                    {suggestionsLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-4 w-4" />
-                    )}
-                    Refresh
+                    {!suggestionsLoading && <Sparkles className="h-4 w-4" />}
+                    {suggestionsLoading ? "Refreshing…" : "Refresh"}
                   </Button>
                 </div>
                 {suggestionGroups && suggestionGroups.length > 0 && (
-                  <div className="space-y-4 mt-3 max-h-[480px] overflow-y-auto">
+                  <div className="mt-3 max-h-[480px] space-y-4 overflow-y-auto">
                     {suggestionGroups.slice(0, 4).map((group) => (
                       <div key={group.weekKey}>
-                        <p className="text-tiny font-mono uppercase tracking-wider text-text-tertiary mb-2">
+                        <p className="mb-2 text-label text-text-3">
                           {group.weekKey} · {group.items.length} shipped
                         </p>
                         <ul className="space-y-2">
                           {group.items.map((s) => (
                             <li
                               key={`${s.repo}-${s.sha}`}
-                              className="flex items-start gap-2 rounded-lg border border-border-default bg-surface-2 p-3"
+                              className="flex items-start gap-2 rounded-md border border-line bg-surface-2 p-3"
                             >
                               <Badge variant="secondary" className="shrink-0">
                                 {s.repo}
                               </Badge>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-small text-text-primary">{s.clean}</p>
-                                <p className="text-tiny text-text-tertiary mt-0.5">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-body-s text-text">{s.clean}</p>
+                                <p className="mt-0.5 font-mono text-caption text-text-3">
                                   {new Date(s.date).toLocaleDateString()} · {s.sha}
                                 </p>
                               </div>
@@ -193,7 +187,7 @@ export default function XPlaybookPage() {
                   </div>
                 )}
                 {suggestionGroups && suggestionGroups.length === 0 && (
-                  <p className="text-small text-text-tertiary mt-2">
+                  <p className="mt-2 text-body-s text-text-3">
                     No tweet-worthy commits found. Re-run the digest script.
                   </p>
                 )}
@@ -219,24 +213,24 @@ export default function XPlaybookPage() {
                   className="animate-in"
                   style={{ animationDelay: `${60 * (idx + 1)}ms` }}
                 >
-                  <CardContent className="space-y-4 p-6">
+                  <CardContent className="space-y-4">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Badge variant="secondary">Day {item.day}</Badge>
                           <Badge variant="secondary">Slot {item.slot}</Badge>
-                          <Badge variant={allFilled ? "success" : "secondary"}>
+                          <Badge variant={allFilled ? "success" : "warning"}>
                             {allFilled ? "Ready" : "Needs input"}
                           </Badge>
                         </div>
-                        <p className="text-small text-text-secondary mt-2 flex items-center gap-1.5">
+                        <p className="mt-2 flex items-center gap-1.5 text-body-s text-text-2">
                           <Calendar className="h-3.5 w-3.5" />
                           Fires {fireLabel} WAT
                         </p>
                       </div>
                     </div>
 
-                    <div className="rounded-lg border border-border-default bg-surface-2 p-3 text-small text-text-secondary whitespace-pre-wrap font-mono">
+                    <div className="whitespace-pre-wrap rounded-md border border-line bg-surface-2 p-3 font-mono text-body-s text-text-2">
                       {item.preview}
                     </div>
 
@@ -250,9 +244,9 @@ export default function XPlaybookPage() {
                         const isLong = f.name === "MISTAKE" || f.name === "LESSON" || f.name === "CALIB_STAT";
                         return (
                           <div key={f.name} className="space-y-1.5">
-                            <label className="text-small text-text-secondary">
+                            <label className="text-body-s text-text-2">
                               {f.label}{" "}
-                              <code className="text-tiny font-mono text-text-tertiary">
+                              <code className="font-mono text-caption text-text-3">
                                 {"{"}{f.name}{"}"}
                               </code>
                             </label>
@@ -264,7 +258,7 @@ export default function XPlaybookPage() {
                                 }
                                 placeholder={f.hint}
                                 rows={2}
-                                className="w-full rounded-lg border border-border-strong bg-surface-0 px-4 py-3 text-text-primary placeholder:text-text-tertiary font-sans text-[0.9375rem] transition-all duration-150 focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-glow)] focus:outline-none resize-y"
+                                className="w-full resize-y rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                               />
                             ) : (
                               <Input
@@ -275,14 +269,14 @@ export default function XPlaybookPage() {
                                 placeholder={f.hint}
                               />
                             )}
-                            <div className="flex items-center justify-between text-tiny">
-                              <span className="text-text-tertiary">
+                            <div className="flex flex-wrap items-center justify-between gap-2 text-caption">
+                              <span className="text-text-3">
                                 {f.hint}
                               </span>
                               <div className="flex items-center gap-2">
                                 {f.name === "SHIPPED_FEATURE" && suggestions && suggestions.length > 0 && (
                                   <select
-                                    className="text-tiny rounded-md border border-border-default bg-surface-2 px-2 py-1 text-text-secondary"
+                                    className="h-8 rounded-md border border-line-strong bg-surface px-2 text-caption text-text-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                                     onChange={(e) => {
                                       const idx = parseInt(e.target.value, 10);
                                       if (!Number.isNaN(idx) && suggestions[idx]) {
@@ -302,18 +296,16 @@ export default function XPlaybookPage() {
                                 )}
                                 <Button
                                   size="sm"
-                                  variant={isDirty ? "primary" : "secondary"}
+                                  variant={isDirty ? "primary" : "outline"}
                                   onClick={() => save(item.ref, f.name)}
                                   disabled={isSaving || !isDirty}
                                 >
-                                  {isSaving ? (
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                  ) : isDirty ? (
+                                  {isSaving ? null : isDirty ? (
                                     <Save className="h-3 w-3" />
                                   ) : (
                                     <Check className="h-3 w-3" />
                                   )}
-                                  {isSaving ? "Saving" : isDirty ? "Save" : "Saved"}
+                                  {isSaving ? "Saving…" : isDirty ? "Save" : "Saved"}
                                 </Button>
                               </div>
                             </div>

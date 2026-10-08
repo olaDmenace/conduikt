@@ -3,7 +3,6 @@
 import { useState, useEffect, use } from "react";
 import {
   GitBranch,
-  Loader2,
   Copy,
   Check,
   Save,
@@ -15,9 +14,10 @@ import {
   ShieldCheck,
   Calculator,
   FileCheck2,
-} from "lucide-react";
+} from "@/src/components/ui/lucide-icons";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import { PageHeader } from "@/src/components/layout/page-header";
 import { ExpectationBanner } from "@/src/components/ui/expectation-banner";
 import { useToast } from "@/src/components/ui/toast";
@@ -318,8 +318,12 @@ export default function ABTestAgentPage({
 
   if (planLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 text-accent animate-spin" />
+      <div className="space-y-6" role="status" aria-label="Loading">
+        <Skeleton className="h-10 w-64" />
+        <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
+          <Skeleton className="h-[520px]" />
+          <Skeleton className="h-72" />
+        </div>
       </div>
     );
   }
@@ -328,23 +332,21 @@ export default function ABTestAgentPage({
     return (
       <div>
         <PageHeader
-          title="A/B Test Planner"
-          description="Rigorous A/B test design — hypothesis, sample size, and decision rules before you ship"
+          title="Split Test"
+          description="Plan a proper split test: what you expect, how many visitors you need, and how you'll decide"
         />
-        <div className="rounded-xl border border-border-default bg-surface-1 p-10 text-center animate-in">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-surface-2 mb-4">
-            <Lock className="h-7 w-7 text-text-tertiary" />
-          </div>
-          <h3 className="text-h3 text-text-primary mb-2">
-            Upgrade to unlock A/B Test Planner
+        <div className="rounded-lg border border-line bg-surface p-10 text-center animate-in">
+          <Lock className="mx-auto mb-4 h-6 w-6 text-text-3" />
+          <h3 className="text-heading text-text mb-2">
+            Upgrade to use Split Test
           </h3>
-          <p className="text-body text-text-secondary max-w-md mx-auto mb-6">
-            Design real experiments — hypothesis, sample size, decision rules — not just variant spinners.
+          <p className="text-body text-text-2 max-w-md mx-auto mb-6">
+            Plan real experiments with a clear guess, the right number of visitors and rules for calling a winner.
             Available on Growth and Agency plans.
           </p>
           <Button asChild>
             <Link href="/settings/billing">
-              Upgrade Plan <ArrowUpRight className="h-4 w-4 ml-1" />
+              Upgrade plan <ArrowUpRight className="h-4 w-4" />
             </Link>
           </Button>
         </div>
@@ -355,57 +357,55 @@ export default function ABTestAgentPage({
   return (
     <div>
       <PageHeader
-        title="A/B Test Planner"
-        description="Rigorous A/B test design — hypothesis, sample size, and decision rules before you ship"
+        title="Split Test"
+        description="Plan a proper split test: what you expect, how many visitors you need, and how you'll decide"
       />
 
       <ExpectationBanner
         storageKey="conduikt-expect-abtest"
-        message="Most tests fail not because the variant was bad, but because the test was designed wrong. Always plan sample size BEFORE you start running traffic."
+        message="Most tests fail because the test was planned badly, not because the new version was bad. Work out how many visitors you need before you start."
         details={[
-          "A test that can't reach its sample size in 4 weeks is usually worse than no test — the signal gets lost.",
-          "Pre-commit to success criteria. If you decide after the fact what 'winning' means, you're p-hacking.",
+          "A test that can't reach enough visitors in 4 weeks is usually worse than no test. The result gets lost in the noise.",
+          "Decide what counts as winning before you start. Deciding afterwards lets you fool yourself.",
           "Run time must be a multiple of 7 days to average out weekday effects.",
         ]}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
         {/* Input form */}
-        <div className="rounded-xl border border-border-default bg-surface-1 p-6 animate-in h-fit">
+        <div className="rounded-lg border border-line bg-surface p-6 animate-in h-fit">
           <div className="flex items-center gap-3 mb-5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-muted text-accent">
-              <GitBranch className="h-5 w-5" />
-            </div>
+            <GitBranch className="h-4 w-4 shrink-0 text-text-3" />
             <div>
-              <p className="text-body font-semibold text-text-primary">Test brief</p>
-              <p className="text-caption text-text-tertiary">
-                More inputs = more rigorous plan
+              <p className="text-title text-text">Test brief</p>
+              <p className="text-caption text-text-3">
+                The more you fill in, the sharper the plan
               </p>
             </div>
-            <Badge variant="secondary" className="ml-auto text-[10px]">
+            <Badge variant="growth" className="ml-auto">
               Growth+
             </Badge>
           </div>
 
           <Label>
-            Hypothesis or question <span className="text-warning">*</span>
+            Hypothesis or question <span className="text-accent">*</span>
           </Label>
           <textarea
             value={hypothesis}
             onChange={(e) => setHypothesis(e.target.value)}
             placeholder="e.g. Adding social proof above the CTA will increase signup rate by 10%"
             rows={3}
-            className="w-full rounded-lg border border-border-default bg-surface-0 px-3 py-2.5 text-body text-text-primary placeholder:text-text-tertiary focus:border-accent focus:ring-1 focus:ring-accent outline-none resize-none mb-4"
+            className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent resize-none mb-4"
           />
 
           <Label>
-            Surface being tested <span className="text-warning">*</span>
+            Surface being tested <span className="text-accent">*</span>
           </Label>
           <input
             value={surface}
             onChange={(e) => setSurface(e.target.value)}
             placeholder="e.g. Landing page hero, pricing page CTA"
-            className="w-full rounded-lg border border-border-default bg-surface-0 px-3 py-2.5 text-body text-text-primary placeholder:text-text-tertiary focus:border-accent focus:ring-1 focus:ring-accent outline-none mb-4"
+            className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent mb-4"
           />
 
           <Label>Baseline conversion rate</Label>
@@ -413,7 +413,7 @@ export default function ABTestAgentPage({
             value={baselineRate}
             onChange={(e) => setBaselineRate(e.target.value)}
             placeholder="e.g. 2.3% (last 30 days)"
-            className="w-full rounded-lg border border-border-default bg-surface-0 px-3 py-2.5 text-body text-text-primary placeholder:text-text-tertiary focus:border-accent focus:ring-1 focus:ring-accent outline-none mb-4"
+            className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent mb-4"
           />
 
           <Label>Weekly traffic to this surface</Label>
@@ -421,7 +421,7 @@ export default function ABTestAgentPage({
             value={trafficPerWeek}
             onChange={(e) => setTrafficPerWeek(e.target.value)}
             placeholder="e.g. 3000 visitors/week"
-            className="w-full rounded-lg border border-border-default bg-surface-0 px-3 py-2.5 text-body text-text-primary placeholder:text-text-tertiary focus:border-accent focus:ring-1 focus:ring-accent outline-none mb-4"
+            className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent mb-4"
           />
 
           <Label>Minimum detectable effect (relative)</Label>
@@ -432,9 +432,9 @@ export default function ABTestAgentPage({
               max={100}
               value={targetMDE}
               onChange={(e) => setTargetMDE(e.target.value)}
-              className="w-24 rounded-lg border border-border-default bg-surface-0 px-3 py-2.5 text-body text-text-primary focus:border-accent focus:ring-1 focus:ring-accent outline-none"
+              className="w-24 rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             />
-            <span className="text-small text-text-tertiary">% lift</span>
+            <span className="text-body-s text-text-3">% lift</span>
           </div>
 
           <Label>Variant ideas (optional)</Label>
@@ -443,7 +443,7 @@ export default function ABTestAgentPage({
             onChange={(e) => setVariantIdeas(e.target.value)}
             placeholder="Any specific variants you already have in mind"
             rows={2}
-            className="w-full rounded-lg border border-border-default bg-surface-0 px-3 py-2.5 text-body text-text-primary placeholder:text-text-tertiary focus:border-accent focus:ring-1 focus:ring-accent outline-none resize-none mb-5"
+            className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent resize-none mb-5"
           />
 
           <Button
@@ -451,57 +451,49 @@ export default function ABTestAgentPage({
             disabled={generating || !hypothesis.trim() || !surface.trim()}
             className="w-full"
           >
-            {generating ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            ) : (
-              <Sparkles className="h-4 w-4 mr-2" />
-            )}
-            {generating ? "Designing test..." : "Design Test Plan"}
+            {!generating && <Sparkles className="h-4 w-4" />}
+            {generating ? "Planning test…" : "Plan my test"}
           </Button>
         </div>
 
         {/* Output */}
         <div className="min-w-0">
           {!testPlan && !generating && (
-            <div className="rounded-xl border border-border-default bg-surface-1 py-20 px-6 text-center animate-in">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-surface-2 mb-4">
-                <Target className="h-6 w-6 text-text-tertiary" />
-              </div>
-              <p className="text-body font-medium text-text-secondary mb-1">
-                No test plan yet
-              </p>
-              <p className="text-small text-text-tertiary max-w-sm mx-auto">
-                Fill in the brief and hit Design. You&apos;ll get a hypothesis,
-                variants, sample size, and decision rules.
+            <div className="rounded-lg border border-dashed border-line py-20 px-6 text-center animate-in">
+              <Target className="mx-auto mb-4 h-8 w-8 text-text-3" />
+              <p className="text-body text-text-2 max-w-sm mx-auto">
+                No test plan yet. Fill in the brief and we&apos;ll write the
+                plan, the versions to try, the visitors you need and how to decide.
               </p>
             </div>
           )}
 
           {generating && !testPlan && (
-            <div className="rounded-xl border border-border-default bg-surface-1 p-10 animate-in text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-accent-muted mb-4">
-                <Loader2 className="h-6 w-6 text-accent animate-spin" />
-              </div>
-              <p className="text-body font-semibold text-text-primary">
-                Designing your test...
+            <div className="rounded-lg border border-line bg-surface p-10 animate-in text-center">
+              <p className="flex items-center justify-center gap-2 text-title text-text">
+                <span className="live-dot" aria-hidden />
+                Planning your test…
               </p>
-              <p className="text-small text-text-tertiary mt-2 max-w-sm mx-auto">
-                We&apos;re working out the hypothesis, sample size, variants, and
-                decision rules. This usually takes about 20 seconds.
+              <p className="text-body-s text-text-3 mt-2 max-w-sm mx-auto">
+                We&apos;re working out what to expect, how many visitors you need, the versions
+                to try and how to decide. This usually takes about 20 seconds.
               </p>
             </div>
           )}
 
           {!generating && !testPlan && rawText && (
-            <div className="rounded-xl border border-warning/30 bg-surface-1 p-6 animate-in space-y-2">
-              <p className="text-small text-text-primary font-medium">
-                We got a response but couldn&apos;t format it into a test plan. Try regenerating.
+            <div className="rounded-lg border border-accent bg-surface p-6 animate-in space-y-2">
+              <p className="text-body-s text-text font-medium">
+                We got an answer but couldn&apos;t turn it into a test plan.
               </p>
-              <details className="text-small">
-                <summary className="cursor-pointer text-text-tertiary hover:text-text-secondary">
+              <Button size="sm" variant="outline" onClick={handleGeneratePlan}>
+                Try again
+              </Button>
+              <details className="text-body-s">
+                <summary className="cursor-pointer text-text-3 hover:text-text">
                   Show raw output
                 </summary>
-                <pre className="mt-2 whitespace-pre-wrap text-caption text-text-secondary font-mono break-words max-h-[320px] overflow-y-auto">
+                <pre className="mt-2 whitespace-pre-wrap text-caption text-text-2 font-mono break-words max-h-[320px] overflow-y-auto">
                   {rawText}
                 </pre>
               </details>
@@ -514,20 +506,20 @@ export default function ABTestAgentPage({
               <ViabilityBanner viability={testPlan.sample_size.viability} note={testPlan.sample_size.viability_note} />
 
               {/* Hypothesis */}
-              <SectionCard title="Hypothesis" icon={Target}>
-                <p className="text-body text-text-primary leading-relaxed mb-3">
+              <SectionCard title="What we expect" icon={Target}>
+                <p className="text-body text-text leading-relaxed mb-3">
                   {testPlan.hypothesis.statement}
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="rounded-lg border border-border-subtle bg-surface-0 p-3">
-                    <p className="text-caption text-text-tertiary mb-1">Mechanism</p>
-                    <p className="text-small text-text-secondary">
+                  <div className="rounded-md border border-line bg-ground p-3">
+                    <p className="text-label text-text-3 mb-1.5">Why it should work</p>
+                    <p className="text-body-s text-text-2">
                       {testPlan.hypothesis.mechanism}
                     </p>
                   </div>
-                  <div className="rounded-lg border border-border-subtle bg-surface-0 p-3">
-                    <p className="text-caption text-text-tertiary mb-1">Kill criteria</p>
-                    <p className="text-small text-text-secondary">
+                  <div className="rounded-md border border-line bg-ground p-3">
+                    <p className="text-label text-text-3 mb-1.5">When to stop</p>
+                    <p className="text-body-s text-text-2">
                       {testPlan.hypothesis.kill_criteria}
                     </p>
                   </div>
@@ -535,41 +527,41 @@ export default function ABTestAgentPage({
               </SectionCard>
 
               {/* Sample size */}
-              <SectionCard title="Sample size & duration" icon={Calculator}>
+              <SectionCard title="Visitors needed and how long" icon={Calculator}>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
                   <KV label="Per variant" value={testPlan.sample_size.per_variant} />
-                  <KV label="Total required" value={testPlan.sample_size.total_required} />
+                  <KV label="Total needed" value={testPlan.sample_size.total_required} />
                   <KV
-                    label="Est. duration"
+                    label="About how long"
                     value={`${testPlan.sample_size.estimated_duration_days} days`}
                   />
                 </div>
-                <div className="rounded-lg border border-border-subtle bg-surface-0 p-3 mb-2">
-                  <p className="text-caption text-text-tertiary mb-1">Math</p>
-                  <p className="text-small font-mono text-text-secondary">
+                <div className="rounded-md border border-line bg-ground p-3 mb-2">
+                  <p className="text-label text-text-3 mb-1.5">Working</p>
+                  <p className="text-body-s font-mono text-text-2">
                     {testPlan.sample_size.math_shown}
                   </p>
                 </div>
-                <p className="text-caption text-text-tertiary italic">
+                <p className="text-caption text-text-3">
                   Based on: {testPlan.sample_size.traffic_estimate_used}
                 </p>
               </SectionCard>
 
               {/* Variants */}
-              <SectionCard title="Variants" icon={GitBranch}>
+              <SectionCard title="Versions to try" icon={GitBranch}>
                 {(() => {
                   const anyLoading = Object.values(copies).some((c) => c?.loading);
                   const allHaveCopy =
                     testPlan.variants.length > 0 &&
                     testPlan.variants.every((_, i) => copies[i]?.content);
                   return !allHaveCopy ? (
-                    <div className="mb-4 rounded-lg border border-accent/30 bg-accent-muted p-3 flex items-center justify-between gap-3 flex-wrap">
+                    <div className="mb-4 rounded-md border border-accent bg-surface p-3 flex items-center justify-between gap-3 flex-wrap">
                       <div className="min-w-0">
-                        <p className="text-small font-semibold text-text-primary">
-                          Generate ready-to-ship copy for each variant
+                        <p className="text-title text-text">
+                          Write the copy for each version
                         </p>
-                        <p className="text-caption text-text-tertiary mt-0.5">
-                          Turns the brief below into actual headlines, CTAs, or body copy you can paste in.
+                        <p className="text-caption text-text-3 mt-0.5">
+                          Turns each idea below into headlines, buttons or body copy you can paste in.
                         </p>
                       </div>
                       <Button
@@ -577,12 +569,8 @@ export default function ABTestAgentPage({
                         onClick={generateAllVariantCopy}
                         disabled={anyLoading}
                       >
-                        {anyLoading ? (
-                          <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
-                        ) : (
-                          <Sparkles className="h-3.5 w-3.5 mr-1" />
-                        )}
-                        {anyLoading ? "Generating..." : "Generate copy for all"}
+                        {!anyLoading && <Sparkles className="h-3.5 w-3.5" />}
+                        {anyLoading ? "Writing…" : "Write copy for all"}
                       </Button>
                     </div>
                   ) : null;
@@ -592,17 +580,14 @@ export default function ABTestAgentPage({
                   {testPlan.variants.map((v, i) => (
                     <div
                       key={i}
-                      className="rounded-lg border border-border-subtle bg-surface-0 p-4"
+                      className="rounded-md border border-line bg-ground p-4"
                     >
                       <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
                         <div className="flex items-center gap-2">
-                          <Badge
-                            variant="secondary"
-                            className="font-mono text-[10px]"
-                          >
+                          <Badge variant="secondary">
                             {v.label}
                           </Badge>
-                          <p className="text-body font-semibold text-text-primary">
+                          <p className="text-title text-text">
                             {v.description}
                           </p>
                         </div>
@@ -612,8 +597,8 @@ export default function ABTestAgentPage({
                               size="sm"
                               onClick={() => generateVariantCopy(i, v)}
                             >
-                              <Sparkles className="h-3.5 w-3.5 mr-1" />
-                              Generate copy
+                              <Sparkles className="h-3.5 w-3.5" />
+                              Write copy
                             </Button>
                           ) : null}
                           {copies[i]?.content && (
@@ -626,37 +611,37 @@ export default function ABTestAgentPage({
                                   toast("Copy copied", "info");
                                 }}
                               >
-                                <Copy className="h-3.5 w-3.5 mr-1" />
+                                <Copy className="h-3.5 w-3.5" />
                                 Copy
                               </Button>
                               <Button
                                 size="sm"
-                                variant="secondary"
+                                variant="outline"
                                 onClick={() => saveVariant(i, v)}
                               >
-                                <Save className="h-3.5 w-3.5 mr-1" />
+                                <Save className="h-3.5 w-3.5" />
                                 Save
                               </Button>
                             </>
                           )}
                         </div>
                       </div>
-                      <p className="text-small text-text-tertiary mb-2">
+                      <p className="text-body-s text-text-3 mb-2">
                         {v.rationale}
                       </p>
 
                       {copies[i]?.loading && (
-                        <div className="flex items-center gap-2 text-small text-text-tertiary mt-2">
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          Generating copy...
+                        <div className="flex items-center gap-2 text-body-s text-text-3 mt-2">
+                          <span className="live-dot" aria-hidden />
+                          Writing copy…
                         </div>
                       )}
                       {copies[i]?.content && (
-                        <div className="mt-3 rounded-lg border border-accent/20 bg-surface-1 p-3">
-                          <p className="text-caption text-accent font-medium uppercase tracking-wider mb-1.5">
-                            Ready-to-ship copy
+                        <div className="mt-3 rounded-md border border-line bg-surface p-3">
+                          <p className="text-label text-text-3 mb-1.5">
+                            Copy to use
                           </p>
-                          <p className="whitespace-pre-wrap text-body text-text-primary leading-relaxed">
+                          <p className="whitespace-pre-wrap text-body text-text leading-relaxed">
                             {copies[i].content}
                           </p>
                         </div>
@@ -668,43 +653,43 @@ export default function ABTestAgentPage({
 
               {/* Metrics */}
               <SectionCard title="Metrics" icon={ShieldCheck}>
-                <div className="rounded-lg border border-accent/30 bg-accent-muted p-3 mb-3">
-                  <p className="text-caption text-text-tertiary mb-0.5">
-                    Primary metric (decides the test)
+                <div className="rounded-md border border-accent bg-surface p-3 mb-3">
+                  <p className="text-label text-text-3 mb-1.5">
+                    Main number (decides the test)
                   </p>
-                  <p className="text-body font-semibold text-text-primary">
+                  <p className="text-title text-text">
                     {testPlan.metrics.primary.name}
                   </p>
-                  <p className="text-small text-text-secondary mt-1">
+                  <p className="text-body-s text-text-2 mt-1">
                     {testPlan.metrics.primary.definition}
                   </p>
-                  <div className="flex items-center gap-4 mt-2 text-caption text-text-tertiary">
-                    <span>Baseline: {testPlan.metrics.primary.baseline_rate}</span>
-                    <span>MDE: {testPlan.metrics.primary.minimum_detectable_effect}</span>
+                  <div className="flex flex-wrap items-center gap-4 mt-2 text-caption text-text-3">
+                    <span>Today: <span className="font-mono">{testPlan.metrics.primary.baseline_rate}</span></span>
+                    <span>Smallest lift we can see: <span className="font-mono">{testPlan.metrics.primary.minimum_detectable_effect}</span></span>
                   </div>
                 </div>
 
                 {testPlan.metrics.guardrails.length > 0 && (
                   <>
-                    <p className="text-caption text-text-tertiary mb-2">
-                      Guardrails (stop the test if violated)
+                    <p className="text-label text-text-3 mb-2">
+                      Safety checks (stop the test if broken)
                     </p>
                     <div className="space-y-2 mb-3">
                       {testPlan.metrics.guardrails.map((g, i) => (
                         <div
                           key={i}
-                          className="rounded-lg border border-border-subtle bg-surface-0 p-3"
+                          className="rounded-md border border-line bg-ground p-3"
                         >
                           <div className="flex items-center gap-2 mb-1">
-                            <AlertTriangle className="h-3.5 w-3.5 text-warning" />
-                            <p className="text-body font-medium text-text-primary">
+                            <AlertTriangle className="h-3.5 w-3.5 text-accent" />
+                            <p className="text-title text-text">
                               {g.name}
                             </p>
                           </div>
-                          <p className="text-small text-text-secondary">
+                          <p className="text-body-s text-text-2">
                             {g.why_it_matters}
                           </p>
-                          <p className="text-caption text-warning mt-1">
+                          <p className="text-caption text-accent mt-1">
                             Stop if: {g.stop_threshold}
                           </p>
                         </div>
@@ -715,16 +700,16 @@ export default function ABTestAgentPage({
 
                 {testPlan.metrics.secondary.length > 0 && (
                   <>
-                    <p className="text-caption text-text-tertiary mb-1.5">
-                      Secondary (directional only)
+                    <p className="text-label text-text-3 mb-1.5">
+                      Also watch (for direction only)
                     </p>
                     <ul className="space-y-0.5">
                       {testPlan.metrics.secondary.map((s, i) => (
                         <li
                           key={i}
-                          className="text-small text-text-secondary flex items-start gap-1.5"
+                          className="text-body-s text-text-2 flex items-start gap-1.5"
                         >
-                          <span className="text-accent shrink-0">·</span>
+                          <span className="text-text-3 shrink-0">·</span>
                           {s}
                         </li>
                       ))}
@@ -734,29 +719,29 @@ export default function ABTestAgentPage({
               </SectionCard>
 
               {/* Decision rules */}
-              <SectionCard title="Decision rules (pre-committed)" icon={FileCheck2}>
+              <SectionCard title="How we'll decide (agreed up front)" icon={FileCheck2}>
                 <div className="space-y-2">
-                  <div className="rounded-lg border border-success/30 bg-success/5 p-3">
-                    <p className="text-caption text-success mb-0.5 font-semibold">
-                      Success
+                  <div className="rounded-md border border-line bg-teal-soft p-3">
+                    <p className="text-label text-teal mb-1.5">
+                      Win
                     </p>
-                    <p className="text-small text-text-secondary">
+                    <p className="text-body-s text-text-2">
                       {testPlan.decision_rules.success}
                     </p>
                   </div>
-                  <div className="rounded-lg border border-error/30 bg-error/5 p-3">
-                    <p className="text-caption text-error mb-0.5 font-semibold">
-                      Failure
+                  <div className="rounded-md border border-line bg-surface-2 p-3">
+                    <p className="text-label text-danger mb-1.5">
+                      Lose
                     </p>
-                    <p className="text-small text-text-secondary">
+                    <p className="text-body-s text-text-2">
                       {testPlan.decision_rules.failure}
                     </p>
                   </div>
-                  <div className="rounded-lg border border-border-subtle bg-surface-0 p-3">
-                    <p className="text-caption text-text-tertiary mb-0.5 font-semibold">
-                      Inconclusive
+                  <div className="rounded-md border border-line bg-ground p-3">
+                    <p className="text-label text-text-3 mb-1.5">
+                      No clear result
                     </p>
-                    <p className="text-small text-text-secondary">
+                    <p className="text-body-s text-text-2">
                       {testPlan.decision_rules.inconclusive}
                     </p>
                   </div>
@@ -765,18 +750,18 @@ export default function ABTestAgentPage({
 
               {/* Risks */}
               {testPlan.risks.length > 0 && (
-                <SectionCard title="Risks & mitigations" icon={AlertTriangle} accent="warning">
+                <SectionCard title="Risks and what to do" icon={AlertTriangle} accent="warning">
                   <div className="space-y-2">
                     {testPlan.risks.map((r, i) => (
                       <div
                         key={i}
-                        className="rounded-lg border border-border-subtle bg-surface-0 p-3"
+                        className="rounded-md border border-line bg-ground p-3"
                       >
-                        <p className="text-body font-medium text-text-primary mb-1">
+                        <p className="text-title text-text mb-1">
                           {r.risk}
                         </p>
-                        <p className="text-small text-text-secondary">
-                          Mitigation: {r.mitigation}
+                        <p className="text-body-s text-text-2">
+                          What to do: {r.mitigation}
                         </p>
                       </div>
                     ))}
@@ -786,14 +771,14 @@ export default function ABTestAgentPage({
 
               {/* Shipping checklist */}
               {testPlan.shipping_checklist.length > 0 && (
-                <SectionCard title="Shipping checklist" icon={FileCheck2}>
+                <SectionCard title="Before you launch" icon={FileCheck2}>
                   <ul className="space-y-1.5">
                     {testPlan.shipping_checklist.map((item, i) => (
                       <li
                         key={i}
-                        className="text-small text-text-secondary flex items-start gap-2"
+                        className="text-body-s text-text-2 flex items-start gap-2"
                       >
-                        <span className="text-accent shrink-0">·</span>
+                        <span className="text-text-3 shrink-0">·</span>
                         {item}
                       </li>
                     ))}
@@ -803,11 +788,11 @@ export default function ABTestAgentPage({
 
               {/* Copy plan as text */}
               <div className="flex justify-end">
-                <Button variant="secondary" size="sm" onClick={copyPlanToClipboard}>
+                <Button variant="outline" size="sm" onClick={copyPlanToClipboard}>
                   {copiedPlan ? (
-                    <Check className="h-3.5 w-3.5 mr-1 text-success" />
+                    <Check className="h-3.5 w-3.5 text-teal" />
                   ) : (
-                    <Copy className="h-3.5 w-3.5 mr-1" />
+                    <Copy className="h-3.5 w-3.5" />
                   )}
                   Copy plan
                 </Button>
@@ -826,7 +811,7 @@ export default function ABTestAgentPage({
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
-    <label className="text-small font-medium text-text-secondary mb-1.5 block">
+    <label className="text-body-s font-medium text-text-2 mb-1.5 block">
       {children}
     </label>
   );
@@ -841,38 +826,38 @@ function ViabilityBanner({
 }) {
   const cfg = {
     ok: {
-      border: "border-success/30",
-      bg: "bg-success/5",
+      border: "border-line",
+      bg: "bg-teal-soft",
       icon: ShieldCheck,
-      iconColor: "text-success",
-      label: "Test is viable",
+      iconColor: "text-teal",
+      label: "This test can work",
     },
     borderline: {
-      border: "border-warning/30",
-      bg: "bg-warning/5",
+      border: "border-accent",
+      bg: "bg-accent-soft",
       icon: AlertTriangle,
-      iconColor: "text-warning",
-      label: "Borderline viable",
+      iconColor: "text-accent",
+      label: "This test is borderline",
     },
     insufficient_traffic: {
-      border: "border-error/30",
-      bg: "bg-error/5",
+      border: "border-line",
+      bg: "bg-surface-2",
       icon: AlertTriangle,
-      iconColor: "text-error",
-      label: "Insufficient traffic",
+      iconColor: "text-danger",
+      label: "Not enough visitors",
     },
   }[viability];
 
   const Icon = cfg.icon;
   return (
     <div
-      className={`rounded-xl border ${cfg.border} ${cfg.bg} p-4 flex items-start gap-3`}
+      className={`rounded-lg border ${cfg.border} ${cfg.bg} p-4 flex items-start gap-3`}
     >
       <Icon className={`h-5 w-5 shrink-0 mt-0.5 ${cfg.iconColor}`} />
       <div>
-        <p className="text-body font-semibold text-text-primary">{cfg.label}</p>
+        <p className="text-title text-text">{cfg.label}</p>
         {note && (
-          <p className="text-small text-text-secondary mt-1">{note}</p>
+          <p className="text-body-s text-text-2 mt-1">{note}</p>
         )}
       </div>
     </div>
@@ -892,15 +877,15 @@ function SectionCard({
 }) {
   const iconColor =
     accent === "warning"
-      ? "text-warning"
+      ? "text-accent"
       : accent === "success"
-        ? "text-success"
-        : "text-accent";
+        ? "text-teal"
+        : "text-text-3";
   return (
-    <div className="rounded-xl border border-border-default bg-surface-1 p-5">
+    <div className="rounded-lg border border-line bg-surface p-5">
       <div className="flex items-center gap-2 mb-3">
         {Icon && <Icon className={`h-4 w-4 ${iconColor}`} />}
-        <h3 className="text-body font-semibold text-text-primary">{title}</h3>
+        <h3 className="text-heading text-text">{title}</h3>
       </div>
       {children}
     </div>
@@ -909,9 +894,9 @@ function SectionCard({
 
 function KV({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-border-subtle bg-surface-0 p-3">
-      <p className="text-caption text-text-tertiary mb-0.5">{label}</p>
-      <p className="text-body font-semibold text-text-primary">{value}</p>
+    <div className="rounded-md border border-line bg-ground p-3">
+      <p className="text-label text-text-3 mb-1.5">{label}</p>
+      <p className="text-numeric text-[22px] text-text">{value}</p>
     </div>
   );
 }

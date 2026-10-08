@@ -10,7 +10,7 @@ import {
   DollarSign,
   Receipt,
   PiggyBank,
-} from "lucide-react";
+} from "@/src/components/ui/lucide-icons";
 
 export const dynamic = "force-dynamic";
 
@@ -36,14 +36,14 @@ export default async function AdminFinancePage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-h1 text-text-primary">Finance</h1>
-        <p className="text-body text-text-secondary mt-1">
+        <h1 className="text-display-s text-text">Finance</h1>
+        <p className="mt-1 text-body text-text-2">
           Revenue, subscriptions, and payout ledger.
         </p>
       </div>
 
       {/* Top KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
           icon={<DollarSign className="h-4 w-4" />}
           label="MRR"
@@ -67,48 +67,48 @@ export default async function AdminFinancePage() {
           icon={<Receipt className="h-4 w-4" />}
           label="AI cost run-rate"
           value={`$${usage.totalCost.toFixed(2)}`}
-          sub={`${usage.totalGenerations.toLocaleString()} gens`}
+          sub={`${usage.totalGenerations.toLocaleString()} pieces of content`}
         />
       </div>
 
       {/* MRR breakdown by plan */}
-      <div className="rounded-xl border border-border-default bg-surface-1 p-6">
+      <div className="rounded-lg border border-line bg-surface p-6">
         <div className="flex items-center gap-2 mb-4">
-          <Wallet className="h-5 w-5 text-accent" />
-          <h2 className="text-h3 text-text-primary">Recurring Revenue by Plan</h2>
+          <Wallet className="h-5 w-5 text-text-3" />
+          <h2 className="text-title text-text">Recurring revenue by plan</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-border-subtle">
-                <th className="text-caption text-text-tertiary pb-3 pr-4">Plan</th>
-                <th className="text-caption text-text-tertiary pb-3 pr-4 text-right">Price</th>
-                <th className="text-caption text-text-tertiary pb-3 pr-4 text-right">Subscribers</th>
-                <th className="text-caption text-text-tertiary pb-3 text-right">MRR</th>
+              <tr className="border-b border-line">
+                <th className="text-label text-text-3 pb-3 pr-4">Plan</th>
+                <th className="text-label text-text-3 pb-3 pr-4 text-right">Price</th>
+                <th className="text-label text-text-3 pb-3 pr-4 text-right">Subscribers</th>
+                <th className="text-label text-text-3 pb-3 text-right">MRR</th>
               </tr>
             </thead>
             <tbody>
               {planRows.map((row) => (
-                <tr key={row.plan} className="border-b border-border-subtle last:border-0">
-                  <td className="py-3 pr-4 text-body text-text-primary capitalize">{row.plan}</td>
-                  <td className="py-3 pr-4 text-right text-small font-mono text-text-secondary">
+                <tr key={row.plan} className="border-b border-line last:border-0">
+                  <td className="py-3 pr-4 text-body text-text capitalize">{row.plan}</td>
+                  <td className="py-3 pr-4 text-right text-body-s font-mono text-text-2">
                     ${row.price}/mo
                   </td>
-                  <td className="py-3 pr-4 text-right text-small font-mono text-text-primary">
+                  <td className="py-3 pr-4 text-right text-body-s font-mono text-text">
                     {row.count}
                   </td>
-                  <td className="py-3 text-right text-small font-mono text-accent">
+                  <td className="py-3 text-right font-mono text-body-s text-teal">
                     ${row.mrr.toLocaleString()}
                   </td>
                 </tr>
               ))}
               <tr className="bg-surface-2">
-                <td className="py-3 pr-4 text-small font-medium text-text-primary">Total</td>
+                <td className="py-3 pr-4 text-body-s font-medium text-text">Total</td>
                 <td className="py-3 pr-4"></td>
-                <td className="py-3 pr-4 text-right text-small font-mono text-text-primary">
+                <td className="py-3 pr-4 text-right text-body-s font-mono text-text">
                   {planRows.reduce((s, r) => s + r.count, 0)}
                 </td>
-                <td className="py-3 text-right text-small font-mono text-accent font-semibold">
+                <td className="py-3 text-right font-mono text-body-s font-medium text-teal">
                   ${finance.mrr.toLocaleString()}
                 </td>
               </tr>
@@ -118,10 +118,10 @@ export default async function AdminFinancePage() {
       </div>
 
       {/* Referral revenue share summary */}
-      <div className="rounded-xl border border-border-default bg-surface-1 p-6">
+      <div className="rounded-lg border border-line bg-surface p-6">
         <div className="flex items-center gap-2 mb-4">
-          <PiggyBank className="h-5 w-5 text-accent" />
-          <h2 className="text-h3 text-text-primary">Referral Revenue Share</h2>
+          <PiggyBank className="h-5 w-5 text-text-3" />
+          <h2 className="text-title text-text">Referral revenue share</h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <MiniStat
@@ -145,42 +145,42 @@ export default async function AdminFinancePage() {
       </div>
 
       {/* Recent payouts */}
-      <div className="rounded-xl border border-border-default bg-surface-1 p-6">
+      <div className="rounded-lg border border-line bg-surface p-6">
         <div className="flex items-center gap-2 mb-4">
-          <Receipt className="h-5 w-5 text-accent" />
-          <h2 className="text-h3 text-text-primary">Recent Payouts</h2>
+          <Receipt className="h-5 w-5 text-text-3" />
+          <h2 className="text-title text-text">Recent payouts</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-border-subtle">
-                <th className="text-caption text-text-tertiary pb-3 pr-4">Date</th>
-                <th className="text-caption text-text-tertiary pb-3 pr-4">Partner</th>
-                <th className="text-caption text-text-tertiary pb-3 pr-4">Method</th>
-                <th className="text-caption text-text-tertiary pb-3 text-right">Amount</th>
+              <tr className="border-b border-line">
+                <th className="text-label text-text-3 pb-3 pr-4">Date</th>
+                <th className="text-label text-text-3 pb-3 pr-4">Partner</th>
+                <th className="text-label text-text-3 pb-3 pr-4">Method</th>
+                <th className="text-label text-text-3 pb-3 text-right">Amount</th>
               </tr>
             </thead>
             <tbody>
               {payouts.slice(0, 10).map((p) => (
-                <tr key={p.id} className="border-b border-border-subtle last:border-0">
-                  <td className="py-3 pr-4 text-small text-text-secondary">
+                <tr key={p.id} className="border-b border-line last:border-0">
+                  <td className="py-3 pr-4 text-body-s text-text-2">
                     {new Date(p.created_at).toLocaleDateString()}
                   </td>
                   <td className="py-3 pr-4">
-                    <div className="text-small text-text-primary">{p.partner_name}</div>
-                    <div className="text-[0.75rem] text-text-tertiary">{p.partner_email}</div>
+                    <div className="text-body-s text-text">{p.partner_name}</div>
+                    <div className="text-caption text-text-3">{p.partner_email}</div>
                   </td>
-                  <td className="py-3 pr-4 text-small text-text-secondary capitalize">
-                    {p.method ?? "—"}
+                  <td className="py-3 pr-4 text-body-s text-text-2 capitalize">
+                    {p.method ?? "Not set"}
                   </td>
-                  <td className="py-3 text-right text-small font-mono text-text-primary">
+                  <td className="py-3 text-right text-body-s font-mono text-text">
                     ${Number(p.amount_usd).toFixed(2)}
                   </td>
                 </tr>
               ))}
               {payouts.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="py-6 text-center text-text-tertiary text-body">
+                  <td colSpan={4} className="py-6 text-center text-body text-text-3">
                     No payouts yet. Record one from the Referrals page.
                   </td>
                 </tr>
@@ -190,7 +190,7 @@ export default async function AdminFinancePage() {
         </div>
       </div>
 
-      <p className="text-caption text-text-tertiary">
+      <p className="text-caption text-text-3">
         Hint: MRR is computed from current plan subscriptions in the profiles table.
         Stripe integration will replace this estimate with actual billed revenue once wired up.
         Gross margin proxy: MRR − AI run-rate = $
@@ -214,19 +214,19 @@ function KpiCard({
   accent?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-border-default bg-surface-1 p-5">
-      <div className="flex items-center gap-2 text-text-tertiary mb-1">
+    <div className="bg-surface p-5">
+      <div className="mb-2 flex items-center gap-2 text-text-3">
         {icon}
-        <span className="text-caption">{label}</span>
+        <span className="text-label">{label}</span>
       </div>
       <p
-        className={`text-[1.75rem] font-semibold font-mono leading-none ${
-          accent ? "text-accent" : "text-text-primary"
+        className={`text-numeric text-[1.75rem] ${
+          accent ? "text-teal" : "text-text"
         }`}
       >
         {value}
       </p>
-      {sub && <p className="text-caption text-text-tertiary mt-1.5">{sub}</p>}
+      {sub && <p className="mt-1.5 text-caption text-text-3">{sub}</p>}
     </div>
   );
 }
@@ -242,9 +242,9 @@ function MiniStat({
 }) {
   return (
     <div>
-      <div className="text-caption text-text-tertiary mb-1">{label}</div>
+      <div className="mb-1 text-label text-text-3">{label}</div>
       <div
-        className={`text-h3 font-mono ${warn ? "text-warning" : "text-text-primary"}`}
+        className={`text-numeric text-[1.375rem] ${warn ? "text-accent" : "text-text"}`}
       >
         {value}
       </div>

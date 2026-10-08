@@ -2,8 +2,9 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Twitter, Linkedin, Facebook, Music2, CheckCircle2, AlertCircle, Loader2, Link2, Unlink, Search, Clock, Pencil, BarChart3, Video } from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+import { Twitter, Linkedin, Facebook, Music2, CheckCircle2, AlertCircle, Link2, Unlink, Search, Clock, Pencil } from "@/src/components/ui/lucide-icons";
+import { Card } from "@/src/components/ui/card";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
@@ -54,13 +55,13 @@ function IntegrationsContent() {
   useEffect(() => {
     const connected = searchParams.get("connected");
     const error = searchParams.get("error");
-    if (connected === "x") toast("X account connected successfully!", "success");
-    if (connected === "linkedin") toast("LinkedIn account connected successfully!", "success");
-    if (connected === "facebook") toast("Facebook Page connected successfully!", "success");
-    if (connected === "tiktok") toast("TikTok account connected successfully!", "success");
-    if (connected === "gsc") toast("Google Search Console connected!", "success");
-    if (connected === "ga4") toast("Google Analytics 4 connected!", "success");
-    if (connected === "youtube") toast("YouTube channel connected!", "success");
+    if (connected === "x") toast("X account connected", "success");
+    if (connected === "linkedin") toast("LinkedIn account connected", "success");
+    if (connected === "facebook") toast("Facebook Page connected", "success");
+    if (connected === "tiktok") toast("TikTok account connected", "success");
+    if (connected === "gsc") toast("Google Search Console connected", "success");
+    if (connected === "ga4") toast("Google Analytics 4 connected", "success");
+    if (connected === "youtube") toast("YouTube channel connected", "success");
     if (error) toast(decodeURIComponent(error), "error");
     // Clean URL
     window.history.replaceState({}, "", "/settings/integrations");
@@ -101,7 +102,7 @@ function IntegrationsContent() {
       const res = await fetch("/api/integrations/gsc/sites");
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setGscSitesError(data.error || "Failed to load GSC sites");
+        setGscSitesError(data.error || "We couldn't load your Search Console sites. Close this and try again.");
         return;
       }
       setGscSites(data.sites ?? []);
@@ -121,7 +122,7 @@ function IntegrationsContent() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast(data.error || "Failed to switch site", "error");
+        toast(data.error || "We couldn't switch the site. Try again.", "error");
         return;
       }
       setGscCurrent(siteUrl);
@@ -130,7 +131,7 @@ function IntegrationsContent() {
           a.platform === "gsc" ? { ...a, platform_username: siteUrl } : a
         )
       );
-      toast(`GSC site set to ${siteUrl}`, "success");
+      toast(`Search Console site set to ${siteUrl}`, "success");
       setGscPickerOpen(false);
     } finally {
       setGscSwitching(null);
@@ -145,7 +146,7 @@ function IntegrationsContent() {
       .eq("platform", platform);
 
     if (error) {
-      toast("Failed to disconnect account", "error");
+      toast("We couldn't disconnect that account. Try again.", "error");
     } else {
       const names: Record<string, string> = { x: "X", linkedin: "LinkedIn", facebook: "Facebook", tiktok: "TikTok", gsc: "Google Search Console", ga4: "Google Analytics 4", youtube: "YouTube" };
       toast(`${names[platform] ?? platform} disconnected`, "info");
@@ -180,7 +181,7 @@ function IntegrationsContent() {
       key: "x",
       name: "X (Twitter)",
       icon: Twitter,
-      description: "Post content directly to X from the Content Studio.",
+      description: "Post to X straight from the Content Studio.",
       connectHref: "/api/integrations/x/connect",
       account: xAccount,
       comingSoon: false,
@@ -189,7 +190,7 @@ function IntegrationsContent() {
       key: "linkedin",
       name: "LinkedIn",
       icon: Linkedin,
-      description: "Publish posts to your LinkedIn profile from the Content Studio.",
+      description: "Post to your LinkedIn profile from the Content Studio.",
       connectHref: "/api/integrations/linkedin/connect",
       account: liAccount,
       comingSoon: false,
@@ -198,7 +199,7 @@ function IntegrationsContent() {
       key: "facebook",
       name: "Facebook Page",
       icon: Facebook,
-      description: "Publish text and image posts to your Facebook Page from the Content Studio.",
+      description: "Post text and images to your Facebook Page from the Content Studio.",
       connectHref: "/api/integrations/facebook/connect",
       account: fbAccount,
       comingSoon: process.env.NEXT_PUBLIC_ENABLE_FACEBOOK_INTEGRATION !== "true",
@@ -207,7 +208,7 @@ function IntegrationsContent() {
       key: "tiktok",
       name: "TikTok",
       icon: Music2,
-      description: "Send AI-generated video ads to your TikTok inbox as drafts — review and publish in the TikTok app.",
+      description: "Send video ads to your TikTok inbox as drafts. Review and publish them in the TikTok app.",
       connectHref: "/api/integrations/tiktok/connect",
       account: ttAccount,
       comingSoon: false,
@@ -229,98 +230,90 @@ function IntegrationsContent() {
     return (
       <Card
         key={integration.key}
-        className="animate-in"
+        className="animate-in flex flex-col gap-4 sm:flex-row sm:items-center"
         style={{ animationDelay: `${i * 60}ms` }}
       >
-        <CardContent className="flex flex-col sm:flex-row sm:items-center gap-4 py-6">
-          <div className="flex items-center gap-4 flex-1 min-w-0">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-border-default bg-surface-2">
-              <integration.icon className="h-5 w-5 text-text-primary" />
+        <div className="flex min-w-0 flex-1 items-center gap-4">
+          <integration.icon className="h-5 w-5 shrink-0 text-text" aria-hidden />
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-title text-text">{integration.name}</h3>
+              {connected && !expired ? (
+                <Badge variant="success">
+                  <CheckCircle2 className="h-3 w-3" aria-hidden />
+                  Connected
+                </Badge>
+              ) : connected && expired ? (
+                <Badge variant="warning">
+                  <AlertCircle className="h-3 w-3" aria-hidden />
+                  Reconnect needed
+                </Badge>
+              ) : integration.comingSoon ? (
+                <Badge variant="secondary">
+                  <Clock className="h-3 w-3" aria-hidden />
+                  Coming soon
+                </Badge>
+              ) : (
+                <Badge variant="secondary">Not connected</Badge>
+              )}
             </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-h3 text-text-primary">{integration.name}</h3>
-                {connected && !expired ? (
-                  <Badge variant="success">
-                    <CheckCircle2 className="h-3 w-3 mr-1" />
-                    Connected
-                  </Badge>
-                ) : connected && expired ? (
-                  <Badge variant="warning">
-                    <AlertCircle className="h-3 w-3 mr-1" />
-                    Reconnect needed
-                  </Badge>
-                ) : integration.comingSoon ? (
-                  <Badge variant="secondary">
-                    <Clock className="h-3 w-3 mr-1" />
-                    Coming soon
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary">Not connected</Badge>
-                )}
-              </div>
-              <p className="mt-0.5 text-small text-text-secondary">
-                {connected && integration.account?.platform_username
-                  ? `@${integration.account.platform_username}`
-                  : integration.comingSoon
-                    ? "Awaiting Meta business verification. We'll email you when this is live."
-                    : integration.description}
-              </p>
-            </div>
+            <p className="mt-0.5 text-body-s text-text-2">
+              {connected && integration.account?.platform_username
+                ? `@${integration.account.platform_username}`
+                : integration.comingSoon
+                  ? "Waiting on Meta business verification. We'll email you when this is live."
+                  : integration.description}
+            </p>
           </div>
+        </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            {connected ? (
-              <>
-                {integration.key === "gsc" && !expired && (
-                  <Button variant="secondary" size="sm" onClick={openGscPicker}>
-                    <Pencil className="h-4 w-4" />
-                    Change site
-                  </Button>
-                )}
-                {/* Row exists but tokens have been nulled by the refresh
-                    helper — give the user a direct Reconnect action that
-                    reruns OAuth. The callback upserts on (user_id,
-                    platform) so the same row gets fresh tokens in place,
-                    AND any recently-failed scheduled posts on this
-                    channel auto-retry. */}
-                {expired && integration.connectHref && (
-                  <Button size="sm" asChild>
-                    <a href={integration.connectHref}>
-                      <Link2 className="h-4 w-4" />
-                      Reconnect
-                    </a>
-                  </Button>
-                )}
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => disconnect(integration.key)}
-                  disabled={disconnecting === integration.key}
-                >
-                  {disconnecting === integration.key ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Unlink className="h-4 w-4" />
-                  )}
-                  Disconnect
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {connected ? (
+            <>
+              {integration.key === "gsc" && !expired && (
+                <Button variant="quiet" size="sm" onClick={openGscPicker}>
+                  <Pencil className="h-4 w-4" />
+                  Change site
                 </Button>
-              </>
-            ) : integration.comingSoon ? (
-              <Button variant="secondary" size="sm" disabled>
-                <Clock className="h-4 w-4" />
-                Coming soon
+              )}
+              {/* Row exists but tokens have been nulled by the refresh
+                  helper: give the user a direct Reconnect action that
+                  reruns OAuth. The callback upserts on (user_id,
+                  platform) so the same row gets fresh tokens in place,
+                  AND any recently-failed scheduled posts on this
+                  channel auto-retry. */}
+              {expired && integration.connectHref && (
+                <Button size="sm" asChild>
+                  <a href={integration.connectHref}>
+                    <Link2 className="h-4 w-4" />
+                    Reconnect
+                  </a>
+                </Button>
+              )}
+              <Button
+                variant="quiet"
+                size="sm"
+                onClick={() => disconnect(integration.key)}
+                disabled={disconnecting === integration.key}
+              >
+                {disconnecting !== integration.key && <Unlink className="h-4 w-4" />}
+                {disconnecting === integration.key ? "Disconnecting…" : "Disconnect"}
               </Button>
-            ) : (
-              <Button size="sm" asChild>
-                <a href={integration.connectHref}>
-                  <Link2 className="h-4 w-4" />
-                  {expired ? "Reconnect" : "Connect"}
-                </a>
-              </Button>
-            )}
-          </div>
-        </CardContent>
+            </>
+          ) : integration.comingSoon ? (
+            <Button variant="outline" size="sm" disabled>
+              <Clock className="h-4 w-4" />
+              Coming soon
+            </Button>
+          ) : (
+            <Button size="sm" variant="outline" asChild>
+              <a href={integration.connectHref}>
+                <Link2 className="h-4 w-4" />
+                {expired ? "Reconnect" : "Connect"}
+              </a>
+            </Button>
+          )}
+        </div>
       </Card>
     );
   }
@@ -329,66 +322,63 @@ function IntegrationsContent() {
     <div>
       <PageHeader
         title="Integrations"
-        description="Connect your social accounts to publish content directly from Conduikt"
+        description="Connect your social accounts so Conduikt can post for you."
       />
 
       {loading ? (
-        <div className="flex justify-center py-16">
-          <Loader2 className="h-6 w-6 text-accent animate-spin" />
+        <div className="space-y-4" role="status" aria-label="Loading integrations">
+          <Skeleton className="h-6 w-32" />
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-20 w-full" />
+          ))}
         </div>
       ) : (
         <div className="space-y-10">
           {/* Publishing */}
           <section>
             <div className="mb-4">
-              <h2 className="text-h2 text-text-primary">Publishing</h2>
-              <p className="mt-1 text-small text-text-secondary">
-                Connect social accounts so Conduikt can post content directly from the Content Studio on your behalf.
+              <h2 className="text-heading text-text">Publishing</h2>
+              <p className="mt-1 text-body-s text-text-2">
+                Connect social accounts so Conduikt can post from the Content Studio for you.
               </p>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {publishingIntegrations.map((integration, i) =>
                 renderIntegrationCard(integration, i)
               )}
             </div>
           </section>
 
-          {/* Analytics & insights — moved to per-project. */}
+          {/* Analytics & insights: moved to per-project. */}
           <section>
             <div className="mb-4">
-              <h2 className="text-h2 text-text-primary">Analytics & insights</h2>
-              <p className="mt-1 text-small text-text-secondary">
-                Google Search Console, Google Analytics 4, and YouTube are
-                now connected per project — different sites, properties, and
-                channels for each one.
+              <h2 className="text-heading text-text">Analytics and insights</h2>
+              <p className="mt-1 text-body-s text-text-2">
+                Google Search Console, Google Analytics 4 and YouTube are
+                connected per project, so each one can use its own site,
+                property and channel.
               </p>
             </div>
-            <Card className="animate-in">
-              <CardContent className="flex items-start gap-3 py-6">
-                <Search className="h-5 w-5 shrink-0 text-accent mt-0.5" />
-                <div>
-                  <p className="text-small font-medium text-text-primary">
-                    Connect inside each project
-                  </p>
-                  <p className="text-small text-text-secondary leading-relaxed mt-1">
-                    Open any project, head to the Analytics tab, and you&rsquo;ll
-                    see Connect buttons for GSC, GA4, and YouTube. Each project
-                    can use a different Google account or property &mdash;
-                    ideal for agencies juggling multiple client sites.
-                  </p>
-                </div>
-              </CardContent>
+            <Card className="animate-in flex items-start gap-3">
+              <Search className="mt-0.5 h-5 w-5 shrink-0 text-text-3" aria-hidden />
+              <div>
+                <p className="text-title text-text">
+                  Connect inside each project
+                </p>
+                <p className="mt-1 text-body-s text-text-2">
+                  Open any project, go to the Analytics tab, and you&rsquo;ll
+                  see Connect buttons for Search Console, GA4 and YouTube. Each project
+                  can use a different Google account or property, which helps
+                  agencies with several client sites.
+                </p>
+              </div>
             </Card>
           </section>
 
-          {/* Info card */}
-          <Card className="animate-in" style={{ animationDelay: "120ms" }}>
-            <CardContent className="py-5">
-              <p className="text-small text-text-secondary">
-                Your OAuth tokens are stored securely and only used for the scope each connection requests. You can disconnect any connection at any time.
-              </p>
-            </CardContent>
-          </Card>
+          {/* Info */}
+          <p className="animate-in max-w-[64ch] text-body-s text-text-3" style={{ animationDelay: "120ms" }}>
+            Your sign-in tokens are stored securely and only used for what each connection asks for. You can disconnect any connection at any time.
+          </p>
         </div>
       )}
 
@@ -397,27 +387,29 @@ function IntegrationsContent() {
           <DialogHeader>
             <DialogTitle>Choose a Search Console site</DialogTitle>
             <DialogDescription>
-              Pick which verified property to pull keyword data from. You can switch any time.
+              Pick which verified site to pull keyword data from. You can switch any time.
             </DialogDescription>
           </DialogHeader>
 
           {gscSitesLoading ? (
-            <div className="flex justify-center py-10">
-              <Loader2 className="h-5 w-5 text-accent animate-spin" />
+            <div className="space-y-2" role="status" aria-label="Loading sites">
+              <Skeleton className="h-14 w-full" />
+              <Skeleton className="h-14 w-full" />
+              <Skeleton className="h-14 w-full" />
             </div>
           ) : gscSitesError ? (
-            <div className="rounded-lg border border-border-default bg-surface-2 p-4">
-              <p className="text-small text-text-secondary">{gscSitesError}</p>
+            <div role="alert" className="rounded-md border border-line bg-surface-2 p-4">
+              <p className="text-body-s text-danger">{gscSitesError}</p>
             </div>
           ) : gscSites.length === 0 ? (
-            <div className="rounded-lg border border-border-default bg-surface-2 p-4">
-              <p className="text-small text-text-secondary">
-                No verified properties found in this Google account. Verify a site in
-                Google Search Console, then reopen this dialog.
+            <div className="rounded-md border border-line bg-surface-2 p-4">
+              <p className="text-body-s text-text-2">
+                No verified sites found in this Google account. Verify a site in
+                Google Search Console, then open this again.
               </p>
             </div>
           ) : (
-            <div className="space-y-2 max-h-80 overflow-y-auto">
+            <div className="max-h-80 space-y-2 overflow-y-auto">
               {gscSites.map((site) => {
                 const isCurrent = site.siteUrl === gscCurrent;
                 const isSwitching = gscSwitching === site.siteUrl;
@@ -426,24 +418,25 @@ function IntegrationsContent() {
                     key={site.siteUrl}
                     onClick={() => selectGscSite(site.siteUrl)}
                     disabled={gscSwitching !== null}
-                    className={`w-full flex items-center justify-between gap-3 rounded-lg border p-3 text-left transition-colors ${
+                    aria-pressed={isCurrent}
+                    className={`flex w-full items-center justify-between gap-3 rounded-md border p-3 text-left transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] ${
                       isCurrent
-                        ? "border-accent bg-accent/5"
-                        : "border-border-default bg-surface-2 hover:bg-surface-3"
-                    } disabled:opacity-60 disabled:cursor-not-allowed`}
+                        ? "border-accent bg-accent-soft"
+                        : "border-line bg-surface hover:bg-surface-2"
+                    } disabled:cursor-not-allowed disabled:opacity-60`}
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="text-small font-medium text-text-primary truncate">
+                      <p className="truncate text-title text-text">
                         {site.siteUrl}
                       </p>
-                      <p className="text-xs text-text-secondary mt-0.5">
+                      <p className="mt-0.5 text-caption text-text-3">
                         {site.permissionLevel}
                       </p>
                     </div>
                     {isSwitching ? (
-                      <Loader2 className="h-4 w-4 text-accent animate-spin shrink-0" />
+                      <span className="shrink-0 text-caption text-text-3">Switching…</span>
                     ) : isCurrent ? (
-                      <CheckCircle2 className="h-4 w-4 text-accent shrink-0" />
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-teal" aria-label="Current site" />
                     ) : null}
                   </button>
                 );
@@ -458,7 +451,15 @@ function IntegrationsContent() {
 
 export default function IntegrationsPage() {
   return (
-    <Suspense fallback={<div className="flex justify-center py-16"><div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" /></div>}>
+    <Suspense
+      fallback={
+        <div className="space-y-4" role="status" aria-label="Loading integrations">
+          <Skeleton className="h-10 w-48" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+        </div>
+      }
+    >
       <IntegrationsContent />
     </Suspense>
   );

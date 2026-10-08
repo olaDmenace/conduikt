@@ -12,8 +12,7 @@ import {
   Search,
   X,
   Unlink,
-} from "lucide-react";
-import { Button } from "@/src/components/ui/button";
+} from "@/src/components/ui/lucide-icons";
 
 interface Notification {
   id: string;
@@ -111,12 +110,15 @@ export function NotificationPanel() {
   return (
     <div className="relative">
       <button
+        type="button"
         onClick={() => setOpen(!open)}
-        className="relative rounded-lg p-2 text-text-secondary hover:bg-surface-2 hover:text-text-primary transition-colors"
+        aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
+        aria-expanded={open}
+        className="relative inline-flex h-9 w-9 items-center justify-center rounded-md text-text-2 transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] hover:bg-surface-2 hover:text-text"
       >
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[0.625rem] font-bold text-on-accent">
+          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 font-mono text-[11px] font-medium leading-none text-white">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -128,24 +130,27 @@ export function NotificationPanel() {
             className="fixed inset-0 z-40"
             onClick={() => setOpen(false)}
           />
-          <div className="absolute right-0 top-full mt-2 z-50 w-80 sm:w-96 rounded-xl border border-border-default bg-surface-1 shadow-elevated overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
-              <h3 className="text-body font-medium text-text-primary">
+          <div className="absolute right-0 top-full z-50 mt-2 w-[calc(100vw-2rem)] max-w-96 overflow-hidden rounded-lg border border-line bg-surface shadow-[var(--shadow-float)] sm:w-96">
+            <div className="flex items-center justify-between border-b border-line px-4 py-3">
+              <h3 className="text-title text-text">
                 Notifications
               </h3>
               <div className="flex items-center gap-2">
                 {unreadCount > 0 && (
                   <button
+                    type="button"
                     onClick={markAllRead}
-                    className="text-caption text-text-tertiary hover:text-accent transition-colors flex items-center gap-1"
+                    className="hover-link flex items-center gap-1 text-caption text-text-3 hover:text-text"
                   >
                     <CheckCheck className="h-3.5 w-3.5" />
                     Mark all read
                   </button>
                 )}
                 <button
+                  type="button"
                   onClick={() => setOpen(false)}
-                  className="text-text-tertiary hover:text-text-primary"
+                  aria-label="Close notifications"
+                  className="hover-link text-text-3 hover:text-text"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -154,9 +159,9 @@ export function NotificationPanel() {
 
             <div className="max-h-80 overflow-y-auto">
               {notifications.length === 0 ? (
-                <div className="flex flex-col items-center py-8 text-center">
-                  <Bell className="h-6 w-6 text-text-tertiary mb-2" />
-                  <p className="text-small text-text-tertiary">
+                <div className="flex flex-col items-center px-4 py-8 text-center">
+                  <Bell className="mb-2 h-5 w-5 text-text-3" />
+                  <p className="text-body-s text-text-3">
                     No notifications yet
                   </p>
                 </div>
@@ -166,44 +171,39 @@ export function NotificationPanel() {
                   return (
                     <button
                       key={n.id}
+                      type="button"
                       onClick={() => handleClick(n)}
-                      className={`w-full text-left px-4 py-3 flex gap-3 hover:bg-surface-2 transition-colors border-b border-border-subtle last:border-0 ${
-                        !n.read ? "bg-accent/5" : ""
+                      className={`flex w-full gap-3 border-b border-line px-4 py-3 text-left transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] last:border-0 hover:bg-surface-2 ${
+                        !n.read ? "bg-accent-soft" : ""
                       }`}
                     >
-                      <div
-                        className={`shrink-0 rounded-lg p-2 ${
-                          !n.read ? "bg-accent/10" : "bg-surface-2"
+                      <Icon
+                        className={`mt-0.5 h-4 w-4 shrink-0 ${
+                          !n.read ? "text-accent" : "text-text-3"
                         }`}
-                      >
-                        <Icon
-                          className={`h-4 w-4 ${
-                            !n.read ? "text-accent" : "text-text-tertiary"
-                          }`}
-                        />
-                      </div>
+                      />
                       <div className="min-w-0 flex-1">
                         <p
-                          className={`text-small ${
+                          className={`text-body-s ${
                             !n.read
-                              ? "font-medium text-text-primary"
-                              : "text-text-secondary"
+                              ? "font-medium text-text"
+                              : "text-text-2"
                           }`}
                         >
                           {n.title}
                         </p>
                         {n.body && (
-                          <p className="text-caption text-text-tertiary mt-0.5 truncate">
+                          <p className="mt-0.5 truncate text-caption text-text-3">
                             {n.body}
                           </p>
                         )}
-                        <p className="text-caption text-text-tertiary mt-1">
+                        <p className="mt-1 font-mono text-caption text-text-3">
                           {timeAgo(n.created_at)}
                         </p>
                       </div>
                       {!n.read && (
-                        <div className="shrink-0 mt-1.5">
-                          <div className="h-2 w-2 rounded-full bg-accent" />
+                        <div className="mt-1.5 shrink-0">
+                          <div className="h-2 w-2 rounded-full bg-accent" aria-label="Unread" />
                         </div>
                       )}
                     </button>

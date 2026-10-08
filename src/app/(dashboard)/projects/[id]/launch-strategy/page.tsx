@@ -6,7 +6,6 @@ import Link from "next/link";
 import {
   Rocket,
   Sparkles,
-  Loader2,
   Target,
   AlertTriangle,
   Users,
@@ -19,9 +18,10 @@ import {
   Check,
   Lock,
   ArrowUpRight,
-} from "lucide-react";
+} from "@/src/components/ui/lucide-icons";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import { PageHeader } from "@/src/components/layout/page-header";
 import { ExpectationBanner } from "@/src/components/ui/expectation-banner";
 import { useToast } from "@/src/components/ui/toast";
@@ -229,7 +229,7 @@ export default function LaunchStrategyPage({
           setResult(parsed);
           toast("Launch plan generated", "success");
         } catch {
-          toast("Output formatting was off. Check raw text.", "warning");
+          toast("The plan came back in the wrong shape. Try again.", "warning");
         }
       }
     } catch (err) {
@@ -275,8 +275,12 @@ export default function LaunchStrategyPage({
 
   if (planLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 text-accent animate-spin" />
+      <div className="space-y-6" role="status" aria-label="Loading">
+        <Skeleton className="h-10 w-64" />
+        <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
+          <Skeleton className="h-[520px]" />
+          <Skeleton className="h-72" />
+        </div>
       </div>
     );
   }
@@ -285,23 +289,21 @@ export default function LaunchStrategyPage({
     return (
       <div>
         <PageHeader
-          title="Launch Strategy"
-          description="A concrete day-by-day launch plan — pre-launch, launch day, first 30 days"
+          title="Launch Plan"
+          description="A day-by-day launch plan: before launch, launch day and the first 30 days"
         />
-        <div className="rounded-xl border border-border-default bg-surface-1 p-10 text-center animate-in">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-surface-2 mb-4">
-            <Lock className="h-7 w-7 text-text-tertiary" />
-          </div>
-          <h3 className="text-h3 text-text-primary mb-2">
-            Upgrade to unlock Launch Strategy
+        <div className="rounded-lg border border-line bg-surface p-10 text-center animate-in">
+          <Lock className="mx-auto mb-4 h-6 w-6 text-text-3" />
+          <h3 className="text-heading text-text mb-2">
+            Upgrade to use Launch Plan
           </h3>
-          <p className="text-body text-text-secondary max-w-md mx-auto mb-6">
-            Generate specific, assignable launch plans tied to your audience and goals.
+          <p className="text-body text-text-2 max-w-md mx-auto mb-6">
+            Get a launch plan with clear tasks and owners, built around your audience and goals.
             Available on Pro, Growth, and Agency plans.
           </p>
           <Button asChild>
             <Link href="/settings/billing">
-              Upgrade Plan <ArrowUpRight className="h-4 w-4 ml-1" />
+              Upgrade plan <ArrowUpRight className="h-4 w-4" />
             </Link>
           </Button>
         </div>
@@ -312,31 +314,29 @@ export default function LaunchStrategyPage({
   return (
     <div>
       <PageHeader
-        title="Launch Strategy"
-        description="A concrete day-by-day launch plan — pre-launch, launch day, first 30 days"
+        title="Launch Plan"
+        description="A day-by-day launch plan: before launch, launch day and the first 30 days"
       />
 
       <ExpectationBanner
         storageKey="conduikt-expect-launch"
-        message="The AI gives you the plan — you execute it. Every task should have an owner and a deadline on your calendar before launch day."
+        message="We write the plan; you carry it out. Give every task an owner and a date on your calendar before launch day."
         details={[
-          "The riskiest assumption is the one thing to test cheaply BEFORE you ship.",
-          "If a channel isn't in the plan, it's probably not worth spreading thin on it.",
-          "Revisit success metrics at day 7 — if leading indicators are flat, change tactics, not targets.",
+          "The riskiest guess is the one thing to test cheaply before you launch.",
+          "If a channel isn't in the plan, it's probably not worth spreading yourself thin on it.",
+          "Check your numbers on day 7. If early signs are flat, change tactics, not targets.",
         ]}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
         {/* Form */}
-        <div className="rounded-xl border border-border-default bg-surface-1 p-6 animate-in h-fit">
+        <div className="rounded-lg border border-line bg-surface p-6 animate-in h-fit">
           <div className="flex items-center gap-3 mb-5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-muted text-accent">
-              <Rocket className="h-5 w-5" />
-            </div>
+            <Rocket className="h-4 w-4 shrink-0 text-text-3" />
             <div>
-              <p className="text-body font-semibold text-text-primary">Brief</p>
-              <p className="text-caption text-text-tertiary">
-                Leave blank to use project context
+              <p className="text-title text-text">Brief</p>
+              <p className="text-caption text-text-3">
+                Leave blank to use what we know about your project
               </p>
             </div>
           </div>
@@ -346,7 +346,7 @@ export default function LaunchStrategyPage({
               value={product}
               onChange={(e) => setProduct(e.target.value)}
               placeholder="e.g. 'AI blog agent'"
-              className="w-full rounded-lg border border-border-default bg-surface-0 px-3 py-2.5 text-body text-text-primary placeholder:text-text-tertiary focus:border-accent focus:ring-1 focus:ring-accent outline-none"
+              className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             />
           </FormField>
 
@@ -355,7 +355,7 @@ export default function LaunchStrategyPage({
               type="date"
               value={launchDate}
               onChange={(e) => setLaunchDate(e.target.value)}
-              className="w-full rounded-lg border border-border-default bg-surface-0 px-3 py-2.5 text-body text-text-primary focus:border-accent focus:ring-1 focus:ring-accent outline-none"
+              className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             />
           </FormField>
 
@@ -363,7 +363,7 @@ export default function LaunchStrategyPage({
             <select
               value={teamSize}
               onChange={(e) => setTeamSize(e.target.value)}
-              className="w-full rounded-lg border border-border-default bg-surface-0 px-3 py-2.5 text-body text-text-primary focus:border-accent focus:ring-1 focus:ring-accent outline-none"
+              className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               <option>solo founder</option>
               <option>2-person team</option>
@@ -377,7 +377,7 @@ export default function LaunchStrategyPage({
               value={budget}
               onChange={(e) => setBudget(e.target.value)}
               placeholder="e.g. '$2k paid', 'bootstrap only'"
-              className="w-full rounded-lg border border-border-default bg-surface-0 px-3 py-2.5 text-body text-text-primary placeholder:text-text-tertiary focus:border-accent focus:ring-1 focus:ring-accent outline-none"
+              className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             />
           </FormField>
 
@@ -386,7 +386,7 @@ export default function LaunchStrategyPage({
               value={channels}
               onChange={(e) => setChannels(e.target.value)}
               placeholder="e.g. 'Product Hunt, X, Indie Hackers'"
-              className="w-full rounded-lg border border-border-default bg-surface-0 px-3 py-2.5 text-body text-text-primary placeholder:text-text-tertiary focus:border-accent focus:ring-1 focus:ring-accent outline-none"
+              className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             />
           </FormField>
 
@@ -396,7 +396,7 @@ export default function LaunchStrategyPage({
               onChange={(e) => setGoals(e.target.value)}
               placeholder="e.g. '500 signups, 50 paid, 3 press mentions'"
               rows={2}
-              className="w-full rounded-lg border border-border-default bg-surface-0 px-3 py-2.5 text-body text-text-primary placeholder:text-text-tertiary focus:border-accent focus:ring-1 focus:ring-accent outline-none resize-none"
+              className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent resize-none"
             />
           </FormField>
 
@@ -405,66 +405,55 @@ export default function LaunchStrategyPage({
             disabled={generating}
             className="w-full mt-2"
           >
-            {generating ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            ) : (
-              <Sparkles className="h-4 w-4 mr-2" />
-            )}
-            {generating ? "Building plan..." : "Generate Launch Plan"}
+            {!generating && <Sparkles className="h-4 w-4" />}
+            {generating ? "Building plan…" : "Make my launch plan"}
           </Button>
         </div>
 
         {/* Output */}
         <div className="min-w-0">
           {!result && !generating && loadingAsset && (
-            <div className="rounded-xl border border-border-default bg-surface-1 p-10 animate-in text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-accent-muted mb-4">
-                <Loader2 className="h-6 w-6 text-accent animate-spin" />
-              </div>
-              <p className="text-body font-semibold text-text-primary">
-                Loading saved launch plan...
-              </p>
+            <div className="space-y-4" role="status" aria-label="Loading saved launch plan">
+              <Skeleton className="h-28 w-full" />
+              <Skeleton className="h-40 w-full" />
+              <Skeleton className="h-40 w-full" />
             </div>
           )}
 
           {!result && !generating && !loadingAsset && (
-            <div className="rounded-xl border border-border-default bg-surface-1 py-20 px-6 text-center animate-in">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-surface-2 mb-4">
-                <Rocket className="h-6 w-6 text-text-tertiary" />
-              </div>
-              <p className="text-body font-medium text-text-secondary mb-1">
-                No plan yet
-              </p>
-              <p className="text-small text-text-tertiary max-w-sm mx-auto">
-                Fill in the brief (all fields optional) and hit generate.
+            <div className="rounded-lg border border-dashed border-line py-20 px-6 text-center animate-in">
+              <Rocket className="mx-auto mb-4 h-8 w-8 text-text-3" />
+              <p className="text-body text-text-2 max-w-sm mx-auto">
+                No plan yet. Fill in the brief (every field is optional) and make your plan.
               </p>
             </div>
           )}
 
           {generating && !result && (
-            <div className="rounded-xl border border-border-default bg-surface-1 p-10 animate-in text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-accent-muted mb-4">
-                <Loader2 className="h-6 w-6 text-accent animate-spin" />
-              </div>
-              <p className="text-body font-semibold text-text-primary">
-                Building your launch plan...
+            <div className="rounded-lg border border-line bg-surface p-10 animate-in text-center">
+              <p className="flex items-center justify-center gap-2 text-title text-text">
+                <span className="live-dot" aria-hidden />
+                Building your launch plan…
               </p>
-              <p className="text-small text-text-tertiary mt-2 max-w-sm mx-auto">
-                We&apos;re mapping positioning, pre-launch prep, launch-day runbook, and 30-day targets.
+              <p className="text-body-s text-text-3 mt-2 max-w-sm mx-auto">
+                We&apos;re working out how to pitch it, what to prepare, the launch-day schedule and your 30-day targets.
               </p>
             </div>
           )}
 
           {!generating && !result && rawText && (
-            <div className="rounded-xl border border-warning/30 bg-surface-1 p-6 animate-in space-y-2">
-              <p className="text-small text-text-primary font-medium">
-                We got a response but couldn&apos;t format it into a launch plan. Try regenerating.
+            <div className="rounded-lg border border-accent bg-surface p-6 animate-in space-y-2">
+              <p className="text-body-s text-text font-medium">
+                We got an answer but couldn&apos;t turn it into a launch plan.
               </p>
-              <details className="text-small">
-                <summary className="cursor-pointer text-text-tertiary hover:text-text-secondary">
+              <Button size="sm" variant="outline" onClick={handleGenerate}>
+                Try again
+              </Button>
+              <details className="text-body-s">
+                <summary className="cursor-pointer text-text-3 hover:text-text">
                   Show raw output
                 </summary>
-                <pre className="mt-2 whitespace-pre-wrap text-caption text-text-secondary font-mono break-words max-h-[320px] overflow-y-auto">
+                <pre className="mt-2 whitespace-pre-wrap text-caption text-text-2 font-mono break-words max-h-[320px] overflow-y-auto">
                   {rawText}
                 </pre>
               </details>
@@ -474,30 +463,30 @@ export default function LaunchStrategyPage({
           {result && (
             <div className="space-y-5 animate-in">
               {/* Thesis + actions */}
-              <div className="rounded-xl border border-accent/30 bg-accent-muted p-5">
-                <p className="text-caption text-text-tertiary mb-1">Launch thesis</p>
-                <p className="text-body text-text-primary leading-relaxed mb-4">
+              <div className="rounded-lg bg-ink p-5 text-ink-text">
+                <p className="text-label text-ink-text-3 mb-2">The big idea</p>
+                <p className="text-body text-ink-text leading-relaxed mb-4">
                   {result.launch_thesis}
                 </p>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button
                     size="sm"
-                    variant="secondary"
+                    variant="outline-ink"
                     onClick={savePlan}
                     disabled={!!savedId}
                   >
                     {savedId ? (
-                      <Check className="h-3.5 w-3.5 mr-1 text-success" />
+                      <Check className="h-3.5 w-3.5 text-ink-teal" />
                     ) : (
-                      <Save className="h-3.5 w-3.5 mr-1" />
+                      <Save className="h-3.5 w-3.5" />
                     )}
                     {savedId ? "Saved to library" : "Save to library"}
                   </Button>
-                  <Button size="sm" variant="secondary" onClick={copyPlan}>
+                  <Button size="sm" variant="outline-ink" onClick={copyPlan}>
                     {copied ? (
-                      <Check className="h-3.5 w-3.5 mr-1 text-success" />
+                      <Check className="h-3.5 w-3.5 text-ink-teal" />
                     ) : (
-                      <Copy className="h-3.5 w-3.5 mr-1" />
+                      <Copy className="h-3.5 w-3.5" />
                     )}
                     Copy plan
                   </Button>
@@ -505,54 +494,54 @@ export default function LaunchStrategyPage({
               </div>
 
               {/* Positioning */}
-              <SectionCard title="Positioning" icon={Target}>
+              <SectionCard title="How to pitch it" icon={Target}>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <KeyValue label="One-liner" value={result.positioning.one_liner} />
                   <KeyValue label="Category" value={result.positioning.category} />
-                  <KeyValue label="Against" value={result.positioning.against} />
+                  <KeyValue label="Up against" value={result.positioning.against} />
                 </div>
               </SectionCard>
 
               {/* Riskiest assumption */}
-              <SectionCard title="Riskiest assumption" icon={AlertTriangle} accent="warning">
-                <p className="text-body text-text-primary mb-2">
+              <SectionCard title="Riskiest guess" icon={AlertTriangle} accent="warning">
+                <p className="text-body text-text mb-2">
                   {result.riskiest_assumption.assumption}
                 </p>
-                <div className="rounded-lg border border-border-subtle bg-surface-0 p-3">
-                  <p className="text-caption text-text-tertiary mb-1">Cheap test</p>
-                  <p className="text-small text-text-secondary">
+                <div className="rounded-md border border-line bg-ground p-3">
+                  <p className="text-label text-text-3 mb-1.5">Cheap way to test it</p>
+                  <p className="text-body-s text-text-2">
                     {result.riskiest_assumption.cheap_test}
                   </p>
                 </div>
               </SectionCard>
 
               {/* Audience targeting */}
-              <SectionCard title="Audience targeting" icon={Users}>
+              <SectionCard title="Who to reach" icon={Users}>
                 <KeyValue
-                  label="Primary ICP"
+                  label="Ideal customer"
                   value={result.audience_targeting.primary_icp}
                 />
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <p className="text-caption text-text-tertiary mb-1.5">
-                      Primary channels
+                    <p className="text-label text-text-3 mb-1.5">
+                      Main channels
                     </p>
                     <ul className="space-y-1">
                       {result.audience_targeting.primary_channels.map((c) => (
-                        <li key={c} className="text-small text-text-secondary flex items-start gap-1.5">
-                          <span className="text-accent shrink-0">·</span>{c}
+                        <li key={c} className="text-body-s text-text-2 flex items-start gap-1.5">
+                          <span className="text-text-3 shrink-0">·</span>{c}
                         </li>
                       ))}
                     </ul>
                   </div>
                   {result.audience_targeting.where_not_to_post.length > 0 && (
                     <div>
-                      <p className="text-caption text-text-tertiary mb-1.5">
+                      <p className="text-label text-text-3 mb-1.5">
                         Skip these
                       </p>
                       <ul className="space-y-1">
                         {result.audience_targeting.where_not_to_post.map((c) => (
-                          <li key={c} className="text-small text-text-tertiary flex items-start gap-1.5">
+                          <li key={c} className="text-body-s text-text-3 flex items-start gap-1.5">
                             <span className="shrink-0">·</span>{c}
                           </li>
                         ))}
@@ -564,15 +553,15 @@ export default function LaunchStrategyPage({
 
               {/* Pre-launch milestones */}
               <SectionCard
-                title={`Pre-launch (${result.phases.pre_launch.duration_days} days)`}
+                title={`Before launch (${result.phases.pre_launch.duration_days} days)`}
                 icon={Calendar}
               >
                 <div className="mb-3">
-                  <p className="text-caption text-text-tertiary mb-1.5">Goals</p>
+                  <p className="text-label text-text-3 mb-1.5">Goals</p>
                   <ul className="space-y-0.5">
                     {result.phases.pre_launch.goals.map((g, i) => (
-                      <li key={i} className="text-small text-text-secondary flex items-start gap-1.5">
-                        <span className="text-accent shrink-0">·</span>{g}
+                      <li key={i} className="text-body-s text-text-2 flex items-start gap-1.5">
+                        <span className="text-text-3 shrink-0">·</span>{g}
                       </li>
                     ))}
                   </ul>
@@ -581,23 +570,23 @@ export default function LaunchStrategyPage({
                   {result.phases.pre_launch.milestones.map((m, i) => (
                     <div
                       key={i}
-                      className="rounded-lg border border-border-subtle bg-surface-0 p-3"
+                      className="rounded-md border border-line bg-ground p-3"
                     >
                       <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
-                        <Badge variant="secondary" className="font-mono text-[10px]">
+                        <Badge variant="secondary">
                           {m.day}
                         </Badge>
-                        <div className="flex items-center gap-2 text-caption text-text-tertiary">
+                        <div className="flex items-center gap-2 text-caption text-text-3">
                           <span className="capitalize">{m.owner}</span>
                           <span>·</span>
-                          <span>{m.effort_hours}h</span>
+                          <span className="font-mono">{m.effort_hours}h</span>
                         </div>
                       </div>
-                      <p className="text-body text-text-primary font-medium mb-1">
+                      <p className="text-title text-text mb-1">
                         {m.task}
                       </p>
-                      <p className="text-small text-text-secondary">
-                        Deliverable: {m.deliverable}
+                      <p className="text-body-s text-text-2">
+                        You end up with: {m.deliverable}
                       </p>
                     </div>
                   ))}
@@ -605,24 +594,24 @@ export default function LaunchStrategyPage({
               </SectionCard>
 
               {/* Launch day */}
-              <SectionCard title="Launch day — hour by hour" icon={Clock}>
+              <SectionCard title="Launch day, hour by hour" icon={Clock}>
                 <div className="space-y-2">
                   {result.phases.launch_day.hour_by_hour.map((h, i) => (
                     <div
                       key={i}
-                      className="flex items-start gap-3 rounded-lg border border-border-subtle bg-surface-0 p-3"
+                      className="flex items-start gap-3 rounded-md border border-line bg-ground p-3"
                     >
                       <Badge
                         variant="secondary"
-                        className="font-mono text-[10px] shrink-0"
+                        className="shrink-0"
                       >
                         {h.time}
                       </Badge>
                       <div className="flex-1 min-w-0">
-                        <p className="text-body text-text-primary font-medium">
+                        <p className="text-title text-text">
                           {h.action}
                         </p>
-                        <p className="text-caption text-text-tertiary mt-0.5">
+                        <p className="text-caption text-text-3 mt-0.5">
                           {h.channel} · needs: {h.asset_needed}
                         </p>
                       </div>
@@ -637,24 +626,24 @@ export default function LaunchStrategyPage({
                   {result.phases.first_30_days.weekly_focus.map((w) => (
                     <div
                       key={w.week}
-                      className="rounded-lg border border-border-subtle bg-surface-0 p-3"
+                      className="rounded-md border border-line bg-ground p-3"
                     >
                       <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="secondary" className="text-[10px]">
+                        <Badge variant="secondary">
                           Week {w.week}
                         </Badge>
-                        <p className="text-body font-semibold text-text-primary">
+                        <p className="text-title text-text">
                           {w.theme}
                         </p>
                       </div>
                       <ul className="space-y-0.5 mb-2">
                         {w.activities.map((a, i) => (
-                          <li key={i} className="text-small text-text-secondary flex items-start gap-1.5">
-                            <span className="text-accent shrink-0">·</span>{a}
+                          <li key={i} className="text-body-s text-text-2 flex items-start gap-1.5">
+                            <span className="text-text-3 shrink-0">·</span>{a}
                           </li>
                         ))}
                       </ul>
-                      <p className="text-caption text-text-tertiary italic">
+                      <p className="text-caption text-text-3">
                         Watch: {w.leading_indicator}
                       </p>
                     </div>
@@ -669,25 +658,25 @@ export default function LaunchStrategyPage({
                     {result.assets_to_create.map((a, i) => (
                       <div
                         key={i}
-                        className="rounded-lg border border-border-subtle bg-surface-0 p-3"
+                        className="rounded-md border border-line bg-ground p-3"
                       >
                         <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
-                          <p className="text-body font-medium text-text-primary">
+                          <p className="text-title text-text">
                             {a.asset}
                           </p>
                           <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="font-mono text-[10px]">
+                            <Badge variant="secondary">
                               {a.deadline}
                             </Badge>
                             {a.linked_skill && (
-                              <Badge variant="secondary" className="text-[10px]">
+                              <Badge variant="info">
                                 {a.linked_skill}
                               </Badge>
                             )}
                           </div>
                         </div>
-                        <p className="text-small text-text-secondary">{a.purpose}</p>
-                        <p className="text-caption text-text-tertiary mt-1 capitalize">
+                        <p className="text-body-s text-text-2">{a.purpose}</p>
+                        <p className="text-caption text-text-3 mt-1 capitalize">
                           Owner: {a.owner}
                         </p>
                       </div>
@@ -698,34 +687,33 @@ export default function LaunchStrategyPage({
 
               {/* Channel plays */}
               {result.channel_plays.length > 0 && (
-                <SectionCard title="Channel plays">
+                <SectionCard title="What to do on each channel">
                   <div className="space-y-2">
                     {result.channel_plays.map((c, i) => (
                       <div
                         key={i}
-                        className="rounded-lg border border-border-subtle bg-surface-0 p-3"
+                        className="rounded-md border border-line bg-ground p-3"
                       >
                         <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
-                          <p className="text-body font-semibold text-text-primary">
+                          <p className="text-title text-text">
                             {c.channel}
                           </p>
                           <Badge
-                            variant="secondary"
-                            className={`text-[10px] capitalize ${
+                            variant={
                               c.effort === "low"
-                                ? "text-success"
+                                ? "success"
                                 : c.effort === "high"
-                                  ? "text-warning"
-                                  : ""
-                            }`}
+                                  ? "warning"
+                                  : "secondary"
+                            }
                           >
                             {c.effort} effort
                           </Badge>
                         </div>
-                        <p className="text-small text-text-secondary mb-1">
+                        <p className="text-body-s text-text-2 mb-1">
                           {c.play}
                         </p>
-                        <p className="text-caption text-text-tertiary">
+                        <p className="text-caption text-text-3">
                           Expected: {c.expected_outcome}
                         </p>
                       </div>
@@ -735,10 +723,10 @@ export default function LaunchStrategyPage({
               )}
 
               {/* Success metrics */}
-              <SectionCard title="Success metrics" icon={TrendingUp} accent="success">
-                <div className="rounded-lg border border-accent/30 bg-accent-muted p-3 mb-3">
-                  <p className="text-caption text-text-tertiary mb-0.5">North star</p>
-                  <p className="text-body font-semibold text-text-primary">
+              <SectionCard title="How you'll measure it" icon={TrendingUp} accent="success">
+                <div className="rounded-md border border-accent bg-surface p-3 mb-3">
+                  <p className="text-label text-text-3 mb-1.5">The one number that matters</p>
+                  <p className="text-title text-text">
                     {result.success_metrics.north_star}
                   </p>
                 </div>
@@ -760,17 +748,17 @@ export default function LaunchStrategyPage({
 
               {/* Gaps */}
               {result.gaps.length > 0 && (
-                <SectionCard title="Context gaps" icon={AlertTriangle} accent="warning">
-                  <p className="text-small text-text-secondary mb-2">
-                    Fill these in and re-run for a stronger plan:
+                <SectionCard title="What we didn't know" icon={AlertTriangle} accent="warning">
+                  <p className="text-body-s text-text-2 mb-2">
+                    Fill these in and run it again for a stronger plan:
                   </p>
                   <ul className="space-y-1">
                     {result.gaps.map((g, i) => (
                       <li
                         key={i}
-                        className="text-small text-text-secondary flex items-start gap-1.5"
+                        className="text-body-s text-text-2 flex items-start gap-1.5"
                       >
-                        <span className="text-warning shrink-0">·</span>{g}
+                        <span className="text-text-3 shrink-0">·</span>{g}
                       </li>
                     ))}
                   </ul>
@@ -787,7 +775,7 @@ export default function LaunchStrategyPage({
 function FormField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="mb-3">
-      <label className="text-small font-medium text-text-secondary mb-1.5 block">
+      <label className="text-body-s font-medium text-text-2 mb-1.5 block">
         {label}
       </label>
       {children}
@@ -808,15 +796,15 @@ function SectionCard({
 }) {
   const iconColor =
     accent === "warning"
-      ? "text-warning"
+      ? "text-accent"
       : accent === "success"
-        ? "text-success"
-        : "text-accent";
+        ? "text-teal"
+        : "text-text-3";
   return (
-    <div className="rounded-xl border border-border-default bg-surface-1 p-5">
+    <div className="rounded-lg border border-line bg-surface p-5">
       <div className="flex items-center gap-2 mb-3">
         {Icon && <Icon className={`h-4 w-4 ${iconColor}`} />}
-        <h3 className="text-body font-semibold text-text-primary">{title}</h3>
+        <h3 className="text-heading text-text">{title}</h3>
       </div>
       {children}
     </div>
@@ -826,21 +814,21 @@ function SectionCard({
 function KeyValue({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-caption text-text-tertiary mb-0.5">{label}</p>
-      <p className="text-body text-text-primary">{value}</p>
+      <p className="text-label text-text-3 mb-1.5">{label}</p>
+      <p className="text-body text-text">{value}</p>
     </div>
   );
 }
 
 function MetricCol({ label, targets }: { label: string; targets: MetricTarget[] }) {
   return (
-    <div className="rounded-lg border border-border-subtle bg-surface-0 p-3">
-      <p className="text-caption text-text-tertiary mb-2 font-semibold">{label}</p>
+    <div className="rounded-md border border-line bg-ground p-3">
+      <p className="text-label text-text-3 mb-2">{label}</p>
       <ul className="space-y-1.5">
         {targets.map((t, i) => (
-          <li key={i} className="text-small">
-            <p className="text-text-secondary">{t.metric}</p>
-            <p className="text-text-primary font-mono text-caption">{t.target}</p>
+          <li key={i} className="text-body-s">
+            <p className="text-text-2">{t.metric}</p>
+            <p className="text-text font-mono text-caption">{t.target}</p>
           </li>
         ))}
       </ul>

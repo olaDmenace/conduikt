@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Loader2, Zap, CheckCircle2, XCircle } from "lucide-react";
+import { Zap, CheckCircle2, XCircle } from "@/src/components/ui/lucide-icons";
 import { Button } from "@/src/components/ui/button";
 import {
   Dialog,
@@ -59,7 +59,7 @@ export function BulkGenerateDialog({
 
       if (!res.ok) {
         const err = await res.json();
-        toast(err.error || "Failed to start bulk job", "error");
+        toast(err.error || "Couldn't start the bulk run. Try again.", "error");
         setSubmitting(false);
         return;
       }
@@ -102,7 +102,7 @@ export function BulkGenerateDialog({
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Bulk Generate — {agentName}</DialogTitle>
+          <DialogTitle>Bulk generate: {agentName}</DialogTitle>
           <DialogDescription>
             Paste up to 30 topics or keywords, one per line. Each will generate a separate piece of content.
           </DialogDescription>
@@ -114,7 +114,7 @@ export function BulkGenerateDialog({
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               placeholder={"social media marketing tips\nemail marketing best practices\nSEO for startups\n..."}
-              className="w-full h-40 rounded-lg border border-border-default bg-surface-1 px-3 py-2 text-body text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-accent resize-none"
+              className="w-full h-40 resize-none rounded-md border border-line-strong bg-surface px-3.5 py-2 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             />
             {/* Cost = min(inputs, 30) — bulk jobs charge one generation per
                 processed item. Passing the accurate count lets QuotaBadge
@@ -122,50 +122,51 @@ export function BulkGenerateDialog({
             <QuotaBadge cost={Math.max(1, Math.min(inputs.length, 30))} />
 
             <div className="flex items-center justify-between">
-              <p className="text-small text-text-tertiary">
+              <p className="text-body-s text-text-3">
                 {inputs.length} item{inputs.length !== 1 ? "s" : ""} (max 30)
               </p>
               <Button
                 onClick={handleSubmit}
                 disabled={submitting || inputs.length === 0}
               >
-                {submitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                ) : (
-                  <Zap className="h-4 w-4 mr-1" />
-                )}
-                Generate {Math.min(inputs.length, 30)} Pieces
+                {!submitting && <Zap className="h-4 w-4" />}
+                {submitting
+                  ? "Starting…"
+                  : `Generate ${Math.min(inputs.length, 30)} pieces`}
               </Button>
             </div>
           </div>
         ) : (
           <div className="space-y-4 mt-4">
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-small">
-                <span className="text-text-secondary">
+              <div className="flex items-center justify-between text-body-s">
+                <span className="flex items-center gap-2 text-text-2">
+                  {progress.status === "running" && (
+                    <span className="live-dot" aria-hidden />
+                  )}
                   {progress.status === "running"
-                    ? `Generating ${progress.total} pieces...`
+                    ? `Generating ${progress.total} pieces…`
                     : "Generation complete"}
                 </span>
-                <span className="text-text-tertiary font-mono">
+                <span className="font-mono text-text-3">
                   {progress.completed + progress.failed}/{progress.total}
                 </span>
               </div>
               <div className="h-2 rounded-full bg-surface-2 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-accent transition-all duration-500"
+                  className="h-full rounded-full bg-teal transition-all duration-500"
                   style={{ width: `${pct}%` }}
                 />
               </div>
             </div>
 
-            <div className="flex items-center gap-4 text-small">
-              <span className="flex items-center gap-1 text-success">
+            <div className="flex items-center gap-4 text-body-s">
+              <span className="flex items-center gap-1 text-teal">
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 {progress.completed} completed
               </span>
               {progress.failed > 0 && (
-                <span className="flex items-center gap-1 text-error">
+                <span className="flex items-center gap-1 text-danger">
                   <XCircle className="h-3.5 w-3.5" />
                   {progress.failed} failed
                 </span>

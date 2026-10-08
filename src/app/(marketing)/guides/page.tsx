@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { Metadata } from "next";
-import { ArrowRight, BookOpen, Clock } from "lucide-react";
+import { ArrowRight, BookOpen, Clock } from "@/src/components/ui/lucide-icons";
 import { Button } from "@/src/components/ui/button";
-import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { AI_AGENT_COUNT } from "@/src/lib/ai/agents/display";
 
@@ -70,90 +69,78 @@ export default function GuidesIndexPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       {/* Hero */}
-      <section className="pt-8 pb-20">
-        <div className="mx-auto max-w-4xl px-6 text-center">
-          <Badge className="mb-6">Guides</Badge>
-          <h1 className="text-hero text-text-primary">AI Marketing Guides</h1>
-          <p className="mt-4 text-lg text-text-secondary max-w-2xl mx-auto">
+      <section className="mx-auto w-full max-w-[1200px] px-4 pb-12 pt-16 md:px-10 md:pt-24">
+        <div className="flex max-w-[760px] flex-col gap-4">
+          <p className="text-label text-accent">Guides</p>
+          <h1 className="text-display-m text-text">AI marketing guides</h1>
+          <p className="text-lg leading-relaxed text-text-2">
             Practical, step-by-step guides to automating your marketing with AI.
             Written for founders and marketers who want results, not theory.
           </p>
         </div>
       </section>
 
-      {/* Guide Cards */}
-      <section className="pb-20">
-        <div className="mx-auto max-w-4xl px-6">
-          <div className="flex flex-col gap-6">
-            {guides.map((g) => (
-              <Card
-                key={g.slug}
-                className="group hover:border-accent/50 transition-colors"
+      {/* Guide cards */}
+      <section className="mx-auto w-full max-w-[1200px] px-4 pb-24 md:px-10">
+        <ul className="flex flex-col gap-3.5">
+          {guides.map((g, i) => (
+            <li key={g.slug} className="animate-in" style={{ animationDelay: `${i * 80}ms` }}>
+              <Link
+                href={`/guides/${g.slug}`}
+                className="group hover-card hover-card-quiet flex flex-col gap-5 rounded-lg border border-line bg-surface p-6 md:flex-row md:items-start md:justify-between md:p-7"
               >
-                <CardContent className="p-6">
-                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <BookOpen className="h-4 w-4 text-accent" />
-                        <div className="flex items-center gap-2 text-caption text-text-tertiary">
-                          <Clock className="h-3 w-3" />
-                          <span>{g.readTime}</span>
-                          <span>·</span>
-                          <span>{g.sections} sections</span>
-                        </div>
-                      </div>
-                      <h2 className="text-h2 text-text-primary mb-2 group-hover:text-accent transition-colors">
-                        {g.title}
-                      </h2>
-                      <p className="text-body text-text-secondary mb-4 max-w-2xl">
-                        {g.intro}
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {g.topics.map((t) => (
-                          <span
-                            key={t}
-                            className="text-caption text-text-tertiary bg-surface-elevated px-2 py-0.5 rounded"
-                          >
-                            {t}
-                          </span>
-                        ))}
-                      </div>
+                <div className="flex-1">
+                  <div className="mb-3 flex items-center gap-3">
+                    <BookOpen className="h-4 w-4 text-text-3" />
+                    <div className="flex items-center gap-2 text-caption text-text-3">
+                      <Clock className="h-3 w-3" />
+                      <span>{g.readTime}</span>
+                      <span aria-hidden>·</span>
+                      <span>{g.sections} sections</span>
                     </div>
-
-                    <Link href={`/guides/${g.slug}`} className="shrink-0">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="w-full md:w-auto"
-                      >
-                        Read Guide
-                        <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
-                      </Button>
-                    </Link>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
+                  <h2 className="mb-2 text-heading text-text transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] group-hover:text-accent-hover">
+                    {g.title}
+                  </h2>
+                  <p className="mb-4 max-w-2xl text-body text-text-2">
+                    {g.intro}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {g.topics.map((t) => (
+                      <Badge key={t} variant="secondary" className="normal-case">
+                        {t}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                <span className="inline-flex shrink-0 items-center gap-1.5 text-body-s font-medium text-accent-hover">
+                  Read guide
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
       </section>
 
       {/* CTA */}
-      <section className="pb-24">
-        <div className="mx-auto max-w-2xl px-6 text-center">
-          <h2 className="text-h1 text-text-primary mb-4">
+      <section className="band-ink">
+        <div className="mx-auto flex w-full max-w-[1200px] flex-col items-start gap-5 px-4 py-14 md:px-10 md:py-[72px]">
+          <p className="text-label text-ink-accent">Start free</p>
+          <h2 className="max-w-[760px] text-display-s text-ink-text">
             Stop reading. Start automating.
           </h2>
-          <p className="text-body text-text-secondary mb-8">
+          <p className="max-w-[560px] text-lg leading-relaxed text-ink-text-2">
             Conduikt puts all of these strategies into practice with {AI_AGENT_COUNT} AI agents.
-            Start free — no credit card required.
+            Start free, no credit card required.
           </p>
-          <Link href="/signup">
-            <Button size="lg">
-              Get Started Free
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
-          </Link>
+          <Button size="lg" asChild>
+            <Link href="/signup">
+              Get started free
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
         </div>
       </section>
     </div>

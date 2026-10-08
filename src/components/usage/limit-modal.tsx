@@ -2,7 +2,7 @@
 
 import { useState, createContext, useContext, useCallback } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Zap } from "lucide-react";
+import { ArrowUpRight, Zap } from "@/src/components/ui/lucide-icons";
 import {
   Dialog,
   DialogContent,
@@ -56,28 +56,28 @@ export function UsageLimitProvider({ children }: { children: React.ReactNode }) 
       <Dialog open={state.open} onOpenChange={(o) => setState((s) => ({ ...s, open: o }))}>
         <DialogContent>
           <DialogHeader>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="mb-2 flex items-center gap-2">
               <Badge variant="warning">
                 <Zap className="h-3 w-3" />
-                Limit Reached
+                Limit reached
               </Badge>
             </div>
-            <DialogTitle>You&apos;ve used all your generations</DialogTitle>
+            <DialogTitle>You&apos;ve used all your pieces of content this month</DialogTitle>
             <DialogDescription>
-              Your <span className="capitalize font-medium text-text-primary">{plan}</span> plan
-              includes {Number.isFinite(GENERATION_LIMITS[plan]) ? GENERATION_LIMITS[plan] : "unlimited"} generations
-              per month. Your allowance resets on the 1st of next month.
+              Your <span className="font-medium capitalize text-text">{plan}</span> plan
+              includes {Number.isFinite(GENERATION_LIMITS[plan]) ? GENERATION_LIMITS[plan] : "unlimited"} pieces
+              of content a month. Your allowance resets on the 1st of next month.
             </DialogDescription>
           </DialogHeader>
 
           {nextTier && (
-            <div className="mt-4 rounded-lg border border-accent/30 bg-accent-muted/20 p-4">
-              <p className="text-small text-text-secondary mb-3">
-                Upgrade to <span className="font-semibold text-accent">{tierLabel(nextTier)}</span> for{" "}
+            <div className="mt-2 rounded-md border border-line bg-ground p-4">
+              <p className="mb-3 text-body-s text-text-2">
+                Upgrade to <span className="font-medium text-text">{tierLabel(nextTier)}</span> for{" "}
                 {Number.isFinite(GENERATION_LIMITS[nextTier])
-                  ? `${GENERATION_LIMITS[nextTier]} generations/month`
-                  : "unlimited generations"}{" "}
-                at <span className="font-mono font-semibold text-text-primary">{PLAN_PRICING[nextTier].label}/mo</span>.
+                  ? `${GENERATION_LIMITS[nextTier]} pieces of content a month`
+                  : "unlimited pieces of content"}{" "}
+                at <span className="font-mono font-medium text-text">{PLAN_PRICING[nextTier].label}/mo</span>.
               </p>
               <Button asChild>
                 <Link href="/settings/billing" onClick={() => setState((s) => ({ ...s, open: false }))}>
@@ -89,8 +89,8 @@ export function UsageLimitProvider({ children }: { children: React.ReactNode }) 
           )}
 
           {!nextTier && (
-            <p className="mt-4 text-small text-text-secondary">
-              You&apos;re on the highest plan. Your generations reset on the 1st of next month.
+            <p className="mt-2 text-body-s text-text-2">
+              You&apos;re on the highest plan. Your allowance resets on the 1st of next month.
             </p>
           )}
         </DialogContent>

@@ -8,18 +8,14 @@ import {
   RefreshCw,
   Download,
   ArrowUpRight,
-  Loader2,
   Sparkles,
   Lock,
-} from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/ui/card";
+} from "@/src/components/ui/lucide-icons";
+import { Card } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
+import { EmptyState } from "@/src/components/ui/empty-state";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import { PageHeader } from "@/src/components/layout/page-header";
 
 import { useToast } from "@/src/components/ui/toast";
@@ -51,19 +47,31 @@ interface Audit {
   created_at: string;
 }
 
+// Plain labels for the three importance levels the audit API returns.
 const severityConfig = {
   critical: {
     icon: AlertTriangle,
-    color: "text-error",
-    badge: "error" as const,
+    color: "text-danger",
+    label: "Fix first",
+    hint: "these hurt how Google sees your site most",
   },
   warning: {
     icon: AlertTriangle,
-    color: "text-warning",
-    badge: "warning" as const,
+    color: "text-accent",
+    label: "Fix next",
+    hint: "worth fixing once the first list is done",
   },
-  info: { icon: Info, color: "text-info", badge: "info" as const },
+  info: {
+    icon: Info,
+    color: "text-text-3",
+    label: "Nice to have",
+    hint: "small wins when you have time",
+  },
 };
+
+function severityOf(f: Finding): keyof typeof severityConfig {
+  return f.severity in severityConfig ? f.severity : "info";
+}
 
 export default function AuditPage({
   params,
@@ -99,7 +107,7 @@ export default function AuditPage({
     if (!projectRes.ok) return;
     const project = await projectRes.json();
     if (!project.website_url) {
-      toast("No website URL set for this project.", "warning");
+      toast("Add your website address in project settings first.", "warning");
       return;
     }
 
@@ -111,14 +119,14 @@ export default function AuditPage({
     });
 
     if (res.ok) {
-      toast("Audit complete! Results updated.", "success");
+      toast("Site check done. Results updated.", "success");
       fetchAudits();
     } else {
       const err = await res.json();
       if (res.status === 429) {
         showLimitModal();
       } else {
-        toast(err.error || "Audit failed", "error");
+        toast(err.error || "The site check failed. Try again.", "error");
       }
     }
     setRerunning(false);
@@ -126,8 +134,11 @@ export default function AuditPage({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 text-accent animate-spin" />
+      <div className="space-y-6" role="status" aria-label="Loading">
+        <Skeleton className="h-10 w-56" />
+        <Skeleton className="h-36" />
+        <Skeleton className="h-24" />
+        <Skeleton className="h-24" />
       </div>
     );
   }
@@ -137,26 +148,16 @@ export default function AuditPage({
   if (!latestAudit) {
     return (
       <div>
-        <PageHeader title="SEO Audit" description="Technical and on-page analysis">
+        <PageHeader title="Site Audit" description="Finds what to fix on your website">
           <Button size="sm" onClick={handleRerun} disabled={rerunning}>
-            {rerunning ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Sparkles className="h-4 w-4" />
-            )}
-            {rerunning ? "Running..." : "Run First Audit"}
+            {!rerunning && <Sparkles className="h-4 w-4" />}
+            {rerunning ? "Checking your site…" : "Check my site"}
           </Button>
         </PageHeader>
-        <Card className="border-dashed border-border-strong">
-          <CardContent className="flex flex-col items-center py-16 text-center">
-            <AlertTriangle className="h-10 w-10 text-text-tertiary mb-4" />
-            <h3 className="text-h2 text-text-primary">No audits yet</h3>
-            <p className="mt-2 max-w-md text-body text-text-secondary">
-              Run your first SEO audit to get a detailed analysis of your
-              website&apos;s search optimization.
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={<AlertTriangle className="h-6 w-6" />}
+          title="No site check yet. Run one to see your site score and what to fix first."
+        />
       </div>
     );
   }
@@ -166,20 +167,27 @@ export default function AuditPage({
   const filtered =
     filter === "all"
       ? findings
-      : findings.filter((f) => f.severity === filter);
+      : findings.filter((f) => severityOf(f) === filter);
 
-  const scoreColor =
-    score >= 80 ? "success" : score >= 50 ? "warning" : "error";
+  const scoreStroke =
+    score >= 80 ? "var(--teal)" : score >= 50 ? "var(--accent)" : "var(--danger)";
   const scoreLabel =
-    score >= 80 ? "Good" : score >= 50 ? "Needs Improvement" : "Poor";
+    score >= 80 ? "Good" : score >= 50 ? "Needs work" : "Poor";
+  const scoreLabelClass =
+    score >= 80 ? "text-teal" : score >= 50 ? "text-accent" : "text-danger";
+
+  const countBy = (s: Finding["severity"]) =>
+    findings.filter((f) => severityOf(f) === s).length;
 
   return (
     <div>
-      <PageHeader title="SEO Audit" description={`Last run: ${new Date(latestAudit.created_at).toLocaleDateString()} — ${latestAudit.url}`}>
-
+      <PageHeader
+        title="Site Audit"
+        description={`Last checked ${new Date(latestAudit.created_at).toLocaleDateString()} · ${latestAudit.url}`}
+      >
         <div className="flex items-center gap-2">
           <Button
-            variant="secondary"
+            variant="outline"
             size="sm"
             onClick={async () => {
               const res = await fetch(
@@ -194,7 +202,7 @@ export default function AuditPage({
                 a.click();
                 URL.revokeObjectURL(url);
               } else {
-                toast("Failed to generate PDF", "error");
+                toast("Couldn't make the PDF. Try again.", "error");
               }
             }}
           >
@@ -202,48 +210,38 @@ export default function AuditPage({
             Download PDF
           </Button>
           <Button
-            variant="secondary"
+            variant="outline"
             size="sm"
             onClick={handleRerun}
             disabled={rerunning}
           >
-            {rerunning ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4" />
-            )}
-            {rerunning ? "Running..." : "Re-run Audit"}
+            {!rerunning && <RefreshCw className="h-4 w-4" />}
+            {rerunning ? "Checking…" : "Check again"}
           </Button>
         </div>
       </PageHeader>
 
-
       <ExpectationBanner
         storageKey="conduikt-expect-audit"
-        message="SEO improvements take 2-8 weeks to reflect in search rankings. Implement fixes gradually, starting with critical issues, and re-run audits regularly to track progress."
+        message="Fixes take 2 to 8 weeks to show up in Google results. Start with the 'Fix first' items and check your site again every few weeks."
         details={[
-          "A score of 80+ means your site is well optimized — that's the goal.",
-          "50-79 is a solid foundation with room to grow. Focus on the red items first.",
-          "Below 50 needs work, but every fix moves the needle. Start small, stay consistent.",
+          "80 out of 100 or more means your site is in good shape. That's the goal.",
+          "50 to 79 is a solid start with room to grow. Work through the 'Fix first' items.",
+          "Below 50 needs work, but every fix helps. Start small and keep going.",
         ]}
       />
 
-      {/* PageSpeed Panel */}
-      {latestAudit.metadata?.pageSpeed && (
-        <PageSpeedPanel data={latestAudit.metadata.pageSpeed} />
-      )}
-
-      {/* Score Gauge */}
+      {/* Score */}
       <Card className="mb-8 animate-in">
-        <CardContent className="flex flex-col sm:flex-row items-center gap-6 sm:gap-8 py-8">
-          <div className="relative flex h-28 w-28 items-center justify-center shrink-0">
-            <svg className="absolute inset-0" viewBox="0 0 120 120">
+        <div className="flex flex-col items-center gap-6 sm:flex-row sm:gap-8">
+          <div className="relative flex h-28 w-28 shrink-0 items-center justify-center">
+            <svg className="absolute inset-0" viewBox="0 0 120 120" aria-hidden>
               <circle
                 cx="60"
                 cy="60"
                 r="52"
                 fill="none"
-                stroke="var(--border-default)"
+                stroke="var(--surface-2)"
                 strokeWidth="8"
               />
               <circle
@@ -251,110 +249,112 @@ export default function AuditPage({
                 cy="60"
                 r="52"
                 fill="none"
-                stroke={`var(--${scoreColor})`}
+                stroke={scoreStroke}
                 strokeWidth="8"
                 strokeDasharray={`${(score / 100) * 327} 327`}
-                strokeLinecap="round"
                 transform="rotate(-90 60 60)"
                 className="transition-all duration-1000"
               />
             </svg>
-            <span className="text-3xl font-mono font-bold text-text-primary">
-              {score}
-            </span>
+            <span className="text-numeric text-4xl text-text">{score}</span>
           </div>
-          <div>
-            <h2 className="text-h2 text-text-primary">{scoreLabel}</h2>
-            <p className="text-body text-text-secondary mt-1">
-              Found {findings.length} issues:{" "}
-              {findings.filter((f) => f.severity === "critical").length}{" "}
-              critical,{" "}
-              {findings.filter((f) => f.severity === "warning").length}{" "}
-              warnings,{" "}
-              {findings.filter((f) => f.severity === "info").length} info
+          <div className="text-center sm:text-left">
+            <p className="text-label text-text-3">Site score</p>
+            <p className="mt-2 text-heading text-text">
+              {score} out of 100 ·{" "}
+              <span className={scoreLabelClass}>{scoreLabel}</span>
+            </p>
+            <p className="mt-1 text-body text-text-2">
+              {findings.length === 0
+                ? "We found nothing to fix."
+                : `We found ${findings.length} ${findings.length === 1 ? "thing" : "things"} to fix: ${countBy("critical")} to fix first, ${countBy("warning")} to fix next, ${countBy("info")} nice to have.`}
             </p>
             {audits.length > 1 && (
-              <p className="text-small text-text-tertiary mt-2">
-                {audits.length} audits total — showing latest
+              <p className="mt-2 text-caption text-text-3">
+                {audits.length} checks so far. Showing the latest.
               </p>
             )}
           </div>
-        </CardContent>
+        </div>
       </Card>
 
+      {/* Page speed */}
+      {latestAudit.metadata?.pageSpeed && (
+        <PageSpeedPanel data={latestAudit.metadata.pageSpeed} />
+      )}
+
       {/* Filters */}
-      <div className="flex items-center gap-2 mb-6">
+      <div className="mb-6 flex flex-wrap items-center gap-2" role="group" aria-label="Show">
         {(["all", "critical", "warning", "info"] as const).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`rounded-lg px-3 py-1.5 text-small font-medium transition-colors ${
+            aria-pressed={filter === f}
+            className={`rounded-md border px-3 py-1.5 text-body-s font-medium transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] ${
               filter === f
-                ? "bg-surface-2 text-accent"
-                : "text-text-secondary hover:text-text-primary hover:bg-surface-2"
+                ? "border-line-strong bg-surface text-text"
+                : "border-line text-text-2 hover:bg-surface-2 hover:text-text"
             }`}
           >
-            {f === "all" ? "All" : f.charAt(0).toUpperCase() + f.slice(1)}
-            {f !== "all" && (
-              <span className="ml-1.5 text-text-tertiary">
-                ({findings.filter((finding) => finding.severity === f).length})
-              </span>
-            )}
+            {f === "all" ? "Everything" : severityConfig[f].label}
+            <span className="ml-1.5 font-mono text-text-3">
+              {f === "all" ? findings.length : countBy(f)}
+            </span>
           </button>
         ))}
       </div>
 
-      {/* Findings List */}
-      <div className="space-y-3">
-        {filtered.map((finding, i) => {
-          const config = severityConfig[finding.severity] ?? severityConfig.info;
+      {/* Fixes, grouped by importance */}
+      <div className="space-y-8">
+        {(["critical", "warning", "info"] as const).map((sev) => {
+          const group = filtered.filter((f) => severityOf(f) === sev);
+          if (group.length === 0) return null;
+          const config = severityConfig[sev];
           const Icon = config.icon;
           return (
-            <Card
-              key={i}
-              className="animate-in"
-              style={{ animationDelay: `${i * 60}ms` }}
-            >
-              <CardContent className="flex items-start justify-between">
-                <div className="flex items-start gap-3 w-full">
-                  <Icon
-                    className={`mt-0.5 h-5 w-5 shrink-0 ${config.color}`}
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <h3 className="text-body font-medium text-text-primary">
-                        {finding.title}
-                      </h3>
-                      <Badge variant={config.badge}>{finding.severity}</Badge>
+            <section key={sev} aria-labelledby={`audit-group-${sev}`}>
+              <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <h2
+                  id={`audit-group-${sev}`}
+                  className="flex items-center gap-2 text-heading text-text"
+                >
+                  <Icon className={`h-5 w-5 ${config.color}`} aria-hidden />
+                  {config.label}
+                </h2>
+                <span className="text-body-s text-text-3">
+                  {group.length} · {config.hint}
+                </span>
+              </div>
+              <div className="space-y-3">
+                {group.map((finding, i) => (
+                  <Card
+                    key={`${sev}-${i}`}
+                    className="animate-in"
+                    style={{ animationDelay: `${Math.min(i, 5) * 80}ms` }}
+                  >
+                    <div className="mb-1 flex flex-wrap items-center gap-2">
+                      <h3 className="text-title text-text">{finding.title}</h3>
                       {finding.category && (
                         <Badge variant="secondary">{finding.category}</Badge>
                       )}
                       {finding.gated && (
-                        <Badge variant="secondary">
+                        <Badge variant="pro">
                           <Lock className="h-3 w-3" />
                           Pro
                         </Badge>
                       )}
                     </div>
                     {finding.gated ? (
-                      <div className="relative mt-2 rounded-lg border border-dashed border-accent/40 bg-accent-muted/20 p-4">
-                        <div
-                          aria-hidden
-                          className="select-none pointer-events-none blur-sm text-small text-text-tertiary space-y-2"
-                        >
-                          <p>
-                            Lorem ipsum dolor sit amet, consectetur adipiscing
-                            elit. Suspendisse ac risus nec libero lacinia.
-                          </p>
-                          <p>
-                            Pellentesque habitant morbi tristique senectus et
-                            netus et malesuada fames ac turpis egestas.
-                          </p>
+                      <div className="mt-3 rounded-md border border-dashed border-line bg-ground p-4">
+                        <div aria-hidden className="space-y-2">
+                          <div className="h-3 w-11/12 rounded-sm bg-surface-2" />
+                          <div className="h-3 w-4/5 rounded-sm bg-surface-2" />
+                          <div className="h-3 w-2/3 rounded-sm bg-surface-2" />
                         </div>
-                        <div className="mt-3 flex items-center justify-between gap-3">
-                          <p className="text-small text-text-secondary">
+                        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                          <p className="text-body-s text-text-2">
                             {finding.gateCTA ??
-                              "Upgrade to Pro to see this critical issue and how to fix it"}
+                              "Upgrade to Pro to see this issue and how to fix it."}
                           </p>
                           <Button size="sm" asChild>
                             <Link href="/settings/billing">
@@ -366,36 +366,32 @@ export default function AuditPage({
                       </div>
                     ) : (
                       <>
-                        <p className="text-small text-text-secondary">
-                          {finding.detail}
-                        </p>
+                        <p className="text-body-s text-text-2">{finding.detail}</p>
                         {finding.fix && (
-                          <div className="mt-3 rounded-lg bg-surface-0 border border-border-default p-3">
-                            <p className="text-caption text-text-tertiary mb-1">
-                              Suggested Fix
-                            </p>
-                            <code className="text-data text-accent-secondary break-all">
+                          <div className="mt-3 rounded-md border border-line bg-ground p-3">
+                            <p className="mb-1.5 text-label text-text-3">How to fix it</p>
+                            <p className="break-words font-mono text-body-s text-text">
                               {finding.fix}
-                            </code>
+                            </p>
                           </div>
                         )}
                       </>
                     )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  </Card>
+                ))}
+              </div>
+            </section>
           );
         })}
 
         {filtered.length === 0 && (
-          <Card>
-            <CardContent className="text-center py-8">
-              <p className="text-body text-text-secondary">
-                No {filter} findings.
-              </p>
-            </CardContent>
-          </Card>
+          <EmptyState
+            title={
+              filter === "all"
+                ? "Nothing to fix. Your site passed every check."
+                : `Nothing under "${severityConfig[filter].label}".`
+            }
+          />
         )}
       </div>
     </div>

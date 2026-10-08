@@ -2,10 +2,9 @@
 
 import { use, useEffect, useState } from "react";
 import {
-  Loader2,
   TrendingUp,
   Sparkles,
-} from "lucide-react";
+} from "@/src/components/ui/lucide-icons";
 import {
   LineChart,
   Line,
@@ -18,6 +17,8 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { EmptyState } from "@/src/components/ui/empty-state";
 import { PageHeader } from "@/src/components/layout/page-header";
 import { createClient } from "@/src/lib/supabase/client";
 
@@ -106,8 +107,13 @@ export default function LearningsPage({
 
   if (loading) {
     return (
-      <div className="flex h-96 items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-text-tertiary" />
+      <div className="space-y-8" role="status" aria-label="Loading learnings">
+        <Skeleton className="h-10 w-60" />
+        <div className="space-y-3">
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+        </div>
+        <Skeleton className="h-80 w-full" />
       </div>
     );
   }
@@ -119,49 +125,36 @@ export default function LearningsPage({
     <div className="space-y-8">
       <PageHeader
         title="Learnings"
-        description="What the analyzer has extracted from real performance. Active learnings are injected into every generation."
+        description="What we've learned from how your posts actually performed. Every new piece of content uses these."
       />
 
       {learnings.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-text-secondary">
-            <Sparkles className="mx-auto mb-3 h-8 w-8 text-text-tertiary" />
-            <p className="text-body">
-              No active learnings yet. The analyzer needs at least 6 posted, synced
-              posts in a 14-day window before it produces findings.
-            </p>
-            <p className="mt-2 text-small text-text-tertiary">
-              Runs daily at 03:00 UTC, or trigger manually via
-              {" "}
-              <code className="rounded bg-surface-2 px-1.5 py-0.5">
-                scripts/loop-closure/analyze-now.mjs
-              </code>
-              .
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={<Sparkles className="h-8 w-8" />}
+          title="Nothing learned yet. We need at least 6 published posts with stats from the last 14 days. We check every day at 03:00 UTC."
+        />
       ) : (
         <div className="space-y-3">
           {learnings.map((l) => (
             <Card key={l.id}>
-              <CardContent className="p-4">
+              <CardContent>
                 <div className="mb-2 flex items-start justify-between gap-3">
-                  <p className="text-body text-text-primary">{l.hypothesis}</p>
-                  <Badge variant="secondary" className="shrink-0 capitalize">
+                  <p className="text-body text-text">{l.hypothesis}</p>
+                  <Badge variant="secondary" className="shrink-0">
                     {l.channel}
                   </Badge>
                 </div>
-                <div className="flex flex-wrap gap-3 text-small text-text-tertiary">
+                <div className="flex flex-wrap gap-3 text-caption text-text-3">
                   {l.evidence.lift !== undefined && (
-                    <span className="inline-flex items-center gap-1">
+                    <span className="inline-flex items-center gap-1 font-mono text-teal">
                       <TrendingUp className="h-3.5 w-3.5" />
                       {l.evidence.lift}x lift
                     </span>
                   )}
                   {l.evidence.sampleSize !== undefined && (
-                    <span>n={l.evidence.sampleSize}</span>
+                    <span className="font-mono">{l.evidence.sampleSize} posts</span>
                   )}
-                  <span>confidence {Math.round(l.confidence * 100)}%</span>
+                  <span className="font-mono">{Math.round(l.confidence * 100)}% confidence</span>
                   <span className="font-mono">{l.pattern_key}</span>
                 </div>
               </CardContent>
@@ -176,36 +169,37 @@ export default function LearningsPage({
         </CardHeader>
         <CardContent>
           {weekly.length === 0 ? (
-            <div className="py-12 text-center text-small text-text-tertiary">
-              No metrics yet. Once posts publish and the sync cron runs, the
-              before/after chart shows up here.
-            </div>
+            <p className="py-12 text-center text-body-s text-text-3">
+              No stats yet. Once your posts are published and their stats come
+              in, the before-and-after chart shows here.
+            </p>
           ) : (
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={weekly}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-3)" />
-                  <XAxis dataKey="week" stroke="var(--text-tertiary)" fontSize={12} />
-                  <YAxis stroke="var(--text-tertiary)" fontSize={12} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" vertical={false} />
+                  <XAxis dataKey="week" stroke="var(--text-3)" fontSize={12} tickLine={false} />
+                  <YAxis stroke="var(--text-3)" fontSize={12} tickLine={false} axisLine={false} />
                   <Tooltip
                     contentStyle={{
-                      background: "var(--surface-1)",
-                      border: "1px solid var(--surface-3)",
+                      background: "var(--surface)",
+                      border: "1px solid var(--line)",
                       borderRadius: 8,
+                      color: "var(--text)",
                     }}
                   />
                   {analyzerBoundary && (
                     <ReferenceLine
                       x={analyzerBoundary}
-                      stroke="var(--accent-primary)"
+                      stroke="var(--accent)"
                       strokeDasharray="3 3"
-                      label={{ value: "analyzer", fill: "var(--accent-primary)", fontSize: 11 }}
+                      label={{ value: "Learnings on", fill: "var(--accent)", fontSize: 11 }}
                     />
                   )}
                   <Line
                     type="monotone"
                     dataKey="x"
-                    stroke="var(--accent-primary)"
+                    stroke="var(--teal)"
                     strokeWidth={2}
                     dot={{ r: 3 }}
                     name="X"
@@ -213,7 +207,7 @@ export default function LearningsPage({
                   <Line
                     type="monotone"
                     dataKey="linkedin"
-                    stroke="var(--accent-secondary)"
+                    stroke="var(--text-2)"
                     strokeWidth={2}
                     dot={{ r: 3 }}
                     name="LinkedIn"
@@ -223,9 +217,9 @@ export default function LearningsPage({
             </div>
           )}
           {analyzerRunAt && (
-            <p className="mt-3 text-small text-text-tertiary">
-              Latest analyzer run: {new Date(analyzerRunAt).toLocaleString()}. Posts
-              after this point were generated with learnings injected.
+            <p className="mt-3 text-body-s text-text-3">
+              Last checked {new Date(analyzerRunAt).toLocaleString()}. Posts
+              after this point were written using these learnings.
             </p>
           )}
         </CardContent>

@@ -9,12 +9,13 @@ import {
   Check,
   Wallet,
   DollarSign,
-  Loader2,
   X,
   TrendingUp,
   Users,
   MousePointerClick,
-} from "lucide-react";
+} from "@/src/components/ui/lucide-icons";
+import { Button, IconButton } from "@/src/components/ui/button";
+import { Badge } from "@/src/components/ui/badge";
 
 type ReferralLink = {
   id: string;
@@ -111,28 +112,25 @@ export function ReferralsClient({
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-h1 text-text-primary">Referral Program</h1>
-          <p className="text-body text-text-secondary mt-1">
+          <h1 className="text-display-s text-text">Referral program</h1>
+          <p className="mt-1 text-body text-text-2">
             Create trackable links, manage partners, and disburse commissions.
           </p>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-br from-[#D9663A] to-[#B24E27] px-4 py-2.5 text-[0.875rem] font-medium text-on-accent shadow-[0_0_20px_var(--accent-glow)] hover:brightness-110 transition-all"
-        >
+        <Button onClick={() => setShowCreate(true)}>
           <Plus className="h-4 w-4" />
-          New Referral Link
-        </button>
+          New referral link
+        </Button>
       </div>
 
       {message && (
         <div
           className={`rounded-lg border px-4 py-3 text-body ${
             message.type === "success"
-              ? "border-success/20 bg-success/5 text-success"
-              : "border-error/20 bg-error/5 text-error"
+              ? "border-line bg-teal-soft text-teal"
+              : "border-line bg-surface-2 text-danger"
           }`}
         >
           {message.text}
@@ -140,15 +138,15 @@ export function ReferralsClient({
       )}
 
       {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon={<LinkIcon className="h-4 w-4" />}
-          label="Active Links"
+          label="Active links"
           value={stats.totals.linkCount.toString()}
         />
         <StatCard
           icon={<MousePointerClick className="h-4 w-4" />}
-          label="Total Clicks"
+          label="Total clicks"
           value={stats.totals.clickCount.toLocaleString()}
         />
         <StatCard
@@ -158,106 +156,102 @@ export function ReferralsClient({
         />
         <StatCard
           icon={<DollarSign className="h-4 w-4" />}
-          label="Unpaid Commissions"
+          label="Unpaid commissions"
           value={`$${stats.totals.unpaidCommissionsUsd.toFixed(2)}`}
           accent
         />
       </div>
 
       {/* Referral links table */}
-      <div className="rounded-xl border border-border-default bg-surface-1 p-6">
+      <div className="rounded-lg border border-line bg-surface p-6">
         <div className="flex items-center gap-2 mb-4">
-          <Share2 className="h-5 w-5 text-accent" />
-          <h2 className="text-h3 text-text-primary">Links ({stats.links.length})</h2>
+          <Share2 className="h-5 w-5 text-text-3" />
+          <h2 className="text-title text-text">Links ({stats.links.length})</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-border-subtle">
-                <th className="text-caption text-text-tertiary pb-3 pr-4">Link</th>
-                <th className="text-caption text-text-tertiary pb-3 pr-4">Partner</th>
-                <th className="text-caption text-text-tertiary pb-3 pr-4">Commission</th>
-                <th className="text-caption text-text-tertiary pb-3 pr-4 text-right">Clicks</th>
-                <th className="text-caption text-text-tertiary pb-3 pr-4 text-right">Signups</th>
-                <th className="text-caption text-text-tertiary pb-3 pr-4 text-right">Unpaid</th>
-                <th className="text-caption text-text-tertiary pb-3 text-right">Actions</th>
+              <tr className="border-b border-line">
+                <th className="text-label text-text-3 pb-3 pr-4">Link</th>
+                <th className="text-label text-text-3 pb-3 pr-4">Partner</th>
+                <th className="text-label text-text-3 pb-3 pr-4">Commission</th>
+                <th className="text-label text-text-3 pb-3 pr-4 text-right">Clicks</th>
+                <th className="text-label text-text-3 pb-3 pr-4 text-right">Signups</th>
+                <th className="text-label text-text-3 pb-3 pr-4 text-right">Unpaid</th>
+                <th className="text-label text-text-3 pb-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {stats.links.map((link) => (
-                <tr key={link.id} className="border-b border-border-subtle last:border-0">
+                <tr key={link.id} className="border-b border-line last:border-0">
                   <td className="py-3 pr-4">
                     <div className="flex items-center gap-2">
                       <button
+                        type="button"
                         onClick={() => copyLink(link.code)}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-border-subtle bg-surface-2 px-2 py-1 font-mono text-[0.75rem] text-text-secondary hover:bg-surface-3 transition-colors"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-line-strong bg-surface px-2 py-1 font-mono text-caption text-text-2 hover:bg-surface-2 transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)]"
                       >
                         {copied === link.code ? (
-                          <Check className="h-3 w-3 text-success" />
+                          <Check className="h-3 w-3 text-teal" />
                         ) : (
                           <Copy className="h-3 w-3" />
                         )}
                         /r/{link.code}
                       </button>
-                      <span
-                        className={`text-[0.6875rem] rounded-full px-2 py-0.5 ${
-                          link.active
-                            ? "bg-success/10 text-success"
-                            : "bg-surface-2 text-text-tertiary"
-                        }`}
-                      >
+                      <Badge variant={link.active ? "success" : "secondary"}>
                         {link.active ? "active" : "paused"}
-                      </span>
+                      </Badge>
                     </div>
-                    <div className="text-small text-text-primary mt-1">{link.label}</div>
+                    <div className="mt-1 text-body-s text-text">{link.label}</div>
                   </td>
                   <td className="py-3 pr-4">
-                    <div className="text-small text-text-primary">{link.partner_name}</div>
-                    <div className="text-[0.75rem] text-text-tertiary">{link.partner_email}</div>
+                    <div className="text-body-s text-text">{link.partner_name}</div>
+                    <div className="text-caption text-text-3">{link.partner_email}</div>
                   </td>
-                  <td className="py-3 pr-4 text-small text-text-secondary">
+                  <td className="py-3 pr-4 text-body-s text-text-2">
                     {link.commission_type === "flat"
                       ? `$${Number(link.flat_amount_usd ?? 0).toFixed(2)} flat`
                       : `${((link.commission_rate ?? 0) * 100).toFixed(0)}%`}
                   </td>
-                  <td className="py-3 pr-4 text-right text-small font-mono text-text-primary">
+                  <td className="py-3 pr-4 text-right text-body-s font-mono text-text">
                     {link.clicks}
                   </td>
-                  <td className="py-3 pr-4 text-right text-small font-mono text-text-primary">
-                    {link.conversions} <span className="text-text-tertiary">({link.paidConversions})</span>
+                  <td className="py-3 pr-4 text-right text-body-s font-mono text-text">
+                    {link.conversions} <span className="text-text-3">({link.paidConversions})</span>
                   </td>
-                  <td className="py-3 pr-4 text-right text-small font-mono text-accent">
+                  <td className="py-3 pr-4 text-right font-mono text-body-s text-text">
                     ${link.unpaidEarnedUsd.toFixed(2)}
                   </td>
                   <td className="py-3 text-right">
                     <div className="inline-flex items-center gap-1.5">
-                      <button
+                      <Button
+                        size="sm"
+                        variant="quiet"
                         onClick={() => setPayoutLink(link)}
                         disabled={link.unpaidEarnedUsd <= 0}
-                        className="inline-flex items-center gap-1 rounded-md border border-accent/20 bg-accent/5 px-2.5 py-1 text-[0.75rem] font-medium text-accent hover:bg-accent/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                       >
                         <Wallet className="h-3 w-3" />
                         Pay
-                      </button>
-                      <button
-                        onClick={() => toggleActive(link)}
-                        className="rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1 text-[0.75rem] text-text-secondary hover:bg-surface-3 transition-colors"
-                      >
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => toggleActive(link)}>
                         {link.active ? "Pause" : "Resume"}
-                      </button>
-                      <button
+                      </Button>
+                      <IconButton
+                        size="sm"
+                        variant="outline"
+                        label={`Delete ${link.label}`}
                         onClick={() => deleteLink(link)}
-                        className="rounded-md border border-error/20 bg-error/5 px-2.5 py-1 text-[0.75rem] text-error hover:bg-error/10 transition-colors"
+                        className="text-danger"
                       >
                         <X className="h-3 w-3" />
-                      </button>
+                      </IconButton>
                     </div>
                   </td>
                 </tr>
               ))}
               {stats.links.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-6 text-center text-text-tertiary text-body">
+                  <td colSpan={7} className="py-6 text-center text-body text-text-3">
                     No referral links yet. Create one to get started.
                   </td>
                 </tr>
@@ -268,47 +262,47 @@ export function ReferralsClient({
       </div>
 
       {/* Payout ledger */}
-      <div className="rounded-xl border border-border-default bg-surface-1 p-6">
+      <div className="rounded-lg border border-line bg-surface p-6">
         <div className="flex items-center gap-2 mb-4">
-          <TrendingUp className="h-5 w-5 text-accent" />
-          <h2 className="text-h3 text-text-primary">Payout History ({payouts.length})</h2>
+          <TrendingUp className="h-5 w-5 text-text-3" />
+          <h2 className="text-title text-text">Payout history ({payouts.length})</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-border-subtle">
-                <th className="text-caption text-text-tertiary pb-3 pr-4">Date</th>
-                <th className="text-caption text-text-tertiary pb-3 pr-4">Partner</th>
-                <th className="text-caption text-text-tertiary pb-3 pr-4">Method</th>
-                <th className="text-caption text-text-tertiary pb-3 pr-4">Reference</th>
-                <th className="text-caption text-text-tertiary pb-3 text-right">Amount</th>
+              <tr className="border-b border-line">
+                <th className="text-label text-text-3 pb-3 pr-4">Date</th>
+                <th className="text-label text-text-3 pb-3 pr-4">Partner</th>
+                <th className="text-label text-text-3 pb-3 pr-4">Method</th>
+                <th className="text-label text-text-3 pb-3 pr-4">Reference</th>
+                <th className="text-label text-text-3 pb-3 text-right">Amount</th>
               </tr>
             </thead>
             <tbody>
               {payouts.map((p) => (
-                <tr key={p.id} className="border-b border-border-subtle last:border-0">
-                  <td className="py-3 pr-4 text-small text-text-secondary">
+                <tr key={p.id} className="border-b border-line last:border-0">
+                  <td className="py-3 pr-4 text-body-s text-text-2">
                     {new Date(p.created_at).toLocaleDateString()}
                   </td>
                   <td className="py-3 pr-4">
-                    <div className="text-small text-text-primary">{p.partner_name}</div>
-                    <div className="text-[0.75rem] text-text-tertiary">{p.partner_email}</div>
+                    <div className="text-body-s text-text">{p.partner_name}</div>
+                    <div className="text-caption text-text-3">{p.partner_email}</div>
                   </td>
-                  <td className="py-3 pr-4 text-small text-text-secondary capitalize">
-                    {p.method ?? "—"}
+                  <td className="py-3 pr-4 text-body-s text-text-2 capitalize">
+                    {p.method ?? "Not set"}
                   </td>
-                  <td className="py-3 pr-4 text-[0.75rem] text-text-tertiary font-mono">
-                    {p.reference ?? "—"}
+                  <td className="py-3 pr-4 font-mono text-caption text-text-3">
+                    {p.reference ?? "None"}
                   </td>
-                  <td className="py-3 text-right text-small font-mono text-text-primary">
+                  <td className="py-3 text-right text-body-s font-mono text-text">
                     ${Number(p.amount_usd).toFixed(2)}
                   </td>
                 </tr>
               ))}
               {payouts.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-6 text-center text-text-tertiary text-body">
-                    No payouts disbursed yet
+                  <td colSpan={5} className="py-6 text-center text-body text-text-3">
+                    No payouts disbursed yet.
                   </td>
                 </tr>
               )}
@@ -387,14 +381,14 @@ function StatCard({
   accent?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-border-default bg-surface-1 p-5">
-      <div className="flex items-center gap-2 text-text-tertiary mb-1">
+    <div className="bg-surface p-5">
+      <div className="mb-2 flex items-center gap-2 text-text-3">
         {icon}
-        <span className="text-caption">{label}</span>
+        <span className="text-label">{label}</span>
       </div>
       <p
-        className={`text-[1.5rem] font-semibold font-mono leading-none ${
-          accent ? "text-accent" : "text-text-primary"
+        className={`text-numeric text-[1.5rem] ${
+          accent ? "text-accent-hover" : "text-text"
         }`}
       >
         {value}
@@ -456,16 +450,16 @@ function CreateModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4" onClick={onClose}>
       <div
-        className="w-full max-w-lg rounded-xl border border-border-default bg-surface-1 p-6"
+        className="w-full max-w-lg rounded-lg border border-line bg-surface p-6 shadow-[var(--shadow-float)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-h3 text-text-primary">New Referral Link</h2>
-          <button onClick={onClose} className="text-text-tertiary hover:text-text-primary">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-heading text-text">New referral link</h2>
+          <IconButton label="Close" onClick={onClose}>
             <X className="h-5 w-5" />
-          </button>
+          </IconButton>
         </div>
         <form onSubmit={handleSubmit} className="space-y-3">
           <Field label="Slug (URL)">
@@ -474,9 +468,9 @@ function CreateModal({
               value={form.code}
               onChange={(e) => setForm({ ...form, code: e.target.value })}
               placeholder="summer-launch"
-              className="w-full rounded-lg border border-border-default bg-surface-2 px-3 py-2 text-body text-text-primary font-mono"
+              className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent font-mono"
             />
-            <span className="text-[0.6875rem] text-text-tertiary mt-1 block">
+            <span className="mt-1 block font-mono text-caption text-text-3">
               conduikt.com/r/{form.code || "your-slug"}
             </span>
           </Field>
@@ -486,7 +480,7 @@ function CreateModal({
               value={form.label}
               onChange={(e) => setForm({ ...form, label: e.target.value })}
               placeholder="Summer 2026 — influencer campaign"
-              className="w-full rounded-lg border border-border-default bg-surface-2 px-3 py-2 text-body text-text-primary"
+              className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             />
           </Field>
           <div className="grid grid-cols-2 gap-3">
@@ -495,7 +489,7 @@ function CreateModal({
                 required
                 value={form.partner_name}
                 onChange={(e) => setForm({ ...form, partner_name: e.target.value })}
-                className="w-full rounded-lg border border-border-default bg-surface-2 px-3 py-2 text-body text-text-primary"
+                className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               />
             </Field>
             <Field label="Partner email">
@@ -504,7 +498,7 @@ function CreateModal({
                 required
                 value={form.partner_email}
                 onChange={(e) => setForm({ ...form, partner_email: e.target.value })}
-                className="w-full rounded-lg border border-border-default bg-surface-2 px-3 py-2 text-body text-text-primary"
+                className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               />
             </Field>
           </div>
@@ -514,7 +508,7 @@ function CreateModal({
               onChange={(e) =>
                 setForm({ ...form, commission_type: e.target.value as "percentage" | "flat" })
               }
-              className="w-full rounded-lg border border-border-default bg-surface-2 px-3 py-2 text-body text-text-primary"
+              className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               <option value="percentage">Percentage of revenue</option>
               <option value="flat">Flat amount per paid signup</option>
@@ -529,7 +523,7 @@ function CreateModal({
                 max="1"
                 value={form.commission_rate}
                 onChange={(e) => setForm({ ...form, commission_rate: e.target.value })}
-                className="w-full rounded-lg border border-border-default bg-surface-2 px-3 py-2 text-body text-text-primary font-mono"
+                className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent font-mono"
               />
             </Field>
           ) : (
@@ -540,7 +534,7 @@ function CreateModal({
                 min="0"
                 value={form.flat_amount_usd}
                 onChange={(e) => setForm({ ...form, flat_amount_usd: e.target.value })}
-                className="w-full rounded-lg border border-border-default bg-surface-2 px-3 py-2 text-body text-text-primary font-mono"
+                className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent font-mono"
               />
             </Field>
           )}
@@ -549,25 +543,17 @@ function CreateModal({
               rows={2}
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              className="w-full rounded-lg border border-border-default bg-surface-2 px-3 py-2 text-body text-text-primary resize-none"
+              className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent resize-none"
             />
           </Field>
           <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg border border-border-default bg-surface-2 px-4 py-2 text-[0.875rem] text-text-secondary hover:bg-surface-3 transition-colors"
-            >
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-br from-[#D9663A] to-[#B24E27] px-4 py-2 text-[0.875rem] font-medium text-on-accent hover:brightness-110 transition-all disabled:opacity-50"
-            >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-              Create link
-            </button>
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {!loading && <Plus className="h-4 w-4" />}
+              {loading ? "Creating…" : "Create link"}
+            </Button>
           </div>
         </form>
       </div>
@@ -625,21 +611,21 @@ function PayoutModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4" onClick={onClose}>
       <div
-        className="w-full max-w-md rounded-xl border border-border-default bg-surface-1 p-6"
+        className="w-full max-w-md rounded-lg border border-line bg-surface p-6 shadow-[var(--shadow-float)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-h3 text-text-primary">Record Payout</h2>
-          <button onClick={onClose} className="text-text-tertiary hover:text-text-primary">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-heading text-text">Record payout</h2>
+          <IconButton label="Close" onClick={onClose}>
             <X className="h-5 w-5" />
-          </button>
+          </IconButton>
         </div>
-        <div className="rounded-lg border border-border-subtle bg-surface-2 px-3 py-2 mb-4">
-          <div className="text-[0.75rem] text-text-tertiary">Partner</div>
-          <div className="text-small text-text-primary">{link.partner_name}</div>
-          <div className="text-[0.75rem] text-text-tertiary">
+        <div className="mb-4 rounded-md border border-line bg-surface-2 px-3 py-2">
+          <div className="text-label text-text-3">Partner</div>
+          <div className="text-body-s text-text">{link.partner_name}</div>
+          <div className="font-mono text-caption text-text-3">
             Unpaid: ${link.unpaidEarnedUsd.toFixed(2)}
           </div>
         </div>
@@ -652,14 +638,14 @@ function PayoutModal({
               required
               value={form.amount_usd}
               onChange={(e) => setForm({ ...form, amount_usd: e.target.value })}
-              className="w-full rounded-lg border border-border-default bg-surface-2 px-3 py-2 text-body text-text-primary font-mono"
+              className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent font-mono"
             />
           </Field>
           <Field label="Method">
             <select
               value={form.method}
               onChange={(e) => setForm({ ...form, method: e.target.value })}
-              className="w-full rounded-lg border border-border-default bg-surface-2 px-3 py-2 text-body text-text-primary"
+              className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               <option value="bank">Bank transfer</option>
               <option value="paypal">PayPal</option>
@@ -671,7 +657,7 @@ function PayoutModal({
             <input
               value={form.reference}
               onChange={(e) => setForm({ ...form, reference: e.target.value })}
-              className="w-full rounded-lg border border-border-default bg-surface-2 px-3 py-2 text-body text-text-primary font-mono"
+              className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent font-mono"
             />
           </Field>
           <Field label="Notes (optional)">
@@ -679,25 +665,17 @@ function PayoutModal({
               rows={2}
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              className="w-full rounded-lg border border-border-default bg-surface-2 px-3 py-2 text-body text-text-primary resize-none"
+              className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent resize-none"
             />
           </Field>
           <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg border border-border-default bg-surface-2 px-4 py-2 text-[0.875rem] text-text-secondary hover:bg-surface-3 transition-colors"
-            >
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-br from-[#D9663A] to-[#B24E27] px-4 py-2 text-[0.875rem] font-medium text-on-accent hover:brightness-110 transition-all disabled:opacity-50"
-            >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />}
-              Record payout
-            </button>
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {!loading && <Wallet className="h-4 w-4" />}
+              {loading ? "Recording…" : "Record payout"}
+            </Button>
           </div>
         </form>
       </div>
@@ -708,7 +686,7 @@ function PayoutModal({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="text-caption text-text-tertiary mb-1 block">{label}</span>
+      <span className="mb-2 block text-label text-text-3">{label}</span>
       {children}
     </label>
   );

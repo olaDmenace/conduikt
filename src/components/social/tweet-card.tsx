@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageCircle, Repeat2, Heart, Bookmark, BarChart2, Share } from "lucide-react";
+import { MessageCircle, Repeat2, Heart, Bookmark, BarChart2, Share } from "@/src/components/ui/lucide-icons";
 import { cn } from "@/src/lib/utils/cn";
 
 /**
@@ -69,22 +69,22 @@ export function TweetCard({
   const C = 2 * Math.PI * R;
 
   const ringColor = overLimit
-    ? "stroke-red-500"
+    ? "stroke-danger"
     : warning
-    ? "stroke-yellow-500"
-    : "stroke-sky-500";
+    ? "stroke-accent"
+    : "stroke-teal";
 
   return (
     <article
       className={cn(
-        "rounded-2xl border border-border-default bg-surface-1 p-4 max-w-[598px] font-sans",
+        "rounded-lg border border-line bg-surface p-4 max-w-[598px] font-sans",
         className
       )}
       // aria region so screen readers announce it as a preview grouping
       aria-label="Tweet preview"
     >
       {thread && position && (
-        <div className="mb-2 text-caption text-text-tertiary font-mono">
+        <div className="mb-2 text-caption text-text-3 font-mono">
           {position.current}/{position.total}
         </div>
       )}
@@ -101,7 +101,7 @@ export function TweetCard({
             />
           ) : (
             <div
-              className="h-10 w-10 rounded-full bg-surface-3 flex items-center justify-center text-text-secondary text-sm font-semibold"
+              className="h-10 w-10 rounded-full bg-surface-2 flex items-center justify-center text-text-2 text-sm font-semibold"
               aria-hidden
             >
               {author.name.charAt(0).toUpperCase()}
@@ -113,12 +113,12 @@ export function TweetCard({
         <div className="flex-1 min-w-0">
           {/* Header line */}
           <div className="flex items-center gap-1 text-[0.9375rem] leading-tight">
-            <span className="font-bold text-text-primary truncate">
+            <span className="font-bold text-text truncate">
               {author.name}
             </span>
             {author.verified && (
               <span
-                className="text-sky-500 shrink-0"
+                className="text-teal shrink-0"
                 aria-label="Verified"
                 title="Verified"
               >
@@ -133,17 +133,17 @@ export function TweetCard({
                 </svg>
               </span>
             )}
-            <span className="text-text-tertiary truncate">
+            <span className="text-text-3 truncate">
               @{author.handle}
             </span>
-            <span className="text-text-tertiary">·</span>
-            <span className="text-text-tertiary">{timestamp}</span>
+            <span className="text-text-3">·</span>
+            <span className="text-text-3">{timestamp}</span>
           </div>
 
           {/* Body */}
-          <p className="mt-1 text-[0.9375rem] leading-[1.35] text-text-primary whitespace-pre-wrap break-words">
+          <p className="mt-1 text-[0.9375rem] leading-[1.35] text-text whitespace-pre-wrap break-words">
             {text || (
-              <span className="text-text-tertiary italic">
+              <span className="text-text-3 italic">
                 Your tweet will appear here as you type…
               </span>
             )}
@@ -153,7 +153,7 @@ export function TweetCard({
           {mediaCount > 0 && (
             <div
               className={cn(
-                "mt-3 grid gap-0.5 rounded-2xl overflow-hidden border border-border-subtle",
+                "mt-3 grid gap-0.5 rounded-lg overflow-hidden border border-line",
                 mediaCount === 1 && "grid-cols-1",
                 mediaCount === 2 && "grid-cols-2",
                 mediaCount === 3 && "grid-cols-2",
@@ -163,7 +163,7 @@ export function TweetCard({
               {Array.from({ length: Math.min(mediaCount, 4) }).map((_, i) => (
                 <div
                   key={i}
-                  className="aspect-video bg-surface-3 flex items-center justify-center text-text-tertiary text-caption"
+                  className="aspect-video bg-surface-2 flex items-center justify-center text-text-3 text-caption"
                 >
                   Media {i + 1}
                 </div>
@@ -172,40 +172,40 @@ export function TweetCard({
           )}
 
           {/* Interaction row + counter ring */}
-          <div className="mt-3 flex items-center justify-between text-text-tertiary">
+          <div className="mt-3 flex items-center justify-between text-text-3">
             <div className="flex items-center gap-6 text-caption">
               <span
-                className="flex items-center gap-1 hover:text-sky-500 transition-colors"
+                className="flex items-center gap-1 hover:text-text transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)]"
                 title="Reply"
               >
                 <MessageCircle className="h-4 w-4" />
               </span>
               <span
-                className="flex items-center gap-1 hover:text-emerald-500 transition-colors"
+                className="flex items-center gap-1 hover:text-text transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)]"
                 title="Repost"
               >
                 <Repeat2 className="h-4 w-4" />
               </span>
               <span
-                className="flex items-center gap-1 hover:text-pink-500 transition-colors"
+                className="flex items-center gap-1 hover:text-text transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)]"
                 title="Like"
               >
                 <Heart className="h-4 w-4" />
               </span>
               <span
-                className="flex items-center gap-1 hover:text-sky-500 transition-colors"
+                className="flex items-center gap-1 hover:text-text transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)]"
                 title="Views"
               >
                 <BarChart2 className="h-4 w-4" />
               </span>
               <span
-                className="flex items-center gap-1 hover:text-sky-500 transition-colors"
+                className="flex items-center gap-1 hover:text-text transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)]"
                 title="Bookmark"
               >
                 <Bookmark className="h-4 w-4" />
               </span>
               <span
-                className="flex items-center gap-1 hover:text-sky-500 transition-colors"
+                className="flex items-center gap-1 hover:text-text transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)]"
                 title="Share"
               >
                 <Share className="h-4 w-4" />
@@ -222,7 +222,7 @@ export function TweetCard({
                 <span
                   className={cn(
                     "text-caption font-mono tabular-nums",
-                    overLimit ? "text-red-500" : "text-yellow-500"
+                    overLimit ? "text-danger" : "text-accent"
                   )}
                 >
                   {remaining}
@@ -233,7 +233,7 @@ export function TweetCard({
                   cx="10"
                   cy="10"
                   r={R}
-                  className="fill-none stroke-border-strong"
+                  className="fill-none stroke-line-strong"
                   strokeWidth="1.5"
                 />
                 <circle

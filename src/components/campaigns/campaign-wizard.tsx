@@ -8,11 +8,10 @@ import {
   Trash2,
   ArrowRight,
   ArrowLeft,
-  Loader2,
   GripVertical,
-} from "lucide-react";
-import { Button } from "@/src/components/ui/button";
-import { Card, CardContent } from "@/src/components/ui/card";
+} from "@/src/components/ui/lucide-icons";
+import { Button, IconButton } from "@/src/components/ui/button";
+import { Card } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { AGENT_REGISTRY } from "@/src/lib/ai/agents/registry";
 
@@ -43,16 +42,16 @@ const availableAgents = AGENT_REGISTRY.filter(
 
 const CAMPAIGN_TEMPLATES = [
   {
-    name: "Blog → Social Promotion",
-    description: "Write a blog post, then generate social promotion for it",
+    name: "Blog post, then social posts",
+    description: "Write a blog post, then posts to share it",
     steps: [
       { agent_id: "blog-post", config: {} },
       { agent_id: "social-content", config: {} },
     ],
   },
   {
-    name: "Audit → Fix → Report",
-    description: "Run an SEO audit, generate copy fixes, then create a growth plan",
+    name: "Check, fix, plan",
+    description: "Check your site, rewrite the copy that needs it, then make a growth plan",
     steps: [
       { agent_id: "seo-audit", config: {} },
       { agent_id: "copywriting", config: {} },
@@ -60,8 +59,8 @@ const CAMPAIGN_TEMPLATES = [
     ],
   },
   {
-    name: "Monthly Content Sprint",
-    description: "Keyword research → blog posts → social content → email sequence",
+    name: "A month of content",
+    description: "Find what people search for, then write blog posts, social posts and an email series",
     steps: [
       { agent_id: "keyword-research", config: {} },
       { agent_id: "blog-post", config: {} },
@@ -108,7 +107,7 @@ export function CampaignWizard({
       onClose();
     } else {
       const err = await res.json();
-      setError(err.error || "Failed to create campaign");
+      setError(err.error || "Couldn't make the campaign. Try again.");
     }
     setCreating(false);
   }
@@ -118,23 +117,30 @@ export function CampaignWizard({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[90] flex items-center justify-center bg-surface-0/80 backdrop-blur-sm"
+      className="fixed inset-0 z-[90] flex items-center justify-center bg-overlay/60"
     >
       <motion.div
-        initial={{ opacity: 0, y: 20, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        className="relative w-full max-w-2xl mx-4 max-h-[85vh] overflow-y-auto rounded-2xl border border-border-default bg-surface-1 p-6 shadow-[var(--shadow-elevated)]"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="campaign-wizard-title"
+        className="relative mx-4 max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-line bg-surface p-6 shadow-[var(--shadow-float)]"
       >
-        <button
+        <IconButton
+          label="Close"
+          size="sm"
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-lg p-1.5 text-text-tertiary hover:text-text-primary hover:bg-surface-2 transition-colors"
+          className="absolute right-4 top-4"
         >
           <X className="h-4 w-4" />
-        </button>
+        </IconButton>
 
-        <h2 className="text-h2 text-text-primary mb-1">Create Campaign</h2>
-        <p className="text-small text-text-secondary mb-6">
-          Chain AI agents together to build a multi-step marketing pipeline.
+        <h2 id="campaign-wizard-title" className="mb-1 text-heading text-text">
+          New campaign
+        </h2>
+        <p className="mb-6 text-body-s text-text-2">
+          Chain agents into one run. Each step uses what the last one made.
         </p>
 
         <AnimatePresence mode="wait">
@@ -142,12 +148,12 @@ export function CampaignWizard({
           {phase === "name" && (
             <motion.div
               key="name"
-              initial={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
+              exit={{ opacity: 0, x: 10 }}
             >
               {/* Quick-start templates */}
-              <p className="text-caption text-text-tertiary mb-2">
+              <p className="mb-2 text-label text-text-3">
                 Start from a template
               </p>
               <div className="grid gap-2 mb-6">
@@ -159,12 +165,12 @@ export function CampaignWizard({
                       setSteps(tpl.steps.map((s) => ({ ...s, _uid: newUid() })));
                       setPhase("review");
                     }}
-                    className="text-left rounded-lg border border-border-default bg-surface-0 p-3 hover:border-accent hover:bg-surface-2 transition-colors"
+                    className="hover-card hover-card-quiet rounded-md border border-line bg-surface p-3 text-left"
                   >
-                    <p className="text-body font-medium text-text-primary">
+                    <p className="text-title text-text">
                       {tpl.name}
                     </p>
-                    <p className="text-small text-text-tertiary mt-0.5">
+                    <p className="text-body-s text-text-3 mt-0.5">
                       {tpl.description} ({tpl.steps.length} steps)
                     </p>
                   </button>
@@ -172,21 +178,22 @@ export function CampaignWizard({
               </div>
 
               <div className="relative flex items-center mb-6">
-                <div className="flex-1 border-t border-border-default" />
-                <span className="px-3 text-caption text-text-tertiary">or build custom</span>
-                <div className="flex-1 border-t border-border-default" />
+                <div className="flex-1 border-t border-line" />
+                <span className="px-3 text-caption text-text-3">or build your own</span>
+                <div className="flex-1 border-t border-line" />
               </div>
 
-              <label className="text-caption text-text-tertiary mb-2 block">
-                Campaign Name
+              <label htmlFor="campaign-name" className="mb-1.5 block text-body-s text-text-2">
+                Campaign name
               </label>
               <input
+                id="campaign-name"
                 type="text"
-                placeholder="e.g., Q1 Launch Sequence"
+                placeholder="Try: Spring launch"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 autoFocus
-                className="w-full rounded-lg border border-border-default bg-surface-0 py-3 px-4 text-[0.875rem] text-text-primary placeholder:text-text-tertiary transition-colors focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-glow)] mb-6"
+                className="mb-6 h-10 w-full rounded-md border border-line-strong bg-surface px-3.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               />
               <div className="flex justify-end">
                 <Button
@@ -205,13 +212,13 @@ export function CampaignWizard({
           {phase === "steps" && (
             <motion.div
               key="steps"
-              initial={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
+              exit={{ opacity: 0, x: 10 }}
             >
-              <label className="text-caption text-text-tertiary mb-3 block">
-                Pipeline Steps ({steps.length})
-              </label>
+              <p className="mb-3 text-label text-text-3">
+                Steps ({steps.length})
+              </p>
 
               {/* Current steps */}
               {steps.length > 0 && (
@@ -223,22 +230,24 @@ export function CampaignWizard({
                     return (
                       <div
                         key={step._uid}
-                        className="flex items-center gap-3 rounded-lg border border-border-default bg-surface-0 p-3"
+                        className="flex items-center gap-3 rounded-md border border-line bg-ground p-3"
                       >
-                        <GripVertical className="h-4 w-4 text-text-tertiary shrink-0" />
-                        <span className="text-caption text-accent font-mono w-6">
+                        <GripVertical className="h-4 w-4 shrink-0 text-text-3" />
+                        <span className="w-6 font-mono text-caption text-text-3">
                           {i + 1}
                         </span>
-                        <span className="text-body text-text-primary flex-1">
+                        <span className="flex-1 text-body text-text">
                           {def?.name || step.agent_id}
                         </span>
                         <Badge variant="secondary">{def?.category}</Badge>
-                        <button
+                        <IconButton
+                          label="Remove step"
+                          size="sm"
                           onClick={() => removeStep(i)}
-                          className="p-1.5 rounded text-text-tertiary hover:text-error hover:bg-error/10 transition-colors"
+                          className="hover:text-danger"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                        </IconButton>
                       </div>
                     );
                   })}
@@ -246,19 +255,19 @@ export function CampaignWizard({
               )}
 
               {/* Agent picker */}
-              <p className="text-small text-text-secondary mb-2">
-                Add an agent to the pipeline:
+              <p className="text-body-s text-text-2 mb-2">
+                Add an agent:
               </p>
               <div className="grid grid-cols-2 gap-2 mb-6 max-h-48 overflow-y-auto">
                 {availableAgents.map((agent) => (
                   <button
                     key={agent.id}
                     onClick={() => addStep(agent.id)}
-                    className="flex items-center gap-2 rounded-lg border border-border-default bg-surface-0 p-2.5 text-left hover:border-accent hover:bg-surface-2 transition-colors"
+                    className="flex items-center gap-2 rounded-md border border-line bg-surface p-2.5 text-left transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] hover:bg-surface-2"
                   >
-                    <Plus className="h-3.5 w-3.5 text-accent shrink-0" />
+                    <Plus className="h-3.5 w-3.5 shrink-0 text-text-3" />
                     <div className="min-w-0">
-                      <p className="text-small font-medium text-text-primary truncate">
+                      <p className="text-body-s font-medium text-text truncate">
                         {agent.shortName}
                       </p>
                     </div>
@@ -291,21 +300,17 @@ export function CampaignWizard({
           {phase === "review" && (
             <motion.div
               key="review"
-              initial={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
+              exit={{ opacity: 0, x: 10 }}
             >
-              <Card className="mb-4">
-                <CardContent>
-                  <p className="text-caption text-text-tertiary mb-1">
-                    Campaign
-                  </p>
-                  <p className="text-h3 text-text-primary">{name}</p>
-                  <p className="text-small text-text-secondary mt-1">
-                    {steps.length} step{steps.length !== 1 ? "s" : ""} — output
-                    from each step feeds into the next
-                  </p>
-                </CardContent>
+              <Card className="mb-4 bg-ground">
+                <p className="mb-1 text-label text-text-3">Campaign</p>
+                <p className="text-title text-text">{name}</p>
+                <p className="mt-1 text-body-s text-text-2">
+                  {steps.length} step{steps.length !== 1 ? "s" : ""}. Each one
+                  uses what the last one made.
+                </p>
               </Card>
 
               <div className="space-y-2 mb-6">
@@ -316,16 +321,16 @@ export function CampaignWizard({
                   return (
                     <div
                       key={i}
-                      className="flex items-center gap-3 rounded-lg bg-surface-0 border border-border-default p-3"
+                      className="flex items-center gap-3 rounded-md border border-line bg-ground p-3"
                     >
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent/10 text-accent text-caption font-mono">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-2 font-mono text-caption text-text-2">
                         {i + 1}
                       </span>
                       <div className="flex-1">
-                        <p className="text-body font-medium text-text-primary">
+                        <p className="text-title text-text">
                           {def?.name}
                         </p>
-                        <p className="text-small text-text-tertiary">
+                        <p className="text-body-s text-text-3">
                           {def?.description}
                         </p>
                       </div>
@@ -335,7 +340,7 @@ export function CampaignWizard({
               </div>
 
               {error && (
-                <p className="text-small text-error mb-4">{error}</p>
+                <p className="mb-4 text-body-s text-danger">{error}</p>
               )}
 
               <div className="flex justify-between">
@@ -352,12 +357,8 @@ export function CampaignWizard({
                   onClick={handleCreate}
                   disabled={creating}
                 >
-                  {creating ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Plus className="h-4 w-4" />
-                  )}
-                  {creating ? "Creating..." : "Create Campaign"}
+                  {!creating && <Plus className="h-4 w-4" />}
+                  {creating ? "Making…" : "Make campaign"}
                 </Button>
               </div>
             </motion.div>

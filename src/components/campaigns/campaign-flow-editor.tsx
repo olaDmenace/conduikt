@@ -33,10 +33,9 @@ import {
   Plus,
   Trash2,
   Save,
-  Loader2,
   X,
-} from "lucide-react";
-import { Button } from "@/src/components/ui/button";
+} from "@/src/components/ui/lucide-icons";
+import { Button, IconButton } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { AGENT_REGISTRY } from "@/src/lib/ai/agents/registry";
@@ -64,40 +63,37 @@ interface AgentNodeData {
 
 function AgentNode({ data, selected }: NodeProps<Node<AgentNodeData>>) {
   const Icon = getAgentIcon(data.icon);
+  // Category reads from the left rule, not a rainbow of border colours.
   const categoryColors: Record<string, string> = {
-    analysis: "border-blue-500/50",
-    creation: "border-accent/50",
-    strategy: "border-emerald-500/50",
-    distribution: "border-violet-500/50",
+    analysis: "border-l-teal",
+    creation: "border-l-accent",
+    strategy: "border-l-line-strong",
+    distribution: "border-l-text-3",
   };
-  const borderClass = categoryColors[data.category] || "border-accent/50";
+  const borderClass = categoryColors[data.category] || "border-l-accent";
 
   return (
     <div
-      className={`rounded-xl border-2 bg-surface-1 px-4 py-3 min-w-[180px] shadow-lg transition-all ${borderClass} ${
-        selected ? "ring-2 ring-accent ring-offset-2 ring-offset-surface-0" : ""
+      className={`min-w-[180px] rounded-md border border-l-4 border-line bg-surface px-4 py-3 transition-colors ${borderClass} ${
+        selected ? "ring-2 ring-accent ring-offset-2 ring-offset-ground" : ""
       }`}
     >
       <Handle
         type="target"
         position={Position.Top}
-        className="!w-3 !h-3 !bg-accent !border-2 !border-surface-0"
+        className="!h-3 !w-3 !border-2 !border-ground !bg-accent"
       />
       <div className="flex items-center gap-2">
-        <div className="rounded-lg bg-surface-2 p-1.5">
-          <Icon className="h-4 w-4 text-accent" />
-        </div>
+        <Icon className="h-4 w-4 shrink-0 text-text-3" />
         <div>
-          <p className="text-small font-semibold text-text-primary">{data.label}</p>
-          <p className="text-[10px] text-text-tertiary uppercase tracking-wider">
-            {data.category}
-          </p>
+          <p className="text-title text-text">{data.label}</p>
+          <p className="text-label text-text-3">{data.category}</p>
         </div>
       </div>
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!w-3 !h-3 !bg-accent !border-2 !border-surface-0"
+        className="!h-3 !w-3 !border-2 !border-ground !bg-accent"
       />
     </div>
   );
@@ -107,23 +103,23 @@ function ActionNode({ data, selected }: NodeProps<Node<AgentNodeData>>) {
   const Icon = getAgentIcon(data.icon);
   return (
     <div
-      className={`rounded-xl border-2 border-dashed border-text-tertiary/30 bg-surface-2 px-4 py-3 min-w-[160px] shadow-lg transition-all ${
-        selected ? "ring-2 ring-accent ring-offset-2 ring-offset-surface-0" : ""
+      className={`min-w-[160px] rounded-md border border-dashed border-line-strong bg-surface-2 px-4 py-3 transition-colors ${
+        selected ? "ring-2 ring-accent ring-offset-2 ring-offset-ground" : ""
       }`}
     >
       <Handle
         type="target"
         position={Position.Top}
-        className="!w-3 !h-3 !bg-text-tertiary !border-2 !border-surface-0"
+        className="!h-3 !w-3 !border-2 !border-ground !bg-text-3"
       />
       <div className="flex items-center gap-2">
-        <Icon className="h-4 w-4 text-text-secondary" />
-        <p className="text-small font-medium text-text-secondary">{data.label}</p>
+        <Icon className="h-4 w-4 text-text-2" />
+        <p className="text-body-s font-medium text-text-2">{data.label}</p>
       </div>
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!w-3 !h-3 !bg-text-tertiary !border-2 !border-surface-0"
+        className="!h-3 !w-3 !border-2 !border-ground !bg-text-3"
       />
     </div>
   );
@@ -221,7 +217,7 @@ export function CampaignFlowEditor({
           {
             ...connection,
             animated: true,
-            style: { stroke: "#D9663A", strokeWidth: 2 },
+            style: { stroke: "var(--accent)", strokeWidth: 2 },
           },
           eds
         )
@@ -280,13 +276,13 @@ export function CampaignFlowEditor({
 
   async function handleSave() {
     if (!campaignName.trim()) {
-      toast("Enter a campaign name", "warning");
+      toast("Give the campaign a name first", "warning");
       return;
     }
 
     const steps = flowToSteps(nodes, edges);
     if (steps.length === 0) {
-      toast("Add at least one agent node to the flow", "warning");
+      toast("Add at least one agent first", "warning");
       return;
     }
 
@@ -302,15 +298,15 @@ export function CampaignFlowEditor({
       });
 
       if (res.ok) {
-        toast("Campaign created!", "success");
+        toast("Campaign saved", "success");
         onCreated();
         onClose();
       } else {
         const err = await res.json();
-        toast(err.error || "Failed to create campaign", "error");
+        toast(err.error || "Couldn't save the campaign. Try again.", "error");
       }
     } catch {
-      toast("Failed to create campaign", "error");
+      toast("Couldn't save the campaign. Try again.", "error");
     }
     setSaving(false);
   }
@@ -318,7 +314,7 @@ export function CampaignFlowEditor({
   const defaultEdgeOptions = useMemo(
     () => ({
       animated: true,
-      style: { stroke: "#D9663A", strokeWidth: 2 },
+      style: { stroke: "var(--accent)", strokeWidth: 2 },
     }),
     []
   );
@@ -328,33 +324,38 @@ export function CampaignFlowEditor({
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5 text-accent" />
-            Visual Campaign Builder
+            <Zap className="h-4 w-4 text-text-3" />
+            Build a campaign visually
           </CardTitle>
-          <Button variant="ghost" size="sm" onClick={onClose}>
+          <IconButton label="Close" size="sm" onClick={onClose}>
             <X className="h-4 w-4" />
-          </Button>
+          </IconButton>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Campaign name */}
+        <label htmlFor="flow-campaign-name" className="sr-only">
+          Campaign name
+        </label>
         <input
+          id="flow-campaign-name"
           type="text"
           value={campaignName}
           onChange={(e) => setCampaignName(e.target.value)}
-          placeholder="Campaign name..."
-          className="w-full rounded-lg border border-border-strong bg-surface-0 px-4 py-2.5 text-text-primary placeholder:text-text-tertiary focus:border-accent focus:outline-none"
+          placeholder="Try: Spring launch"
+          className="h-10 w-full rounded-md border border-line-strong bg-surface px-3.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         />
 
         {/* Toolbar */}
         <div className="flex items-center gap-2 flex-wrap">
           <Button
-            variant="secondary"
+            variant="outline"
             size="sm"
             onClick={() => setShowAgentPicker(!showAgentPicker)}
+            aria-expanded={showAgentPicker}
           >
             <Plus className="h-4 w-4" />
-            Add Agent
+            Add agent
           </Button>
           {actionNodes.map((action) => {
             const Icon = getAgentIcon(action.icon);
@@ -376,30 +377,26 @@ export function CampaignFlowEditor({
             Delete
           </Button>
           <Button size="sm" onClick={handleSave} disabled={saving}>
-            {saving ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4" />
-            )}
-            {saving ? "Saving..." : "Save Campaign"}
+            {!saving && <Save className="h-4 w-4" />}
+            {saving ? "Saving…" : "Save campaign"}
           </Button>
         </div>
 
         {/* Agent picker panel */}
         {showAgentPicker && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 p-3 rounded-lg border border-border-default bg-surface-2">
+          <div className="grid grid-cols-2 gap-2 rounded-md border border-line bg-ground p-3 sm:grid-cols-3 md:grid-cols-4">
             {availableAgents.map((agent) => {
               const Icon = getAgentIcon(agent.icon);
               return (
                 <button
                   key={agent.id}
                   onClick={() => addAgentNode(agent.id)}
-                  className="flex items-center gap-2 rounded-lg p-2.5 text-left text-small text-text-secondary hover:bg-surface-1 hover:text-text-primary transition-colors"
+                  className="flex items-center gap-2 rounded-md p-2.5 text-left text-body-s text-text-2 transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] hover:bg-surface hover:text-text"
                 >
-                  <Icon className="h-4 w-4 text-accent shrink-0" />
+                  <Icon className="h-4 w-4 shrink-0 text-text-3" />
                   <div>
                     <p className="font-medium">{agent.shortName}</p>
-                    <Badge variant="secondary" className="mt-0.5 text-[9px]">
+                    <Badge variant="secondary" className="mt-0.5">
                       {agent.category}
                     </Badge>
                   </div>
@@ -411,7 +408,7 @@ export function CampaignFlowEditor({
 
         {/* Flow canvas */}
         <div
-          className="rounded-xl border border-border-default overflow-hidden"
+          className="overflow-hidden rounded-md border border-line"
           style={{ height: 500 }}
         >
           <ReactFlow
@@ -423,29 +420,30 @@ export function CampaignFlowEditor({
             nodeTypes={nodeTypes}
             defaultEdgeOptions={defaultEdgeOptions}
             fitView
-            className="bg-surface-0"
+            className="bg-ground"
             proOptions={{ hideAttribution: true }}
           >
             <Background
               variant={BackgroundVariant.Dots}
               gap={20}
               size={1}
-              color="#5E5A5420"
+              color="var(--line)"
             />
             <Controls
-              className="!bg-surface-2 !border-border-default !rounded-lg !shadow-lg [&>button]:!bg-surface-1 [&>button]:!border-border-default [&>button]:!text-text-secondary [&>button:hover]:!bg-surface-2"
+              className="!rounded-md !border-line !bg-surface-2 [&>button]:!border-line [&>button]:!bg-surface [&>button]:!text-text-2 [&>button:hover]:!bg-surface-2"
             />
             <MiniMap
-              className="!bg-surface-1 !border-border-default !rounded-lg"
-              nodeColor="#D9663A"
-              maskColor="rgba(12, 12, 14, 0.8)"
+              className="!rounded-md !border-line !bg-surface"
+              nodeColor="var(--accent)"
+              maskColor="color-mix(in srgb, var(--ink) 12%, transparent)"
             />
           </ReactFlow>
         </div>
 
-        <p className="text-[11px] text-text-tertiary">
-          Drag nodes to position them. Connect agents by dragging from an output handle (bottom) to an input handle (top).
-          Each agent&apos;s output feeds into the next as context.
+        <p className="text-caption text-text-3">
+          Drag the boxes to move them. Connect two agents by dragging from the dot
+          at the bottom of one to the dot at the top of the next. Each agent uses
+          what the last one made.
         </p>
       </CardContent>
     </Card>

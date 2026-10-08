@@ -5,11 +5,11 @@ import { useSearchParams } from "next/navigation";
 import {
   CheckCircle2,
   Zap,
-  Loader2,
   Sparkles,
   CreditCard,
-} from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+} from "@/src/components/ui/lucide-icons";
+import { Card } from "@/src/components/ui/card";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
@@ -41,7 +41,7 @@ const plans: {
     name: "Free",
     features: [
       "1 project",
-      "5 AI generations/month",
+      "5 pieces of content a month",
       "Basic audit",
       "1 audience, 50 marketing emails/mo",
     ],
@@ -63,7 +63,7 @@ const plans: {
     features: [
       "15 projects",
       "500 pieces of content a month",
-      `All ${AI_AGENT_COUNT} AI agents + Calendar`,
+      `All ${AI_AGENT_COUNT} AI agents + calendar`,
       "Analytics feedback loop",
       "10 audiences, 50K marketing emails/mo",
     ],
@@ -74,7 +74,7 @@ const plans: {
     features: [
       "Unlimited projects",
       "No monthly content limit",
-      `All ${AI_AGENT_COUNT} AI agents + Client Reports`,
+      `All ${AI_AGENT_COUNT} AI agents + client reports`,
       "White-label reports",
       "API access",
       "Unlimited audiences, 200K marketing emails/mo",
@@ -198,124 +198,118 @@ function BillingContent() {
   const unlimited = isUnlimited(genLimit);
   const remaining = unlimited ? Infinity : Math.max(0, genLimit - genCount);
 
+  const planName = currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1);
+
   return (
     <div>
-      <PageHeader title="Billing" description="Manage your subscription" />
+      <PageHeader title="Billing" description="Your plan, what you've used, and upgrades." />
 
       {upgraded && (
-        <div className="mb-6 flex items-center gap-3 rounded-xl border border-success/20 bg-success/10 px-5 py-4 animate-in">
-          <Sparkles className="h-5 w-5 text-success shrink-0" />
+        <div role="status" className="mb-6 flex items-center gap-3 rounded-lg border border-line bg-teal-soft px-5 py-4 animate-in">
+          <Sparkles className="h-5 w-5 shrink-0 text-teal" aria-hidden />
           <div>
-            <p className="text-small font-medium text-success">
-              Welcome to {currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1)}!
+            <p className="text-title text-teal">
+              Welcome to {planName}
             </p>
-            <p className="text-small text-text-secondary">
-              Your plan has been upgraded. Enjoy your new limits.
+            <p className="text-body-s text-text-2">
+              Your plan has been upgraded. Your new limits apply now.
             </p>
           </div>
         </div>
       )}
 
       {verifying && !upgraded && (
-        <div className="mb-6 flex items-center gap-3 rounded-xl border border-accent/20 bg-accent/10 px-5 py-4 animate-in">
-          <Loader2 className="h-5 w-5 text-accent shrink-0 animate-spin" />
+        <div role="status" className="mb-6 flex items-center gap-3 rounded-lg border border-line bg-accent-soft px-5 py-4 animate-in">
+          <span className="live-dot" aria-hidden />
           <div>
-            <p className="text-small font-medium text-text-primary">
-              Verifying your payment...
+            <p className="text-title text-text">
+              Checking your payment…
             </p>
-            <p className="text-small text-text-secondary">
+            <p className="text-body-s text-text-2">
               This usually takes a few seconds. Your plan will update
-              automatically.
+              on its own.
             </p>
           </div>
         </div>
       )}
 
       {error && (
-        <div className="mb-6 rounded-xl border border-red-500/20 bg-red-500/10 px-5 py-4">
-          <p className="text-small text-red-400">{error}</p>
+        <div role="alert" className="mb-6 rounded-lg border border-line bg-surface-2 px-5 py-4">
+          <p className="text-body-s text-danger">{error}</p>
+          <p className="mt-1 text-body-s text-text-2">Pick a plan below to try again.</p>
         </div>
       )}
 
       {loading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="h-6 w-6 text-accent animate-spin" />
+        <div className="space-y-6" role="status" aria-label="Loading billing">
+          <Skeleton className="h-28 w-full" />
+          <Skeleton className="h-16 w-full" />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-72 w-full" />
+            ))}
+          </div>
         </div>
       ) : (
         <>
-          {/* Current Plan Summary */}
+          {/* Current plan summary */}
           <div className="mb-6">
-            <Card className="animate-in">
-              <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-6">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-h3 text-text-primary">
-                      {currentPlan.charAt(0).toUpperCase() +
-                        currentPlan.slice(1)}{" "}
-                      Plan
-                    </h3>
-                    <Badge
-                      variant={
-                        currentPlan === "free" ? "secondary" : "success"
-                      }
-                    >
-                      Current
-                    </Badge>
-                  </div>
-                  <p className="mt-1 text-small text-text-secondary">
-                    {genCount} of{" "}
-                    {unlimited ? "unlimited" : genLimit} AI
-                    generations used this period
-                  </p>
+            <Card className="animate-in flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-heading text-text">
+                    {planName} plan
+                  </h2>
+                  <Badge variant={currentPlan}>
+                    Current
+                  </Badge>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <div className="flex items-center gap-2">
-                      <Zap className="h-5 w-5 text-accent" />
-                      <span className="text-data text-accent">
-                        {unlimited
-                          ? "Unlimited"
-                          : `${remaining} remaining`}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
+                <p className="mt-1 text-body-s text-text-2">
+                  {genCount} of{" "}
+                  {unlimited ? "unlimited" : genLimit} pieces of
+                  content used this period
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-text-3" aria-hidden />
+                <span className="text-numeric text-[32px] text-text">
+                  {unlimited ? "Unlimited" : remaining}
+                </span>
+                {!unlimited && <span className="text-label text-text-3">left</span>}
+              </div>
             </Card>
           </div>
 
-          {/* Usage Bar */}
+          {/* Usage bar */}
           {!unlimited && (
             <div className="mb-8">
               <Card
                 className="animate-in"
                 style={{ animationDelay: "60ms" }}
               >
-                <CardContent className="py-5">
-                  <div className="flex items-center justify-between text-small mb-2">
-                    <span className="text-text-secondary">
-                      Generation Usage
-                    </span>
-                    <span className="text-text-tertiary">
-                      {genCount}/{genLimit}
-                    </span>
-                  </div>
-                  <div className="h-2 rounded-full bg-surface-2 overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-accent transition-all duration-500"
-                      style={{
-                        width: `${Math.min(100, (genCount / genLimit) * 100)}%`,
-                      }}
-                    />
-                  </div>
-                </CardContent>
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-label text-text-3">
+                    Content used
+                  </span>
+                  <span className="font-mono text-caption text-text-3">
+                    {genCount}/{genLimit}
+                  </span>
+                </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
+                  <div
+                    className="h-full rounded-full bg-teal transition-[width] duration-500"
+                    style={{
+                      width: `${Math.min(100, (genCount / genLimit) * 100)}%`,
+                    }}
+                  />
+                </div>
               </Card>
             </div>
           )}
 
-          {/* Plans Grid — items-stretch so cards in the same row share
-              height, and each card uses flex-column inside so its CTA
-              button pins to the bottom regardless of feature count. */}
+          {/* Plans grid: items-stretch so cards in the same row share
+              height, and each card is a flex column so its button pins
+              to the bottom regardless of feature count. */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-stretch">
             {plans.map((plan, i) => {
               const isCurrent = plan.key === currentPlan;
@@ -333,118 +327,104 @@ function BillingContent() {
               return (
                 <Card
                   key={plan.key}
-                  className={`animate-in h-full ${isCurrent ? "border-accent" : ""}`}
+                  emphasis={isCurrent}
+                  className="animate-in flex h-full flex-col"
                   style={{ animationDelay: `${(i + 2) * 60}ms` }}
                 >
-                  <CardContent className="pt-6 flex flex-col h-full">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="text-h3 text-text-primary">
-                        {plan.name}
-                      </h3>
-                      {isCurrent && (
-                        <Badge variant="success">Current</Badge>
-                      )}
-                    </div>
-                    <div className="mb-4 flex items-baseline gap-1">
-                      <span
-                        className="text-2xl font-bold text-text-primary"
-                        style={{
-                          fontFamily: "var(--font-display)",
-                          letterSpacing: "-0.02em",
-                        }}
+                  <div className="mb-2 flex items-center gap-2">
+                    <h3 className="text-title text-text">
+                      {plan.name}
+                    </h3>
+                    {isCurrent && (
+                      <Badge variant="success">Current</Badge>
+                    )}
+                  </div>
+                  <div className="mb-4 flex items-baseline gap-1">
+                    <span className="text-numeric text-[40px] text-text">
+                      {price.label}
+                    </span>
+                    <span className="text-body-s text-text-3">
+                      /mo
+                    </span>
+                  </div>
+                  <ul className="mb-6 space-y-2">
+                    {plan.features.map((f) => (
+                      <li
+                        key={f}
+                        className="flex items-start gap-2 text-body-s text-text-2"
                       >
-                        {price.label}
-                      </span>
-                      <span className="text-text-tertiary text-small">
-                        /mo
-                      </span>
-                    </div>
-                    <ul className="space-y-2 mb-6">
-                      {plan.features.map((f) => (
-                        <li
-                          key={f}
-                          className="flex items-start gap-2 text-small text-text-secondary"
-                        >
-                          <CheckCircle2 className="h-3.5 w-3.5 text-accent shrink-0 mt-0.5" />
-                          <span>{f}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    {/* mt-auto pins the CTA to the bottom of the flex
-                        column so all four cards line up at the
-                        baseline regardless of feature count. */}
-                    <div className="mt-auto">
-                      {isCurrent ? (
-                        <Button
-                          variant="secondary"
-                          className="w-full"
-                          disabled
-                        >
-                          Current Plan
-                        </Button>
-                      ) : plan.key === "free" ? (
-                        <Button
-                          variant="secondary"
-                          className="w-full"
-                          disabled
-                        >
-                          {isDowngrade
-                            ? "Contact Support"
-                            : "Free Tier"}
-                        </Button>
-                      ) : isUpgrade ? (
-                        <Button
-                          className="w-full"
-                          disabled={isLoading || verifying}
-                          onClick={() => handleUpgrade(plan.key)}
-                        >
-                          {isLoading ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <>
-                              <CreditCard className="h-4 w-4" />
-                              Upgrade
-                            </>
-                          )}
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="secondary"
-                          className="w-full"
-                          disabled
-                        >
-                          Contact Support
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
+                        <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-teal" aria-hidden />
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {/* mt-auto pins the button to the bottom of the flex
+                      column so all four cards line up. */}
+                  <div className="mt-auto">
+                    {isCurrent ? (
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        disabled
+                      >
+                        Current plan
+                      </Button>
+                    ) : plan.key === "free" ? (
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        disabled
+                      >
+                        {isDowngrade
+                          ? "Contact support"
+                          : "Free tier"}
+                      </Button>
+                    ) : isUpgrade ? (
+                      <Button
+                        className="w-full"
+                        disabled={isLoading || verifying}
+                        onClick={() => handleUpgrade(plan.key)}
+                      >
+                        {isLoading ? (
+                          "Opening checkout…"
+                        ) : (
+                          <>
+                            <CreditCard className="h-4 w-4" />
+                            Upgrade
+                          </>
+                        )}
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        disabled
+                      >
+                        Contact support
+                      </Button>
+                    )}
+                  </div>
                 </Card>
               );
             })}
           </div>
 
           {/* Info */}
-          <div className="mt-8">
-            <Card
-              className="animate-in"
-              style={{ animationDelay: "360ms" }}
+          <p
+            className="mt-8 max-w-[64ch] animate-in text-body-s text-text-2"
+            style={{ animationDelay: "360ms" }}
+          >
+            Payments are processed securely by Flutterwave in USD. You
+            can upgrade your plan at any time. To downgrade or cancel,
+            email us at{" "}
+            <a
+              href="mailto:hello@conduikt.com"
+              className="hover-link text-accent hover:text-accent-hover"
             >
-              <CardContent className="py-5">
-                <p className="text-small text-text-secondary">
-                  Payments are processed securely by Flutterwave in USD. You
-                  can upgrade your plan at any time. To downgrade or cancel,
-                  contact us at{" "}
-                  <a
-                    href="mailto:hello@conduikt.com"
-                    className="text-accent hover:underline"
-                  >
-                    hello@conduikt.com
-                  </a>
-                  . Generation limits reset on each billing cycle.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+              hello@conduikt.com
+            </a>
+            . Content limits reset on each billing cycle.
+          </p>
         </>
       )}
     </div>
@@ -455,8 +435,9 @@ export default function BillingPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex justify-center py-12">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+        <div className="space-y-6" role="status" aria-label="Loading billing">
+          <Skeleton className="h-10 w-48" />
+          <Skeleton className="h-28 w-full" />
         </div>
       }
     >

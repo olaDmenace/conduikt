@@ -12,7 +12,7 @@ import {
   ArrowLeft,
   X,
   CheckCircle2,
-} from "lucide-react";
+} from "@/src/components/ui/lucide-icons";
 import { Button } from "@/src/components/ui/button";
 import { AI_AGENT_COUNT } from "@/src/lib/ai/agents/display";
 
@@ -21,35 +21,35 @@ const steps = [
     icon: Sparkles,
     title: "Welcome to Conduikt",
     description:
-      "Your AI marketing command center. We'll walk you through the key features in 60 seconds.",
-    hint: "Let's get started!",
+      "Your marketing, done every week. Here's how it works in about a minute.",
+    hint: "Let's start.",
   },
   {
     icon: FolderPlus,
-    title: "Create a Project",
+    title: "Create a project",
     description:
-      "Connect your website URL to unlock all AI agents. Each project gets its own audit history, content library, and analytics.",
-    hint: "Head to Dashboard > New Project",
+      "Add your website to unlock every agent. Each project keeps its own audits, content library and analytics.",
+    hint: "Dashboard > New project",
   },
   {
     icon: Search,
-    title: "Run an SEO Audit",
+    title: "Check your site",
     description:
-      "Get a comprehensive technical and on-page analysis with specific, actionable fixes. Your AI agents will use these insights to create better content.",
-    hint: "Project > SEO Audit > Run Audit",
+      "Site Audit looks at your pages and gives you specific fixes. The other agents use what it finds to write better content.",
+    hint: "Project > Site Audit > Run audit",
   },
   {
     icon: PenLine,
-    title: "Generate Content",
+    title: "Write something",
     description:
-      `Use ${AI_AGENT_COUNT} AI agents to create blog posts, social content, email sequences, copywriting, keyword research, and more — all tailored to your brand voice.`,
+      `${AI_AGENT_COUNT} agents write blog posts, social posts, email series, sales copy, keyword lists and more, all in your brand voice.`,
     hint: "Project > Content Studio",
   },
   {
     icon: Calendar,
-    title: "Schedule & Publish",
+    title: "Schedule and post",
     description:
-      "Manage your content calendar, schedule posts, and publish directly to X and LinkedIn. Email sequences export to your ESP. Track performance and let the AI learn from results.",
+      "Plan your calendar, schedule posts and publish straight to X and LinkedIn. Conduikt watches how each one does and gets better next week.",
     hint: "Project > Calendar",
   },
 ];
@@ -85,60 +85,60 @@ export function OnboardingTour({ onComplete }: OnboardingTourProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[100] flex items-center justify-center bg-surface-0/80 backdrop-blur-sm"
+        className="fixed inset-0 z-[100] flex items-center justify-center bg-overlay/60"
       >
         <motion.div
           key={currentStep}
-          initial={{ opacity: 0, y: 20, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -20, scale: 0.95 }}
-          transition={{ duration: 0.3 }}
-          className="relative w-full max-w-lg mx-4 rounded-2xl border border-border-default bg-surface-1 p-8 shadow-[var(--shadow-elevated)]"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="onboarding-tour-title"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.25, ease: [0.2, 0.8, 0.2, 1] }}
+          className="relative mx-4 w-full max-w-lg rounded-lg border border-line bg-surface p-6 shadow-[var(--shadow-float)] md:p-8"
         >
           {/* Close button */}
           <button
+            type="button"
             onClick={finish}
-            className="absolute right-4 top-4 rounded-lg p-1.5 text-text-tertiary hover:text-text-primary hover:bg-surface-2 transition-colors"
+            className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-md text-text-3 transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] hover:bg-surface-2 hover:text-text"
             aria-label="Skip tour"
           >
             <X className="h-4 w-4" />
           </button>
 
           {/* Step indicator */}
-          <div className="flex items-center gap-1.5 mb-6">
+          <div className="mb-6 flex items-center gap-1.5" aria-hidden>
             {steps.map((_, i) => (
               <div
                 key={i}
-                className={`h-1 rounded-full transition-all duration-300 ${
+                className={`h-1 rounded-full transition-all duration-[var(--duration-base)] ${
                   i === currentStep
                     ? "w-8 bg-accent"
                     : i < currentStep
-                    ? "w-4 bg-accent/40"
-                    : "w-4 bg-surface-3"
+                    ? "w-4 bg-text-3"
+                    : "w-4 bg-surface-2"
                 }`}
               />
             ))}
           </div>
 
           {/* Icon */}
-          <div className="mb-6 rounded-xl bg-accent-muted p-4 w-fit">
-            <Icon className="h-8 w-8 text-accent" />
-          </div>
+          <Icon className="mb-4 h-6 w-6 text-text-3" aria-hidden />
 
           {/* Content */}
-          <h2 className="text-h2 text-text-primary mb-2">{step.title}</h2>
-          <p className="text-body text-text-secondary mb-2">
-            {step.description}
-          </p>
-          <p className="text-small text-text-tertiary italic">{step.hint}</p>
-
-          {/* Step counter */}
-          <p className="text-caption text-text-tertiary mt-6 mb-4">
+          <p className="mb-2 text-label text-text-3">
             Step {currentStep + 1} of {steps.length}
           </p>
+          <h2 id="onboarding-tour-title" className="mb-2 text-heading text-text">{step.title}</h2>
+          <p className="mb-3 text-body text-text-2">
+            {step.description}
+          </p>
+          <p className="font-mono text-caption text-text-3">{step.hint}</p>
 
           {/* Actions */}
-          <div className="flex items-center justify-between">
+          <div className="mt-8 flex items-center justify-between">
             <div>
               {!isFirst && (
                 <Button
@@ -158,7 +158,7 @@ export function OnboardingTour({ onComplete }: OnboardingTourProps) {
               {isLast ? (
                 <Button size="sm" onClick={finish}>
                   <CheckCircle2 className="h-4 w-4" />
-                  Get Started
+                  Get started
                 </Button>
               ) : (
                 <Button

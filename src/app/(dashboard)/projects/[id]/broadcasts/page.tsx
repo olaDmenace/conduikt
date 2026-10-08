@@ -4,7 +4,6 @@ import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Mail,
-  Loader2,
   Send,
   Calendar,
   Clock,
@@ -15,9 +14,11 @@ import {
   FileEdit,
   Globe,
   Sparkles,
-} from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+} from "@/src/components/ui/lucide-icons";
+import { Card } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
+import { EmptyState } from "@/src/components/ui/empty-state";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import { PageHeader } from "@/src/components/layout/page-header";
 
 interface Broadcast {
@@ -44,12 +45,12 @@ function statusBadge(status: Broadcast["status"]) {
     cancelled: "secondary",
   };
   const icons: Record<Broadcast["status"], React.ReactNode> = {
-    draft: <FileEdit className="h-3 w-3 mr-1" />,
-    scheduled: <Calendar className="h-3 w-3 mr-1" />,
-    sending: <Loader2 className="h-3 w-3 mr-1 animate-spin" />,
-    sent: <CheckCircle2 className="h-3 w-3 mr-1" />,
-    failed: <AlertTriangle className="h-3 w-3 mr-1" />,
-    cancelled: <XCircle className="h-3 w-3 mr-1" />,
+    draft: <FileEdit className="h-3 w-3" />,
+    scheduled: <Calendar className="h-3 w-3" />,
+    sending: <span className="live-dot" aria-hidden />,
+    sent: <CheckCircle2 className="h-3 w-3" />,
+    failed: <AlertTriangle className="h-3 w-3" />,
+    cancelled: <XCircle className="h-3 w-3" />,
   };
   return (
     <Badge variant={variants[status]}>
@@ -114,53 +115,46 @@ export default function BroadcastsPage({
   return (
     <div>
       <PageHeader
-        title="Broadcasts"
-        description="One-shot email campaigns sent to your audiences. Send a new broadcast from any generated email sequence."
+        title="One-off emails"
+        description="Emails sent once to a subscriber list. Send one from any email series we write for you."
       />
 
       {/* Sender info — sets expectations about which domain emails come from
           and previews the upcoming custom-domain feature for paid users. */}
-      <Card className="mb-6 border-accent/20 bg-accent-muted/40">
-        <CardContent>
-          <div className="flex items-start gap-3">
-            <Globe className="h-5 w-5 text-accent shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="text-body font-medium text-text-primary">
-                Sending from{" "}
-                <code className="font-mono text-accent">mail@contacts.conduikt.com</code>
-              </p>
-              <p className="text-small text-text-secondary mt-1">
-                Free and Pro tiers send from our shared domain.{" "}
-                <strong>Custom sending domain</strong> (verify your own
-                e.g. <code className="font-mono">mail.yourcompany.com</code>) is
-                shipping soon as a Pro+ feature for better deliverability and
-                brand consistency.
-              </p>
-              <Badge variant="secondary" className="mt-2">
-                <Sparkles className="h-3 w-3 mr-1" />
-                Coming soon
-              </Badge>
-            </div>
+      <Card className="mb-6">
+        <div className="flex items-start gap-3">
+          <Globe className="mt-0.5 h-5 w-5 shrink-0 text-text-3" />
+          <div className="flex-1">
+            <p className="text-title text-text">
+              Sending from{" "}
+              <code className="font-mono text-text">mail@contacts.conduikt.com</code>
+            </p>
+            <p className="mt-1 text-body-s text-text-2">
+              Free and Pro send from our shared address. Sending from your own
+              address (like <code className="font-mono">mail.yourcompany.com</code>)
+              is coming soon on higher plans, so more emails land in the inbox
+              under your name.
+            </p>
+            <Badge variant="secondary" className="mt-2">
+              <Sparkles className="h-3 w-3" />
+              Coming soon
+            </Badge>
           </div>
-        </CardContent>
+        </div>
       </Card>
 
       {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 text-accent animate-spin" />
+        <div className="space-y-3" role="status" aria-label="Loading">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-28" />
+          ))}
         </div>
       ) : broadcasts.length === 0 ? (
-        <Card className="border-dashed border-border-strong animate-in">
-          <CardContent className="flex flex-col items-center py-12 text-center">
-            <div className="mb-4 rounded-xl bg-accent-muted p-4">
-              <Send className="h-8 w-8 text-accent" />
-            </div>
-            <h3 className="text-h2 text-text-primary">No broadcasts yet</h3>
-            <p className="mt-2 max-w-md text-body text-text-secondary">
-              Generate an email sequence from the Content tab, then click <strong>Send Broadcast</strong> to launch your first campaign.
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          className="animate-in"
+          icon={<Send className="h-6 w-6" />}
+          title="No one-off emails yet. Write an email series in Content, then send one of its emails to a subscriber list from there."
+        />
       ) : (
         <div className="space-y-3">
           {broadcasts.map((b, i) => {
@@ -176,36 +170,36 @@ export default function BroadcastsPage({
                 key={b.id}
                 href={`/projects/${projectId}/broadcasts/${b.id}`}
                 className="group block animate-in"
-                style={{ animationDelay: `${i * 60}ms` }}
+                style={{ animationDelay: `${Math.min(i, 5) * 80}ms` }}
               >
-                <Card className="transition-colors group-hover:border-accent">
-                  <CardContent>
+                <Card className="hover-card hover-card-quiet">
+                  <div>
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 mb-1.5">
-                          <Mail className="h-4 w-4 text-accent shrink-0" />
+                          <Mail className="h-4 w-4 shrink-0 text-text-3" />
                           {statusBadge(b.status)}
                         </div>
-                        <h3 className="text-h3 text-text-primary truncate">
+                        <h3 className="text-title text-text truncate">
                           {b.subject}
                         </h3>
-                        <p className="mt-1 text-small text-text-tertiary">
+                        <p className="mt-1 text-body-s text-text-3">
                           From {b.from_name} · {b.from_email}
                         </p>
                       </div>
-                      <ArrowRight className="h-4 w-4 text-text-tertiary transition-transform group-hover:translate-x-0.5" />
+                      <ArrowRight className="h-4 w-4 text-text-3" />
                     </div>
 
                     {(b.status === "sent" || b.status === "sending") && sent > 0 && (
-                      <div className="mt-4 grid grid-cols-4 gap-3 pt-4 border-t border-border-subtle">
+                      <div className="mt-4 grid grid-cols-4 gap-3 pt-4 border-t border-line">
                         <Stat label="Sent" value={sent} />
                         <Stat label="Delivered" value={delivered} />
-                        <Stat label="Open rate" value={`${openRate}%`} />
-                        <Stat label="Click rate" value={`${clickRate}%`} />
+                        <Stat label="Opened" value={`${openRate}%`} />
+                        <Stat label="Clicked" value={`${clickRate}%`} />
                       </div>
                     )}
 
-                    <div className="mt-4 flex items-center gap-4 text-caption text-text-tertiary">
+                    <div className="mt-4 flex items-center gap-4 text-caption text-text-3">
                       {b.sent_at && (
                         <span className="flex items-center gap-1">
                           <CheckCircle2 className="h-3 w-3" />
@@ -225,7 +219,7 @@ export default function BroadcastsPage({
                         </span>
                       )}
                     </div>
-                  </CardContent>
+                  </div>
                 </Card>
               </Link>
             );
@@ -239,10 +233,10 @@ export default function BroadcastsPage({
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div>
-      <p className="text-caption text-text-tertiary uppercase tracking-wider">
-        {label}
+      <p className="text-label text-text-3">{label}</p>
+      <p className="mt-1.5 font-mono text-body text-text">
+        {typeof value === "number" ? value.toLocaleString() : value}
       </p>
-      <p className="text-body text-text-primary font-mono mt-0.5">{value}</p>
     </div>
   );
 }

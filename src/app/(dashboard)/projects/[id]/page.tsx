@@ -4,7 +4,6 @@ import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import {
   Settings,
-  Loader2,
   ArrowUpRight,
   FileText,
   Search,
@@ -26,9 +25,10 @@ import {
   Compass,
   Send,
   ListChecks,
-} from "lucide-react";
+} from "@/src/components/ui/lucide-icons";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import { PageHeader } from "@/src/components/layout/page-header";
 import { cn } from "@/src/lib/utils/cn";
 import { AGENT_REGISTRY, type AgentDefinition } from "@/src/lib/ai/agents/registry";
@@ -83,46 +83,39 @@ function AgentCard({
   return (
     <div
       className={cn(
-        "animate-in group relative flex flex-col rounded-xl border bg-surface-1 p-5 transition-all duration-200",
+        "animate-in group relative flex flex-col rounded-lg border border-line bg-surface p-5",
         isComingSoon
-          ? "opacity-50 cursor-not-allowed border-border-default"
-          : "border-border-default hover:border-border-strong hover:shadow-elevated hover:scale-[1.01] cursor-pointer"
+          ? "opacity-50 cursor-not-allowed"
+          : "hover-card hover-card-quiet cursor-pointer"
       )}
       style={{ animationDelay: `${delay}ms` }}
     >
       {/* Agent icon + name */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div
-            className={cn(
-              "flex h-10 w-10 items-center justify-center rounded-lg transition-colors",
-              isComingSoon
-                ? "bg-surface-2 text-text-tertiary"
-                : "bg-accent-muted text-accent group-hover:bg-accent/20"
-            )}
-          >
+          <span className="shrink-0 text-text-3" aria-hidden>
             {isComingSoon ? (
               <Lock className="h-4 w-4" />
             ) : (
               <IconComp className="h-5 w-5" />
             )}
-          </div>
+          </span>
           <div>
-            <p className="text-body font-semibold text-text-primary leading-tight">
+            <p className="text-title text-text">
               {agent.name}
             </p>
-            <p className="text-caption text-text-tertiary mt-0.5">
+            <p className="text-caption text-text-3 mt-0.5">
               {agent.category}
             </p>
           </div>
         </div>
         {isComingSoon && (
-          <Badge variant="secondary" className="text-[10px] shrink-0">
+          <Badge variant="secondary" className="shrink-0">
             Soon
           </Badge>
         )}
         {!isComingSoon && agent.tier !== "free" && (
-          <Badge variant="secondary" className="text-[10px] shrink-0 capitalize">
+          <Badge variant="secondary" className="shrink-0">
             {agent.tier}+
           </Badge>
         )}
@@ -130,7 +123,7 @@ function AgentCard({
 
       {/* Metrics */}
       <div className="flex-1 mb-4">
-        <p className="text-small text-text-secondary leading-snug">
+        <p className="text-body-s text-text-2 leading-snug">
           {agent.description}
         </p>
         {!isComingSoon && metrics && (
@@ -138,18 +131,18 @@ function AgentCard({
             {metrics.primary && (
               <p
                 className={cn(
-                  "text-body font-semibold font-mono",
-                  isUnused ? "text-text-tertiary" : "text-text-primary"
+                  "text-numeric text-[22px]",
+                  isUnused ? "text-text-3" : "text-text"
                 )}
               >
                 {metrics.primary}
               </p>
             )}
             {metrics.secondary && (
-              <p className="text-caption text-success">{metrics.secondary}</p>
+              <p className="text-caption text-teal">{metrics.secondary}</p>
             )}
             {metrics.lastUsedLabel && (
-              <p className="text-caption text-text-tertiary">
+              <p className="text-caption text-text-3">
                 Last used {metrics.lastUsedLabel}
               </p>
             )}
@@ -162,9 +155,9 @@ function AgentCard({
         <Link
           href={href}
           className={cn(
-            "flex items-center justify-center gap-2 rounded-lg border px-4 py-2 text-small font-medium transition-all",
-            "border-border-default text-text-secondary",
-            "group-hover:border-accent group-hover:text-accent group-hover:bg-accent-muted"
+            "flex h-9 items-center justify-center gap-2 rounded-md border px-4 text-body-s font-medium transition-colors delay-[var(--hover-delay)] duration-[var(--duration-fast)]",
+            "border-line-strong text-text",
+            "group-hover:border-accent group-hover:text-accent"
           )}
         >
           {agent.ctaLabel}
@@ -192,26 +185,26 @@ interface CategoryMeta {
 const AGENT_CATEGORIES: CategoryMeta[] = [
   {
     id: "analysis",
-    label: "Audit & Analyze",
+    label: "Audit and analyse",
     description: "Score your site, study competitors, find what's working",
     icon: Microscope,
   },
   {
     id: "creation",
-    label: "Create Content",
-    description: "Generate posts, emails, blogs, ads — on brand, on demand",
+    label: "Create content",
+    description: "Write posts, emails, blogs and ads in your voice",
     icon: Sparkles,
   },
   {
     id: "strategy",
-    label: "Plan & Strategy",
-    description: "Set the playbook — keywords, calendar, launch plans",
+    label: "Plan",
+    description: "Keywords, posting plan and launch plans",
     icon: Compass,
   },
   {
     id: "distribution",
-    label: "Publish & Distribute",
-    description: "Schedule and run multi-step campaigns end-to-end",
+    label: "Publish",
+    description: "Schedule posts and run campaigns from start to finish",
     icon: Send,
   },
 ];
@@ -256,33 +249,31 @@ function AgentCategorySection({
   const HeaderIcon = category.icon;
 
   return (
-    <div className="rounded-xl border border-border-default bg-surface-1 overflow-hidden">
+    <div className="rounded-lg border border-line bg-surface overflow-hidden">
       <button
         type="button"
         onClick={toggle}
         aria-expanded={expanded}
         aria-controls={`agent-cat-${category.id}`}
-        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-surface-2 transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors delay-[var(--hover-delay)] duration-[var(--duration-fast)] hover:bg-surface-2"
       >
-        <div className="rounded-lg bg-accent-muted p-2 shrink-0">
-          <HeaderIcon className="h-4 w-4 text-accent" />
-        </div>
+        <HeaderIcon className="h-4 w-4 shrink-0 text-text-3" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="text-body font-medium text-text-primary">
+            <p className="text-title text-text">
               {category.label}
             </p>
-            <span className="text-caption text-text-tertiary font-mono">
+            <span className="text-caption text-text-3 font-mono">
               {agents.length}
             </span>
           </div>
-          <p className="text-small text-text-tertiary truncate">
+          <p className="text-body-s text-text-3 truncate">
             {category.description}
           </p>
         </div>
         <ChevronDown
           className={cn(
-            "h-4 w-4 text-text-tertiary transition-transform shrink-0",
+            "h-4 w-4 text-text-3 transition-transform shrink-0",
             expanded && "rotate-180"
           )}
         />
@@ -290,7 +281,7 @@ function AgentCategorySection({
       {expanded && (
         <div
           id={`agent-cat-${category.id}`}
-          className="border-t border-border-default p-4 bg-surface-0"
+          className="border-t border-line p-4 bg-ground"
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {agents.map((agent, i) => (
@@ -334,8 +325,14 @@ export default function ProjectOverviewPage({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 text-accent animate-spin" />
+      <div className="space-y-6" role="status" aria-label="Loading project">
+        <Skeleton className="h-10 w-72" />
+        <Skeleton className="h-16 w-full" />
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -343,9 +340,9 @@ export default function ProjectOverviewPage({
   if (!project) {
     return (
       <div className="text-center py-20">
-        <h2 className="text-h2 text-text-primary">Project not found</h2>
+        <h2 className="text-heading text-text">Project not found</h2>
         <Button className="mt-4" asChild>
-          <Link href="/projects">Back to Projects</Link>
+          <Link href="/projects">Back to projects</Link>
         </Button>
       </div>
     );
@@ -368,9 +365,9 @@ export default function ProjectOverviewPage({
     <div>
       <PageHeader
         title={project.name}
-        description={project.website_url ?? "AI Marketing Command Center"}
+        description={project.website_url ?? "Your marketing, in one place"}
       >
-        <Button variant="secondary" size="sm" asChild>
+        <Button variant="outline" size="sm" asChild>
           <Link href={`/projects/${id}/settings`}>
             <Settings className="h-4 w-4" />
             Settings
@@ -380,12 +377,12 @@ export default function ProjectOverviewPage({
 
       {/* Onboarding banner */}
       {!project.onboarding_completed && (
-        <div className="flex items-center gap-4 px-5 py-4 rounded-xl border border-accent/30 bg-accent-muted/20 mb-6 animate-in">
-          <div className="flex-1">
-            <p className="text-body font-semibold text-text-primary">
-              Complete your brand profile to unlock AI-powered features
+        <div className="flex flex-wrap items-center gap-4 px-5 py-4 rounded-lg border border-accent bg-surface mb-6 animate-in">
+          <div className="flex-1 min-w-[16rem]">
+            <p className="text-title text-text">
+              Finish your brand profile so every agent writes for you
             </p>
-            <p className="text-small text-text-secondary mt-0.5">
+            <p className="text-body-s text-text-2 mt-0.5">
               Help Conduikt understand your business, audience, and goals so every piece of content is tailored to you.
             </p>
           </div>
@@ -399,33 +396,33 @@ export default function ProjectOverviewPage({
       )}
 
       {/* Quick stats strip */}
-      <div className="flex items-center gap-6 px-5 py-3 rounded-xl border border-border-default bg-surface-1 mb-8 animate-in overflow-x-auto">
-        <div className="shrink-0">
-          <p className="text-caption text-text-tertiary">SEO Score</p>
-          <p className="text-body font-bold font-mono text-text-primary">
-            {seoMetrics?.primary ?? "—"}
+      <div className="flex items-center gap-6 px-5 py-3 rounded-lg border border-line bg-surface mb-8 animate-in overflow-x-auto">
+        <div className="shrink-0 space-y-1">
+          <p className="text-label text-text-3">Site score</p>
+          <p className="text-body font-mono text-text">
+            {seoMetrics?.primary ?? "Not run yet"}
           </p>
         </div>
         {seoMetrics?.secondary && (
-          <div className="shrink-0">
-            <p className="text-caption text-text-tertiary">Change</p>
-            <p className="text-body font-medium text-success">
+          <div className="shrink-0 space-y-1">
+            <p className="text-label text-text-3">Change</p>
+            <p className="text-body font-mono text-teal">
               {seoMetrics.secondary}
             </p>
           </div>
         )}
-        <div className="shrink-0">
-          <p className="text-caption text-text-tertiary">Total Activity</p>
-          <p className="text-body font-bold font-mono text-text-primary">
+        <div className="shrink-0 space-y-1">
+          <p className="text-label text-text-3">Total activity</p>
+          <p className="text-body font-mono text-text">
             {totalAssets} pieces
           </p>
         </div>
         <div className="ml-auto shrink-0">
           <Link
             href={`/projects/${id}/analytics`}
-            className="text-small text-accent hover:text-accent-hover transition-colors"
+            className="hover-link text-body-s text-accent hover:text-accent-hover"
           >
-            View Analytics →
+            View analytics →
           </Link>
         </div>
       </div>
@@ -435,8 +432,8 @@ export default function ProjectOverviewPage({
           expanded state in localStorage so the user's preference sticks
           across visits. */}
       <div className="mb-3">
-        <p className="text-caption text-text-tertiary tracking-wider uppercase px-1">
-          Your Agents
+        <p className="text-label text-text-3 px-1">
+          Your agents
         </p>
       </div>
 
@@ -462,8 +459,8 @@ export default function ProjectOverviewPage({
       {comingSoonAgents.length > 0 && (
         <>
           <div className="mb-3">
-            <p className="text-caption text-text-tertiary tracking-wider uppercase px-1">
-              Coming Soon
+            <p className="text-label text-text-3 px-1">
+              Coming soon
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

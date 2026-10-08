@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Loader2, Zap, ListChecks } from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+import { Zap, ListChecks } from "@/src/components/ui/lucide-icons";
+import { Card } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import { PageHeader } from "@/src/components/layout/page-header";
 import { useToast } from "@/src/components/ui/toast";
 
@@ -17,15 +19,15 @@ interface Settings {
 }
 
 const MODE_DESCRIPTIONS: Record<Mode, string> = {
-  off: "Open the editor with a draft pre-filled — you publish manually.",
+  off: "Opens the editor with a draft filled in. You publish it yourself.",
   review:
-    "Auto-generate, drop in a queue with a hold window. Publishes unless you cancel from the queue.",
-  auto: "Auto-generate and publish on the next scheduler tick (within 5 minutes). No review window.",
+    "Writes the post and holds it in the queue for a while. It publishes unless you cancel it.",
+  auto: "Writes the post and publishes it within about 5 minutes. No time to review.",
 };
 
 const MODE_LABEL: Record<Mode, string> = {
   off: "Off",
-  review: "Review-first",
+  review: "Review first",
   auto: "Auto",
 };
 
@@ -55,7 +57,7 @@ export default function AutomationSettingsPage() {
     if (res.ok) {
       const data = await res.json();
       setSettings(data);
-      toast("Updated", "success");
+      toast("Saved", "success");
     } else {
       const err = await res.json().catch(() => ({}));
       toast(err.error || "Could not save", "error");
@@ -64,59 +66,74 @@ export default function AutomationSettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-20">
-        <Loader2 className="h-8 w-8 text-accent animate-spin" />
+      <div className="space-y-4" role="status" aria-label="Loading automation settings">
+        <Skeleton className="h-10 w-56" />
+        <Skeleton className="h-5 w-96 max-w-full" />
+        <div className="max-w-2xl space-y-4 pt-4">
+          <Skeleton className="h-44 w-full" />
+          <Skeleton className="h-44 w-full" />
+          <Skeleton className="h-32 w-full" />
+        </div>
       </div>
     );
   }
   if (!settings) {
-    return <p className="text-text-secondary">Could not load settings.</p>;
+    return (
+      <div className="flex flex-col items-start gap-3" role="alert">
+        <p className="text-body text-danger">We couldn&apos;t load your automation settings.</p>
+        <Button variant="outline" onClick={() => window.location.reload()}>
+          Retry
+        </Button>
+      </div>
+    );
   }
 
   return (
     <div>
       <PageHeader
         title="Automation"
-        description="Decide how much of the Growth Playbook the system can run on its own. You can change these any time."
+        description="Decide how much of the Growth Plan Conduikt can run on its own. You can change this any time."
       >
         <Button variant="ghost" asChild>
           <Link href="/automation/queue">
-            <ListChecks className="h-4 w-4 mr-1.5" />
+            <ListChecks className="h-4 w-4" />
             View queue
           </Link>
         </Button>
       </PageHeader>
 
-      <div className="space-y-4 max-w-2xl">
+      <div className="max-w-2xl space-y-4">
         <ChannelCard
           title="X (Twitter)"
-          description="High-volume, lower-stakes channel — good fit for auto with small posts."
+          description="Lots of short posts, lower stakes. A good fit for Auto."
           mode={settings.x_mode}
           onChange={(mode) => update({ x_mode: mode })}
           saving={saving}
         />
         <ChannelCard
           title="LinkedIn"
-          description="Professional surface — review-first by default so off-tone posts don't slip through."
+          description="Your professional audience. Review first is the default so nothing off-tone slips through."
           mode={settings.linkedin_mode}
           onChange={(mode) => update({ linkedin_mode: mode })}
           saving={saving}
         />
 
         <Card>
-          <CardContent className="p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <Zap className="h-4 w-4 text-accent" />
-              <h3 className="text-body font-medium text-text-primary">
+            <div className="mb-2 flex items-center gap-2">
+              <Zap className="h-4 w-4 text-text-3" aria-hidden />
+              <h3 className="text-title text-text">
                 Review window
               </h3>
             </div>
-            <p className="text-small text-text-secondary mb-4">
-              How long queued items wait before publishing in review-first mode.
-              Lower = faster turnaround, less time to catch issues.
+            <p className="mb-4 text-body-s text-text-2">
+              How long a queued post waits before it publishes in Review first mode.
+              Shorter means faster posting and less time to catch problems.
             </p>
             <div className="flex items-center gap-3">
-              <input
+              <div className="w-24">
+              <Input
+                label="Review window in hours"
+                hideLabel
                 type="number"
                 min={1}
                 max={168}
@@ -130,18 +147,18 @@ export default function AutomationSettingsPage() {
                 onBlur={() =>
                   update({ review_hold_hours: settings.review_hold_hours })
                 }
-                className="w-24 rounded-lg border border-border-default bg-surface-0 px-3 py-2 text-body text-text-primary font-mono"
+                className="font-mono"
               />
-              <span className="text-small text-text-tertiary">
+              </div>
+              <span className="text-body-s text-text-3">
                 hours (1–168)
               </span>
             </div>
-          </CardContent>
         </Card>
 
-        <p className="text-caption text-text-tertiary px-1">
-          Email broadcasts and blog posts always stay manual — they go through
-          their own send flows.
+        <p className="px-1 text-caption text-text-3">
+          Email broadcasts and blog posts always stay manual. They go through
+          their own send steps.
         </p>
       </div>
     </div>
@@ -163,10 +180,9 @@ function ChannelCard({
 }) {
   return (
     <Card>
-      <CardContent className="p-5">
-        <h3 className="text-body font-medium text-text-primary mb-1">{title}</h3>
-        <p className="text-small text-text-secondary mb-4">{description}</p>
-        <div className="grid grid-cols-3 gap-2">
+        <h3 className="mb-1 text-title text-text">{title}</h3>
+        <p className="mb-4 text-body-s text-text-2">{description}</p>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           {(["off", "review", "auto"] as Mode[]).map((m) => {
             const active = mode === m;
             return (
@@ -175,23 +191,23 @@ function ChannelCard({
                 type="button"
                 onClick={() => onChange(m)}
                 disabled={saving}
-                className={`rounded-lg border p-3 text-left transition-colors ${
+                aria-pressed={active}
+                className={`rounded-md border p-3 text-left transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] ${
                   active
-                    ? "border-accent bg-accent/5"
-                    : "border-border-default hover:border-border-strong"
-                } ${saving ? "opacity-50 cursor-wait" : ""}`}
+                    ? "border-accent bg-accent-soft"
+                    : "border-line bg-surface hover:bg-ground"
+                } ${saving ? "cursor-wait opacity-50" : ""}`}
               >
-                <p className="text-body font-medium text-text-primary mb-1">
+                <p className="mb-1 text-title text-text">
                   {MODE_LABEL[m]}
                 </p>
-                <p className="text-caption text-text-tertiary leading-relaxed">
+                <p className="text-caption text-text-2">
                   {MODE_DESCRIPTIONS[m]}
                 </p>
               </button>
             );
           })}
         </div>
-      </CardContent>
     </Card>
   );
 }

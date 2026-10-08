@@ -17,12 +17,10 @@ import {
   CheckCircle2,
   Globe,
   Rocket,
-} from "lucide-react";
+} from "@/src/components/ui/lucide-icons";
 import { Button } from "@/src/components/ui/button";
-import { Card, CardContent } from "@/src/components/ui/card";
-import { Badge } from "@/src/components/ui/badge";
 import { AGENT_REGISTRY } from "@/src/lib/ai/agents/registry";
-import { AI_AGENT_COUNT } from "@/src/lib/ai/agents/display";
+import { AI_AGENT_COUNT, agentDisplay } from "@/src/lib/ai/agents/display";
 
 export const metadata: Metadata = {
   title: `Conduikt Launch — ${AI_AGENT_COUNT} AI Marketing Agents`,
@@ -92,188 +90,165 @@ export default function LaunchPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       {/* Hero */}
-      <section className="pt-8 pb-24 relative overflow-hidden">
-        <div className="mx-auto max-w-4xl px-6 text-center">
-          <Badge className="mb-6 animate-in">Launching on Product Hunt</Badge>
-          <h1 className="text-hero text-text-primary leading-[1.1] animate-in" style={{ animationDelay: "60ms" }}>
-            {AI_AGENT_COUNT} AI Marketing Agents.
-            <br />
-            <span className="text-accent">One Platform.</span>
-            <br />
-            Zero Busywork.
+      <section className="mx-auto w-full max-w-[1200px] px-4 pb-16 pt-16 md:px-10 md:pb-24 md:pt-24">
+        <div className="flex max-w-[900px] flex-col gap-6">
+          <p className="animate-in text-label text-accent">Launching on Product Hunt</p>
+          <h1 className="animate-in text-display-l text-text" style={{ animationDelay: "60ms" }}>
+            {AI_AGENT_COUNT} AI marketing agents.{" "}
+            <span className="font-medium">One platform. Zero busywork.</span>
           </h1>
-          <p className="mt-6 text-lg text-text-secondary max-w-2xl mx-auto animate-in" style={{ animationDelay: "120ms" }}>
-            Conduikt connects to your website, runs SEO audits, and deploys
-            specialized AI agents to generate, publish, and optimize your
-            marketing — automatically.
+          <p className="animate-in max-w-[600px] text-lg leading-relaxed text-text-2" style={{ animationDelay: "120ms" }}>
+            Conduikt connects to your website, checks it, and puts
+            specialized AI agents to work writing, posting, and improving your
+            marketing, automatically.
           </p>
-          <div className="mt-8 flex items-center justify-center gap-4 animate-in" style={{ animationDelay: "180ms" }}>
+          <div className="animate-in flex flex-wrap items-center gap-3" style={{ animationDelay: "180ms" }}>
             <Button size="lg" asChild>
               <Link href="/signup">
-                Start Free
+                Start free
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
-            <Button variant="secondary" size="lg" asChild>
-              <Link href="/#features">See Features</Link>
+            <Button variant="outline" size="lg" asChild>
+              <Link href="/features">See features</Link>
             </Button>
           </div>
-          <div className="mt-6 flex items-center justify-center gap-6 text-small text-text-tertiary animate-in" style={{ animationDelay: "240ms" }}>
+          <div className="animate-in flex flex-wrap items-center gap-6 text-body-s text-text-3" style={{ animationDelay: "240ms" }}>
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="h-4 w-4 text-success" />
-              Free tier — no credit card
+              <CheckCircle2 className="h-4 w-4 text-teal" />
+              Free plan, no credit card
             </span>
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="h-4 w-4 text-success" />
-              5 AI generations included
+              <CheckCircle2 className="h-4 w-4 text-teal" />
+              5 pieces of content included
             </span>
-          </div>
-        </div>
-        <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 h-60 w-[600px] rounded-full bg-accent/8 blur-[80px]" />
-      </section>
-
-      {/* Value Props: Audit → Generate → Publish */}
-      <section className="py-20 border-t border-border-subtle">
-        <div className="mx-auto max-w-5xl px-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {valueProps.map((prop, i) => (
-              <Card
-                key={prop.title}
-                className="animate-in text-center"
-                style={{ animationDelay: `${i * 60}ms` }}
-              >
-                <CardContent className="flex flex-col items-center py-8">
-                  <div className="mb-4 rounded-xl bg-accent-muted p-4">
-                    <prop.icon className="h-8 w-8 text-accent" />
-                  </div>
-                  <h3 className="text-h2 text-text-primary mb-2">
-                    {prop.title}
-                  </h3>
-                  <p className="text-body text-text-secondary">
-                    {prop.description}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
           </div>
         </div>
       </section>
 
-      {/* Agent Showcase */}
-      <section className="py-20">
-        <div className="mx-auto max-w-5xl px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-h1 text-text-primary">
-              Meet Your AI Marketing Team
+      {/* Value props: Audit, Generate, Publish */}
+      <section className="mx-auto w-full max-w-[1200px] px-4 pb-20 md:px-10">
+        <ol className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-line bg-line md:grid-cols-3">
+          {valueProps.map((prop, i) => (
+            <li
+              key={prop.title}
+              className="animate-in flex flex-col gap-3 bg-surface p-7"
+              style={{ animationDelay: `${i * 60}ms` }}
+            >
+              <div className="flex items-center gap-2 text-accent">
+                <prop.icon className="h-5 w-5" />
+                <span className="text-label text-text-3">{String(i + 1).padStart(2, "0")}</span>
+              </div>
+              <h2 className="text-heading text-text">{prop.title}</h2>
+              <p className="text-body text-text-2">{prop.description}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {/* Agent showcase */}
+      <section className="band-ink">
+        <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-10 px-4 py-14 md:px-10 md:py-[72px] lg:py-[104px]">
+          <div className="flex max-w-[760px] flex-col gap-3">
+            <p className="text-label text-ink-accent">The agents</p>
+            <h2 className="text-display-m text-ink-text">
+              Meet your AI marketing team.
             </h2>
-            <p className="mt-4 text-lg text-text-secondary">
-              {AI_AGENT_COUNT} specialized agents — each trained for a specific marketing task.
+            <p className="text-lg text-ink-text-2">
+              {AI_AGENT_COUNT} specialized agents, each trained for one marketing job.
             </p>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <ul className="grid grid-cols-2 gap-2.5 md:grid-cols-3 lg:grid-cols-5">
             {activeAgents.map((agent, i) => {
               const Icon = iconMap[agent.icon] || Sparkles;
+              const d = agentDisplay(agent);
               return (
-                <Card
+                <li
                   key={agent.id}
-                  className="animate-in"
+                  className="animate-in flex flex-col gap-2 rounded-md border border-ink-line bg-ink-surface p-4"
                   style={{ animationDelay: `${i * 40}ms` }}
                 >
-                  <CardContent className="flex flex-col items-center text-center py-5 px-3">
-                    <div className="mb-3 rounded-lg bg-surface-2 p-2.5">
-                      <Icon className="h-5 w-5 text-accent" />
-                    </div>
-                    <p className="text-small font-medium text-text-primary leading-tight">
-                      {agent.shortName}
-                    </p>
-                    <p className="text-[0.6875rem] text-text-tertiary mt-1 leading-snug">
-                      {agent.description.slice(0, 50)}
-                    </p>
-                  </CardContent>
-                </Card>
+                  <Icon className="h-4 w-4 text-ink-accent" />
+                  <p className="text-body-s font-medium text-ink-text">{d.name}</p>
+                  <p className="text-caption text-ink-text-3">{d.job}</p>
+                </li>
               );
             })}
-          </div>
+          </ul>
         </div>
       </section>
 
-      {/* Maker's Story */}
-      <section className="py-20 border-t border-border-subtle">
-        <div className="mx-auto max-w-3xl px-6">
-          <Card className="animate-in">
-            <CardContent className="py-8">
-              <div className="flex items-start gap-4 mb-6">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/10 text-accent font-bold text-lg shrink-0">
-                  OA
-                </div>
-                <div>
-                  <h3 className="text-h3 text-text-primary">
-                    Olayinka Fagbenro
-                  </h3>
-                  <p className="text-small text-text-secondary">
-                    Founder, Technicity Digital
-                  </p>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <Globe className="h-3.5 w-3.5 text-text-tertiary" />
-                    <span className="text-small text-text-tertiary">
-                      Lagos, Nigeria
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <p className="text-body text-text-secondary leading-relaxed">
-                &quot;I built Conduikt because I was tired of juggling 6
-                different marketing tools. As a solo founder, I needed
-                something that could audit my site, generate content that
-                actually sounds like my brand, and publish across channels
-                — without hiring a marketing team.
+      {/* Maker's story */}
+      <section className="mx-auto w-full max-w-[1200px] px-4 py-16 md:px-10 md:py-24">
+        <figure className="animate-in flex max-w-[820px] flex-col gap-6 rounded-lg border border-line bg-surface p-7 md:p-10">
+          <p className="text-label text-accent">From the maker</p>
+          <blockquote className="flex flex-col gap-3 text-[17px] leading-relaxed text-text">
+            <p>
+              &quot;I built Conduikt because I was tired of juggling 6
+              different marketing tools. As a solo founder, I needed
+              something that could audit my site, generate content that
+              actually sounds like my brand, and publish across channels,
+              without hiring a marketing team.
+            </p>
+            <p>
+              Conduikt replaces all of that with {AI_AGENT_COUNT} specialized AI agents
+              that work together. The secret sauce is the feedback loop:
+              performance data from published content feeds back into the
+              AI, so every piece is smarter than the last. Built
+              entirely with Claude Code.&quot;
+            </p>
+          </blockquote>
+          <figcaption className="flex items-center gap-3 border-t border-line pt-5">
+            <span
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent font-mono text-[13px] text-white"
+              aria-hidden
+            >
+              OA
+            </span>
+            <div>
+              <p className="text-title text-text">Olayinka Fagbenro</p>
+              <p className="flex items-center gap-1.5 text-caption text-text-3">
+                Founder, Technicity Digital
+                <span aria-hidden>·</span>
+                <Globe className="h-3 w-3" />
+                Lagos, Nigeria
               </p>
-              <p className="text-body text-text-secondary leading-relaxed mt-3">
-                Conduikt replaces all of that with {AI_AGENT_COUNT} specialized AI agents
-                that work together. The secret sauce is the feedback loop:
-                performance data from published content feeds back into the
-                AI, so every generation is smarter than the last. Built
-                entirely with Claude Code.&quot;
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </figcaption>
+        </figure>
       </section>
 
       {/* Final CTA */}
-      <section className="py-20">
-        <div className="mx-auto max-w-3xl px-6 text-center">
-          <h2 className="text-hero text-text-primary">
+      <section className="band-ink">
+        <div className="mx-auto flex w-full max-w-[1200px] flex-col items-start gap-6 px-4 py-16 md:px-10 md:py-24">
+          <h2 className="max-w-[900px] text-display-m text-ink-text">
             Your marketing team is ready.
           </h2>
-          <p className="mt-4 text-lg text-text-secondary">
-            Start free. No credit card required. 5 AI generations included.
+          <p className="max-w-[560px] text-lg text-ink-text-2">
+            Start free. No credit card required. 5 pieces of content included.
           </p>
-          <div className="mt-8 flex items-center justify-center gap-4">
-            <Button size="lg" asChild>
-              <Link href="/signup">
-                Get Started Free
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-          <div className="mt-8 flex items-center justify-center">
-            <a
-              href="https://www.producthunt.com/products/conduikt?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-conduikt"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1119957&theme=dark"
-                alt="Conduikt - Paste your website → get marketing content in 20 seconds | Product Hunt"
-                width={250}
-                height={54}
-                loading="lazy"
-                decoding="async"
-              />
-            </a>
-          </div>
+          <Button size="lg" asChild>
+            <Link href="/signup">
+              Get started free
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+          <a
+            href="https://www.producthunt.com/products/conduikt?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-conduikt"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1119957&theme=dark"
+              alt="Conduikt - Paste your website → get marketing content in 20 seconds | Product Hunt"
+              width={250}
+              height={54}
+              loading="lazy"
+              decoding="async"
+            />
+          </a>
         </div>
       </section>
     </div>

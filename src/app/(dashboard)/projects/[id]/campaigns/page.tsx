@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
-import { Megaphone, Plus, Loader2, Workflow } from "lucide-react";
+import { Megaphone, Plus, Workflow } from "@/src/components/ui/lucide-icons";
 import { PageHeader } from "@/src/components/layout/page-header";
 
 import { Button } from "@/src/components/ui/button";
-import { Card, CardContent } from "@/src/components/ui/card";
+import { EmptyState } from "@/src/components/ui/empty-state";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import { CampaignWizard } from "@/src/components/campaigns/campaign-wizard";
 import { CampaignRunner } from "@/src/components/campaigns/campaign-runner";
 import { CampaignFlowEditor } from "@/src/components/campaigns/campaign-flow-editor";
@@ -56,20 +57,19 @@ export default function CampaignsPage({
     <div>
       <PageHeader
         title="Campaigns"
-        description="Multi-step AI campaign orchestration"
+        description="Chain agents into one run. Each step uses what the last one made."
       >
         <div className="flex items-center gap-2">
-          <Button variant="secondary" size="sm" onClick={() => setShowFlowEditor(true)}>
+          <Button variant="outline" size="sm" onClick={() => setShowFlowEditor(true)}>
             <Workflow className="h-4 w-4" />
-            Visual Builder
+            Build visually
           </Button>
           <Button size="sm" onClick={() => setShowWizard(true)}>
             <Plus className="h-4 w-4" />
-            Create Campaign
+            New campaign
           </Button>
         </div>
       </PageHeader>
-
 
       {showFlowEditor && (
         <CampaignFlowEditor
@@ -88,38 +88,29 @@ export default function CampaignsPage({
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 text-accent animate-spin" />
+        <div className="space-y-4" role="status" aria-label="Loading">
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
         </div>
       ) : campaigns.length === 0 ? (
-        <Card className="border-dashed border-border-strong animate-in">
-          <CardContent className="flex flex-col items-center py-16 text-center">
-            <div className="mb-4 rounded-xl bg-accent-muted p-4">
-              <Megaphone className="h-8 w-8 text-accent" />
-            </div>
-            <h3 className="text-h2 text-text-primary">No campaigns yet</h3>
-            <p className="mt-2 max-w-md text-body text-text-secondary">
-              Create your first campaign to chain AI agents together.
-              Each step&apos;s output feeds into the next for a complete
-              marketing pipeline.
-            </p>
-            <Button
-              className="mt-6"
-              size="sm"
-              onClick={() => setShowWizard(true)}
-            >
+        <EmptyState
+          className="animate-in"
+          icon={<Megaphone className="h-6 w-6" />}
+          title="No campaigns yet. Make one to chain agents together, so each step builds on the last."
+          action={
+            <Button size="sm" onClick={() => setShowWizard(true)}>
               <Plus className="h-4 w-4" />
-              Create Campaign
+              New campaign
             </Button>
-          </CardContent>
-        </Card>
+          }
+        />
       ) : (
         <div className="space-y-4">
           {campaigns.map((campaign, i) => (
             <div
               key={campaign.id}
               className="animate-in"
-              style={{ animationDelay: `${i * 60}ms` }}
+              style={{ animationDelay: `${Math.min(i, 5) * 80}ms` }}
             >
               <CampaignRunner
                 campaign={campaign}

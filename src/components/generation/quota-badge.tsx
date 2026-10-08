@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Zap } from "lucide-react";
+import { AlertTriangle, Zap } from "@/src/components/ui/lucide-icons";
 import { createClient } from "@/src/lib/supabase/client";
 import {
   getGenerationLimit,
@@ -92,12 +92,12 @@ export function QuotaBadge({ variant = "compact", cost = 1, className }: Props) 
       return (
         <div
           className={cn(
-            "flex items-center gap-1.5 text-caption text-text-tertiary",
+            "flex items-center gap-1.5 text-caption text-text-3",
             className
           )}
         >
-          <Zap className="h-3 w-3 shrink-0 text-success" />
-          <span>Unlimited generations on {plan}.</span>
+          <Zap className="h-3 w-3 shrink-0 text-teal" />
+          <span>Unlimited pieces of content on {plan}.</span>
         </div>
       );
     }
@@ -112,13 +112,13 @@ export function QuotaBadge({ variant = "compact", cost = 1, className }: Props) 
   const tone = empty || willExceed ? "error" : low ? "warning" : "muted";
 
   const toneClasses = {
-    error: "text-error bg-error/10 border-error/30",
-    warning: "text-warning bg-warning/10 border-warning/30",
-    muted: "text-text-tertiary bg-surface-2 border-border-default",
+    error: "text-danger bg-surface-2 border-line-strong",
+    warning: "text-accent bg-accent-soft border-line",
+    muted: "text-text-3 bg-surface-2 border-line",
   }[tone];
 
   const message = empty
-    ? `You're out of generations this month.`
+    ? `You've used all your pieces of content this month.`
     : willExceed
     ? `This action needs ${cost}. You have ${remaining} left.`
     : cost > 1
@@ -129,7 +129,7 @@ export function QuotaBadge({ variant = "compact", cost = 1, className }: Props) 
     return (
       <div
         className={cn(
-          "rounded-lg border px-3 py-2.5 text-small flex items-start gap-2",
+          "rounded-lg border px-3 py-2.5 text-body-s flex items-start gap-2",
           toneClasses,
           className
         )}
@@ -142,9 +142,9 @@ export function QuotaBadge({ variant = "compact", cost = 1, className }: Props) 
           {plan !== "agency" && (empty || low || willExceed) && (
             <Link
               href="/settings/billing"
-              className="mt-1 inline-block text-caption underline underline-offset-2 hover:no-underline"
+              className="mt-1 inline-block text-caption underline underline-offset-2 hover:no-underline hover-link"
             >
-              Upgrade for more →
+              Upgrade for more
             </Link>
           )}
         </div>
@@ -170,7 +170,7 @@ export function QuotaBadge({ variant = "compact", cost = 1, className }: Props) 
       {plan !== "agency" && (empty || low || willExceed) && (
         <Link
           href="/settings/billing"
-          className="shrink-0 underline underline-offset-2 hover:no-underline"
+          className="shrink-0 underline underline-offset-2 hover:no-underline hover-link"
         >
           Upgrade
         </Link>

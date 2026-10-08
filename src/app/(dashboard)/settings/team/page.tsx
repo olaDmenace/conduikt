@@ -4,17 +4,19 @@ import { useEffect, useState } from "react";
 import {
   Users,
   UserPlus,
-  Loader2,
   Trash2,
   Mail,
   Shield,
   Eye,
   Crown,
   Send,
-} from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+} from "@/src/components/ui/lucide-icons";
+import { Card } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
-import { Button } from "@/src/components/ui/button";
+import { Button, IconButton } from "@/src/components/ui/button";
+import { Input, Field } from "@/src/components/ui/input";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import { EmptyState } from "@/src/components/ui/empty-state";
 import { PageHeader } from "@/src/components/layout/page-header";
 import { useToast } from "@/src/components/ui/toast";
 
@@ -29,12 +31,12 @@ interface TeamMember {
 
 const roleConfig: Record<
   string,
-  { icon: typeof Crown; label: string; variant: "default" | "success" | "warning" | "info" }
+  { icon: typeof Crown; label: string; variant: "default" | "secondary" | "success" | "warning" | "info" | "count" }
 > = {
-  owner: { icon: Crown, label: "Owner", variant: "warning" },
+  owner: { icon: Crown, label: "Owner", variant: "count" },
   admin: { icon: Shield, label: "Admin", variant: "success" },
   member: { icon: Users, label: "Member", variant: "info" },
-  viewer: { icon: Eye, label: "Viewer", variant: "default" },
+  viewer: { icon: Eye, label: "Viewer", variant: "secondary" },
 };
 
 export default function TeamPage() {
@@ -46,10 +48,6 @@ export default function TeamPage() {
   const [role, setRole] = useState("member");
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchMembers();
-  }, []);
-
   async function fetchMembers() {
     const res = await fetch("/api/team", { cache: "no-store" });
     if (res.ok) {
@@ -58,6 +56,10 @@ export default function TeamPage() {
     }
     setLoading(false);
   }
+
+  useEffect(() => {
+    fetchMembers();
+  }, []);
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
@@ -73,7 +75,7 @@ export default function TeamPage() {
     if (res.ok) {
       const newMember = await res.json();
       if (newMember.email?.delivered) {
-        toast("Invite sent — email on its way", "success");
+        toast("Invite sent. The email is on its way.", "success");
       } else {
         toast(
           `Invite saved, but email didn't send: ${newMember.email?.error ?? "unknown error"}`,
@@ -100,7 +102,7 @@ export default function TeamPage() {
       fetchMembers();
     } else {
       const err = await res.json();
-      toast(err.error || "Failed to send invite", "error");
+      toast(err.error || "We couldn't send the invite. Try again.", "error");
     }
     setInviting(false);
   }
@@ -116,7 +118,7 @@ export default function TeamPage() {
     const data = await res.json();
     if (res.ok) {
       if (data.email?.delivered) {
-        toast("Invite resent — email on its way", "success");
+        toast("Invite sent again. The email is on its way.", "success");
       } else {
         toast(
           `Couldn't resend the invite: ${data.email?.error ?? "unknown error"}`,
@@ -124,7 +126,7 @@ export default function TeamPage() {
         );
       }
     } else {
-      toast(data.error || "Failed to resend invite", "error");
+      toast(data.error || "We couldn't resend the invite. Try again.", "error");
     }
     setResendingId(null);
   }
@@ -141,7 +143,7 @@ export default function TeamPage() {
       fetchMembers();
     } else {
       const err = await res.json();
-      toast(err.error || "Failed to remove member", "error");
+      toast(err.error || "We couldn't remove that member. Try again.", "error");
     }
   }
 
@@ -149,64 +151,63 @@ export default function TeamPage() {
     <div>
       <PageHeader
         title="Team"
-        description="Invite members and manage access"
+        description="Invite people and choose what they can do."
       />
 
-      {/* Invite Form */}
+      {/* Invite form */}
       <Card className="mb-8 animate-in">
-        <CardContent>
-          <h3 className="text-h3 text-text-primary mb-4">Invite a team member</h3>
-          <form onSubmit={handleInvite} className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
-              <input
-                type="email"
-                placeholder="colleague@company.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full rounded-lg border border-border-default bg-surface-1 py-2.5 pl-10 pr-4 text-[0.875rem] text-text-primary placeholder:text-text-tertiary transition-colors focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-glow)]"
-              />
-            </div>
+        <h2 className="mb-4 text-heading text-text">Invite a team member</h2>
+        <form onSubmit={handleInvite} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="relative flex-1">
+            <Input
+              label="Email"
+              type="email"
+              placeholder="colleague@company.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="pl-10"
+            />
+            <Mail className="pointer-events-none absolute bottom-3 left-3 h-4 w-4 text-text-3" aria-hidden />
+          </div>
+          <Field label="Role" htmlFor="invite-role">
             <select
+              id="invite-role"
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="rounded-lg border border-border-default bg-surface-1 px-4 py-2.5 text-[0.875rem] text-text-primary transition-colors focus:border-accent focus:outline-none appearance-none cursor-pointer"
+              className="h-10 cursor-pointer rounded-md border border-line-strong bg-surface px-3.5 text-[15px] text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               <option value="admin">Admin</option>
               <option value="member">Member</option>
               <option value="viewer">Viewer</option>
             </select>
-            <Button type="submit" size="sm" disabled={inviting} className="shrink-0">
-              {inviting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <UserPlus className="h-4 w-4" />
-              )}
-              {inviting ? "Sending..." : "Send Invite"}
-            </Button>
-          </form>
-        </CardContent>
+          </Field>
+          <Button type="submit" disabled={inviting} className="h-10 shrink-0">
+            {!inviting && <UserPlus className="h-4 w-4" />}
+            {inviting ? "Sending…" : "Send invite"}
+          </Button>
+        </form>
       </Card>
 
-      {/* Members List */}
+      {/* Members list */}
       {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 text-accent animate-spin" />
+        <div className="space-y-3" role="status" aria-label="Loading team members">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4 rounded-lg border border-line bg-surface p-4 md:p-6">
+              <Skeleton className="h-10 w-10 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-3 w-56" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : members.length === 0 ? (
-        <Card className="border-dashed border-border-strong animate-in" style={{ animationDelay: "60ms" }}>
-          <CardContent className="flex flex-col items-center py-12 text-center">
-            <div className="mb-4 rounded-xl bg-accent-muted p-4">
-              <Users className="h-8 w-8 text-accent" />
-            </div>
-            <h3 className="text-h2 text-text-primary">No team members yet</h3>
-            <p className="mt-2 max-w-md text-body text-text-secondary">
-              Invite your first team member to start collaborating on
-              campaigns, content, and audits together.
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          className="animate-in"
+          icon={<Users className="h-8 w-8" />}
+          title="No team members yet. Invite someone above to work on campaigns, content and audits together."
+        />
       ) : (
         <div className="space-y-3">
           {members.map((member, i) => {
@@ -227,56 +228,55 @@ export default function TeamPage() {
             return (
               <Card
                 key={member.id}
-                className="animate-in"
+                className="animate-in flex flex-wrap items-center gap-4"
                 style={{ animationDelay: `${i * 60}ms` }}
               >
-                <CardContent className="flex items-center gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-2 text-[0.75rem] font-medium text-text-secondary shrink-0">
-                    {initials}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-body font-medium text-text-primary truncate">
-                      {displayName}
+                <div
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-2 font-mono text-caption font-medium text-text-2"
+                  aria-hidden
+                >
+                  {initials}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-title text-text">
+                    {displayName}
+                  </p>
+                  {member.invite_email && member.profiles?.full_name && (
+                    <p className="truncate text-body-s text-text-3">
+                      {member.invite_email}
                     </p>
-                    {member.invite_email && member.profiles?.full_name && (
-                      <p className="text-small text-text-tertiary truncate">
-                        {member.invite_email}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Badge variant={config.variant}>
-                      <RoleIcon className="h-3 w-3 mr-1" />
-                      {config.label}
-                    </Badge>
-                    {isPending && (
-                      <Badge variant="warning">Pending</Badge>
-                    )}
-                    {isPending && (
-                      <button
-                        onClick={() => handleResend(member.id)}
-                        disabled={resendingId === member.id}
-                        className="rounded-lg p-2 text-text-tertiary hover:text-accent hover:bg-accent-muted transition-colors disabled:opacity-50"
-                        title="Resend invite email"
-                      >
-                        {resendingId === member.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Send className="h-4 w-4" />
-                        )}
-                      </button>
-                    )}
-                    {member.role !== "owner" && (
-                      <button
-                        onClick={() => handleRevoke(member.id)}
-                        className="rounded-lg p-2 text-text-tertiary hover:text-error hover:bg-error/10 transition-colors"
-                        title="Remove member"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-                </CardContent>
+                  )}
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Badge variant={config.variant}>
+                    <RoleIcon className="h-3 w-3" aria-hidden />
+                    {config.label}
+                  </Badge>
+                  {isPending && (
+                    <Badge variant="warning">Pending</Badge>
+                  )}
+                  {isPending && (
+                    <IconButton
+                      label={resendingId === member.id ? "Sending invite again" : "Resend invite email"}
+                      onClick={() => handleResend(member.id)}
+                      disabled={resendingId === member.id}
+                      title="Resend invite email"
+                      className="disabled:opacity-50"
+                    >
+                      <Send className="h-4 w-4" />
+                    </IconButton>
+                  )}
+                  {member.role !== "owner" && (
+                    <IconButton
+                      label="Remove member"
+                      onClick={() => handleRevoke(member.id)}
+                      title="Remove member"
+                      className="hover:text-danger"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </IconButton>
+                  )}
+                </div>
               </Card>
             );
           })}
