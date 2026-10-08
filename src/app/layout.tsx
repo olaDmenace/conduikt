@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Space_Grotesk, Geist, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { Analytics } from "@vercel/analytics/next";
 import "@/src/styles/globals.css";
 import { softwareAppJsonLd, faqJsonLd } from "@/src/lib/seo/homepage-schema";
@@ -13,25 +13,31 @@ const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 // Geist (interface + body), JetBrains Mono (labels, aligned numbers).
 // Variables are set on <html> so the @theme tokens in globals.css can
 // resolve them from :root.
-const spaceGrotesk = Space_Grotesk({
-  weight: ["300", "400", "500", "600"],
-  subsets: ["latin"],
+// Self-hosted (src/app/fonts): fetching from Google at build time broke
+// Vercel builds whenever Google served /l/font?kit=… URLs. Variable fonts,
+// latin subset, same CSS variables as before.
+const spaceGrotesk = localFont({
+  src: "./fonts/SpaceGrotesk-Variable.woff2",
+  weight: "300 700",
   variable: "--font-space-grotesk",
   display: "swap",
+  fallback: ["system-ui", "sans-serif"],
 });
 
-const geist = Geist({
-  weight: ["400", "500", "600"],
-  subsets: ["latin"],
+const geist = localFont({
+  src: "./fonts/Geist-Variable.woff2",
+  weight: "100 900",
   variable: "--font-geist",
   display: "swap",
+  fallback: ["system-ui", "sans-serif"],
 });
 
-const jetbrainsMono = JetBrains_Mono({
-  weight: ["400", "500"],
-  subsets: ["latin"],
+const jetbrainsMono = localFont({
+  src: "./fonts/JetBrainsMono-Variable.woff2",
+  weight: "100 800",
   variable: "--font-jetbrains-mono",
   display: "swap",
+  fallback: ["ui-monospace", "monospace"],
 });
 
 export const viewport: Viewport = {
