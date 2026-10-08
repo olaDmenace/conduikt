@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Built on first use, not at import: the build imports every route, and
+// CI builds without RESEND_API_KEY.
+let client: Resend | null = null;
+const getResend = () => (client ??= new Resend(process.env.RESEND_API_KEY));
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -64,7 +67,7 @@ export async function POST(request: NextRequest) {
   };
 
   try {
-    const { data: emailData, error: emailError } = await resend.emails.send({
+    const { data: emailData, error: emailError } = await getResend().emails.send({
       from: `Conduikt <noreply@${process.env.RESEND_FROM_DOMAIN || "contacts.conduikt.com"}>`,
       to: invite.invite_email,
       subject: "Reminder: you've been invited to join a team on Conduikt",

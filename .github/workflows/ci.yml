@@ -58,11 +58,17 @@ jobs:
     name: E2E (Playwright)
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # Playwright needs the built app; the build step is heavy, so skip
-    # this job on Dependabot bumps unless the workflow itself changed.
+    # Opt-in. The specs sign in a real test user, create projects and run
+    # agents, so they need a staging Supabase project, TEST_USER_EMAIL /
+    # TEST_USER_PASSWORD and an Anthropic key as repo secrets — and they
+    # still target the pre-v2 screens. Until that exists, set the repo
+    # variable E2E_ENABLED=true to run them (Settings → Secrets and
+    # variables → Actions → Variables). Lint, typecheck and unit tests
+    # above stay mandatory on every push.
     if: >
-      github.actor != 'dependabot[bot]' ||
-      contains(github.event.head_commit.modified, '.github/workflows/ci.yml')
+      vars.E2E_ENABLED == 'true' &&
+      (github.actor != 'dependabot[bot]' ||
+      contains(github.event.head_commit.modified, '.github/workflows/ci.yml'))
 
     steps:
       - uses: actions/checkout@v4

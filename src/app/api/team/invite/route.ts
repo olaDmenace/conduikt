@@ -8,7 +8,10 @@ import {
   tierLabel,
 } from "@/src/lib/plans";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Built on first use, not at import: the build imports every route, and
+// CI builds without RESEND_API_KEY.
+let client: Resend | null = null;
+const getResend = () => (client ??= new Resend(process.env.RESEND_API_KEY));
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -134,7 +137,7 @@ export async function POST(request: NextRequest) {
   } = { delivered: false };
 
   try {
-    const { data: emailData, error: emailError } = await resend.emails.send({
+    const { data: emailData, error: emailError } = await getResend().emails.send({
       from: `Conduikt <noreply@${process.env.RESEND_FROM_DOMAIN || "contacts.conduikt.com"}>`,
       to: email,
       subject: "You've been invited to join a team on Conduikt",

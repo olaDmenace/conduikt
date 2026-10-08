@@ -1,3 +1,4 @@
+import { NextRequest, NextResponse } from "next/server";
 import { serve } from "inngest/next";
 import {
   inngest,
@@ -9,20 +10,7 @@ import {
   refreshTiktokTokens,
 } from "@/src/lib/inngest";
 
-// Inngest verifies request signatures using INNGEST_SIGNING_KEY. Without it
-// set, the route would accept unsigned events — anyone who knows the URL
-// could trigger functions. Fail loudly in production so a misconfigured
-// deploy can't silently accept untrusted events.
-if (
-  process.env.NODE_ENV === "production" &&
-  !process.env.INNGEST_SIGNING_KEY
-) {
-  throw new Error(
-    "INNGEST_SIGNING_KEY is not set in production. Refusing to expose the /api/inngest route without signature verification. Add the key from app.inngest.com to Vercel env vars."
-  );
-}
-
-export const { GET, POST, PUT } = serve({
+const handlers = serve({
   client: inngest,
   functions: [
     videoPipeline,
@@ -33,3 +21,28 @@ export const { GET, POST, PUT } = serve({
     refreshTiktokTokens,
   ],
 });
+
+// Inngest verifies request signatures using INNGEST_SIGNING_KEY. Without it
+// the route would accept unsigned events — anyone who knows the URL could
+// trigger functions. In production, refuse every request when it's missing.
+// Checked per request rather than at import so a build without secrets
+// (CI) still succeeds; the deploy itself stays locked shut.
+function unsigned(): NextResponse | null {
+  if (process.env.NODE_ENV === "production" && !process.env.INNGEST_SIGNING_KEY) {
+    console.error("[inngest] INNGEST_SIGNING_KEY is not set; refusing requests. Add it from app.inngest.com to Vercel env vars.");
+    return NextResponse.json({ error: "Inngest is not configured" }, { status: 503 });
+  }
+  return null;
+}
+
+type Ctx = { params: Promise<Record<string, never>> };
+
+export async function GET(req: NextRequest, ctx: Ctx) {
+  return unsigned() ?? handlers.GET(req, ctx);
+}
+export async function POST(req: NextRequest, ctx: Ctx) {
+  return unsigned() ?? handlers.POST(req, ctx);
+}
+export async function PUT(req: NextRequest, ctx: Ctx) {
+  return unsigned() ?? handlers.PUT(req, ctx);
+}

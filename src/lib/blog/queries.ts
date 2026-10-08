@@ -34,6 +34,13 @@ export interface BlogPostRow {
   date_modified: string;
 }
 
+// A build without Supabase credentials (CI) renders the blog and sitemap
+// empty instead of failing; production always has them.
+function db() {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) return null;
+  return createServiceClient();
+}
+
 const SELECT_COLS = `
   id, slug, title, description, excerpt, author, tags,
   reading_time_minutes, sections, content_markdown,
@@ -41,7 +48,8 @@ const SELECT_COLS = `
 `;
 
 export async function listPublishedBlogPosts(): Promise<BlogPostRow[]> {
-  const supabase = createServiceClient();
+  const supabase = db();
+  if (!supabase) return [];
   const { data, error } = await supabase
     .from("blog_posts")
     .select(SELECT_COLS)
@@ -58,7 +66,8 @@ export async function listPublishedBlogPosts(): Promise<BlogPostRow[]> {
 export async function getPublishedBlogPost(
   slug: string
 ): Promise<BlogPostRow | null> {
-  const supabase = createServiceClient();
+  const supabase = db();
+  if (!supabase) return null;
   const { data, error } = await supabase
     .from("blog_posts")
     .select(SELECT_COLS)
@@ -77,7 +86,8 @@ export async function getRelatedBlogPosts(
   slug: string,
   limit = 2
 ): Promise<BlogPostRow[]> {
-  const supabase = createServiceClient();
+  const supabase = db();
+  if (!supabase) return [];
   const { data, error } = await supabase
     .from("blog_posts")
     .select(SELECT_COLS)
