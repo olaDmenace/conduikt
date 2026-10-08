@@ -14,6 +14,7 @@ import { Input } from "@/src/components/ui/input";
 import { Card } from "@/src/components/ui/card";
 import { AuditResult, type AuditResultData } from "@/src/components/first-week/audit-result";
 import { FirstWeekPanel } from "@/src/components/first-week/first-week-panel";
+import { DownloadReport } from "@/src/components/first-week/download-report";
 import { useUIStore } from "@/src/stores/ui-store";
 import { cn } from "@/src/lib/utils/cn";
 
@@ -225,9 +226,23 @@ export default function MagicAuditPage() {
 
       {stage === "result" && audit && (
         <>
-          <header className="space-y-2">
-            <p className="text-label text-text-3">Check complete</p>
-            <h1 className="text-display-s text-text">Here&apos;s {hostOf(auditedUrl)}.</h1>
+          <header className="flex flex-wrap items-end justify-between gap-4">
+            <div className="space-y-2">
+              <p className="text-label text-text-3">Check complete</p>
+              <h1 className="text-display-s text-text">Here&apos;s {hostOf(auditedUrl)}.</h1>
+            </div>
+            {projectId ? (
+              <DownloadReport
+                href={`/api/onboarding/first-week/pdf?projectId=${projectId}`}
+                filename={`conduikt-${hostOf(auditedUrl)}-first-week.pdf`}
+              />
+            ) : (
+              <DownloadReport
+                href="/api/onboarding/audit/pdf"
+                body={{ url: auditedUrl, audit }}
+                filename={`conduikt-site-check-${hostOf(auditedUrl)}.pdf`}
+              />
+            )}
           </header>
           <AuditResult audit={audit} host={hostOf(auditedUrl)} />
           {packError ? (

@@ -6,9 +6,11 @@ import { normalizeAuditUrl } from "@/src/lib/onboarding/url";
 import { fetchPageSignal } from "@/src/lib/onboarding/magic-audit";
 import { assertPublicUrl, BlockedUrlError, safeFetch } from "@/src/lib/security/safe-fetch";
 import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
-import { firstWeekAgents, firstWeekInput, splitByPlan, type SiteBrief } from "@/src/lib/first-week/plan";
+import { firstWeekInput, splitByPlan, type SiteBrief } from "@/src/lib/first-week/plan";
 import { generateAgentPreviews } from "@/src/lib/first-week/previews";
 import { FIRST_WEEK, FIRST_WEEK_AGENT, runFirstWeekRows } from "@/src/lib/first-week/run";
+import { loadFirstWeek } from "@/src/lib/first-week/status";
+import { toQuickAudit } from "@/src/lib/pdf/quick-audit";
 
 // "Your first week": run every agent the user's plan includes against
 // their website, and preview the rest.
@@ -24,7 +26,6 @@ import { FIRST_WEEK, FIRST_WEEK_AGENT, runFirstWeekRows } from "@/src/lib/first-
 
 export const maxDuration = 300;
 
-const STALE_MS = 6 * 60 * 1000;
 const clip = (v: unknown, n: number) => (typeof v === "string" ? v.trim().slice(0, n) : "");
 const hostOf = (u: string) => new URL(u).hostname.replace(/^www\./, "");
 
@@ -92,6 +93,42 @@ export async function POST(request: NextRequest) {
     project = created;
   }
   const projectId = project.id;
+
+  // Keep the quick check on the project: it becomes the Overview's site
+  // score and can be downloaded later. "Try again" re-posts the same
+  // result, so skip it if the last saved check matches.
+  const quick = toQuickAudit(body.audit);
+  if (quick) {
+    const { data: last } = await supabase
+      .from("audits")
+      .select("score, created_at, metadata")
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const repeat =
+      last &&
+      last.score === quick.seoScore &&
+      (last.metadata as { source?: string } | null)?.source === "magic-audit" &&
+      Date.now() - Date.parse(last.created_at) < 15 * 60 * 1000;
+    if (!repeat) {
+      await supabase.from("audits").insert({
+        project_id: projectId,
+        type: "seo",
+        url,
+        score: quick.seoScore,
+        findings: quick.topIssues.map((title, i) => ({
+          severity: i === 0 ? "critical" : "warning",
+          category: "Quick check",
+          title,
+          detail: "",
+          fix: "",
+          impact: i === 0 ? "high" : "medium",
+        })),
+        metadata: { source: "magic-audit", quick },
+      });
+    }
+  }
 
   const service = createServiceClient();
   const { data: existing } = await service
@@ -189,83 +226,8 @@ export async function GET(request: NextRequest) {
   const { data: project } = await supabase.from("projects").select("id, name, website_url").eq("id", projectId).maybeSingle();
   if (!project) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const service = createServiceClient();
-  const { data: parent } = await service
-    .from("scheduled_executions")
-    .select("id, payload, result, created_at")
-    .eq("execution_type", FIRST_WEEK)
-    .eq("parent_id", projectId)
-    .maybeSingle();
-  if (!parent) return NextResponse.json({ projectId, started: false });
-
-  const columns = includeOutput
-    ? "id, status, payload, ran_at, last_error, completed_at, result"
-    : "id, status, payload, ran_at, last_error, completed_at";
-  const { data: childRows } = await service
-    .from("scheduled_executions")
-    .select(columns)
-    .eq("parent_id", parent.id)
-    .eq("execution_type", FIRST_WEEK_AGENT);
-  const children = (childRows ?? []) as unknown as ChildRow[];
-
-  // A row stuck in "running" means the request that ran it died; hand it
-  // back to the scheduler.
-  const now = Date.now();
-  const stale = children.filter((c) => c.status === "running" && c.ran_at && now - Date.parse(c.ran_at) > STALE_MS);
-  if (stale.length) {
-    await service.from("scheduled_executions").update({ status: "pending" }).in("id", stale.map((c) => c.id)).eq("status", "running");
-    for (const c of stale) c.status = "pending";
-  }
-
-  const payload = parent.payload as { plan: string; run: string[]; locked: string[]; host: string };
-  const result = (parent.result ?? {}) as { previews?: Array<{ agentId: string; headline: string; items: string[] }>; previewsReady?: boolean };
-  const byAgent = new Map(children.map((c) => [c.payload.agentId, c]));
-
-  const agents = firstWeekAgents()
-    .filter((a) => payload.run.includes(a.id) || payload.locked.includes(a.id))
-    .map((a) => {
-      if (payload.locked.includes(a.id)) {
-        const preview = result.previews?.find((p) => p.agentId === a.id) ?? null;
-        return { ...a, state: "locked" as const, preview };
-      }
-      const row = byAgent.get(a.id);
-      const state =
-        row?.status === "completed" ? "done" : row?.status === "failed" ? "failed" : row?.status === "running" ? "running" : "queued";
-      return {
-        ...a,
-        state,
-        executionId: row?.id ?? null,
-        output: includeOutput ? (row?.result?.output ?? null) : undefined,
-      };
-    });
-
-  const ran = agents.filter((a) => a.state !== "locked");
-  return NextResponse.json({
-    projectId,
-    started: true,
-    host: payload.host,
-    plan: payload.plan,
-    previewsReady: !!result.previewsReady,
-    done: ran.every((a) => a.state === "done" || a.state === "failed"),
-    counts: {
-      done: ran.filter((a) => a.state === "done").length,
-      running: ran.filter((a) => a.state === "running").length,
-      queued: ran.filter((a) => a.state === "queued").length,
-      failed: ran.filter((a) => a.state === "failed").length,
-      locked: agents.length - ran.length,
-    },
-    agents,
-  });
-}
-
-interface ChildRow {
-  id: string;
-  status: string;
-  payload: { agentId: string };
-  ran_at: string | null;
-  last_error: string | null;
-  completed_at: string | null;
-  result?: { output?: unknown } | null;
+  const status = await loadFirstWeek(createServiceClient(), projectId, includeOutput);
+  return NextResponse.json(status ?? { projectId, started: false });
 }
 
 // PATCH { projectId, agentId } — run a failed agent again.

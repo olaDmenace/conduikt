@@ -6,6 +6,7 @@ import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { AgentOutput } from "@/src/components/first-week/agent-output";
+import { DownloadReport } from "@/src/components/first-week/download-report";
 import { tierLabel, type PlanTier } from "@/src/lib/plans";
 import { cn } from "@/src/lib/utils/cn";
 
@@ -130,7 +131,15 @@ export function FirstWeekPanel({ projectId, className }: { projectId: string; cl
   return (
     <section className={cn("space-y-5", className)} aria-labelledby="first-week-title">
       <div className="space-y-2">
-        <p className="text-label text-text-3">Your first week{status.host ? ` · ${status.host}` : ""}</p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-label text-text-3">Your first week{status.host ? ` · ${status.host}` : ""}</p>
+          <DownloadReport
+            href={`/api/onboarding/first-week/pdf?projectId=${projectId}`}
+            filename={`conduikt-${status.host ?? "site"}-first-week.pdf`}
+            label={status.done ? "Download report" : "Download what's ready"}
+            size="sm"
+          />
+        </div>
         <h2 id="first-week-title" className="text-display-s text-text">
           {status.done
             ? `${counts.done} of ${total} agents finished their work.`

@@ -75,7 +75,14 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   trailingSlash: true,
   experimental: {
-    optimizePackageImports: ["lucide-react", "@icon-park/react"],
+    optimizePackageImports: ["@icon-park/react"],
+  },
+  // PDF routes read the bundled report fonts from disk at render time
+  // (src/lib/pdf/brand.ts → registerPdfFonts); make sure they ship with
+  // those functions.
+  outputFileTracingIncludes: {
+    "/api/**/pdf": ["./src/lib/pdf/fonts/**/*"],
+    "/api/marketing-kit/pdf": ["./src/lib/pdf/fonts/**/*"],
   },
   // docs/DESIGN.md §Navigation model: the global agents menu and the
   // Playground are retired. Their routes open the agent picker instead.

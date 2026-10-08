@@ -62,6 +62,20 @@ export async function runFirstWeekAgent(supabase: Db, payload: Record<string, un
     duration_ms: result.durationMs,
   });
 
+  // The Site Audit's first run is a real audit: file it with the project's
+  // audits so the audit page, its PDF and the Overview score all see it.
+  const data = parsed.data as { score?: unknown; findings?: unknown } | null;
+  if (agent.id === "seo-audit" && data && typeof data.score === "number" && Array.isArray(data.findings)) {
+    await supabase.from("audits").insert({
+      project_id: projectId,
+      type: "seo",
+      url: typeof input.url === "string" ? input.url : project.website_url,
+      score: Math.max(0, Math.min(100, Math.round(data.score))),
+      findings: data.findings,
+      metadata: { source: "first-week" },
+    });
+  }
+
   return {
     ok: true,
     result: {

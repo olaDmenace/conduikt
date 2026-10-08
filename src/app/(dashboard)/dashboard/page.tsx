@@ -25,6 +25,7 @@ import {
   whenLabel,
 } from "@/src/lib/dashboard/overview";
 import { cn } from "@/src/lib/utils/cn";
+import { DownloadReport } from "@/src/components/first-week/download-report";
 
 // docs/DESIGN.md §Overview screen. The app home is a status surface:
 // what ran, what needs you, what was learned. Every number on it comes
@@ -318,9 +319,18 @@ export default function DashboardPage() {
               {firstWeek.counts.locked > 0 ? ` ${firstWeek.counts.locked} more on a bigger plan.` : ""}
             </p>
           </div>
-          <Button asChild variant={firstWeek.done ? "outline" : "primary"}>
-            <Link href={`/projects/${pid}/first-week`}>See their work</Link>
-          </Button>
+          <div className="flex flex-wrap items-start gap-2">
+            <Button asChild variant={firstWeek.done ? "outline" : "primary"}>
+              <Link href={`/projects/${pid}/first-week`}>See their work</Link>
+            </Button>
+            {firstWeek.done && (
+              <DownloadReport
+                href={`/api/onboarding/first-week/pdf?projectId=${pid}`}
+                filename={`conduikt-${firstWeek.host}-first-week.pdf`}
+                variant="quiet"
+              />
+            )}
+          </div>
         </Card>
       )}
 
