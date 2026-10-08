@@ -198,6 +198,20 @@ export default function NewProjectPage() {
     setLoading(false);
 
     if (newProjectId && websiteUrl) {
+      // Put every agent on the plan to work on the new site; the first-week
+      // page shows them live. If that can't start, fall back to the audit.
+      const started = await fetch("/api/onboarding/first-week", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: newProjectId }),
+      })
+        .then((r) => r.ok)
+        .catch(() => false);
+      if (started) {
+        window.dispatchEvent(new Event("conduikt:generation"));
+        router.push(`/projects/${newProjectId}/first-week`);
+        return;
+      }
       runAudit(newProjectId);
     } else {
       setTimeout(() => router.push(`/projects/${newProjectId}`), 1000);

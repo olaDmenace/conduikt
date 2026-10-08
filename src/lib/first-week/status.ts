@@ -26,6 +26,8 @@ export async function loadFirstWeek(service: Db, projectId: string, includeOutpu
     .select("id, payload, result, created_at")
     .eq("execution_type", FIRST_WEEK)
     .eq("parent_id", projectId)
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
   if (!parent) return null;
 
@@ -74,6 +76,7 @@ export async function loadFirstWeek(service: Db, projectId: string, includeOutpu
   return {
     projectId,
     started: true,
+    startedAt: parent.created_at as string,
     host: payload.host,
     plan: payload.plan,
     previewsReady: !!result.previewsReady,

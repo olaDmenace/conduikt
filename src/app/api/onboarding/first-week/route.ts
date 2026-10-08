@@ -28,6 +28,7 @@ export const maxDuration = 300;
 
 const clip = (v: unknown, n: number) => (typeof v === "string" ? v.trim().slice(0, n) : "");
 const hostOf = (u: string) => new URL(u).hostname.replace(/^www\./, "");
+const RERUN_AFTER_MS = 24 * 60 * 60 * 1000;
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -41,10 +42,37 @@ export async function POST(request: NextRequest) {
 
   const body = (await request.json().catch(() => ({}))) as {
     url?: string;
+    /** Run on this project (its website) instead of finding one by URL. */
+    projectId?: string;
+    /** Run again although a pack already exists (once a day). */
+    rerun?: boolean;
     audit?: { seoScore?: number; brandVoice?: { tone?: string; audience?: string; valueProposition?: string } };
   };
-  const url = normalizeAuditUrl(body.url ?? "");
-  if (!url) return NextResponse.json({ error: "Enter a valid website address." }, { status: 400 });
+
+  // Started from a project (new-project flow, "Run every agent", "Run again").
+  let given: {
+    id: string;
+    website_url: string | null;
+    value_proposition?: string | null;
+    target_audience?: unknown;
+    brand_voice?: unknown;
+  } | null = null;
+  if (body.projectId) {
+    const { data } = await supabase
+      .from("projects")
+      .select("id, website_url, value_proposition, target_audience, brand_voice")
+      .eq("id", body.projectId)
+      .maybeSingle();
+    if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    given = data;
+  }
+  const url = normalizeAuditUrl(body.url ?? given?.website_url ?? "");
+  if (!url) {
+    return NextResponse.json(
+      { error: given ? "Add your website address in the project settings first." : "Enter a valid website address." },
+      { status: 400 }
+    );
+  }
   try {
     await assertPublicUrl(url);
   } catch (err) {
@@ -54,13 +82,20 @@ export async function POST(request: NextRequest) {
 
   const host = hostOf(url);
   const voice = body.audit?.brandVoice ?? {};
-  const valueProposition = clip(voice.valueProposition, 400);
-  const audience = clip(voice.audience, 300);
-  const tone = clip(voice.tone, 120);
+  // Fall back to what the project already knows when no fresh check came in.
+  const knownAudience =
+    typeof given?.target_audience === "string"
+      ? given.target_audience
+      : (given?.target_audience as { personas?: string[] } | null)?.personas?.[0];
+  const knownTone =
+    typeof given?.brand_voice === "string" ? given.brand_voice : (given?.brand_voice as { tone?: string } | null)?.tone;
+  const valueProposition = clip(voice.valueProposition ?? given?.value_proposition, 400);
+  const audience = clip(voice.audience ?? knownAudience, 300);
+  const tone = clip(voice.tone ?? knownTone, 120);
 
   // Find this site's project, or make one.
-  const { data: projects } = await supabase.from("projects").select("id, website_url").eq("user_id", user.id);
-  let project = (projects ?? []).find((p) => {
+  const { data: projects } = given ? { data: [] } : await supabase.from("projects").select("id, website_url").eq("user_id", user.id);
+  let project = given ?? (projects ?? []).find((p) => {
     try {
       return p.website_url && hostOf(normalizeAuditUrl(p.website_url) ?? "") === host;
     } catch {
@@ -133,11 +168,24 @@ export async function POST(request: NextRequest) {
   const service = createServiceClient();
   const { data: existing } = await service
     .from("scheduled_executions")
-    .select("id")
+    .select("id, created_at")
     .eq("execution_type", FIRST_WEEK)
     .eq("parent_id", projectId)
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
-  if (existing) return NextResponse.json({ projectId, started: false });
+  if (existing && !body.rerun) return NextResponse.json({ projectId, started: false });
+  if (existing && body.rerun) {
+    const next = Date.parse(existing.created_at) + RERUN_AFTER_MS;
+    if (Date.now() < next) {
+      return NextResponse.json(
+        { error: "Your agents already ran on this site today. You can run them again tomorrow.", code: "too_soon", nextAt: new Date(next).toISOString() },
+        { status: 429 }
+      );
+    }
+  }
+  // Each run gets its own keys; the first run keeps the original ones.
+  const runKey = existing ? `first-week:${projectId}@${Date.now()}` : `first-week:${projectId}`;
 
   const { data: profile } = await supabase.from("profiles").select("plan").eq("id", user.id).maybeSingle();
   const plan = normalizePlan(profile?.plan);
@@ -167,7 +215,7 @@ export async function POST(request: NextRequest) {
       scheduled_for: new Date().toISOString(),
       parent_type: "project",
       parent_id: projectId,
-      idempotency_key: `first-week:${projectId}`,
+      idempotency_key: runKey,
       payload: { url, host, plan, run: run.map((a) => a.id), locked: locked.map((a) => a.id) },
       result: { previews: [], previewsReady: locked.length === 0 },
       completed_at: new Date().toISOString(),
@@ -188,7 +236,7 @@ export async function POST(request: NextRequest) {
         scheduled_for: new Date().toISOString(),
         parent_type: FIRST_WEEK,
         parent_id: parent.id,
-        idempotency_key: `first-week:${projectId}:${a.id}`,
+        idempotency_key: `${runKey}:${a.id}`,
         max_attempts: 2,
         payload: { projectId, agentId: a.id, title: `${a.name} · ${host}`, input: firstWeekInput(a.id, brief) },
       }))
@@ -246,10 +294,21 @@ export async function PATCH(request: NextRequest) {
   if (!project) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const service = createServiceClient();
+  const { data: latest } = await service
+    .from("scheduled_executions")
+    .select("id")
+    .eq("execution_type", FIRST_WEEK)
+    .eq("parent_id", projectId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!latest) return NextResponse.json({ error: "Nothing to retry" }, { status: 409 });
   const { data: row } = await service
     .from("scheduled_executions")
     .update({ status: "pending", attempts: 0, last_error: null, completed_at: null })
-    .eq("idempotency_key", `first-week:${projectId}:${agentId}`)
+    .eq("parent_id", latest.id)
+    .eq("execution_type", FIRST_WEEK_AGENT)
+    .eq("payload->>agentId", agentId)
     .eq("user_id", user.id)
     .eq("status", "failed")
     .select("id")

@@ -92,6 +92,9 @@ export default function DashboardPage() {
   const [busy, setBusy] = useState(false);
   const [showTour, setShowTour] = useState(false);
   const [firstWeek, setFirstWeek] = useState<FirstWeekSummary | null>(null);
+  // True once we know this project has never had a first-week run.
+  const [noRunYet, setNoRunYet] = useState(false);
+  const [startingRun, setStartingRun] = useState(false);
 
   const load = useCallback(async () => {
     // Every sign-in path lands here. If the visitor typed their site into
@@ -112,7 +115,10 @@ export default function DashboardPage() {
     if (json.project) {
       fetch(`/api/onboarding/first-week?projectId=${json.project.id}`, { cache: "no-store" })
         .then((r) => (r.ok ? r.json() : null))
-        .then((s) => setFirstWeek(s?.started ? s : null))
+        .then((s) => {
+          setFirstWeek(s?.started ? s : null);
+          setNoRunYet(!!s && !s.started);
+        })
         .catch(() => setFirstWeek(null));
     }
     if (!json.user.onboardingCompleted) setShowTour(true);
@@ -307,6 +313,34 @@ export default function DashboardPage() {
       </header>
 
       <KpiStrip cells={cells} />
+
+      {!firstWeek && noRunYet && (
+        <Card className="flex flex-wrap items-center justify-between gap-4">
+          <div className="space-y-1">
+            <p className="text-label text-text-3">Your agents</p>
+            <p className="text-title text-text">
+              Put every agent on your plan to work on {data.project.websiteUrl ? new URL(data.project.websiteUrl).hostname.replace(/^www\./, "") : "this site"}.
+            </p>
+            <p className="text-body-s text-text-2">An audit, a plan and a first week of posts and emails, in a few minutes.</p>
+          </div>
+          <Button
+            disabled={startingRun}
+            onClick={async () => {
+              setStartingRun(true);
+              const res = await fetch("/api/onboarding/first-week", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ projectId: pid }),
+              });
+              setStartingRun(false);
+              if (res.ok) router.push(`/projects/${pid}/first-week`);
+              else toast((await res.json().catch(() => ({}))).error ?? "Your agents didn't start. Try again.", "error");
+            }}
+          >
+            {startingRun ? "Starting…" : "Run every agent"}
+          </Button>
+        </Card>
+      )}
 
       {firstWeek && (
         <Card className="flex flex-wrap items-center justify-between gap-4">

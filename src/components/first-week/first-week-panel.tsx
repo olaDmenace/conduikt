@@ -57,6 +57,9 @@ export function FirstWeekPanel({ projectId, className }: { projectId: string; cl
   const [outputs, setOutputs] = React.useState<Record<string, unknown>>({});
   const [open, setOpen] = React.useState<string | null>(null);
   const [retrying, setRetrying] = React.useState<string | null>(null);
+  const [rerun, setRerun] = React.useState<{ busy: boolean; note: string | null }>({ busy: false, note: null });
+  // Bumped when a new run starts so polling restarts.
+  const [runNonce, setRunNonce] = React.useState(0);
   const lastDone = React.useRef(-1);
 
   const load = React.useCallback(async () => {
@@ -90,7 +93,26 @@ export function FirstWeekPanel({ projectId, className }: { projectId: string; cl
       stop = true;
       clearTimeout(timer);
     };
-  }, [load]);
+  }, [load, runNonce]);
+
+  async function runAgain() {
+    setRerun({ busy: true, note: null });
+    const res = await fetch("/api/onboarding/first-week", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ projectId, rerun: true }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok || !body.started) {
+      setRerun({ busy: false, note: body.error ?? "Your agents didn't start. Try again in a minute." });
+      return;
+    }
+    lastDone.current = -1;
+    setOutputs({});
+    setOpen(null);
+    setRerun({ busy: false, note: null });
+    setRunNonce((n) => n + 1);
+  }
 
   async function retry(agentId: string) {
     setRetrying(agentId);
@@ -133,13 +155,25 @@ export function FirstWeekPanel({ projectId, className }: { projectId: string; cl
       <div className="space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-label text-text-3">Your first week{status.host ? ` · ${status.host}` : ""}</p>
-          <DownloadReport
-            href={`/api/onboarding/first-week/pdf?projectId=${projectId}`}
-            filename={`conduikt-${status.host ?? "site"}-first-week.pdf`}
-            label={status.done ? "Download report" : "Download what's ready"}
-            size="sm"
-          />
+          <div className="flex flex-wrap items-start gap-2">
+            {status.done && (
+              <Button size="sm" variant="quiet" onClick={runAgain} disabled={rerun.busy}>
+                {rerun.busy ? "Starting…" : "Run all agents again"}
+              </Button>
+            )}
+            <DownloadReport
+              href={`/api/onboarding/first-week/pdf?projectId=${projectId}`}
+              filename={`conduikt-${status.host ?? "site"}-first-week.pdf`}
+              label={status.done ? "Download report" : "Download what's ready"}
+              size="sm"
+            />
+          </div>
         </div>
+        {rerun.note && (
+          <p role="status" className="text-body-s text-accent">
+            {rerun.note}
+          </p>
+        )}
         <h2 id="first-week-title" className="text-display-s text-text">
           {status.done
             ? `${counts.done} of ${total} agents finished their work.`
