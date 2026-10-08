@@ -1,187 +1,14 @@
-﻿import React from "react";
-import {
-  Document,
-  Page,
-  Text,
-  View,
-  Image,
-  StyleSheet,
-} from "@react-pdf/renderer";
-import { PDF_BRAND } from "./brand";
+import React from "react";
+import { Document, Text, View } from "@react-pdf/renderer";
+import { PDF_BRAND as C, PDF_FONTS as F, registerPdfFonts } from "./brand";
+import { CoverPage, Label, ReportPage, ScoreBlock, s } from "./kit";
 
-const colors = PDF_BRAND;
+registerPdfFonts();
 
-const styles = StyleSheet.create({
-  page: {
-    backgroundColor: colors.surface0,
-    padding: 40,
-    fontFamily: "Helvetica",
-    color: colors.textPrimary,
-  },
-  // Cover page
-  coverPage: {
-    backgroundColor: colors.surface0,
-    padding: 60,
-    fontFamily: "Helvetica",
-    color: colors.textPrimary,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-  },
-  brandMark: {
-    width: 48,
-    height: 48,
-    backgroundColor: colors.accent,
-    borderRadius: 10,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 40,
-  },
-  brandLetter: {
-    color: colors.surface0,
-    fontSize: 24,
-    fontWeight: "bold",
-  },
-  coverTitle: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: colors.textPrimary,
-    marginBottom: 8,
-  },
-  coverSubtitle: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: 40,
-  },
-  scoreCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 4,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
-  scoreText: {
-    fontSize: 48,
-    fontWeight: "bold",
-  },
-  scoreLabel: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: 40,
-  },
-  metaRow: {
-    flexDirection: "row",
-    marginBottom: 6,
-  },
-  metaLabel: {
-    fontSize: 10,
-    color: colors.textTertiary,
-    width: 100,
-    textTransform: "uppercase" as const,
-    letterSpacing: 0.5,
-  },
-  metaValue: {
-    fontSize: 10,
-    color: colors.textSecondary,
-  },
-  // Content pages
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: colors.accent,
-    marginBottom: 16,
-    marginTop: 8,
-  },
-  categoryRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 12,
-    flexWrap: "wrap",
-  },
-  categoryBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 4,
-    backgroundColor: colors.surface2,
-  },
-  categoryText: {
-    fontSize: 9,
-    color: colors.textSecondary,
-  },
-  // Findings
-  findingCard: {
-    backgroundColor: colors.surface1,
-    borderRadius: 8,
-    padding: 14,
-    marginBottom: 8,
-    borderLeftWidth: 3,
-  },
-  findingTitle: {
-    fontSize: 11,
-    fontWeight: "bold",
-    color: colors.textPrimary,
-    marginBottom: 4,
-  },
-  findingDetail: {
-    fontSize: 9,
-    color: colors.textSecondary,
-    marginBottom: 6,
-    lineHeight: 1.4,
-  },
-  fixBox: {
-    backgroundColor: colors.surface2,
-    borderRadius: 4,
-    padding: 8,
-    marginTop: 4,
-  },
-  fixLabel: {
-    fontSize: 8,
-    color: colors.textTertiary,
-    textTransform: "uppercase" as const,
-    letterSpacing: 0.5,
-    marginBottom: 2,
-  },
-  fixText: {
-    fontSize: 9,
-    color: colors.info,
-  },
-  impactBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 3,
-    fontSize: 8,
-    fontWeight: "bold",
-    alignSelf: "flex-start",
-    marginTop: 4,
-  },
-  severityHeader: {
-    fontSize: 13,
-    fontWeight: "bold",
-    marginTop: 16,
-    marginBottom: 8,
-    paddingBottom: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.surface2,
-  },
-  // Footer
-  footer: {
-    position: "absolute",
-    bottom: 20,
-    left: 40,
-    right: 40,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  footerText: {
-    fontSize: 8,
-    color: colors.textTertiary,
-  },
-});
+// Site audit report (docs/DESIGN.md Direction C). Ink cover with the score,
+// then sand pages: a summary, the fixes to make first, then every finding
+// grouped by how serious it is. Agencies can swap in a client logo, name
+// and accent colour.
 
 interface Finding {
   severity: "critical" | "warning" | "info";
@@ -208,185 +35,188 @@ interface AuditReportProps {
   branding?: ClientBranding;
 }
 
-function getScoreColor(score: number) {
-  if (score >= 80) return colors.success;
-  if (score >= 50) return colors.warning;
-  return colors.error;
+const ACCENT_RE = /^#[0-9a-fA-F]{6}$/;
+
+/** A client accent only counts if it's a full six-digit hex colour. */
+function resolveAccent(value?: string | null): string {
+  return value && ACCENT_RE.test(value.trim()) ? value.trim() : C.accent;
 }
 
-function getSeverityColor(severity: string) {
-  if (severity === "critical") return colors.error;
-  if (severity === "warning") return colors.warning;
-  return colors.info;
+const SEVERITY = {
+  critical: { title: "Broken", blurb: "These stop pages from ranking or loading properly. Fix them first." },
+  warning: { title: "Needs work", blurb: "These hold the site back. Worth fixing in the next few weeks." },
+  info: { title: "Good to know", blurb: "Small improvements. Pick these up when you have time." },
+} as const;
+
+function severityColor(sev: Finding["severity"], accent: string): string {
+  if (sev === "critical") return C.error;
+  if (sev === "warning") return accent;
+  return C.text3;
 }
 
-function getImpactStyle(impact: string) {
-  if (impact === "high") return { backgroundColor: colors.error + "30", color: colors.error };
-  if (impact === "medium") return { backgroundColor: colors.warning + "30", color: colors.warning };
-  return { backgroundColor: colors.info + "30", color: colors.info };
+function scoreVerdict(score: number): string {
+  if (score >= 80) return "In good shape. A few things to tidy up.";
+  if (score >= 50) return "Solid base, but some issues are costing you traffic.";
+  return "Several problems are holding this site back.";
 }
 
-export function AuditReportDocument({
-  projectName,
-  url,
-  date,
-  score,
-  findings,
-  branding,
-}: AuditReportProps) {
-  const accentColor = branding?.reportAccentColor || colors.accent;
-  const scoreColor = getScoreColor(score);
-  const preparedBy = branding?.agencyName
-    ? `Prepared by ${branding.agencyName} using Conduikt`
-    : "Generated by Conduikt";
-
-  // Group by severity
-  const critical = findings.filter((f) => f.severity === "critical");
-  const warnings = findings.filter((f) => f.severity === "warning");
-  const info = findings.filter((f) => f.severity === "info");
-
-  // Category summary
-  const categories = [...new Set(findings.map((f) => f.category))];
-
+/** Small mono tag. `color` sets the text and border; fill stays the card colour. */
+function Tag({ children, color }: { children: React.ReactNode; color: string }) {
   return (
-    <Document>
-      {/* Cover Page */}
-      <Page size="A4" style={styles.coverPage}>
-        {branding?.clientLogoUrl ? (
-          <Image
-            src={branding.clientLogoUrl}
-            style={{ width: 120, height: 48, objectFit: "contain", marginBottom: 40 }}
-          />
-        ) : (
-          <View style={[styles.brandMark, { backgroundColor: accentColor }]}>
-            <Text style={styles.brandLetter}>C</Text>
-          </View>
-        )}
-        <Text style={styles.coverTitle}>SEO Audit Report</Text>
-        <Text style={styles.coverSubtitle}>
-          {branding?.clientName || projectName}
-        </Text>
-
-        <View style={[styles.scoreCircle, { borderColor: scoreColor }]}>
-          <Text style={[styles.scoreText, { color: scoreColor }]}>{score}</Text>
-        </View>
-        <Text style={styles.scoreLabel}>Overall SEO Score</Text>
-
-        <View style={styles.metaRow}>
-          <Text style={styles.metaLabel}>Website</Text>
-          <Text style={styles.metaValue}>{url}</Text>
-        </View>
-        <View style={styles.metaRow}>
-          <Text style={styles.metaLabel}>Audit Date</Text>
-          <Text style={styles.metaValue}>{date}</Text>
-        </View>
-        <View style={styles.metaRow}>
-          <Text style={styles.metaLabel}>Findings</Text>
-          <Text style={styles.metaValue}>
-            {critical.length} critical, {warnings.length} warnings,{" "}
-            {info.length} info
-          </Text>
-        </View>
-
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>{preparedBy}</Text>
-          <Text style={styles.footerText}>conduikt.com</Text>
-        </View>
-      </Page>
-
-      {/* Score Summary Page */}
-      <Page size="A4" style={styles.page}>
-        <Text style={[styles.sectionTitle, { color: accentColor }]}>Score Breakdown</Text>
-        <View style={styles.categoryRow}>
-          {categories.map((cat) => (
-            <View key={cat} style={styles.categoryBadge}>
-              <Text style={styles.categoryText}>
-                {cat}: {findings.filter((f) => f.category === cat).length}{" "}
-                issues
-              </Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Critical Findings */}
-        {critical.length > 0 && (
-          <>
-            <Text
-              style={[styles.severityHeader, { color: colors.error }]}
-            >
-              Critical Issues ({critical.length})
-            </Text>
-            {critical.map((f, i) => (
-              <FindingCard key={`c-${i}`} finding={f} />
-            ))}
-          </>
-        )}
-
-        {/* Warning Findings */}
-        {warnings.length > 0 && (
-          <>
-            <Text
-              style={[styles.severityHeader, { color: colors.warning }]}
-            >
-              Warnings ({warnings.length})
-            </Text>
-            {warnings.map((f, i) => (
-              <FindingCard key={`w-${i}`} finding={f} />
-            ))}
-          </>
-        )}
-
-        {/* Info Findings */}
-        {info.length > 0 && (
-          <>
-            <Text
-              style={[styles.severityHeader, { color: colors.info }]}
-            >
-              Informational ({info.length})
-            </Text>
-            {info.map((f, i) => (
-              <FindingCard key={`i-${i}`} finding={f} />
-            ))}
-          </>
-        )}
-
-        <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>{preparedBy}</Text>
-          <Text
-            style={styles.footerText}
-            render={({ pageNumber, totalPages }) =>
-              `Page ${pageNumber} of ${totalPages}`
-            }
-          />
-        </View>
-      </Page>
-    </Document>
+    <Text style={[s.chip, { color, borderWidth: 1, borderColor: color, marginRight: 6, lineHeight: 1.2 }]}>{children}</Text>
   );
 }
 
-function FindingCard({ finding }: { finding: Finding }) {
-  const impactStyle = getImpactStyle(finding.impact);
+function SectionHead({ kicker, title, accent }: { kicker: string; title: string; accent: string }) {
   return (
-    <View
-      style={[
-        styles.findingCard,
-        { borderLeftColor: getSeverityColor(finding.severity) },
-      ]}
-      wrap={false}
-    >
-      <Text style={styles.findingTitle}>{finding.title}</Text>
-      <Text style={styles.findingDetail}>{finding.detail}</Text>
-      {finding.fix && (
-        <View style={styles.fixBox}>
-          <Text style={styles.fixLabel}>Recommended Fix</Text>
-          <Text style={styles.fixText}>{finding.fix}</Text>
-        </View>
-      )}
-      <View style={[styles.impactBadge, impactStyle]}>
-        <Text style={{ fontSize: 8, color: impactStyle.color }}>
-          {finding.impact.toUpperCase()} IMPACT
-        </Text>
-      </View>
+    <View style={{ marginBottom: 12 }} minPresenceAhead={80}>
+      <Label color={accent}>{kicker}</Label>
+      <Text style={s.h2}>{title}</Text>
     </View>
+  );
+}
+
+function Stat({ value, label, color }: { value: number; label: string; color: string }) {
+  return (
+    <View style={[s.card, { flex: 1, marginRight: 8, marginBottom: 0 }]}>
+      <Text style={{ fontFamily: F.display, fontWeight: 300, fontSize: 30, lineHeight: 1, color }}>{value}</Text>
+      <Text style={[s.label, { marginTop: 8, marginBottom: 0 }]}>{label}</Text>
+    </View>
+  );
+}
+
+function FindingCard({ finding, accent }: { finding: Finding; accent: string }) {
+  const color = severityColor(finding.severity, accent);
+  return (
+    <View style={[s.card, { borderLeftWidth: 3, borderLeftColor: color }]} wrap={false}>
+      <View style={{ flexDirection: "row", marginBottom: 6 }}>
+        <Tag color={C.text2}>{finding.category}</Tag>
+        <Tag color={finding.impact === "high" ? color : C.text3}>{`${finding.impact} impact`}</Tag>
+      </View>
+      <Text style={s.h3}>{finding.title}</Text>
+      {finding.detail ? <Text style={[s.muted, { marginBottom: 6 }]}>{finding.detail}</Text> : null}
+      {finding.fix ? (
+        <View style={{ backgroundColor: C.ground, borderRadius: 4, padding: 8, marginTop: 2 }}>
+          <Text style={[s.label, { marginBottom: 3 }]}>How to fix</Text>
+          <Text style={s.body}>{finding.fix}</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+export function AuditReportDocument({ projectName, url, date, score, findings, branding }: AuditReportProps) {
+  const accent = resolveAccent(branding?.reportAccentColor);
+  const subject = branding?.clientName || projectName;
+  const preparedBy = branding?.agencyName ? `Prepared by ${branding.agencyName} with Conduikt` : "Made with Conduikt";
+  const safeScore = Math.max(0, Math.min(100, Math.round(score || 0)));
+
+  const groups = (["critical", "warning", "info"] as const).map((sev) => ({
+    sev,
+    items: findings.filter((f) => f.severity === sev),
+  }));
+  const [critical, warnings, info] = groups.map((g) => g.items);
+
+  // Fix these first: everything broken, then high-impact warnings. Max 5.
+  const firstFixes = [...critical, ...warnings.filter((f) => f.impact === "high")].slice(0, 5);
+
+  // Findings per area, for the bar rows.
+  const byArea = Object.entries(
+    findings.reduce<Record<string, number>>((acc, f) => {
+      const k = f.category || "Other";
+      acc[k] = (acc[k] ?? 0) + 1;
+      return acc;
+    }, {}),
+  ).sort((a, b) => b[1] - a[1]);
+  const maxArea = byArea[0]?.[1] ?? 1;
+
+  const runTitle = `Site audit · ${subject}`;
+
+  return (
+    <Document title={`Site audit: ${subject}`} author={branding?.agencyName || "Conduikt"}>
+      <CoverPage
+        eyebrow="Site audit"
+        title={subject}
+        subtitle={url || undefined}
+        logoUrl={branding?.clientLogoUrl}
+        accent={branding?.reportAccentColor && accent !== C.accent ? accent : undefined}
+        meta={[
+          ["Date", date],
+          ["Findings", `${findings.length}`],
+          ["Broken", `${critical.length}`],
+          ["Prepared by", branding?.agencyName || "Conduikt"],
+        ]}
+      >
+        <ScoreBlock score={safeScore} label="Overall score" inverse />
+        <Text style={{ fontSize: 11, color: C.inkText2, marginTop: 14, maxWidth: 360 }}>{scoreVerdict(safeScore)}</Text>
+      </CoverPage>
+
+      <ReportPage title={runTitle} footerNote={preparedBy}>
+        <View style={s.section}>
+          <SectionHead kicker="Summary" title="What we found" accent={accent} />
+          <Text style={[s.body, { marginBottom: 14, maxWidth: 440 }]}>
+            {findings.length === 0
+              ? `We checked ${url || subject} and found nothing to fix. Nice work.`
+              : `We checked ${url || subject} and found ${findings.length} thing${findings.length === 1 ? "" : "s"} to look at. ${
+                  critical.length > 0
+                    ? `Start with the ${critical.length} broken item${critical.length === 1 ? "" : "s"}.`
+                    : "Nothing is broken, so start with the high-impact items."
+                }`}
+          </Text>
+          <View style={{ flexDirection: "row", marginRight: -8 }}>
+            <Stat value={critical.length} label="Broken" color={critical.length > 0 ? C.error : C.teal} />
+            <Stat value={warnings.length} label="Needs work" color={warnings.length > 0 ? accent : C.teal} />
+            <Stat value={info.length} label="Good to know" color={C.text} />
+          </View>
+        </View>
+
+        {byArea.length > 0 ? (
+          <View style={s.section} wrap={false}>
+            <Label>Findings by area</Label>
+            {byArea.map(([area, n]) => (
+              <View key={area} style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
+                <Text style={{ width: 130, fontSize: 9, color: C.text }}>{area}</Text>
+                <View style={{ flex: 1, height: 6, backgroundColor: C.surface2, borderRadius: 3 }}>
+                  <View style={{ width: `${(n / maxArea) * 100}%`, height: 6, backgroundColor: C.teal, borderRadius: 3 }} />
+                </View>
+                <Text style={{ width: 28, textAlign: "right", fontFamily: F.mono, fontSize: 8, color: C.text2 }}>{n}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
+        {firstFixes.length > 0 ? (
+          <View style={s.section}>
+            <SectionHead kicker="Start here" title="Fix these first" accent={accent} />
+            {firstFixes.map((f, i) => (
+              <View key={i} style={[s.card, { flexDirection: "row", paddingVertical: 10 }]} wrap={false}>
+                <Text style={{ width: 22, fontFamily: F.mono, fontSize: 10, color: severityColor(f.severity, accent) }}>
+                  {String(i + 1).padStart(2, "0")}
+                </Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[s.h3, { marginBottom: 2 }]}>{f.title}</Text>
+                  <Text style={s.muted}>{f.fix || f.detail}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
+        {groups
+          .filter((g) => g.items.length > 0)
+          .map((g, gi) => (
+            <View key={g.sev} style={s.section} break={gi === 0}>
+              <View minPresenceAhead={120}>
+                <Label color={severityColor(g.sev, accent)}>{`${g.items.length} item${g.items.length === 1 ? "" : "s"}`}</Label>
+                <Text style={s.h2}>{SEVERITY[g.sev].title}</Text>
+                <Text style={[s.muted, { marginBottom: 12 }]}>{SEVERITY[g.sev].blurb}</Text>
+              </View>
+              {g.items.map((f, i) => (
+                <FindingCard key={i} finding={f} accent={accent} />
+              ))}
+            </View>
+          ))}
+      </ReportPage>
+    </Document>
   );
 }

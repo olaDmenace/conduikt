@@ -1,55 +1,51 @@
 import React from "react";
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
-import { PDF_BRAND } from "./brand";
+import { Document, Text, View } from "@react-pdf/renderer";
+import { registerPdfFonts } from "./brand";
+import { CoverPage, Label, OutputView, ReportPage, s } from "./kit";
+import { MarkdownBlocks, parseMarkdown } from "./blog-post";
 
-const C = { ...PDF_BRAND, bg: PDF_BRAND.surface0 };
+registerPdfFonts();
+
+// Fallback export for any saved asset without its own template
+// (docs/DESIGN.md Direction C). JSON content goes through the shared
+// OutputView so it reads as sections, not code; text goes through the
+// same light markdown renderer as blog posts.
 
 const TYPE_LABELS: Record<string, string> = {
-  copy_block: "Copy Block",
-  email: "Email Sequence",
-  social_post: "Social Posts",
-  landing_page: "Landing Page",
+  copy_block: "Copy",
+  email: "Email sequence",
+  social_post: "Social posts",
+  landing_page: "Landing page",
   headline: "Headlines",
-  cta: "CTA",
-  ad_copy: "Ad Copy",
-  meta_tags: "Meta Tags",
-  schema_markup: "Schema Markup",
-  audit_report: "Audit Report",
-  seo_page: "SEO Page",
+  cta: "Calls to action",
+  ad_copy: "Ad copy",
+  meta_tags: "Meta tags",
+  schema_markup: "Schema markup",
+  audit_report: "Audit report",
+  seo_page: "SEO page",
 };
 
-const s = StyleSheet.create({
-  page: { backgroundColor: C.bg, padding: 48, fontFamily: "Helvetica", color: C.textPrimary },
-  coverPage: { backgroundColor: C.bg, padding: 60, fontFamily: "Helvetica", color: C.textPrimary, display: "flex", flexDirection: "column", justifyContent: "center" },
-  brand: { width: 44, height: 44, backgroundColor: C.accent, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 48 },
-  brandText: { color: C.bg, fontSize: 22, fontFamily: "Helvetica-Bold" },
-  typeLabel: { fontSize: 9, color: C.accent, textTransform: "uppercase" as const, letterSpacing: 1, fontFamily: "Helvetica-Bold", marginBottom: 10 },
-  coverTitle: { fontSize: 26, fontFamily: "Helvetica-Bold", color: C.textPrimary, marginBottom: 40, lineHeight: 1.3 },
-  metaRow: { flexDirection: "row", marginBottom: 5 },
-  metaLabel: { fontSize: 9, color: C.textTertiary, width: 90, textTransform: "uppercase" as const, letterSpacing: 0.5 },
-  metaValue: { fontSize: 9, color: C.textSecondary },
-  sectionTitle: { fontSize: 14, fontFamily: "Helvetica-Bold", color: C.accent, marginBottom: 14 },
-  contentBlock: { backgroundColor: C.surface1, borderRadius: 6, padding: 14, marginBottom: 12 },
-  contentText: { fontSize: 9.5, color: C.textSecondary, lineHeight: 1.65 },
-  footer: { position: "absolute", bottom: 32, left: 48, right: 48, flexDirection: "row", justifyContent: "space-between" },
-  footerText: { fontSize: 8, color: C.textTertiary },
-});
+function typeLabel(type: string): string {
+  if (TYPE_LABELS[type]) return TYPE_LABELS[type];
+  const w = type.replace(/[_-]+/g, " ").trim();
+  return w ? w.charAt(0).toUpperCase() + w.slice(1) : "Content";
+}
 
-/** Chunk long text into pages (~3500 chars per page to avoid overflow) */
-function chunkText(text: string, maxChars = 3500): string[] {
-  const paragraphs = text.split(/\n\n+/);
-  const pages: string[] = [];
-  let current = "";
-  for (const para of paragraphs) {
-    if (current.length + para.length > maxChars && current.length > 0) {
-      pages.push(current.trim());
-      current = para;
-    } else {
-      current += (current ? "\n\n" : "") + para;
+/** JSON objects/arrays become structured output; anything else stays text. */
+function parseJson(raw: string): unknown | null {
+  const t = raw.trim();
+  if (!t.startsWith("{") && !t.startsWith("[")) return null;
+  try {
+    const v = JSON.parse(t) as unknown;
+    if (v && typeof v === "object") {
+      // Assets often wrap the real output as { parsed: {...} }.
+      const o = v as Record<string, unknown>;
+      return o.parsed && typeof o.parsed === "object" ? o.parsed : v;
     }
+  } catch {
+    // Not JSON: fall through to text.
   }
-  if (current.trim()) pages.push(current.trim());
-  return pages.length > 0 ? pages : [""];
+  return null;
 }
 
 export function GenericContentDocument({
@@ -65,31 +61,35 @@ export function GenericContentDocument({
   date: string;
   rawContent: string;
 }) {
-  const typeLabel = TYPE_LABELS[type] ?? type.replace(/_/g, " ");
-  const pages = chunkText(rawContent);
+  const label = typeLabel(type);
+  const json = parseJson(rawContent ?? "");
+  const blocks = json ? [] : parseMarkdown(rawContent ?? "", true);
 
   return (
-    <Document>
-      {/* Cover */}
-      <Page size="A4" style={s.coverPage}>
-        <View style={s.brand}><Text style={s.brandText}>C</Text></View>
-        <Text style={s.typeLabel}>{typeLabel}</Text>
-        <Text style={s.coverTitle}>{title || typeLabel}</Text>
-        <View style={s.metaRow}><Text style={s.metaLabel}>Project</Text><Text style={s.metaValue}>{projectName}</Text></View>
-        <View style={s.metaRow}><Text style={s.metaLabel}>Generated</Text><Text style={s.metaValue}>{date}</Text></View>
-        <View style={s.footer}><Text style={s.footerText}>Generated by Conduikt · conduikt.com</Text></View>
-      </Page>
-
-      {/* Content pages */}
-      {pages.map((chunk, i) => (
-        <Page key={i} size="A4" style={s.page}>
-          {i === 0 ? <Text style={s.sectionTitle}>Content</Text> : null}
-          <View style={s.contentBlock}>
-            <Text style={s.contentText}>{chunk}</Text>
+    <Document title={title || label} author="Conduikt">
+      <CoverPage
+        eyebrow={label}
+        title={title || label}
+        subtitle={`Saved from ${projectName}.`}
+        meta={[
+          ["Project", projectName],
+          ["Date", date],
+          ["Type", label],
+        ]}
+      />
+      <ReportPage title={`${label} · ${projectName}`}>
+        <Label>Content</Label>
+        <Text style={[s.h1, { marginBottom: 16 }]}>{title || label}</Text>
+        {json ? (
+          <OutputView output={json} />
+        ) : blocks.length > 0 ? (
+          <MarkdownBlocks blocks={blocks} />
+        ) : (
+          <View style={s.card}>
+            <Text style={s.muted}>This item has no content to show.</Text>
           </View>
-          <View style={s.footer}><Text style={s.footerText}>{projectName}</Text><Text style={s.footerText}>{`Page ${i + 2} · conduikt.com`}</Text></View>
-        </Page>
-      ))}
+        )}
+      </ReportPage>
     </Document>
   );
 }

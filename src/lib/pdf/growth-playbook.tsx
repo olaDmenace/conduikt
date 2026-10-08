@@ -1,55 +1,14 @@
 import React from "react";
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
-import { PDF_BRAND } from "./brand";
+import { Document, Text, View } from "@react-pdf/renderer";
+import { PDF_BRAND as C, PDF_FONTS as F, registerPdfFonts } from "./brand";
+import { Bullets, Chip, CoverPage, Label, ReportPage, s } from "./kit";
 
-// Local extension of PDF_BRAND with priority-tier aliases used by the
-// playbook's action badges. `bg` aliases surface0 because growth-playbook
-// pre-dates the unified token names.
-const C = {
-  ...PDF_BRAND,
-  bg: PDF_BRAND.surface0,
-  critical: PDF_BRAND.error,
-  high: PDF_BRAND.warning,
-  medium: PDF_BRAND.info,
-};
+registerPdfFonts();
 
-const s = StyleSheet.create({
-  page: { backgroundColor: C.bg, padding: 48, fontFamily: "Helvetica", color: C.textPrimary },
-  coverPage: { backgroundColor: C.bg, padding: 60, fontFamily: "Helvetica", color: C.textPrimary, display: "flex", flexDirection: "column", justifyContent: "center", minHeight: "100%" },
-  brand: { width: 44, height: 44, backgroundColor: C.accent, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 48 },
-  brandText: { color: C.bg, fontSize: 22, fontFamily: "Helvetica-Bold" },
-  coverTitle: { fontSize: 30, fontFamily: "Helvetica-Bold", color: C.textPrimary, marginBottom: 8 },
-  coverSub: { fontSize: 14, color: C.textSecondary, marginBottom: 48 },
-  metaRow: { flexDirection: "row", marginBottom: 5 },
-  metaLabel: { fontSize: 9, color: C.textTertiary, width: 90, textTransform: "uppercase" as const, letterSpacing: 0.5 },
-  metaValue: { fontSize: 9, color: C.textSecondary },
-  divider: { height: 1, backgroundColor: C.surface2, marginVertical: 24 },
-  sectionTitle: { fontSize: 16, fontFamily: "Helvetica-Bold", color: C.accent, marginBottom: 14, marginTop: 6 },
-  sectionBody: { fontSize: 9.5, color: C.textSecondary, lineHeight: 1.6 },
-  phaseHeader: { backgroundColor: C.surface2, borderRadius: 6, padding: 12, marginBottom: 10 },
-  phaseNumber: { fontSize: 9, color: C.accent, textTransform: "uppercase" as const, letterSpacing: 1, marginBottom: 4, fontFamily: "Helvetica-Bold" },
-  phaseName: { fontSize: 14, fontFamily: "Helvetica-Bold", color: C.textPrimary, marginBottom: 4 },
-  phaseTimeline: { fontSize: 9, color: C.textTertiary },
-  phaseTheme: { fontSize: 9.5, color: C.textSecondary, marginTop: 6, lineHeight: 1.5 },
-  actionCard: { borderLeftWidth: 2, borderLeftColor: C.surface2, paddingLeft: 10, marginBottom: 12 },
-  actionTitle: { fontSize: 10, fontFamily: "Helvetica-Bold", color: C.textPrimary, marginBottom: 3 },
-  actionDesc: { fontSize: 9, color: C.textSecondary, lineHeight: 1.5, marginBottom: 4 },
-  actionMeta: { flexDirection: "row", gap: 12, flexWrap: "wrap" },
-  badge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 3, marginRight: 4 },
-  badgeText: { fontSize: 7.5, fontFamily: "Helvetica-Bold", textTransform: "uppercase" as const, letterSpacing: 0.5 },
-  metricRow: { backgroundColor: C.surface1, borderRadius: 4, padding: 8, marginTop: 4 },
-  metricLabel: { fontSize: 7.5, color: C.textTertiary, textTransform: "uppercase" as const, letterSpacing: 0.5, marginBottom: 2 },
-  metricValue: { fontSize: 8.5, color: C.textSecondary, lineHeight: 1.4 },
-  kpiBox: { backgroundColor: C.surface2, borderRadius: 4, padding: 8, marginTop: 8 },
-  kpiLabel: { fontSize: 7.5, color: C.accent, textTransform: "uppercase" as const, letterSpacing: 0.5, fontFamily: "Helvetica-Bold", marginBottom: 3 },
-  kpiValue: { fontSize: 8.5, color: C.textSecondary, lineHeight: 1.4 },
-  leverCard: { backgroundColor: C.surface1, borderRadius: 6, padding: 12, marginBottom: 10 },
-  leverTitle: { fontSize: 11, fontFamily: "Helvetica-Bold", color: C.textPrimary, marginBottom: 8 },
-  leverLabel: { fontSize: 8, color: C.textTertiary, textTransform: "uppercase" as const, letterSpacing: 0.5, fontFamily: "Helvetica-Bold", marginBottom: 3 },
-  leverValue: { fontSize: 8.5, color: C.textSecondary, lineHeight: 1.4, marginBottom: 8 },
-  footer: { position: "absolute", bottom: 32, left: 48, right: 48, flexDirection: "row", justifyContent: "space-between" },
-  footerText: { fontSize: 8, color: C.textTertiary },
-});
+// Growth playbook export (docs/DESIGN.md Direction C). Ink cover, the short
+// version and a plan-at-a-glance bar chart, then one section per phase and
+// the growth levers. Priority: critical reads as "do now" (accent), high as
+// "next", medium as "later" (neutral).
 
 interface PlaybookAction {
   id: string;
@@ -86,117 +45,187 @@ interface GrowthPlaybookData {
   growth_levers?: GrowthLever[];
 }
 
-function priorityColor(p: string) {
-  if (p === "critical") return C.critical;
-  if (p === "high") return C.high;
-  return C.medium;
+const PRIORITY = {
+  critical: { label: "Do now", color: C.accent, tone: "warn" as const },
+  high: { label: "Next", color: C.teal, tone: "good" as const },
+  medium: { label: "Later", color: C.text3, tone: "neutral" as const },
+};
+
+function priorityOf(p: string) {
+  return PRIORITY[p as keyof typeof PRIORITY] ?? PRIORITY.medium;
 }
 
-function ActionBadge({ label, color }: { label: string; color: string }) {
+function ActionCard({ action }: { action: PlaybookAction }) {
+  const p = priorityOf(action.priority);
   return (
-    <View style={[s.badge, { backgroundColor: `${color}22`, borderWidth: 1, borderColor: `${color}44` }]}>
-      <Text style={[s.badgeText, { color }]}>{label}</Text>
+    <View style={[s.card, { borderLeftWidth: 3, borderLeftColor: p.color }]} wrap={false}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", marginBottom: 6 }}>
+        <View style={{ marginRight: 4, marginBottom: 2 }}>
+          <Chip tone={p.tone}>{p.label}</Chip>
+        </View>
+        {action.category ? (
+          <View style={{ marginRight: 4, marginBottom: 2 }}>
+            <Chip>{action.category}</Chip>
+          </View>
+        ) : null}
+        {action.conduikt_tool ? (
+          <View style={{ marginRight: 4, marginBottom: 2 }}>
+            <Chip tone="ink">{action.conduikt_tool}</Chip>
+          </View>
+        ) : null}
+      </View>
+      <Text style={s.h3}>{action.title}</Text>
+      {action.description ? <Text style={[s.muted, { marginBottom: 8 }]}>{action.description}</Text> : null}
+      <View style={{ flexDirection: "row", borderTopWidth: 1, borderTopColor: C.line, paddingTop: 6 }}>
+        {action.effort ? (
+          <View style={{ width: 110, paddingRight: 8 }}>
+            <Text style={[s.label, { marginBottom: 1 }]}>Effort</Text>
+            <Text style={{ fontSize: 9, color: C.text }}>{action.effort}</Text>
+          </View>
+        ) : null}
+        {action.impact ? (
+          <View style={{ width: 110, paddingRight: 8 }}>
+            <Text style={[s.label, { marginBottom: 1 }]}>Impact</Text>
+            <Text style={{ fontSize: 9, color: C.teal }}>{action.impact}</Text>
+          </View>
+        ) : null}
+        {action.success_metric ? (
+          <View style={{ flex: 1 }}>
+            <Text style={[s.label, { marginBottom: 1 }]}>How you&apos;ll know</Text>
+            <Text style={{ fontSize: 9, color: C.text }}>{action.success_metric}</Text>
+          </View>
+        ) : null}
+      </View>
     </View>
   );
 }
 
-export function GrowthPlaybookDocument({
-  projectName,
-  date,
-  data,
-}: {
-  projectName: string;
-  date: string;
-  data: GrowthPlaybookData;
-}) {
+export function GrowthPlaybookDocument({ projectName, date, data }: { projectName: string; date: string; data: GrowthPlaybookData }) {
   const phases = data.phases ?? [];
   const levers = data.growth_levers ?? [];
+  const totalActions = phases.reduce((n, ph) => n + (ph.actions?.length ?? 0), 0);
+  const maxActions = Math.max(1, ...phases.map((ph) => ph.actions?.length ?? 0));
+  const title = data.title || "90-day growth plan";
+  const runTitle = `Growth playbook · ${projectName}`;
 
   return (
-    <Document>
-      {/* Cover */}
-      <Page size="A4" style={s.coverPage}>
-        <View style={s.brand}><Text style={s.brandText}>C</Text></View>
-        <Text style={s.coverTitle}>{data.title ?? "90-Day Growth Playbook"}</Text>
-        <Text style={s.coverSub}>{projectName}</Text>
-        <View style={s.metaRow}><Text style={s.metaLabel}>Generated</Text><Text style={s.metaValue}>{date}</Text></View>
-        <View style={s.metaRow}><Text style={s.metaLabel}>Phases</Text><Text style={s.metaValue}>{phases.length}</Text></View>
-        <View style={s.metaRow}><Text style={s.metaLabel}>Total Actions</Text><Text style={s.metaValue}>{phases.reduce((n, ph) => n + (ph.actions?.length ?? 0), 0)}</Text></View>
-        <View style={s.footer}><Text style={s.footerText}>Generated by Conduikt · conduikt.com</Text></View>
-      </Page>
+    <Document title={title} author="Conduikt">
+      <CoverPage
+        eyebrow="Growth playbook"
+        title={title}
+        subtitle={`A step-by-step plan for ${projectName}.`}
+        meta={[
+          ["Project", projectName],
+          ["Date", date],
+          ["Phases", `${phases.length}`],
+          ["Actions", `${totalActions}`],
+        ]}
+      />
 
-      {/* Executive Summary */}
-      {data.executive_summary ? (
-        <Page size="A4" style={s.page}>
-          <Text style={s.sectionTitle}>Executive Summary</Text>
-          <Text style={s.sectionBody}>{data.executive_summary}</Text>
-          <View style={s.footer}><Text style={s.footerText}>{projectName}</Text><Text style={s.footerText}>conduikt.com</Text></View>
-        </Page>
-      ) : null}
-
-      {/* One page per phase */}
-      {phases.map((phase) => (
-        <Page key={phase.phase} size="A4" style={s.page}>
-          <View style={s.phaseHeader}>
-            <Text style={s.phaseNumber}>Phase {phase.phase} · {phase.timeline}</Text>
-            <Text style={s.phaseName}>{phase.name}</Text>
-            <Text style={s.phaseTimeline}>{phase.theme}</Text>
+      <ReportPage title={runTitle}>
+        {data.executive_summary ? (
+          <View style={s.section}>
+            <Label color={C.accent}>The short version</Label>
+            <Text style={s.h2}>Where to focus</Text>
+            <Text style={[s.body, { lineHeight: 1.65, maxWidth: 460 }]}>{data.executive_summary}</Text>
           </View>
+        ) : null}
 
-          {(phase.actions ?? []).map((action) => (
-            <View key={action.id} style={[s.actionCard, { borderLeftColor: priorityColor(action.priority) }]}>
-              <Text style={s.actionTitle}>{action.title}</Text>
-              <Text style={s.actionDesc}>{action.description}</Text>
-              <View style={s.actionMeta}>
-                <ActionBadge label={action.priority} color={priorityColor(action.priority)} />
-                <ActionBadge label={`Effort: ${action.effort}`} color={C.textTertiary} />
-                <ActionBadge label={`Impact: ${action.impact}`} color={C.success} />
-                {action.conduikt_tool ? <ActionBadge label={action.conduikt_tool} color={C.accent} /> : null}
+        {phases.length > 0 ? (
+          <View style={s.section} wrap={false}>
+            <Label color={C.accent}>At a glance</Label>
+            <Text style={[s.h2, { marginBottom: 4 }]}>The plan by phase</Text>
+            <Text style={[s.muted, { marginBottom: 10 }]}>Actions in each phase, split by when to do them.</Text>
+            <View style={s.card}>
+              {phases.map((ph, i) => {
+                const acts = ph.actions ?? [];
+                const counts = (["critical", "high", "medium"] as const).map((k) => acts.filter((a) => priorityOf(a.priority) === PRIORITY[k]).length);
+                return (
+                  <View
+                    key={ph.phase}
+                    style={{ flexDirection: "row", alignItems: "center", paddingVertical: 7, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.line }}
+                  >
+                    <View style={{ width: 150, paddingRight: 8 }}>
+                      <Text style={{ fontFamily: F.mono, fontSize: 7, color: C.text3, textTransform: "uppercase", letterSpacing: 0.6 }}>
+                        {`Phase ${ph.phase} · ${ph.timeline}`}
+                      </Text>
+                      <Text style={{ fontSize: 9.5, fontWeight: 600, color: C.text }}>{ph.name}</Text>
+                    </View>
+                    <View style={{ flex: 1, flexDirection: "row", height: 10 }}>
+                      <View style={{ width: `${(acts.length / maxActions) * 100}%`, flexDirection: "row", height: 10 }}>
+                        {counts.map((n, k) =>
+                          n > 0 ? (
+                            <View
+                              key={k}
+                              style={{ flex: n, height: 10, backgroundColor: [C.accent, C.teal, C.surface2][k], marginRight: 1 }}
+                            />
+                          ) : null,
+                        )}
+                      </View>
+                    </View>
+                    <Text style={{ width: 30, textAlign: "right", fontFamily: F.mono, fontSize: 8.5, color: C.text }}>{acts.length}</Text>
+                  </View>
+                );
+              })}
+              <View style={{ flexDirection: "row", marginTop: 8 }}>
+                {(["critical", "high", "medium"] as const).map((k, i) => (
+                  <View key={k} style={{ flexDirection: "row", alignItems: "center", marginRight: 14 }}>
+                    <View style={{ width: 8, height: 8, backgroundColor: [C.accent, C.teal, C.surface2][i], marginRight: 5 }} />
+                    <Text style={{ fontFamily: F.mono, fontSize: 7, color: C.text2, textTransform: "uppercase" }}>{PRIORITY[k].label}</Text>
+                  </View>
+                ))}
               </View>
-              {action.success_metric ? (
-                <View style={s.metricRow}>
-                  <Text style={s.metricLabel}>Success Metric</Text>
-                  <Text style={s.metricValue}>{action.success_metric}</Text>
+            </View>
+          </View>
+        ) : null}
+
+        {phases.map((ph) => (
+          <View key={ph.phase} style={s.section} break>
+            <View style={{ borderBottomWidth: 1, borderBottomColor: C.lineStrong, paddingBottom: 10, marginBottom: 12 }} minPresenceAhead={120}>
+              <Label color={C.accent}>{`Phase ${ph.phase} · ${ph.timeline}`}</Label>
+              <Text style={[s.h1, { marginBottom: 4 }]}>{ph.name}</Text>
+              {ph.theme ? <Text style={s.muted}>{ph.theme}</Text> : null}
+            </View>
+            {(ph.actions ?? []).map((a, j) => (
+              <ActionCard key={a.id || j} action={a} />
+            ))}
+            {ph.phase_kpi ? (
+              <View style={[s.card, { backgroundColor: C.tealSoft, borderColor: C.teal }]} wrap={false}>
+                <Label color={C.teal}>Goal for this phase</Label>
+                <Text style={s.body}>{ph.phase_kpi}</Text>
+              </View>
+            ) : null}
+          </View>
+        ))}
+
+        {levers.length > 0 ? (
+          <View style={s.section} break>
+            <Label color={C.accent}>Growth levers</Label>
+            <Text style={[s.h2, { marginBottom: 12 }]}>Where growth will come from</Text>
+            {levers.map((lv, i) => (
+              <View key={i} style={s.card} wrap={false}>
+                <Text style={[s.h3, { marginBottom: 8 }]}>{lv.lever}</Text>
+                <View style={{ flexDirection: "row", marginBottom: (lv.key_actions ?? []).length ? 8 : 0 }}>
+                  <View style={{ flex: 1, paddingRight: 10 }}>
+                    <Text style={[s.label, { marginBottom: 2 }]}>Now</Text>
+                    <Text style={s.muted}>{lv.current_state}</Text>
+                  </View>
+                  <View style={{ flex: 1, paddingLeft: 10, borderLeftWidth: 1, borderLeftColor: C.line }}>
+                    <Text style={[s.label, { marginBottom: 2, color: C.teal }]}>Target</Text>
+                    <Text style={[s.muted, { color: C.text }]}>{lv.target_state}</Text>
+                  </View>
                 </View>
-              ) : null}
-            </View>
-          ))}
-
-          {phase.phase_kpi ? (
-            <View style={s.kpiBox}>
-              <Text style={s.kpiLabel}>Phase KPI</Text>
-              <Text style={s.kpiValue}>{phase.phase_kpi}</Text>
-            </View>
-          ) : null}
-
-          <View style={s.footer}><Text style={s.footerText}>{projectName}</Text><Text style={s.footerText}>conduikt.com</Text></View>
-        </Page>
-      ))}
-
-      {/* Growth Levers */}
-      {levers.length > 0 ? (
-        <Page size="A4" style={s.page}>
-          <Text style={s.sectionTitle}>Growth Levers</Text>
-          {levers.map((lever, i) => (
-            <View key={i} style={s.leverCard}>
-              <Text style={s.leverTitle}>{lever.lever}</Text>
-              <Text style={s.leverLabel}>Current State</Text>
-              <Text style={s.leverValue}>{lever.current_state}</Text>
-              <Text style={s.leverLabel}>Target State</Text>
-              <Text style={s.leverValue}>{lever.target_state}</Text>
-              {(lever.key_actions ?? []).length > 0 ? (
-                <>
-                  <Text style={s.leverLabel}>Key Actions</Text>
-                  {(lever.key_actions ?? []).map((a, j) => (
-                    <Text key={j} style={[s.leverValue, { marginBottom: 2 }]}>· {a}</Text>
-                  ))}
-                </>
-              ) : null}
-            </View>
-          ))}
-          <View style={s.footer}><Text style={s.footerText}>{projectName}</Text><Text style={s.footerText}>conduikt.com</Text></View>
-        </Page>
-      ) : null}
+                {(lv.key_actions ?? []).length > 0 ? (
+                  <View style={{ borderTopWidth: 1, borderTopColor: C.line, paddingTop: 6 }}>
+                    <Text style={s.label}>Key actions</Text>
+                    <Bullets items={lv.key_actions ?? []} />
+                  </View>
+                ) : null}
+              </View>
+            ))}
+          </View>
+        ) : null}
+      </ReportPage>
     </Document>
   );
 }

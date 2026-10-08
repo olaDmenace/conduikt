@@ -1,49 +1,109 @@
-// Single source of truth for PDF colors. Keeps every @react-pdf template
-// aligned with the site-wide Mineral palette: teal-primary, copper-secondary,
-// dark obsidian surfaces.
+// Single source of truth for PDF colours and type — docs/DESIGN.md
+// Direction C, resolved to hex because @react-pdf can't read CSS variables.
+// Keep in step with the tokens in src/styles/globals.css.
 //
-// Site-wide tokens live as CSS variables (see DESIGN_SYSTEM.md). They are
-// duplicated here as resolved hex because @react-pdf can't read CSS vars
-// at render time.
-//
-// PDFs always render dark — even when the dashboard is in light mode —
-// because printed reports need consistency and the brand is most legible
-// on obsidian.
+// Reports print on sand with ink bands, one orange accent, and teal only
+// for data (scores, charts, "good" states). Light pages: they print well
+// and match the product.
 
-export const PDF_BRAND = {
-  // Surfaces — dark obsidian ladder.
-  surface0: "#0C0C0E",
-  surface1: "#141418",
-  surface2: "#1C1C22",
-  border: "#1C1C22",
+import path from "node:path";
+import { Font } from "@react-pdf/renderer";
 
-  // Primary accent — brand teal. Used for headings, brand mark, section
-  // titles, callouts. Replaces the prior copper-as-primary scheme.
-  accent: "#2F8C85",
-  accentDark: "#1F6B66",
+const BASE = {
+  // Surfaces
+  ground: "#EAE4D5", // page
+  surface: "#F6F2E9", // cards
+  surface2: "#E0D9C8",
+  line: "#D9D1C0",
+  lineStrong: "#1E2A2E",
 
-  // Secondary accent — brand copper. Reserved for illustrative highlights,
-  // chart series, conduikt-tool badges, and the marketing one-pager's
-  // "secondary palette" demonstration. Never use copper for section
-  // headings or primary CTAs.
-  accentSecondary: "#D9663A",
-  accentSecondaryDark: "#B24E27",
+  // Ink band (cover, headers)
+  ink: "#1E2A2E",
+  inkSurface: "#263439",
+  inkLine: "#34444A",
+  inkText: "#EAE4D5",
+  inkText2: "#B9C2C0",
+  inkText3: "#8FA0A3",
+  inkAccent: "#E78457",
+  inkTeal: "#3FA09A",
 
-  // Cream — for warm highlight surfaces (subtle pull-quotes, etc.).
-  cream: "#F4E2C9",
+  // Text
+  text: "#1E2A2E",
+  text2: "#4A5559",
+  text3: "#5A6568",
 
-  // Text ladder.
-  textPrimary: "#E8E4DE",
-  textSecondary: "#9B958C",
-  textTertiary: "#5E5A54",
+  // Accent (actions, emphasis) and data
+  accent: "#B24E27",
+  accentDisplay: "#D9663A",
+  accentSoft: "#F3E3DA",
+  teal: "#1F6B66",
+  tealSoft: "#E3F0EE",
 
-  // Status colors — unchanged from prior PDFs.
-  success: "#6B9E78",
-  warning: "#C9A84C",
-  error: "#B85C5C",
-  info: "#6B8FAD",
+  // States — teal is "good", accent is "needs work", danger is "broken".
+  success: "#1F6B66",
+  warning: "#B24E27",
+  error: "#A33A2A",
 
   white: "#FFFFFF",
+
+} as const;
+
+export const PDF_BRAND = {
+  ...BASE,
+  // Legacy names, so templates keep compiling while they move to the
+  // names above.
+  surface0: BASE.ground,
+  surface1: BASE.surface,
+  border: BASE.line,
+  accentDark: BASE.accent,
+  accentSecondary: BASE.teal,
+  accentSecondaryDark: BASE.teal,
+  cream: BASE.accentSoft,
+  textPrimary: BASE.text,
+  textSecondary: BASE.text2,
+  textTertiary: BASE.text3,
+  info: BASE.text2,
 } as const;
 
 export type PdfBrand = typeof PDF_BRAND;
+
+export const PDF_FONTS = {
+  display: "Space Grotesk",
+  body: "Geist",
+  mono: "JetBrains Mono",
+} as const;
+
+let registered = false;
+
+/** Register the bundled TTFs once per process. Call before rendering. */
+export function registerPdfFonts(): void {
+  if (registered) return;
+  registered = true;
+  const dir = path.join(process.cwd(), "src", "lib", "pdf", "fonts");
+  Font.register({
+    family: PDF_FONTS.display,
+    fonts: [
+      { src: path.join(dir, "SpaceGrotesk-300.ttf"), fontWeight: 300 },
+      { src: path.join(dir, "SpaceGrotesk-500.ttf"), fontWeight: 500 },
+    ],
+  });
+  Font.register({
+    family: PDF_FONTS.body,
+    fonts: [
+      { src: path.join(dir, "Geist-400.ttf"), fontWeight: 400 },
+      { src: path.join(dir, "Geist-500.ttf"), fontWeight: 500 },
+      { src: path.join(dir, "Geist-600.ttf"), fontWeight: 600 },
+      // "bold" in older templates maps to the heaviest cut we ship.
+      { src: path.join(dir, "Geist-600.ttf"), fontWeight: 700 },
+    ],
+  });
+  Font.register({
+    family: PDF_FONTS.mono,
+    fonts: [
+      { src: path.join(dir, "JetBrainsMono-400.ttf"), fontWeight: 400 },
+      { src: path.join(dir, "JetBrainsMono-500.ttf"), fontWeight: 500 },
+    ],
+  });
+  // Long URLs and keywords: break anywhere rather than overflow the page.
+  Font.registerHyphenationCallback((word) => (word.length > 24 ? word.split("") : [word]));
+}

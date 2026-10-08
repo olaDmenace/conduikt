@@ -1,55 +1,53 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { PDF_BRAND } from "@/src/lib/pdf/brand";
+import { PDF_BRAND, PDF_FONTS } from "@/src/lib/pdf/brand";
 
-// These assertions guard against an accidental brand regression — if
-// somebody flips the primary back to copper, this test breaks. Cheap
-// guardrail, well worth keeping.
+// Guards against a brand regression in the PDFs: they must stay on the
+// Direction C palette (docs/DESIGN.md) that the app uses — sand ground,
+// ink bands, one orange accent, teal for data.
 
 describe("PDF_BRAND", () => {
-  it("uses brand-teal for the primary accent (#2F8C85)", () => {
-    expect(PDF_BRAND.accent).toBe("#2F8C85");
+  it("matches the Direction C tokens in globals.css", () => {
+    expect(PDF_BRAND.ground).toBe("#EAE4D5");
+    expect(PDF_BRAND.ink).toBe("#1E2A2E");
+    expect(PDF_BRAND.accent).toBe("#B24E27");
+    expect(PDF_BRAND.teal).toBe("#1F6B66");
   });
 
-  it("uses brand-copper for the secondary accent (#D9663A)", () => {
-    expect(PDF_BRAND.accentSecondary).toBe("#D9663A");
+  it("keeps the retired Mineral colours out", () => {
+    const values = Object.values(PDF_BRAND).map((v) => v.toUpperCase());
+    for (const old of ["#0C0C0E", "#2F8C85", "#E8E4DE"]) expect(values).not.toContain(old);
   });
 
-  it("primary and secondary accents are distinct", () => {
-    expect(PDF_BRAND.accent).not.toBe(PDF_BRAND.accentSecondary);
+  it("legacy names resolve to v2 values", () => {
+    expect(PDF_BRAND.surface0).toBe(PDF_BRAND.ground);
+    expect(PDF_BRAND.textPrimary).toBe(PDF_BRAND.text);
   });
 
-  it("exposes the required surface ladder + text ladder", () => {
-    expect(PDF_BRAND.surface0).toBeTruthy();
-    expect(PDF_BRAND.surface1).toBeTruthy();
-    expect(PDF_BRAND.surface2).toBeTruthy();
-    expect(PDF_BRAND.textPrimary).toBeTruthy();
-    expect(PDF_BRAND.textSecondary).toBeTruthy();
-    expect(PDF_BRAND.textTertiary).toBeTruthy();
+  it("uses the app's three type families", () => {
+    expect(PDF_FONTS).toEqual({ display: "Space Grotesk", body: "Geist", mono: "JetBrains Mono" });
   });
 });
 
 describe("PDF templates use the shared brand module", () => {
-  // None of the PDF templates may hardcode the old copper-as-primary
-  // hex `#D9663A` as their accent. They must read from PDF_BRAND so the
-  // brand stays unified.
   const FILES = [
     "src/lib/pdf/audit-report.tsx",
     "src/lib/pdf/analytics-report.tsx",
     "src/lib/pdf/growth-playbook.tsx",
     "src/lib/pdf/generic-content.tsx",
     "src/lib/pdf/blog-post.tsx",
+    "src/lib/pdf/marketing-onepager.tsx",
+    "src/lib/pdf/first-week-report.tsx",
   ];
 
   for (const file of FILES) {
-    it(`${file} imports PDF_BRAND and does not hardcode accent: "#D9663A"`, () => {
+    it(`${file} reads colours and fonts from brand.ts, with no hex and no Helvetica`, () => {
       const src = readFileSync(resolve(process.cwd(), file), "utf8");
       expect(src).toContain('from "./brand"');
-      // The accent KEY must not be assigned the copper hex directly. We
-      // allow `#D9663A` to appear elsewhere in the file (status hex etc.)
-      // but the primary `accent: "#D9663A"` line must be gone.
-      expect(src).not.toMatch(/accent:\s*"#D9663A"/);
+      expect(src).toContain("registerPdfFonts");
+      expect(src).not.toMatch(/#[0-9a-fA-F]{6}\b/);
+      expect(src).not.toMatch(/Helvetica/);
     });
   }
 });
