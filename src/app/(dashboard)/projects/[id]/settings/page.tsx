@@ -11,6 +11,9 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 
 import { useToast } from "@/src/components/ui/toast";
 
+// Mirrors DIRECTION_MAX_CHARS in src/lib/ai/direction.ts.
+const DIRECTION_LIMIT = 12_000;
+
 interface Project {
   id: string;
   name: string;
@@ -258,14 +261,43 @@ export default function ProjectSettingsPage() {
               />
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-body-s text-text-2">Positioning statement</label>
+            <div id="direction" className="flex scroll-mt-24 flex-col gap-2 rounded-lg border border-line bg-ground p-4">
+              <div className="flex flex-wrap items-end justify-between gap-2">
+                <div>
+                  <label htmlFor="direction-text" className="text-title text-text">
+                    Your direction
+                  </label>
+                  <p className="text-body-s text-text-2">
+                    Positioning, audience, content pillars, or notes from a strategy meeting. Every agent follows this over its own defaults.
+                  </p>
+                </div>
+                <label className="hover-link cursor-pointer text-body-s text-accent hover:text-accent-hover">
+                  Add from a file (.txt, .md)
+                  <input
+                    type="file"
+                    accept=".txt,.md,text/plain,text/markdown"
+                    className="sr-only"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = "";
+                      if (!file) return;
+                      const text = (await file.text()).trim();
+                      setPositioningStatement((cur) => (cur.trim() ? `${cur.trim()}\n\n${text}` : text).slice(0, DIRECTION_LIMIT));
+                    }}
+                  />
+                </label>
+              </div>
               <textarea
-                className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent min-h-[80px] resize-y"
-                placeholder="For [audience], [product] is the [category] that [benefit]..."
+                id="direction-text"
+                className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent min-h-[220px] resize-y"
+                placeholder={"Paste your brief or meeting notes. For example:\nWe're positioning as the financial assistant on WhatsApp for 18–35s. Lead with daily transfers, then crypto. Content pillars: product, education, proof, trust, culture."}
+                maxLength={DIRECTION_LIMIT}
                 value={positioningStatement}
                 onChange={(e) => setPositioningStatement(e.target.value)}
               />
+              <p className="text-caption text-text-3">
+                {positioningStatement.length.toLocaleString()} of {DIRECTION_LIMIT.toLocaleString()} characters · saved with the rest of this page
+              </p>
             </div>
 
             <div className="flex flex-col gap-1.5">

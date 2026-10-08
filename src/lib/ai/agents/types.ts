@@ -30,6 +30,8 @@ export interface ProjectContext {
   // agents that generate styled content (email sequences, blog posts,
   // CRO copy) so CTAs / accents match the user's Brand Kit.
   brandPrimaryColor?: string;
+  /** The team's agreed direction (projects.positioning_statement). See lib/ai/direction. */
+  direction?: string;
 }
 
 export interface AgentConfig {

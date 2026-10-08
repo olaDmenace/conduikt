@@ -6,6 +6,7 @@ import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
 import { socialContentSkill } from "@/src/lib/ai/agents/social-content";
 import { generateWithClaude } from "@/src/lib/ai/client";
 import { enqueueExecution } from "@/src/lib/scheduler/enqueue";
+import { withDirection } from "@/src/lib/ai/direction";
 
 // POST /api/projects/[id]/playbook/auto-execute
 // Body: { actionId, title, channel: 'x' | 'linkedin' }
@@ -96,7 +97,7 @@ export async function POST(
   const { data: project } = await supabase
     .from("projects")
     .select(
-      "id, name, website_url, description, target_audience, value_proposition, brand_voice, competitors, keywords, industry, business_description, audience_pain_point, online_channels, brand_voice_example, primary_goal"
+      "id, name, website_url, description, target_audience, value_proposition, brand_voice, competitors, keywords, industry, business_description, audience_pain_point, online_channels, brand_voice_example, primary_goal, positioning_statement"
     )
     .eq("id", projectId)
     .single();
@@ -117,7 +118,7 @@ export async function POST(
   let parsedOutput: { posts?: Array<{ platform: string; text: string; hook?: string; angle?: string }> };
   try {
     const result = await generateWithClaude({
-      systemPrompt: socialContentSkill.buildSystemPrompt(context),
+      systemPrompt: withDirection(socialContentSkill.buildSystemPrompt(context), context),
       userPrompt: socialContentSkill.buildUserPrompt({
         topic: title,
         platform: channel,

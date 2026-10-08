@@ -32,6 +32,7 @@ interface Status {
   plan?: string;
   done?: boolean;
   previewsReady?: boolean;
+  hasDirection?: boolean;
   counts?: { done: number; running: number; queued: number; failed: number; locked: number };
   agents?: AgentRow[];
 }
@@ -169,6 +170,16 @@ export function FirstWeekPanel({ projectId, className }: { projectId: string; cl
             />
           </div>
         </div>
+        <p className="text-body-s text-text-2">
+          {status.hasDirection ? "Your agents are following your direction. " : "Have a brief or meeting notes? "}
+          <Link
+            href={`/projects/${projectId}/settings#direction`}
+            className="hover-link text-accent underline-offset-2 hover:text-accent-hover hover:underline"
+          >
+            {status.hasDirection ? "Edit it" : "Add your direction"}
+          </Link>
+          {status.hasDirection ? "" : ", then run your agents again."}
+        </p>
         {rerun.note && (
           <p role="status" className="text-body-s text-accent">
             {rerun.note}

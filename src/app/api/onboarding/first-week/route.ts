@@ -271,11 +271,16 @@ export async function GET(request: NextRequest) {
   if (!projectId) return NextResponse.json({ error: "projectId required" }, { status: 400 });
 
   // Ownership check through RLS.
-  const { data: project } = await supabase.from("projects").select("id, name, website_url").eq("id", projectId).maybeSingle();
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id, name, website_url, positioning_statement")
+    .eq("id", projectId)
+    .maybeSingle();
   if (!project) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const status = await loadFirstWeek(createServiceClient(), projectId, includeOutput);
-  return NextResponse.json(status ?? { projectId, started: false });
+  const hasDirection = !!project.positioning_statement?.trim();
+  return NextResponse.json(status ? { ...status, hasDirection } : { projectId, started: false, hasDirection });
 }
 
 // PATCH { projectId, agentId } — run a failed agent again.

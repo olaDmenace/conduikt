@@ -24,6 +24,7 @@ export function buildProjectContext(
     online_channels?: string[] | null;
     brand_voice_example?: string | null;
     primary_goal?: string | null;
+    positioning_statement?: string | null;
   },
   profile?: {
     brand_primary_color?: string | null;
@@ -73,5 +74,6 @@ export function buildProjectContext(
     competitors: project.competitors as ProjectContext["competitors"],
     keywords: project.keywords as ProjectContext["keywords"],
     brandPrimaryColor,
+    direction: project.positioning_statement?.trim() || undefined,
   };
 }

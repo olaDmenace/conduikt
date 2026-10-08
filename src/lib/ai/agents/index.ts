@@ -16,8 +16,9 @@ import { programmaticSeoAgent } from "./programmatic-seo";
 import { launchStrategyAgent } from "./launch-strategy";
 import { abTestSetupAgent } from "./ab-test-setup";
 import type { AgentConfig } from "./types";
+import { withDirection } from "../direction";
 
-export const agents: Record<string, AgentConfig> = {
+const RAW_AGENTS: Record<string, AgentConfig> = {
   "seo-audit": seoAuditSkill,
   "page-cro": pageCroSkill,
   copywriting: copywritingSkill,
@@ -37,6 +38,15 @@ export const agents: Record<string, AgentConfig> = {
   "launch-strategy": launchStrategyAgent,
   "ab-test-setup": abTestSetupAgent,
 };
+
+// Every agent handed out here reads the project's direction (the team's
+// brief or meeting notes) on top of its own system prompt.
+export const agents: Record<string, AgentConfig> = Object.fromEntries(
+  Object.entries(RAW_AGENTS).map(([id, agent]) => [
+    id,
+    { ...agent, buildSystemPrompt: (context) => withDirection(agent.buildSystemPrompt(context), context) },
+  ])
+);
 
 // Legacy alias
 export const skills = agents;

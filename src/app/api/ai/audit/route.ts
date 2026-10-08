@@ -15,6 +15,7 @@ import {
 import { dispatchWebhooks } from "@/src/lib/integrations/webhook-dispatch";
 import { isUrlSafeToFetch } from "@/src/lib/security/validate-url";
 import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
+import { withDirection } from "@/src/lib/ai/direction";
 
 // Force Node.js runtime — Edge runtime can't fetch arbitrary external URLs
 export const runtime = "nodejs";
@@ -119,7 +120,7 @@ export async function POST(request: NextRequest) {
 
   // Build context and run audit
   const context = buildProjectContext(project);
-  const systemPrompt = seoAuditSkill.buildSystemPrompt(context);
+  const systemPrompt = withDirection(seoAuditSkill.buildSystemPrompt(context), context);
   const userPrompt = seoAuditSkill.buildUserPrompt({
     url,
     html,
