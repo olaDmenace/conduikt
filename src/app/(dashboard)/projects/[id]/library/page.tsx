@@ -241,8 +241,16 @@ export default function LibraryPage({
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
+  async function getAssets(): Promise<Asset[] | null> {
+    const res = await fetch(`/api/projects/${projectId}/assets`);
+    return res.ok ? await res.json() : null;
+  }
+
   useEffect(() => {
-    fetchAssets();
+    getAssets().then((data) => {
+      if (data) setAssets(data);
+      setLoading(false);
+    });
     async function fetchPlan() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
@@ -252,12 +260,6 @@ export default function LibraryPage({
     }
     fetchPlan();
   }, [projectId]);
-
-  async function fetchAssets() {
-    const res = await fetch(`/api/projects/${projectId}/assets`);
-    if (res.ok) setAssets(await res.json());
-    setLoading(false);
-  }
 
   async function handleArchive(assetId: string) {
     const res = await fetch(`/api/projects/${projectId}/assets`, {
@@ -415,7 +417,7 @@ export default function LibraryPage({
                 </Link>
               </Button>
               <Button variant="outline" asChild>
-                <Link href="/playground">
+                <Link href="/dashboard?pick=creation">
                   Playground
                 </Link>
               </Button>

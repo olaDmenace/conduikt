@@ -50,17 +50,24 @@ export default function WebhooksPage() {
     auth_token: "",
   });
 
-  async function fetchWebhooks() {
+  async function getWebhooks(): Promise<Webhook[] | null> {
     const res = await fetch("/api/webhooks");
-    if (res.ok) {
-      const data = await res.json();
-      setWebhooks(Array.isArray(data) ? data : data.webhooks ?? []);
-    }
+    if (!res.ok) return null;
+    const data = await res.json();
+    return Array.isArray(data) ? data : data.webhooks ?? [];
+  }
+
+  function applyWebhooks(data: Webhook[] | null) {
+    if (data) setWebhooks(data);
     setLoading(false);
   }
 
+  async function fetchWebhooks() {
+    applyWebhooks(await getWebhooks());
+  }
+
   useEffect(() => {
-    fetchWebhooks();
+    getWebhooks().then(applyWebhooks);
   }, []);
 
   async function handleCreate(e: React.FormEvent) {

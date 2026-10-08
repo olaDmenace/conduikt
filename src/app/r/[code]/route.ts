@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { createServiceClient } from "@/src/lib/supabase/service";
+import { clientIp } from "@/src/lib/security/client-ip";
 
 // Social crawlers we want to serve a rich OG card to instead of a 302.
 // Matters because some platforms (LinkedIn, WhatsApp, Slack) won't follow
@@ -89,10 +90,8 @@ export async function GET(
   }
 
   // Log click fire-and-forget
-  const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    request.headers.get("x-real-ip") ??
-    "";
+  const found = clientIp(request.headers);
+  const ip = found === "unknown" ? "" : found;
   const ipHash = ip
     ? createHash("sha256").update(ip).digest("hex").slice(0, 32)
     : null;

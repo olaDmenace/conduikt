@@ -39,6 +39,7 @@ import { Button, IconButton } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { AGENT_REGISTRY } from "@/src/lib/ai/agents/registry";
+import { agentDisplay } from "@/src/lib/ai/agents/display";
 import { useToast } from "@/src/components/ui/toast";
 
 // ---------- icon map ----------
@@ -62,7 +63,7 @@ interface AgentNodeData {
 }
 
 function AgentNode({ data, selected }: NodeProps<Node<AgentNodeData>>) {
-  const Icon = getAgentIcon(data.icon);
+  const Icon = iconMap[data.icon] || Zap;
   // Category reads from the left rule, not a rainbow of border colours.
   const categoryColors: Record<string, string> = {
     analysis: "border-l-teal",
@@ -100,7 +101,7 @@ function AgentNode({ data, selected }: NodeProps<Node<AgentNodeData>>) {
 }
 
 function ActionNode({ data, selected }: NodeProps<Node<AgentNodeData>>) {
-  const Icon = getAgentIcon(data.icon);
+  const Icon = iconMap[data.icon] || Zap;
   return (
     <div
       className={`min-w-[160px] rounded-md border border-dashed border-line-strong bg-surface-2 px-4 py-3 transition-colors ${
@@ -225,16 +226,17 @@ export function CampaignFlowEditor({
     [setEdges]
   );
 
-  function addAgentNode(agentId: string) {
+  // `stamp` (Date.now() at click time) keeps node ids unique.
+  function addAgentNode(agentId: string, stamp: number) {
     const agent = AGENT_REGISTRY.find((a) => a.id === agentId);
     if (!agent) return;
 
     const newNode: Node = {
-      id: `agent-${Date.now()}`,
+      id: `agent-${stamp}`,
       type: "agent",
       position: { x: 250, y: nodes.length * 120 + 50 },
       data: {
-        label: agent.shortName,
+        label: agentDisplay(agent).name,
         agentId: agent.id,
         icon: agent.icon,
         category: agent.category,
@@ -245,12 +247,12 @@ export function CampaignFlowEditor({
     setShowAgentPicker(false);
   }
 
-  function addAction(actionId: string) {
+  function addAction(actionId: string, stamp: number) {
     const action = actionNodes.find((a) => a.id === actionId);
     if (!action) return;
 
     const newNode: Node = {
-      id: `action-${Date.now()}`,
+      id: `action-${stamp}`,
       type: "action",
       position: { x: 250, y: nodes.length * 120 + 50 },
       data: {
@@ -364,7 +366,7 @@ export function CampaignFlowEditor({
                 key={action.id}
                 variant="ghost"
                 size="sm"
-                onClick={() => addAction(action.id)}
+                onClick={() => addAction(action.id, Date.now())}
               >
                 <Icon className="h-3.5 w-3.5" />
                 {action.label}
@@ -390,12 +392,12 @@ export function CampaignFlowEditor({
               return (
                 <button
                   key={agent.id}
-                  onClick={() => addAgentNode(agent.id)}
+                  onClick={() => addAgentNode(agent.id, Date.now())}
                   className="flex items-center gap-2 rounded-md p-2.5 text-left text-body-s text-text-2 transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] hover:bg-surface hover:text-text"
                 >
                   <Icon className="h-4 w-4 shrink-0 text-text-3" />
                   <div>
-                    <p className="font-medium">{agent.shortName}</p>
+                    <p className="font-medium">{agentDisplay(agent).name}</p>
                     <Badge variant="secondary" className="mt-0.5">
                       {agent.category}
                     </Badge>

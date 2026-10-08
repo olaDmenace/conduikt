@@ -14,6 +14,7 @@ import { Button, IconButton } from "@/src/components/ui/button";
 import { Card } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { AGENT_REGISTRY } from "@/src/lib/ai/agents/registry";
+import { agentDisplay } from "@/src/lib/ai/agents/display";
 
 interface WizardStep {
   // Client-only stable id for React keys. Same agent can appear twice in
@@ -237,7 +238,7 @@ export function CampaignWizard({
                           {i + 1}
                         </span>
                         <span className="flex-1 text-body text-text">
-                          {def?.name || step.agent_id}
+                          {def ? agentDisplay(def).name : step.agent_id}
                         </span>
                         <Badge variant="secondary">{def?.category}</Badge>
                         <IconButton
@@ -268,7 +269,7 @@ export function CampaignWizard({
                     <Plus className="h-3.5 w-3.5 shrink-0 text-text-3" />
                     <div className="min-w-0">
                       <p className="text-body-s font-medium text-text truncate">
-                        {agent.shortName}
+                        {agentDisplay(agent).name}
                       </p>
                     </div>
                   </button>
@@ -328,10 +329,10 @@ export function CampaignWizard({
                       </span>
                       <div className="flex-1">
                         <p className="text-title text-text">
-                          {def?.name}
+                          {def ? agentDisplay(def).name : null}
                         </p>
                         <p className="text-body-s text-text-3">
-                          {def?.description}
+                          {def ? agentDisplay(def).job : null}
                         </p>
                       </div>
                     </div>

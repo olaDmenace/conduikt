@@ -79,21 +79,41 @@ export default function FormsPage({
   const [submitLabel, setSubmitLabel] = useState("Subscribe");
   const [embedFor, setEmbedFor] = useState<string | null>(null);
 
-  async function loadAll() {
+  // Show the skeleton again when the project changes (adjusted during render).
+  const [loadedProjectId, setLoadedProjectId] = useState(projectId);
+  if (loadedProjectId !== projectId) {
+    setLoadedProjectId(projectId);
     setLoading(true);
+  }
+
+  async function getAll() {
     const [fRes, aRes, sRes] = await Promise.all([
       fetch(`/api/projects/${projectId}/forms`),
       fetch(`/api/projects/${projectId}/audiences`),
       fetch(`/api/projects/${projectId}/email-sequences`),
     ]);
-    if (fRes.ok) setForms(await fRes.json());
-    if (aRes.ok) setAudiences(await aRes.json());
-    if (sRes.ok) setSequences(await sRes.json());
+    return {
+      forms: fRes.ok ? await fRes.json() : null,
+      audiences: aRes.ok ? await aRes.json() : null,
+      sequences: sRes.ok ? await sRes.json() : null,
+    };
+  }
+
+  function applyAll(data: Awaited<ReturnType<typeof getAll>>) {
+    if (data.forms) setForms(data.forms);
+    if (data.audiences) setAudiences(data.audiences);
+    if (data.sequences) setSequences(data.sequences);
     setLoading(false);
   }
 
+  async function loadAll() {
+    setLoading(true);
+    applyAll(await getAll());
+  }
+
   useEffect(() => {
-    loadAll();
+    // loading is already true on mount (and reset above on project change).
+    getAll().then(applyAll);
   }, [projectId]);
 
   async function handleCreate(e: React.FormEvent) {

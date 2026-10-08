@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Command } from "cmdk";
 import {
@@ -51,25 +51,24 @@ export function CommandPalette() {
     return () => document.removeEventListener("keydown", down);
   }, [toggle]);
 
-  const fetchData = useCallback(async () => {
-    if (!open) return;
-    const [projRes, assetRes] = await Promise.all([
-      fetch("/api/projects"),
-      fetch("/api/projects?assets=recent"),
-    ]);
-    if (projRes.ok) {
-      const data = await projRes.json();
-      setProjects(Array.isArray(data) ? data : data.projects ?? []);
-    }
-    if (assetRes.ok) {
-      const data = await assetRes.json();
-      setAssets(Array.isArray(data) ? [] : data.recentAssets ?? []);
-    }
-  }, [open]);
-
   useEffect(() => {
+    if (!open) return;
+    async function fetchData() {
+      const [projRes, assetRes] = await Promise.all([
+        fetch("/api/projects"),
+        fetch("/api/projects?assets=recent"),
+      ]);
+      if (projRes.ok) {
+        const data = await projRes.json();
+        setProjects(Array.isArray(data) ? data : data.projects ?? []);
+      }
+      if (assetRes.ok) {
+        const data = await assetRes.json();
+        setAssets(Array.isArray(data) ? [] : data.recentAssets ?? []);
+      }
+    }
     fetchData();
-  }, [fetchData]);
+  }, [open]);
 
   function navigate(href: string) {
     router.push(href);

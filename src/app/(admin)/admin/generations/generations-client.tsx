@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Search, ChevronLeft, ChevronRight } from "@/src/components/ui/lucide-icons";
 
 const PAGE_SIZE = 50;
@@ -26,6 +26,17 @@ export function AdminGenerationsClient({
   const [agentFilter, setAgentFilter] = useState("");
   const [projectFilter, setProjectFilter] = useState("");
   const [page, setPage] = useState(1);
+
+  // Reset to the first page whenever a filter changes (adjusted during render).
+  const [prevFilters, setPrevFilters] = useState({ search, agentFilter, projectFilter });
+  if (
+    prevFilters.search !== search ||
+    prevFilters.agentFilter !== agentFilter ||
+    prevFilters.projectFilter !== projectFilter
+  ) {
+    setPrevFilters({ search, agentFilter, projectFilter });
+    setPage(1);
+  }
 
   // Unique agents and projects for filter dropdowns
   const agents = useMemo(
@@ -61,10 +72,6 @@ export function AdminGenerationsClient({
   const pageStart = (currentPage - 1) * PAGE_SIZE;
   const pageEnd = Math.min(pageStart + PAGE_SIZE, filtered.length);
   const pageRows = filtered.slice(pageStart, pageEnd);
-
-  useEffect(() => {
-    setPage(1);
-  }, [search, agentFilter, projectFilter]);
 
   // Aggregated stats
   const totalTokens = filtered.reduce(

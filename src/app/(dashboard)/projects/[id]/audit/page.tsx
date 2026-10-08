@@ -88,18 +88,23 @@ export default function AuditPage({
   const { toast } = useToast();
   const { showLimitModal } = useUsageLimitModal();
 
-  useEffect(() => {
-    fetchAudits();
-  }, [id]);
-
-  async function fetchAudits() {
+  async function getAudits(): Promise<Audit[] | null> {
     const res = await fetch(`/api/projects/${id}/audits`);
-    if (res.ok) {
-      const data = await res.json();
-      setAudits(data);
-    }
+    return res.ok ? await res.json() : null;
+  }
+
+  function applyAudits(data: Audit[] | null) {
+    if (data) setAudits(data);
     setLoading(false);
   }
+
+  async function fetchAudits() {
+    applyAudits(await getAudits());
+  }
+
+  useEffect(() => {
+    getAudits().then(applyAudits);
+  }, [id]);
 
   async function handleRerun() {
     // Get project URL first

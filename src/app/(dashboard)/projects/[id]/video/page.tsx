@@ -99,18 +99,23 @@ export default function VideoAgentPage({
   const { toast } = useToast();
 
   // Fetch video history
-  const fetchHistory = useCallback(async () => {
+  const getHistory = useCallback(async (): Promise<VideoJob[] | null> => {
     const res = await fetch(`/api/video/history?projectId=${id}`);
-    if (res.ok) {
-      const data = await res.json();
-      setHistory(data);
-    }
-    setHistoryLoading(false);
+    return res.ok ? await res.json() : null;
   }, [id]);
 
+  const applyHistory = useCallback((data: VideoJob[] | null) => {
+    if (data) setHistory(data);
+    setHistoryLoading(false);
+  }, []);
+
+  const fetchHistory = useCallback(async () => {
+    applyHistory(await getHistory());
+  }, [getHistory, applyHistory]);
+
   useEffect(() => {
-    fetchHistory();
-  }, [fetchHistory]);
+    getHistory().then(applyHistory);
+  }, [getHistory, applyHistory]);
 
   // Poll active job
   useEffect(() => {

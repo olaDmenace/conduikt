@@ -50,17 +50,22 @@ export default function CompetitorsPage() {
   const [name, setName] = useState("");
   const { toast } = useToast();
 
-  async function fetchTrackers() {
+  async function getTrackers(): Promise<{ trackers: Tracker[] } | null> {
     const res = await fetch(`/api/projects/${id}/competitors`);
-    if (res.ok) {
-      const data = await res.json();
-      setTrackers(data.trackers);
-    }
+    return res.ok ? await res.json() : null;
+  }
+
+  function applyTrackers(data: { trackers: Tracker[] } | null) {
+    if (data) setTrackers(data.trackers);
     setLoading(false);
   }
 
+  async function fetchTrackers() {
+    applyTrackers(await getTrackers());
+  }
+
   useEffect(() => {
-    fetchTrackers();
+    getTrackers().then(applyTrackers);
   }, [id]);
 
   async function handleAdd(e: React.FormEvent) {

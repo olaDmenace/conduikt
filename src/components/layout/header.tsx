@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Search, HamburgerButton } from "@/src/components/ui/icons";
 import { IconButton } from "@/src/components/ui/button";
@@ -10,6 +10,11 @@ import { createClient } from "@/src/lib/supabase/client";
 import { railOffset } from "@/src/components/layout/rail";
 import { cn } from "@/src/lib/utils/cn";
 
+// The platform never changes after load, so there is nothing to subscribe to.
+const noopSubscribe = () => () => {};
+const getIsMac = () => /Mac|iPad|iPhone|iPod/.test(navigator.platform || navigator.userAgent);
+const getIsMacOnServer = () => false;
+
 // docs/DESIGN.md §Navigation: the header carries search (⌘K), alerts and
 // the account avatar. No orange here — each page owns its one primary
 // action. Adding a website lives in the rail's project switcher.
@@ -18,12 +23,11 @@ export function Header() {
   const toggleMobileMenu = useUIStore((s) => s.toggleMobileMenu);
   const openCommandPalette = useUIStore((s) => s.setCommandPaletteOpen);
 
-  const [isMac, setIsMac] = useState(false);
+  const isMac = useSyncExternalStore(noopSubscribe, getIsMac, getIsMacOnServer);
   const [initials, setInitials] = useState("");
   const [email, setEmail] = useState("");
 
   useEffect(() => {
-    setIsMac(/Mac|iPad|iPhone|iPod/.test(navigator.platform || navigator.userAgent));
     createClient()
       .auth.getUser()
       .then(({ data: { user } }) => {

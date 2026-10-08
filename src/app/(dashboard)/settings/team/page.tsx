@@ -48,17 +48,24 @@ export default function TeamPage() {
   const [role, setRole] = useState("member");
   const { toast } = useToast();
 
-  async function fetchMembers() {
+  async function getMembers(): Promise<TeamMember[] | null> {
     const res = await fetch("/api/team", { cache: "no-store" });
-    if (res.ok) {
-      const data = await res.json();
-      setMembers(Array.isArray(data) ? data : []);
-    }
+    if (!res.ok) return null;
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  }
+
+  function applyMembers(data: TeamMember[] | null) {
+    if (data) setMembers(data);
     setLoading(false);
   }
 
+  async function fetchMembers() {
+    applyMembers(await getMembers());
+  }
+
   useEffect(() => {
-    fetchMembers();
+    getMembers().then(applyMembers);
   }, []);
 
   async function handleInvite(e: React.FormEvent) {

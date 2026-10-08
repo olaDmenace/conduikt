@@ -40,18 +40,23 @@ export default function CampaignsPage({
   const [showWizard, setShowWizard] = useState(false);
   const [showFlowEditor, setShowFlowEditor] = useState(false);
 
-  useEffect(() => {
-    fetchCampaigns();
-  }, [id]);
-
-  async function fetchCampaigns() {
+  async function getCampaigns(): Promise<Campaign[] | null> {
     const res = await fetch(`/api/projects/${id}/campaigns`);
-    if (res.ok) {
-      const data = await res.json();
-      setCampaigns(data);
-    }
+    return res.ok ? await res.json() : null;
+  }
+
+  function applyCampaigns(data: Campaign[] | null) {
+    if (data) setCampaigns(data);
     setLoading(false);
   }
+
+  async function fetchCampaigns() {
+    applyCampaigns(await getCampaigns());
+  }
+
+  useEffect(() => {
+    getCampaigns().then(applyCampaigns);
+  }, [id]);
 
   return (
     <div>

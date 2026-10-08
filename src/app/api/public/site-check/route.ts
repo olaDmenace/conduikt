@@ -6,6 +6,7 @@ import { FIRST_WEEK_AGENT_IDS, OPEN_PREVIEWS, type AgentPreview } from "@/src/li
 import { rateLimit } from "@/src/lib/security/rate-limit";
 import { assertPublicUrl, BlockedUrlError, safeFetch } from "@/src/lib/security/safe-fetch";
 import { verifyTurnstile } from "@/src/lib/security/turnstile";
+import { clientIp } from "@/src/lib/security/client-ip";
 
 // POST /api/public/site-check — the signed-out "Check my site free" run.
 // Body: { url, turnstileToken? }
@@ -29,9 +30,6 @@ interface CachedResult {
 const CACHE = new Map<string, CachedResult>();
 const CACHE_MS = 60 * 60 * 1000;
 
-function clientIp(req: NextRequest): string {
-  return req.headers.get("x-forwarded-for")?.split(",")[0].trim() || req.headers.get("x-real-ip") || "unknown";
-}
 
 function gate(previews: AgentPreview[]) {
   return previews.map((p, i) =>
@@ -40,7 +38,7 @@ function gate(previews: AgentPreview[]) {
 }
 
 export async function POST(request: NextRequest) {
-  const ip = clientIp(request);
+  const ip = clientIp(request.headers);
   const body = (await request.json().catch(() => null)) as { url?: string; turnstileToken?: string } | null;
   const url = normalizeAuditUrl(body?.url ?? "");
   if (!url) {

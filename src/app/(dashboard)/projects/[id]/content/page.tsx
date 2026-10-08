@@ -335,9 +335,12 @@ function SocialPostCard({
   const [cardCopied, setCardCopied] = useState(false);
   const isScheduling = schedulingKey === publishKey;
 
-  const minDateTime = new Date(Date.now() + 5 * 60 * 1000)
-    .toISOString()
-    .slice(0, 16);
+  // Earliest allowed slot (now + 5 min). Read from the clock in event
+  // handlers: when the picker opens and whenever the date changes.
+  const [minDateTime, setMinDateTime] = useState("");
+  function refreshMinDateTime() {
+    setMinDateTime(new Date(Date.now() + 5 * 60 * 1000).toISOString().slice(0, 16));
+  }
 
   function copyPost() {
     navigator.clipboard.writeText(post.text);
@@ -374,9 +377,10 @@ function SocialPostCard({
             <Button
               size="sm"
               variant="outline"
-              onClick={() =>
-                onSchedulingKeyChange(isScheduling ? null : publishKey)
-              }
+              onClick={() => {
+                if (!isScheduling) refreshMinDateTime();
+                onSchedulingKeyChange(isScheduling ? null : publishKey);
+              }}
             >
               <CalendarClock className="h-3.5 w-3.5" />
               Schedule
@@ -418,7 +422,10 @@ function SocialPostCard({
               type="datetime-local"
               min={minDateTime}
               value={scheduleDateTime}
-              onChange={(e) => onScheduleDateTimeChange(e.target.value)}
+              onChange={(e) => {
+                refreshMinDateTime();
+                onScheduleDateTimeChange(e.target.value);
+              }}
               className="h-9 flex-1 rounded-md border border-line-strong bg-surface px-3.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             />
             <Button
@@ -602,7 +609,7 @@ function EmailPreview({ data, projectId, projectName, toast }: EmailPreviewProps
               title="Send this email to an audience"
             >
               <Send className="h-3.5 w-3.5" />
-              Send broadcast
+              Send to a list
             </button>
             <button
               type="button"
@@ -1209,13 +1216,16 @@ function SequenceScheduleAction({
   // Cadence summary — shows each step's *cumulative* offset from
   // enrollment so users see the actual calendar of sends. delay_hours is
   // the gap from the previous step (matches what the runner does).
-  let cumulativeHours = 0;
-  const summaryParts: string[] = emails.map((e, i) => {
+  const offsets = emails.reduce<number[]>((acc, e) => {
     const delay = Math.max(0, Number(e.delay_hours ?? 0));
-    cumulativeHours += delay;
+    acc.push((acc[acc.length - 1] ?? 0) + delay);
+    return acc;
+  }, []);
+  const cumulativeHours = offsets[offsets.length - 1] ?? 0;
+  const summaryParts: string[] = offsets.map((hours, i) => {
     if (i === 0) return "now";
-    if (cumulativeHours < 24) return `+${cumulativeHours}h`;
-    const days = Math.round((cumulativeHours / 24) * 10) / 10;
+    if (hours < 24) return `+${hours}h`;
+    const days = Math.round((hours / 24) * 10) / 10;
     return `+${days}d`;
   });
   const totalDays =

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Bell,
@@ -51,20 +51,20 @@ export function NotificationPanel() {
   const [unreadCount, setUnreadCount] = useState(0);
   const router = useRouter();
 
-  const fetchNotifications = useCallback(async () => {
-    const res = await fetch("/api/notifications");
-    if (res.ok) {
-      const data = await res.json();
-      setNotifications(data.notifications);
-      setUnreadCount(data.unreadCount);
-    }
-  }, []);
-
   useEffect(() => {
+    async function fetchNotifications() {
+      const res = await fetch("/api/notifications");
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data.notifications);
+        setUnreadCount(data.unreadCount);
+      }
+    }
+
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 60000);
     return () => clearInterval(interval);
-  }, [fetchNotifications]);
+  }, []);
 
   async function markAllRead() {
     await fetch("/api/notifications", {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
   Settings,
@@ -32,6 +32,7 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { PageHeader } from "@/src/components/layout/page-header";
 import { cn } from "@/src/lib/utils/cn";
 import { AGENT_REGISTRY, type AgentDefinition } from "@/src/lib/ai/agents/registry";
+import { agentDisplay } from "@/src/lib/ai/agents/display";
 import type { AgentMetrics } from "@/src/app/api/projects/[id]/agent-metrics/route";
 
 // Map icon names to Lucide components
@@ -102,10 +103,10 @@ function AgentCard({
           </span>
           <div>
             <p className="text-title text-text">
-              {agent.name}
+              {agentDisplay(agent).name}
             </p>
             <p className="text-caption text-text-3 mt-0.5">
-              {agent.category}
+              {agentDisplay(agent).job}
             </p>
           </div>
         </div>
@@ -209,6 +210,39 @@ const AGENT_CATEGORIES: CategoryMeta[] = [
   },
 ];
 
+// Per-category "expanded" preference, read from localStorage on the client
+// (always collapsed on the server). An in-memory copy keeps toggling working
+// when localStorage is unavailable (private mode).
+// (`Map` is shadowed by the icon import here, hence a plain record.)
+const categoryExpandedMemory: Record<string, boolean> = {};
+const categoryExpandedListeners = new Set<() => void>();
+
+function subscribeCategoryExpanded(listener: () => void) {
+  categoryExpandedListeners.add(listener);
+  return () => {
+    categoryExpandedListeners.delete(listener);
+  };
+}
+
+function readCategoryExpanded(storageKey: string): boolean {
+  if (storageKey in categoryExpandedMemory) return categoryExpandedMemory[storageKey];
+  try {
+    return window.localStorage.getItem(storageKey) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function writeCategoryExpanded(storageKey: string, next: boolean) {
+  categoryExpandedMemory[storageKey] = next;
+  try {
+    window.localStorage.setItem(storageKey, next ? "1" : "0");
+  } catch {
+    // localStorage may be unavailable (private mode) — non-fatal.
+  }
+  categoryExpandedListeners.forEach((listener) => listener());
+}
+
 function AgentCategorySection({
   category,
   agents,
@@ -226,24 +260,14 @@ function AgentCategorySection({
   // setting applies across all projects — opening "Create Content" once
   // shouldn't re-collapse it next time.
   const storageKey = `dash:agents:cat:${category.id}:expanded`;
-  const [expanded, setExpanded] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const saved = window.localStorage.getItem(storageKey);
-    if (saved === "1") setExpanded(true);
-  }, [storageKey]);
+  const expanded = useSyncExternalStore(
+    subscribeCategoryExpanded,
+    () => readCategoryExpanded(storageKey),
+    () => false
+  );
 
   function toggle() {
-    setExpanded((prev) => {
-      const next = !prev;
-      try {
-        window.localStorage.setItem(storageKey, next ? "1" : "0");
-      } catch {
-        // localStorage may be unavailable (private mode) — non-fatal.
-      }
-      return next;
-    });
+    writeCategoryExpanded(storageKey, !expanded);
   }
 
   const HeaderIcon = category.icon;

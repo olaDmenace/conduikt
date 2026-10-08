@@ -18,6 +18,7 @@ import { Button } from "@/src/components/ui/button";
 import { Card } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { AGENT_REGISTRY } from "@/src/lib/ai/agents/registry";
+import { agentDisplay } from "@/src/lib/ai/agents/display";
 import { useToast } from "@/src/components/ui/toast";
 
 interface SavedAsset {
@@ -544,11 +545,11 @@ export function CampaignRunner({
                   )}
                   <div className="flex-1 min-w-0">
                     <span className="block text-title text-text">
-                      {def?.name || step.agent_id}
+                      {def ? agentDisplay(def).name : step.agent_id}
                     </span>
-                    {def?.description && (
+                    {def && (
                       <span className="block truncate text-caption text-text-3">
-                        {def.description}
+                        {agentDisplay(def).job}
                       </span>
                     )}
                   </div>

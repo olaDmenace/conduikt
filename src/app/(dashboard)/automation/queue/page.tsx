@@ -51,15 +51,24 @@ export default function AutomationQueuePage() {
   const [items, setItems] = useState<QueueItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  async function load() {
-    setLoading(true);
+  async function getItems(): Promise<QueueItem[] | null> {
     const res = await fetch("/api/automation/queue", { cache: "no-store" });
-    if (res.ok) setItems(await res.json());
+    return res.ok ? await res.json() : null;
+  }
+
+  function applyItems(data: QueueItem[] | null) {
+    if (data) setItems(data);
     setLoading(false);
   }
 
+  async function load() {
+    setLoading(true);
+    applyItems(await getItems());
+  }
+
   useEffect(() => {
-    load();
+    // loading starts true, so the first fetch only needs to apply the result.
+    getItems().then(applyItems);
   }, []);
 
   async function act(id: string, action: "cancel" | "publish_now") {

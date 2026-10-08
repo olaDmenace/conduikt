@@ -113,32 +113,57 @@ export default function EmailsPage({
   const [selectedAudienceId, setSelectedAudienceId] = useState<string | null>(null);
   const [enrolling, setEnrolling] = useState(false);
 
+  async function getSequences(): Promise<EmailSequence[] | null> {
+    const res = await fetch(`/api/projects/${projectId}/email-sequences`);
+    return res.ok ? await res.json() : null;
+  }
+
+  function applySequences(data: EmailSequence[] | null) {
+    if (data) setSequences(data);
+    setLoading(false);
+  }
+
   useEffect(() => {
-    fetchSequences();
+    getSequences().then(applySequences);
   }, [projectId]);
+
+  async function getAudiences(): Promise<AudienceOption[] | null> {
+    const res = await fetch(`/api/projects/${projectId}/audiences`);
+    return res.ok ? await res.json() : null;
+  }
+
+  async function openEnroll(seqId: string) {
+    setEnrollForSeqId(seqId);
+    setEnrollOpen(true);
+    setSelectedAudienceId(null);
+    if (audiences.length === 0) {
+      const data = await getAudiences();
+      if (data) setAudiences(data);
+    }
+  }
 
   // Hand-off from /content?skill=email-sequence — when the user clicks
   // "Save & Schedule Drip", we redirect here with ?enroll=<seqId> so the
   // audience picker opens automatically. The user picks an audience and
   // the drip starts. We only auto-open once per page load, hence the
-  // ref-style guard via state.
+  // guard via state. The picker opens during render (once the sequence
+  // list has loaded, so it shows the right step count in its preview);
+  // the audience list is fetched by the effect below.
   const [autoEnrollHandled, setAutoEnrollHandled] = useState(false);
-  useEffect(() => {
-    if (autoEnrollHandled) return;
-    const enrollSeqId = searchParams.get("enroll");
-    if (!enrollSeqId) return;
-    // Wait until the sequence list has loaded so the picker shows the
-    // right step count in its preview.
-    if (loading) return;
+  const enrollParam = searchParams.get("enroll");
+  if (!autoEnrollHandled && enrollParam && !loading) {
     setAutoEnrollHandled(true);
-    openEnroll(enrollSeqId);
-  }, [searchParams, loading, autoEnrollHandled]);
-
-  async function fetchSequences() {
-    const res = await fetch(`/api/projects/${projectId}/email-sequences`);
-    if (res.ok) setSequences(await res.json());
-    setLoading(false);
+    setEnrollForSeqId(enrollParam);
+    setEnrollOpen(true);
+    setSelectedAudienceId(null);
   }
+
+  useEffect(() => {
+    if (!autoEnrollHandled || audiences.length > 0) return;
+    getAudiences().then((data) => {
+      if (data) setAudiences(data);
+    });
+  }, [autoEnrollHandled]);
 
   async function openDetail(seqId: string) {
     setDetailLoading(true);
@@ -148,16 +173,6 @@ export default function EmailsPage({
     );
     if (res.ok) setSelectedSeq(await res.json());
     setDetailLoading(false);
-  }
-
-  async function openEnroll(seqId: string) {
-    setEnrollForSeqId(seqId);
-    setEnrollOpen(true);
-    setSelectedAudienceId(null);
-    if (audiences.length === 0) {
-      const res = await fetch(`/api/projects/${projectId}/audiences`);
-      if (res.ok) setAudiences(await res.json());
-    }
   }
 
   async function handleEnroll() {

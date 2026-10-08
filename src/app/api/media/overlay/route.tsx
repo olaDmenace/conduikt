@@ -16,6 +16,91 @@ const DIMENSIONS = {
   portrait: { w: 1080, h: 1350 },
 } as const;
 
+// Builds the overlay markup. Kept out of POST so the handler itself holds no
+// JSX (and is not treated as a component by the React Compiler lint rules).
+function overlayMarkup({
+  text,
+  palette,
+  fontSize,
+  logo,
+}: {
+  text: string;
+  palette: { bg: string; fg: string; accent: string };
+  fontSize: number;
+  logo: string | null;
+}) {
+  return (
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        padding: "72px",
+        background: palette.bg,
+        fontFamily: "sans-serif",
+        position: "relative",
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "8px",
+          height: "100%",
+          background: palette.accent,
+        }}
+      />
+      <div
+        style={{
+          display: "flex",
+          color: palette.accent,
+          fontSize: 28,
+          letterSpacing: "0.15em",
+          textTransform: "uppercase",
+          fontWeight: 600,
+        }}
+      >
+        {logo ? "" : "Conduikt"}
+      </div>
+      <div
+        style={{
+          display: "flex",
+          color: palette.fg,
+          fontSize,
+          lineHeight: 1.2,
+          fontWeight: 500,
+          maxWidth: "90%",
+        }}
+      >
+        {text}
+      </div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          color: palette.fg,
+          opacity: 0.6,
+          fontSize: 22,
+        }}
+      >
+        <span>{logo ? "" : ""}</span>
+        <div
+          style={{
+            display: "flex",
+            width: 48,
+            height: 4,
+            background: palette.accent,
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -57,76 +142,7 @@ export async function POST(request: NextRequest) {
   const fontSize = text.length < 80 ? 64 : text.length < 160 ? 52 : 42;
 
   const image = new ImageResponse(
-    (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          padding: "72px",
-          background: palette.bg,
-          fontFamily: "sans-serif",
-          position: "relative",
-        }}
-      >
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "8px",
-            height: "100%",
-            background: palette.accent,
-          }}
-        />
-        <div
-          style={{
-            display: "flex",
-            color: palette.accent,
-            fontSize: 28,
-            letterSpacing: "0.15em",
-            textTransform: "uppercase",
-            fontWeight: 600,
-          }}
-        >
-          {logo ? "" : "Conduikt"}
-        </div>
-        <div
-          style={{
-            display: "flex",
-            color: palette.fg,
-            fontSize,
-            lineHeight: 1.2,
-            fontWeight: 500,
-            maxWidth: "90%",
-          }}
-        >
-          {text}
-        </div>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            color: palette.fg,
-            opacity: 0.6,
-            fontSize: 22,
-          }}
-        >
-          <span>{logo ? "" : ""}</span>
-          <div
-            style={{
-              display: "flex",
-              width: 48,
-              height: 4,
-              background: palette.accent,
-            }}
-          />
-        </div>
-      </div>
-    ),
+    overlayMarkup({ text, palette, fontSize, logo }),
     { width: w, height: h }
   );
 
