@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
-import { generateWithClaude } from "@/src/lib/ai/client";
+import { AIUnavailableError, aiUnavailableBody, generateWithClaude } from "@/src/lib/ai/client";
 import { seoAuditSkill } from "@/src/lib/ai/agents/seo-audit";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
 import {
@@ -137,6 +137,7 @@ export async function POST(request: NextRequest) {
       temperature: 0,
     });
   } catch (err) {
+    if (err instanceof AIUnavailableError) return NextResponse.json(aiUnavailableBody(err), { status: 503 });
     const message = err instanceof Error ? err.message : "AI generation failed";
     return NextResponse.json({ error: message }, { status: 500 });
   }

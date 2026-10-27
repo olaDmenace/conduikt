@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
 }
 
 async function handleGet(request: NextRequest) {
-  // Same auth pattern as /api/cron/publish — accepts header or query param secret.
+  // Same auth pattern as /api/cron/publish — Authorization header only.
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) {
     if (process.env.NODE_ENV === "production") {
@@ -62,8 +62,7 @@ async function handleGet(request: NextRequest) {
     console.warn("[cron/fill-x-bracket] CRON_SECRET not set — dev mode");
   } else {
     const auth = request.headers.get("authorization");
-    const q = new URL(request.url).searchParams.get("secret");
-    if (auth !== `Bearer ${cronSecret}` && q !== cronSecret) {
+    if (auth !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
   }

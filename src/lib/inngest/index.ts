@@ -5,3 +5,6 @@ export { analyzePostPerformance } from "./functions/analyze-post-performance";
 export { refreshXTokens } from "./functions/refresh-x-tokens";
 export { refreshLinkedInTokens } from "./functions/refresh-linkedin-tokens";
 export { refreshTiktokTokens } from "./functions/refresh-tiktok-tokens";
+export { syncAdInsightsJob } from "./functions/sync-ad-insights";
+export { foundByAi } from "./functions/found-by-ai";
+export { missingPagesNightly } from "./functions/missing-pages-nightly";

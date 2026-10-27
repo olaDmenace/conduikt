@@ -26,12 +26,17 @@ interface Preview {
   headline: string;
   items: string[];
   locked: boolean;
+  sample?: boolean;
 }
 interface CheckResponse {
   url: string;
   audit: AuditResultData;
   previews: Preview[];
+  /** True when the writing service was unavailable and this is generic sample output. */
+  sample?: boolean;
 }
+
+const SAMPLE_NOTE = "Sample output. Real results run on your site when the writing service is available.";
 
 type Stage = "form" | "auth" | "waiting" | "running" | "result" | "error";
 
@@ -103,11 +108,12 @@ export function SiteCheck() {
       setData(body as CheckResponse);
       setStage("result");
       // After sign-up the app picks the site up and starts the full run,
-      // reusing this audit rather than paying for it again.
+      // reusing this audit rather than paying for it again. A sample audit
+      // is not reused: the signed-in check runs for real.
       try {
         localStorage.setItem(PENDING_AUDIT_KEY, body.url);
       } catch {}
-      savePendingResult(body.url, body.audit);
+      if (!body.sample) savePendingResult(body.url, body.audit);
     } catch {
       setError({ text: "Network problem. Check your connection and try again." });
       setStage("error");
@@ -210,6 +216,11 @@ export function SiteCheck() {
 
         {stage === "result" && data && (
           <>
+            {data.sample && (
+              <p role="status" className="text-body-s text-text-3">
+                {SAMPLE_NOTE}
+              </p>
+            )}
             <AuditResult audit={data.audit} host={host} />
 
             {data.previews.length > 0 && (
@@ -251,6 +262,7 @@ export function SiteCheck() {
                             ))}
                           </ul>
                         )}
+                        {p.sample && <p className="text-caption text-text-3">{SAMPLE_NOTE}</p>}
                       </li>
                     );
                   })}

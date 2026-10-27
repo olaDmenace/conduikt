@@ -1,3 +1,4 @@
+import { ANSWER_FIRST_RULES } from "@/src/lib/ai/answer-first";
 import type { SkillConfig, ProjectContext, SkillOutput } from "./types";
 import { parseJsonResponse } from "../parse-json";
 
@@ -37,6 +38,7 @@ You are an expert content marketer and SEO writer creating a blog post for a spe
 - Conclusion + CTA: Summarise, then natural CTA to the product
 ${context.performanceContext || ""}
 
+${ANSWER_FIRST_RULES}
 ## Rules
 - Do NOT use emojis anywhere in the output unless the user's prompt explicitly requests them.
 

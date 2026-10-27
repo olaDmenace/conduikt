@@ -39,10 +39,19 @@ export default function FirstWeekPage({ params }: { params: Promise<{ id: string
     setStarted(true);
   }
 
+  const overviewLink = (
+    <div className="flex justify-end">
+      <Button asChild>
+        <Link href="/dashboard">Go to your overview</Link>
+      </Button>
+    </div>
+  );
+
   if (started === null) return <Skeleton className="h-64 w-full" />;
   if (!started) {
     return (
       <div className="space-y-3">
+        {overviewLink}
         <EmptyState
           title="Your agents haven't run on this site yet. Start them and they'll audit it, plan and write your first week."
           action={
@@ -61,8 +70,15 @@ export default function FirstWeekPage({ params }: { params: Promise<{ id: string
             )}
           </p>
         )}
+        {overviewLink}
       </div>
     );
   }
-  return <FirstWeekPanel projectId={id} />;
+  return (
+    <div className="space-y-6">
+      {overviewLink}
+      <FirstWeekPanel projectId={id} />
+      {overviewLink}
+    </div>
+  );
 }

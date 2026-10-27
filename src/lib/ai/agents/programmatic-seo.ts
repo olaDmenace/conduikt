@@ -1,3 +1,4 @@
+import { ANSWER_FIRST_RULES } from "@/src/lib/ai/answer-first";
 import type { AgentConfig, ProjectContext, AgentOutput } from "./types";
 import { parseJsonResponse } from "../parse-json";
 
@@ -40,6 +41,7 @@ ${context.performanceContext || ""}
 - "[integration] for [tool]" — e.g. "Google Search Console integration"
 - "[audience] guide to [topic]" — e.g. "Founder's guide to content velocity"
 
+${ANSWER_FIRST_RULES}
 ## Rules
 - Do NOT use emojis anywhere in the output unless the user's prompt explicitly requests them.
 - Do NOT generate pages for queries where the product has no genuine fit — return fewer, higher-quality variants.

@@ -63,9 +63,9 @@ describe('SEO Audit Agent', () => {
       expect(prompt.toLowerCase()).toContain('json')
     })
 
-    it('system prompt length is under 3000 characters', () => {
+    it('system prompt length is under 3500 characters (rubric gained the answer-readiness rows)', () => {
       const prompt = seoAuditSkill.buildSystemPrompt(mockProjectContext)
-      expect(prompt.length).toBeLessThan(3000)
+      expect(prompt.length).toBeLessThan(3500)
     })
   })
 

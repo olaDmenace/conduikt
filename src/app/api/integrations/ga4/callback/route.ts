@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
+import { encryptToken } from "@/src/lib/crypto/tokens";
 
 // GA4 Admin API returns each property summary with `property` as the
 // resource name (e.g. "properties/12345"), NOT `name` like most other
@@ -124,8 +125,10 @@ export async function GET(request: NextRequest) {
     user_id: user.id,
     project_id: projectId,
     platform: "ga4" as const,
-    access_token: tokens.access_token,
-    refresh_token: tokens.refresh_token ?? null,
+    // Encrypted at rest like the X / LinkedIn / TikTok rows; readers go
+    // through getValidGoogleToken (src/lib/integrations/google-oauth.ts).
+    access_token: encryptToken(tokens.access_token),
+    refresh_token: encryptToken(tokens.refresh_token ?? null),
     token_expires_at: expiresAt,
     platform_user_id: propertyName,
     platform_username: propertyDisplay,

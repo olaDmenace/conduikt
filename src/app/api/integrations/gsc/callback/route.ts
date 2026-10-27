@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
+import { encryptToken } from "@/src/lib/crypto/tokens";
 
 export async function GET(request: NextRequest) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
@@ -122,8 +123,10 @@ export async function GET(request: NextRequest) {
     user_id: user.id,
     project_id: projectId,
     platform: "gsc" as const,
-    access_token: tokens.access_token,
-    refresh_token: tokens.refresh_token ?? null,
+    // Encrypted at rest like the X / LinkedIn / TikTok rows; readers go
+    // through getValidGoogleToken (src/lib/integrations/google-oauth.ts).
+    access_token: encryptToken(tokens.access_token),
+    refresh_token: encryptToken(tokens.refresh_token ?? null),
     token_expires_at: expiresAt,
     platform_user_id: null,
     platform_username: siteUrl,

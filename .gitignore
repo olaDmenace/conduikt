@@ -73,3 +73,12 @@ linkedin-playbook.json
 
 # playwright MCP tool cache (console logs, page snapshots, screenshots)
 .playwright-mcp/
+e2e/.env.local
+
+# pitch-deck/ build output and binary assets (kept on disk, not in git)
+pitch-deck/*.png
+pitch-deck/*.jpg
+pitch-deck/*.pdf
+pitch-deck/public/**/*.png
+pitch-deck/public/**/*.jpg
+pitch-deck/node_modules/

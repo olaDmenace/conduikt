@@ -3,7 +3,7 @@ import Script from "next/script";
 import localFont from "next/font/local";
 import { Analytics } from "@vercel/analytics/next";
 import "@/src/styles/globals.css";
-import { softwareAppJsonLd, faqJsonLd } from "@/src/lib/seo/homepage-schema";
+import { softwareAppJsonLd } from "@/src/lib/seo/homepage-schema";
 import { TawkChat } from "@/src/components/marketing/tawk-chat";
 import { Providers } from "@/src/app/providers";
 
@@ -180,10 +180,6 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppJsonLd) }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
         />
         <link rel="preconnect" href="https://api.producthunt.com" crossOrigin="" />
         <link rel="dns-prefetch" href="https://api.producthunt.com" />

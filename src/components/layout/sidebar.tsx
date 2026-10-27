@@ -47,6 +47,9 @@ import { IconButton } from "@/src/components/ui/button";
 //   Settings: Everything we made · How you sound · Connected accounts
 //   Footer: plan tile (ink), sign out, legal
 //
+// Home is always /dashboard (the Overview). Switching project changes
+// which project the Overview and the rail show; it never leaves Home.
+//
 // Rail: drawer under 768px, 64px icon rail 768–999px, 240px at ≥1000px
 // (or 64px when the user collapses it). The nested per-project tree, the
 // global Agents menu and Playground are gone — agents open in AgentPicker.
@@ -233,7 +236,7 @@ export function Sidebar() {
                       setCurrentProjectId(p.id);
                       setSwitcherOpen(false);
                       close();
-                      router.push(`/projects/${p.id}`);
+                      router.push("/dashboard");
                     }}
                     className={cn(
                       "flex h-9 w-full items-center gap-2 rounded-sm px-2.5 text-left text-sm hover:bg-surface-2",
@@ -258,10 +261,10 @@ export function Sidebar() {
           {/* Primary */}
           <div className="space-y-0.5 pt-2">
             <SidebarItem
-              href={base ?? "/dashboard"}
+              href="/dashboard"
               icon={<Home size={20} fill="currentColor" />}
               label="Home"
-              current={base ? at(base, true) : at("/dashboard", true)}
+              current={at("/dashboard", true)}
               onClick={close}
               labelClassName={compactLabel}
               collapsed={collapsed}

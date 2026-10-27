@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Save, Trash2, AlertTriangle, Upload, Palette } from "@/src/components/ui/lucide-icons";
+import Link from "next/link";
+import { Save, Trash2, AlertTriangle, Upload, Palette, Check, ArrowUpRight } from "@/src/components/ui/lucide-icons";
+import { BUSINESS_TYPES, PLAYBOOKS, playbookFor, type BusinessType } from "@/src/lib/playbooks";
+import { AUTOMATION_MODES, normalizeMode, type AutomationMode } from "@/src/lib/automation/mode";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
@@ -28,6 +31,11 @@ interface Project {
   client_name: string | null;
   client_logo_url: string | null;
   report_accent_color: string | null;
+  business_type: BusinessType | null;
+  automation_mode: AutomationMode | null;
+  wants_hosted_page: boolean | null;
+  business_location: string | null;
+  services: string[] | null;
 }
 
 export default function ProjectSettingsPage() {
@@ -58,6 +66,14 @@ export default function ProjectSettingsPage() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [userPlan, setUserPlan] = useState("free");
 
+  // Playbook and mode (audit §4.1, D4)
+  const [businessType, setBusinessType] = useState<BusinessType>("saas");
+  const [automationMode, setAutomationMode] = useState<AutomationMode>("check_all");
+  const [savingMode, setSavingMode] = useState(false);
+  const [wantsHostedPage, setWantsHostedPage] = useState(false);
+  const [businessLocation, setBusinessLocation] = useState("");
+  const [servicesText, setServicesText] = useState("");
+
   useEffect(() => {
     async function fetchProject() {
       const [res, profileRes] = await Promise.all([
@@ -87,6 +103,11 @@ export default function ProjectSettingsPage() {
         setClientName(data.client_name || "");
         setClientLogoUrl(data.client_logo_url || "");
         setReportAccentColor(data.report_accent_color || "#D9663A");
+        setBusinessType(playbookFor(data.business_type).id);
+        setAutomationMode(normalizeMode(data.automation_mode));
+        setWantsHostedPage(Boolean(data.wants_hosted_page));
+        setBusinessLocation(data.business_location || "");
+        setServicesText(Array.isArray(data.services) ? data.services.join(", ") : "");
       } else {
         toast("Failed to load project", "error");
       }
@@ -154,6 +175,14 @@ export default function ProjectSettingsPage() {
         client_name: clientName.trim() || null,
         client_logo_url: clientLogoUrl.trim() || null,
         report_accent_color: reportAccentColor || "#D9663A",
+        business_type: businessType,
+        automation_mode: automationMode,
+        wants_hosted_page: wantsHostedPage,
+        business_location: businessLocation.trim() || null,
+        services: servicesText
+          .split(/[,\n]/)
+          .map((s) => s.trim())
+          .filter(Boolean),
       }),
     });
 
@@ -168,6 +197,28 @@ export default function ProjectSettingsPage() {
     setSaving(false);
   }
 
+  // The mode saves on its own the moment you pick it, so changing your mind
+  // never waits on the big Save button.
+  async function chooseMode(mode: AutomationMode) {
+    if (mode === automationMode || savingMode) return;
+    const previous = automationMode;
+    setAutomationMode(mode);
+    setSavingMode(true);
+    const res = await fetch(`/api/projects/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ automation_mode: mode }),
+    }).catch(() => null);
+    if (res?.ok) {
+      const label = AUTOMATION_MODES.find((m) => m.id === mode)?.label ?? "Mode";
+      toast(`${label}: saved`, "success");
+    } else {
+      setAutomationMode(previous);
+      toast("Couldn't save that. Try again.", "error");
+    }
+    setSavingMode(false);
+  }
+
   async function handleDelete() {
     if (deleteConfirmText !== project?.name) return;
 
@@ -176,7 +227,7 @@ export default function ProjectSettingsPage() {
 
     if (res.ok) {
       toast("Project deleted", "success");
-      router.push("/projects");
+      router.push("/dashboard");
     } else {
       const err = await res.json();
       toast(err.error || "Failed to delete project", "error");
@@ -242,13 +293,154 @@ export default function ProjectSettingsPage() {
           </CardContent>
         </Card>
 
+        {/* How hands-on you want to be (docs/DESIGN.md Modes; D4) */}
+        <Card className="animate-in" style={{ animationDelay: "30ms" }}>
+          <CardHeader>
+            <CardTitle className="text-heading">How hands-on you want to be</CardTitle>
+            <p className="text-body-s text-text-2">
+              Saved the moment you pick one. Change it any time.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div role="radiogroup" aria-label="How hands-on you want to be" className="grid grid-cols-1 gap-2">
+              {AUTOMATION_MODES.map((m) => {
+                const selected = automationMode === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    disabled={savingMode}
+                    onClick={() => chooseMode(m.id)}
+                    className={`flex items-start gap-3 rounded-md border px-4 py-3 text-left transition-colors ${
+                      selected
+                        ? "border-accent bg-accent-soft"
+                        : "border-line bg-surface hover:border-line-strong hover:bg-surface-2"
+                    }`}
+                  >
+                    <span
+                      className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors ${
+                        selected ? "border-accent bg-accent" : "border-line-strong bg-ground"
+                      }`}
+                      aria-hidden
+                    >
+                      {selected && <Check className="h-3 w-3 text-white" />}
+                    </span>
+                    <span>
+                      <span className="block text-title text-text">{m.label}</span>
+                      <span className="block text-body-s text-text-2">{m.blurb}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* What kind of business (playbook; audit §4.1) */}
+        <Card className="animate-in" style={{ animationDelay: "45ms" }}>
+          <CardHeader>
+            <CardTitle className="text-heading">What kind of business</CardTitle>
+            <p className="text-body-s text-text-2">
+              Your first-week pack, default channels and the words we use follow this.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div role="radiogroup" aria-label="Kind of business" className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {BUSINESS_TYPES.map((t) => {
+                const p = PLAYBOOKS[t];
+                const selected = businessType === t;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => setBusinessType(t)}
+                    className={`rounded-md border px-4 py-3 text-left transition-colors ${
+                      selected
+                        ? "border-accent bg-accent-soft"
+                        : "border-line bg-surface hover:border-line-strong hover:bg-surface-2"
+                    }`}
+                  >
+                    <span className="block text-title text-text">{p.label}</span>
+                    <span className="block text-body-s text-text-2">{p.blurb}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {project.business_type !== null && businessType !== project.business_type && (
+              <p className="text-caption text-text-2">
+                Changing this changes which agents run in your first week and the channels we suggest. Saved with the rest of this page.
+              </p>
+            )}
+
+            <button
+              type="button"
+              role="checkbox"
+              aria-checked={wantsHostedPage}
+              onClick={() => setWantsHostedPage((v) => !v)}
+              className={`flex w-full items-start gap-3 rounded-md border px-4 py-3 text-left transition-colors ${
+                wantsHostedPage
+                  ? "border-accent bg-accent-soft"
+                  : "border-line bg-surface hover:border-line-strong hover:bg-surface-2"
+              }`}
+            >
+              <span
+                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border transition-colors ${
+                  wantsHostedPage ? "border-accent bg-accent" : "border-line-strong bg-ground"
+                }`}
+                aria-hidden
+              >
+                {wantsHostedPage && <Check className="h-3 w-3 text-white" />}
+              </span>
+              <span>
+                <span className="block text-title text-text">Build my page</span>
+                <span className="block text-body-s text-text-2">
+                  No website yet? We build and host your first page from your answers.
+                </span>
+              </span>
+            </button>
+
+            {(wantsHostedPage || businessType === "local") && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Input
+                  label="Where you work"
+                  placeholder="Try: Lekki, Lagos"
+                  value={businessLocation}
+                  onChange={(e) => setBusinessLocation(e.target.value)}
+                />
+                <Input
+                  label="What you offer"
+                  placeholder="Try: pipe repairs, drain cleaning"
+                  hint="Separate each service with a comma."
+                  value={servicesText}
+                  onChange={(e) => setServicesText(e.target.value)}
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Marketing Context */}
         <Card className="animate-in" style={{ animationDelay: "60ms" }}>
           <CardHeader>
-            <CardTitle className="text-heading">About your business</CardTitle>
-            <p className="text-body-s text-text-2">
-              Every agent reads this so what it writes fits your business.
-            </p>
+            <div className="flex flex-wrap items-end justify-between gap-2">
+              <div>
+                <CardTitle className="text-heading">About your business</CardTitle>
+                <p className="text-body-s text-text-2">
+                  Every agent reads this so what it writes fits your business.
+                </p>
+              </div>
+              <Link
+                href={`/projects/${id}/onboarding`}
+                className="hover-link inline-flex items-center gap-1 text-body-s text-accent hover:text-accent-hover"
+              >
+                Edit your business profile
+                <ArrowUpRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-col gap-1.5">

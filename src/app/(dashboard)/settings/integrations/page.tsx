@@ -8,6 +8,7 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
+import { SettingsTabs } from "@/src/components/settings/settings-tabs";
 import {
   Dialog,
   DialogContent,
@@ -324,6 +325,7 @@ function IntegrationsContent() {
         title="Integrations"
         description="Connect your social accounts so Conduikt can post for you."
       />
+      <SettingsTabs />
 
       {loading ? (
         <div className="space-y-4" role="status" aria-label="Loading integrations">

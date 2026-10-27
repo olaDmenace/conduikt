@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
   Plus,
@@ -123,6 +124,11 @@ export default function CompetitorsPage() {
         title="Competitor Watch"
         description="Sees what rivals are doing, and what they cover that you don't."
       >
+        <Button size="sm" variant="outline" asChild>
+          <Link href={`/projects/${id}/content?skill=competitor-analysis`}>
+            Write a full analysis
+          </Link>
+        </Button>
         <Button size="sm" onClick={() => setShowForm(!showForm)}>
           <Plus className="h-4 w-4" />
           Add competitor

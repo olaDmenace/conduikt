@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
 
 /**
  * CSP violation report sink.
@@ -16,9 +17,22 @@ import { NextRequest, NextResponse } from "next/server";
  * shaping the policy — the logs are enough. If we later want dashboards,
  * flip this to insert into a `csp_reports` table.
  *
- * Follow-up: when we flip to enforce, add rate-limiting (violations from
- * a compromised page can flood this endpoint).
+ * Rate-limited per client IP (violations from a compromised page, or a
+ * script that targets this URL, can flood the logs). The limiter is the
+ * in-memory one from src/lib/security/rate-limit.ts: per-instance, so it
+ * caps a hot lambda rather than the whole fleet, which is enough here.
  */
+
+const RATE_LIMIT = { limit: 30, windowSeconds: 60 };
+
+function clientKey(request: NextRequest): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  const ip =
+    forwarded?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    "unknown";
+  return `csp-report:${ip}`;
+}
 
 interface CspReportBody {
   "csp-report"?: Record<string, unknown>;
@@ -33,6 +47,9 @@ interface ReportsApiEntry {
 }
 
 export async function POST(request: NextRequest) {
+  const rl = rateLimit(clientKey(request), RATE_LIMIT);
+  if (!rl.allowed) return rateLimitResponse(rl);
+
   try {
     const contentType = request.headers.get("content-type") ?? "";
     const raw = await request.text();

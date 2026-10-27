@@ -17,7 +17,18 @@ interface ChildRow {
   ran_at: string | null;
   last_error: string | null;
   completed_at: string | null;
-  result?: { output?: unknown } | null;
+  /** Finished rows hold the agent's output; failed rows hold `{ errorCode, reason }` (see run.ts). */
+  result?: { output?: unknown; errorCode?: string | null } | null;
+  /** The failure code alone, selected out of `result` when outputs are left out. */
+  error_code?: string | null;
+}
+
+/** A preview as stored on the parent row: real, or a sample standing in for one. */
+interface StoredPreview {
+  agentId: string;
+  headline: string;
+  items: string[];
+  sample?: boolean;
 }
 
 export async function loadFirstWeek(service: Db, projectId: string, includeOutput: boolean) {
@@ -31,9 +42,11 @@ export async function loadFirstWeek(service: Db, projectId: string, includeOutpu
     .maybeSingle();
   if (!parent) return null;
 
+  // Polls leave the outputs out but still need the failure code, so it is
+  // picked out of the result JSON (PostgREST `alias:column->>key`).
   const columns = includeOutput
     ? "id, status, payload, ran_at, last_error, completed_at, result"
-    : "id, status, payload, ran_at, last_error, completed_at";
+    : "id, status, payload, ran_at, last_error, completed_at, error_code:result->>errorCode";
   const { data: childRows } = await service
     .from("scheduled_executions")
     .select(columns)
@@ -51,23 +64,30 @@ export async function loadFirstWeek(service: Db, projectId: string, includeOutpu
   }
 
   const payload = parent.payload as { plan: string; run: string[]; locked: string[]; host: string };
-  const result = (parent.result ?? {}) as { previews?: Array<{ agentId: string; headline: string; items: string[] }>; previewsReady?: boolean };
+  const result = (parent.result ?? {}) as { previews?: StoredPreview[]; previewsReady?: boolean };
   const byAgent = new Map(children.map((c) => [c.payload.agentId, c]));
 
+  // Show agents in the order the run was planned (the playbook's order),
+  // not registry order.
+  const planned = [...payload.run, ...payload.locked];
   const agents = firstWeekAgents()
-    .filter((a) => payload.run.includes(a.id) || payload.locked.includes(a.id))
+    .filter((a) => planned.includes(a.id))
+    .sort((a, b) => planned.indexOf(a.id) - planned.indexOf(b.id))
     .map((a) => {
       if (payload.locked.includes(a.id)) {
-        const preview = result.previews?.find((p) => p.agentId === a.id) ?? null;
+        const stored = result.previews?.find((p) => p.agentId === a.id) ?? null;
+        const preview = stored ? { headline: stored.headline, items: stored.items, sample: stored.sample === true } : null;
         return { ...a, state: "locked" as const, preview };
       }
       const row = byAgent.get(a.id);
       const state =
         row?.status === "completed" ? "done" : row?.status === "failed" ? "failed" : row?.status === "running" ? "running" : "queued";
+      const errorCode = state === "failed" ? (row?.error_code ?? row?.result?.errorCode ?? null) : null;
       return {
         ...a,
         state,
         executionId: row?.id ?? null,
+        errorCode,
         output: includeOutput ? (row?.result?.output ?? null) : undefined,
       };
     });
@@ -80,6 +100,8 @@ export async function loadFirstWeek(service: Db, projectId: string, includeOutpu
     host: payload.host,
     plan: payload.plan,
     previewsReady: !!result.previewsReady,
+    /** True when the previews are generic samples, not results for this site. */
+    previewsSample: (result.previews ?? []).some((p) => p.sample === true),
     done: ran.every((a) => a.state === "done" || a.state === "failed"),
     counts: {
       done: ran.filter((a) => a.state === "done").length,

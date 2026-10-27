@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { generateWithClaudeCompletion, TruncatedResponseError } from "@/src/lib/ai/client";
+import { AIUnavailableError, generateWithClaudeCompletion, TruncatedResponseError } from "@/src/lib/ai/client";
 import { getAgent } from "@/src/lib/ai/agents";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
 import type { HandlerResult } from "@/src/lib/scheduler/types";
@@ -17,7 +17,13 @@ export const FIRST_WEEK_AGENT = "first_week_agent";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any>;
 
-export async function runFirstWeekAgent(supabase: Db, payload: Record<string, unknown>): Promise<HandlerResult> {
+/** Why a row failed, when the UI should say more than "didn't finish". */
+export const AI_UNAVAILABLE = "ai_unavailable";
+
+/** A handler result that can also name the failure for the status payload. */
+export type FirstWeekResult = HandlerResult & { errorCode?: typeof AI_UNAVAILABLE; reason?: string };
+
+export async function runFirstWeekAgent(supabase: Db, payload: Record<string, unknown>): Promise<FirstWeekResult> {
   const projectId = typeof payload.projectId === "string" ? payload.projectId : null;
   const agentId = typeof payload.agentId === "string" ? payload.agentId : null;
   const input = (payload.input ?? {}) as Record<string, unknown>;
@@ -43,6 +49,12 @@ export async function runFirstWeekAgent(supabase: Db, payload: Record<string, un
     });
   } catch (err) {
     if (err instanceof TruncatedResponseError) return { ok: false, error: "The answer was cut short", retryable: true };
+    if (err instanceof AIUnavailableError) {
+      // No credit, a bad key or the spend cap won't clear in the next
+      // minute, so don't burn the second attempt on them; the user's
+      // "Try again" re-queues the row later. Transient faults may retry.
+      return { ok: false, error: err.userMessage, retryable: err.retryable, errorCode: AI_UNAVAILABLE, reason: err.code };
+    }
     return { ok: false, error: err instanceof Error ? err.message : "Model call failed", retryable: true };
   }
 
@@ -105,7 +117,7 @@ export async function runFirstWeekRows(supabase: Db, ids: string[], concurrency 
       if (!row) continue;
       const attempts = (row.attempts ?? 0) + 1;
       const out = await runFirstWeekAgent(supabase, row.payload ?? {}).catch(
-        (err): HandlerResult => ({ ok: false, error: err instanceof Error ? err.message : "failed", retryable: true })
+        (err): FirstWeekResult => ({ ok: false, error: err instanceof Error ? err.message : "failed", retryable: true })
       );
       if (out.ok) {
         await supabase
@@ -114,12 +126,15 @@ export async function runFirstWeekRows(supabase: Db, ids: string[], concurrency 
           .eq("id", id);
       } else {
         const retry = out.retryable !== false && attempts < (row.max_attempts ?? 2);
+        // A failed row keeps the failure's code in `result` so the status
+        // payload (and the UI) can say what went wrong without a schema change.
+        const failure = out.errorCode ? { errorCode: out.errorCode, reason: out.reason ?? null } : null;
         await supabase
           .from("scheduled_executions")
           .update(
             retry
               ? { status: "pending", attempts, last_error: out.error }
-              : { status: "failed", attempts, last_error: out.error, completed_at: new Date().toISOString() }
+              : { status: "failed", attempts, last_error: out.error, result: failure, completed_at: new Date().toISOString() }
           )
           .eq("id", id);
         // One immediate retry in-process; anything still pending is left to the cron.

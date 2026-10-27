@@ -9,8 +9,9 @@ import "@/src/lib/scheduler/handlers";
 // 20260504_scheduled_executions.sql). Pulls pending executions whose
 // scheduled_for has passed and dispatches each to its registered handler.
 //
-// Auth follows the same pattern as /api/cron/publish: CRON_SECRET in either
-// the Authorization header or a `?secret=` query param.
+// Auth follows the same pattern as /api/cron/publish: CRON_SECRET as an
+// `Authorization: Bearer <secret>` header only (never a query param — those
+// land in request logs).
 
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
@@ -29,10 +30,7 @@ export async function GET(request: NextRequest) {
     );
   } else {
     const authHeader = request.headers.get("authorization");
-    const queryParamSecret = new URL(request.url).searchParams.get("secret");
-    const headerMatches = authHeader === `Bearer ${cronSecret}`;
-    const queryMatches = queryParamSecret === cronSecret;
-    if (!headerMatches && !queryMatches) {
+    if (authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
   }

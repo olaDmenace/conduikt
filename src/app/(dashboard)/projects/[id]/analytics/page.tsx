@@ -47,6 +47,8 @@ import { createClient } from "@/src/lib/supabase/client";
 import { Ga4Widget } from "@/src/components/analytics/ga4-widget";
 import { YoutubeWidget } from "@/src/components/analytics/youtube-widget";
 import { UnverifiedAppWarning } from "@/src/components/analytics/unverified-app-warning";
+import { AdsInsightsCard } from "@/src/components/analytics/ads-insights-card";
+import { FoundByAiCard } from "@/src/components/analytics/found-by-ai-card";
 
 
 // ---------- types ----------
@@ -1007,6 +1009,12 @@ export default function AnalyticsPage() {
                 }
               />
             )}
+          </section>
+
+          {/* Paid ads and answer engines: read-only inputs to the loop */}
+          <section className="mb-6 grid gap-6 lg:grid-cols-2">
+            <AdsInsightsCard projectId={id} />
+            <FoundByAiCard projectId={id} />
           </section>
 
           {/* Content history */}

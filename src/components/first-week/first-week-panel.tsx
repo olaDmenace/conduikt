@@ -22,9 +22,17 @@ interface AgentRow {
   job: string;
   tier: PlanTier;
   state: State;
+  /** Set on failed rows when the writing service itself was the problem. */
+  errorCode?: "ai_unavailable" | string | null;
   output?: unknown;
-  preview?: { headline: string; items: string[] } | null;
+  preview?: { headline: string; items: string[]; sample?: boolean } | null;
 }
+
+// Shown under a locked agent's preview when it is a generic sample rather
+// than a result for this site.
+export const SAMPLE_NOTE = "Sample output. Real results run on your site when the writing service is available.";
+const FAILED_NOTE = "This one hit a problem.";
+const UNAVAILABLE_NOTE = "The writing service is unavailable. Nothing was charged.";
 
 interface Status {
   started: boolean;
@@ -237,7 +245,7 @@ export function FirstWeekPanel({ projectId, className }: { projectId: string; cl
               </button>
               {a.state === "failed" && (
                 <div className="flex items-center justify-between gap-3 px-4 pb-3">
-                  <p className="text-body-s text-text-3">This one hit a problem.</p>
+                  <p className="text-body-s text-text-3">{a.errorCode === "ai_unavailable" ? UNAVAILABLE_NOTE : FAILED_NOTE}</p>
                   <Button size="sm" variant="outline" onClick={() => retry(a.id)} disabled={retrying === a.id}>
                     {retrying === a.id ? "Starting…" : "Try again"}
                   </Button>
@@ -285,6 +293,7 @@ export function FirstWeekPanel({ projectId, className }: { projectId: string; cl
                         ))}
                       </ul>
                     )}
+                    {a.preview.sample && <p className="text-caption text-text-3">{SAMPLE_NOTE}</p>}
                   </>
                 ) : status.previewsReady ? (
                   <p className="text-body-s text-text-3">{a.job}</p>

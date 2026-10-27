@@ -189,7 +189,10 @@ export async function POST(request: NextRequest) {
 
   const { data: profile } = await supabase.from("profiles").select("plan").eq("id", user.id).maybeSingle();
   const plan = normalizePlan(profile?.plan);
-  const { run, locked } = splitByPlan(plan);
+  // The pack follows the project's playbook (business type); null means SaaS.
+  const { data: typed } = await supabase.from("projects").select("business_type").eq("id", projectId).maybeSingle();
+  const businessType = (typed?.business_type ?? undefined) as Parameters<typeof splitByPlan>[1];
+  const { run, locked } = splitByPlan(plan, businessType);
 
   const signal = await fetchPageSignal(url, safeFetch as typeof fetch);
   const brief: SiteBrief = {

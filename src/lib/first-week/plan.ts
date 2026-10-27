@@ -9,6 +9,7 @@
 import { AGENT_REGISTRY, type AgentDefinition } from "@/src/lib/ai/agents/registry";
 import { agentDisplay } from "@/src/lib/ai/agents/display";
 import { isPlanAtLeast, type PlanTier } from "@/src/lib/plans";
+import { playbookFor, type BusinessType } from "@/src/lib/playbooks";
 
 /** What we know about the site before any agent runs. */
 export interface SiteBrief {
@@ -55,8 +56,16 @@ export interface FirstWeekAgent {
   tier: AgentDefinition["tier"];
 }
 
-export function firstWeekAgents(): FirstWeekAgent[] {
-  return FIRST_WEEK_AGENT_IDS.map((id) => {
+/**
+ * The pack for a business type, in the order its playbook runs it. With no
+ * business type (or an unknown one) this is the whole pack in registry
+ * order, which is also the SaaS playbook, so existing callers see no change.
+ */
+export function firstWeekAgents(businessType?: BusinessType | string | null): FirstWeekAgent[] {
+  const ids: readonly FirstWeekAgentId[] = businessType
+    ? playbookFor(businessType).firstWeekAgentIds
+    : FIRST_WEEK_AGENT_IDS;
+  return ids.map((id) => {
     const def = AGENT_REGISTRY.find((a) => a.id === id);
     if (!def) throw new Error(`first-week agent ${id} missing from registry`);
     const { name, job } = agentDisplay(def);
@@ -65,8 +74,8 @@ export function firstWeekAgents(): FirstWeekAgent[] {
 }
 
 /** Split the pack into agents this plan runs for real and agents it previews. */
-export function splitByPlan(plan: PlanTier) {
-  const all = firstWeekAgents();
+export function splitByPlan(plan: PlanTier, businessType?: BusinessType | string | null) {
+  const all = firstWeekAgents(businessType);
   return {
     run: all.filter((a) => isPlanAtLeast(plan, a.tier as PlanTier)),
     locked: all.filter((a) => !isPlanAtLeast(plan, a.tier as PlanTier)),

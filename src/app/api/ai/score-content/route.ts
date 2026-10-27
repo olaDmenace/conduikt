@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
-import { generateWithClaude } from "@/src/lib/ai/client";
+import { AIUnavailableError, aiUnavailableBody, generateWithClaude } from "@/src/lib/ai/client";
 import { getAgent } from "@/src/lib/ai/agents";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
 
@@ -112,6 +112,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(scoreData);
   } catch (e) {
+    if (e instanceof AIUnavailableError) return NextResponse.json(aiUnavailableBody(e), { status: 503 });
     return NextResponse.json(
       { error: "Failed to score content", details: String(e) },
       { status: 500 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { User, CreditCard, Zap, Users, Webhook, Palette, Mail, Bot } from "@/src/components/ui/lucide-icons";
 import Link from "next/link";
 import { Card } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
@@ -9,6 +8,7 @@ import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { PageHeader } from "@/src/components/layout/page-header";
+import { SettingsTabs } from "@/src/components/settings/settings-tabs";
 import { useToast } from "@/src/components/ui/toast";
 import { GENERATION_LIMITS, normalizePlan, isUnlimited } from "@/src/lib/plans";
 
@@ -22,47 +22,6 @@ interface Profile {
   onboarding_completed: boolean;
   created_at: string;
 }
-
-const settingsNav = [
-  { name: "Profile", href: "/settings", icon: User, active: true },
-  {
-    name: "Billing",
-    href: "/settings/billing",
-    icon: CreditCard,
-    active: false,
-  },
-  {
-    name: "Integrations",
-    href: "/settings/integrations",
-    icon: Zap,
-    active: false,
-  },
-  { name: "Team", href: "/settings/team", icon: Users, active: false },
-  {
-    name: "Sending domain",
-    href: "/settings/email-domain",
-    icon: Mail,
-    active: false,
-  },
-  {
-    name: "Brand kit",
-    href: "/settings/brand",
-    icon: Palette,
-    active: false,
-  },
-  {
-    name: "Automation",
-    href: "/settings/automation",
-    icon: Bot,
-    active: false,
-  },
-  {
-    name: "Webhooks",
-    href: "/settings/integrations/webhooks",
-    icon: Webhook,
-    active: false,
-  },
-];
 
 export default function SettingsPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -123,31 +82,11 @@ export default function SettingsPage() {
   return (
     <div>
       <PageHeader title="Settings" description="Your profile, plan and account." />
+      <SettingsTabs />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
-        {/* Settings nav */}
-        <nav className="lg:col-span-1" aria-label="Settings">
-          <div className="flex gap-1 overflow-x-auto lg:flex-col">
-            {settingsNav.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                aria-current={item.active ? "page" : undefined}
-                className={`flex h-9 shrink-0 items-center gap-2.5 rounded-md px-2.5 text-sm transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] ${
-                  item.active
-                    ? "bg-ink text-ink-text"
-                    : "text-text-2 hover:bg-surface-2 hover:text-text"
-                }`}
-              >
-                <item.icon className="h-4 w-4" aria-hidden />
-                {item.name}
-              </Link>
-            ))}
-          </div>
-        </nav>
-
+      <div>
         {/* Profile settings */}
-        <div className="space-y-6 lg:col-span-3">
+        <div className="space-y-6">
           {loading ? (
             <div className="space-y-6" role="status" aria-label="Loading your settings">
               <div className="space-y-4 rounded-lg border border-line bg-surface p-4 md:p-6">

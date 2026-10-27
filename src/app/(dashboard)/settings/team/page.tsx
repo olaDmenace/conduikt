@@ -18,6 +18,7 @@ import { Input, Field } from "@/src/components/ui/input";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { EmptyState } from "@/src/components/ui/empty-state";
 import { PageHeader } from "@/src/components/layout/page-header";
+import { SettingsTabs } from "@/src/components/settings/settings-tabs";
 import { useToast } from "@/src/components/ui/toast";
 
 interface TeamMember {
@@ -160,6 +161,7 @@ export default function TeamPage() {
         title="Team"
         description="Invite people and choose what they can do."
       />
+      <SettingsTabs />
 
       {/* Invite form */}
       <Card className="mb-8 animate-in">

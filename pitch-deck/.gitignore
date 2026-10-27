@@ -2,4 +2,3 @@ node_modules/
 .slidev/
 dist/
 *.pdf
-!conduikt-pitch-deck.pdf

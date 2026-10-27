@@ -91,8 +91,14 @@ export default function AudiencesPage({
     <div>
       <PageHeader
         title="Subscribers"
-        description="Your email lists. Each list holds the people you can send one-off emails to."
+        description="Your email lists. Each list holds the people you can send one-off emails to. Sign-up forms add people to a list from your website."
       >
+        <Button variant="outline" asChild>
+          <Link href={`/projects/${projectId}/forms`}>
+            Sign-up forms
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </Button>
         <Button onClick={() => setCreateOpen(true)}>
           <Plus className="h-4 w-4" />
           New list
