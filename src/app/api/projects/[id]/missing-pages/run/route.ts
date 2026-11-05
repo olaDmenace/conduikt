@@ -31,6 +31,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (result.error?.code === "ai_unavailable") {
     return NextResponse.json({ error: result.error.message, code: "ai_unavailable", retryable: true, run: result }, { status: 503 });
   }
+  if (result.error?.code === "generation_limit") {
+    return NextResponse.json({ error: result.error.message, code: "generation_limit", run: result }, { status: 429 });
+  }
   if (result.error) {
     return NextResponse.json({ error: result.error.message, run: result }, { status: 500 });
   }

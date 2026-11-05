@@ -18,6 +18,33 @@ import { buildIntentQueriesForProject } from "./intents";
 import { reviewPage, type ReviewResult } from "./review";
 import { rankCandidates } from "./score";
 import type { CandidateKind, MissingPageContent, ProjectFacts } from "./types";
+import { getGenerationLimit, isUnlimited, normalizePlan } from "@/src/lib/plans";
+
+/** Thrown when the project owner's plan has no generations left this period. */
+export class GenerationLimitError extends Error {
+  constructor(public readonly used: number, public readonly limit: number) {
+    super("Generation limit reached. Upgrade your plan.");
+    this.name = "GenerationLimitError";
+  }
+}
+
+// Every written page is one generation against the owner's plan, exactly
+// like /api/ai/generate. Fails open if the profile cannot be read (tests,
+// service outages) so a quota lookup never blocks a page by accident.
+async function ownerQuota(supabase: SupabaseClient, projectId: string) {
+  try {
+    const { data: p } = await supabase.from("projects").select("user_id").eq("id", projectId).maybeSingle();
+    const userId = (p as { user_id?: string } | null)?.user_id ?? null;
+    if (!userId) return { userId: null, ok: true, used: 0, limit: 0 };
+    const { data: prof } = await supabase.from("profiles").select("plan, generation_count").eq("id", userId).maybeSingle();
+    const row = prof as { plan?: string | null; generation_count?: number | null } | null;
+    const limit = getGenerationLimit(normalizePlan(row?.plan));
+    const used = row?.generation_count ?? 0;
+    return { userId, ok: isUnlimited(limit) || used < limit, used, limit };
+  } catch {
+    return { userId: null, ok: true, used: 0, limit: 0 };
+  }
+}
 
 export interface RunDeps {
   crawl?: (siteUrl: string) => Promise<CrawlResult>;
@@ -44,7 +71,7 @@ export interface RunMissingPagesResult {
   pagesWritten: number;
   pagesPublished: number;
   written: Array<{ candidateId: string; query: string; hostedPageId: string; published: boolean; url: string | null; readiness: number }>;
-  error: { code: "ai_unavailable" | "failed"; message: string } | null;
+  error: { code: "ai_unavailable" | "generation_limit" | "failed"; message: string } | null;
 }
 
 export interface CandidateRow {
@@ -96,6 +123,15 @@ export async function writeCandidate(input: WriteCandidateInput): Promise<WriteC
   const deps = input.deps ?? {};
   const now = (deps.now ?? (() => new Date()))();
   const today = now.toISOString().slice(0, 10);
+
+  const quota = await ownerQuota(supabase, project.id);
+  if (!quota.ok) {
+    await supabase
+      .from("missing_page_candidates")
+      .update({ status: "open", last_error: "Generation limit reached. Upgrade your plan." })
+      .eq("id", candidate.id);
+    throw new GenerationLimitError(quota.used, quota.limit);
+  }
 
   await supabase.from("missing_page_candidates").update({ status: "writing", last_error: null }).eq("id", candidate.id);
 
@@ -190,6 +226,9 @@ export async function writeCandidate(input: WriteCandidateInput): Promise<WriteC
     model: built.usage.model,
     duration_ms: built.usage.durationMs,
   });
+  if (quota.userId && typeof (supabase as { rpc?: unknown }).rpc === "function") {
+    await supabase.rpc("increment_generation_count", { user_id_param: quota.userId });
+  }
 
   return { hostedPageId: hosted.id as string, assetId: asset.id as string, review, hostedPage: hosted as HostedPageRow };
 }
@@ -323,7 +362,7 @@ export async function runMissingPages(input: RunMissingPagesInput): Promise<RunM
         }
         result.written.push({ candidateId: candidate.id, query: candidate.query, hostedPageId: written.hostedPageId, published, url, readiness: written.review.score });
       } catch (err) {
-        if (isAiUnavailable(err)) throw err;
+        if (isAiUnavailable(err) || err instanceof GenerationLimitError) throw err;
         // One bad page should not stop the others; the candidate is marked failed.
         await supabase
           .from("missing_page_candidates")
@@ -334,6 +373,8 @@ export async function runMissingPages(input: RunMissingPagesInput): Promise<RunM
   } catch (err) {
     if (isAiUnavailable(err)) {
       result.error = { code: "ai_unavailable", message: err.userMessage ?? err.message };
+    } else if (err instanceof GenerationLimitError) {
+      result.error = { code: "generation_limit", message: err.message };
     } else {
       result.error = { code: "failed", message: err instanceof Error ? err.message : "Something went wrong" };
     }

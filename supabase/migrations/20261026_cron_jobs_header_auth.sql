@@ -23,10 +23,24 @@
 --
 -- pg_cron and pg_net are already enabled on this project.
 
-DO $$
+-- SAFETY (added 2026-11-05 after inspecting production): the live jobs
+-- 'publish-scheduled-posts' and 'scheduler-tick' already send the header,
+-- with the secret embedded as a literal, and app.cron_secret is NOT set on
+-- the database. Re-scheduling them with current_setting() would send a
+-- NULL header and stop publishing. So this migration only re-schedules
+-- when app.cron_secret is set; otherwise it leaves every job untouched.
+-- Set the GUC first (see above), then re-run this file.
+
+DO $mig$
 DECLARE
   job_name text;
+  secret text := current_setting('app.cron_secret', true);
 BEGIN
+  IF secret IS NULL OR secret = '' THEN
+    RAISE NOTICE 'app.cron_secret is not set; leaving existing cron jobs untouched';
+    RETURN;
+  END IF;
+
   FOREACH job_name IN ARRAY ARRAY[
     'publish-scheduled-posts',
     'scheduler-tick',
@@ -36,47 +50,47 @@ BEGIN
       PERFORM cron.unschedule(job_name);
     END IF;
   END LOOP;
-END
-$$;
 
 -- Every 5 minutes: publish due scheduled_posts.
-SELECT cron.schedule(
+  PERFORM cron.schedule(
   'publish-scheduled-posts',
   '*/5 * * * *',
-  $$
+  $cmd$
     SELECT net.http_get(
       url := 'https://conduikt.vercel.app/api/cron/publish',
       headers := jsonb_build_object(
         'Authorization', 'Bearer ' || current_setting('app.cron_secret', true)
       )
     )
-  $$
+  $cmd$
 );
 
 -- Every 5 minutes: dispatch due scheduled_executions (email steps, playbooks).
-SELECT cron.schedule(
+  PERFORM cron.schedule(
   'scheduler-tick',
   '*/5 * * * *',
-  $$
+  $cmd$
     SELECT net.http_get(
       url := 'https://conduikt.vercel.app/api/cron/scheduler-tick',
       headers := jsonb_build_object(
         'Authorization', 'Bearer ' || current_setting('app.cron_secret', true)
       )
     )
-  $$
+  $cmd$
 );
 
 -- Daily 06:00 UTC: X-playbook bracket filler.
-SELECT cron.schedule(
+  PERFORM cron.schedule(
   'fill-x-bracket-daily',
   '0 6 * * *',
-  $$
+  $cmd$
     SELECT net.http_get(
       url := 'https://conduikt.vercel.app/api/cron/fill-x-bracket',
       headers := jsonb_build_object(
         'Authorization', 'Bearer ' || current_setting('app.cron_secret', true)
       )
     )
-  $$
+  $cmd$
 );
+END
+$mig$;

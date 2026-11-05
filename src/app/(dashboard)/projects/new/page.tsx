@@ -271,8 +271,15 @@ export default function NewProjectPage() {
     setLoading(false);
 
     if (noWebsite || !websiteUrl) {
-      // Nothing to check yet: the first week builds their page from the answers.
-      router.push(`/projects/${newProjectId}/first-week`);
+      // Nothing to check yet: Missing Pages builds their first page from the
+      // answers (services + location). Start one page in the background and
+      // land them where they can watch it.
+      fetch(`/api/projects/${newProjectId}/missing-pages/run`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ maxPages: 1 }),
+      }).catch(() => {});
+      router.push(`/projects/${newProjectId}/missing-pages`);
       return;
     }
 
@@ -346,7 +353,9 @@ export default function NewProjectPage() {
   );
 
   return (
-    <div className="max-w-2xl mx-auto">
+    // data-hide-chat: the support bubble sits exactly where Next lands on
+    // narrow screens and opens the chat over the form. Hide it on the wizard.
+    <div className="max-w-2xl mx-auto" data-hide-chat>
       <PageHeader
         title="New project"
         description="Five quick steps. Your answers shape what every agent does."
