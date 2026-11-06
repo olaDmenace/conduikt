@@ -159,8 +159,44 @@ export async function writeCandidate(input: WriteCandidateInput): Promise<WriteC
     throw err;
   }
 
+  // From here on the candidate is "writing"; any failure must release it or
+  // the write route returns 409 forever and the nightly run never retries it.
+  try {
+    return await saveWrittenPage({ input, built, today, ownerId: quota.userId });
+  } catch (err) {
+    await supabase
+      .from("missing_page_candidates")
+      .update({ status: "failed", last_error: err instanceof Error ? err.message : "failed" })
+      .eq("id", candidate.id);
+    throw err;
+  }
+}
+
+async function saveWrittenPage(args: {
+  input: WriteCandidateInput;
+  built: BuildResult;
+  today: string;
+  ownerId: string | null;
+}): Promise<WriteCandidateResult> {
+  const { input, built, today, ownerId } = args;
+  const { supabase, project, facts, candidate } = input;
+
   const siteSlug = await resolveSiteSlug(supabase, project.id, project.name);
   const slug = slugify(candidate.query);
+
+  // hosted_pages is unique on (site_slug, slug) and the nightly run writes with
+  // the service role, so an upsert could re-parent another project's live page
+  // if site slugs were ever reused. Refuse instead of overwriting.
+  const { data: clash } = await supabase
+    .from("hosted_pages")
+    .select("project_id")
+    .eq("site_slug", siteSlug)
+    .eq("slug", slug)
+    .maybeSingle();
+  if (clash && clash.project_id !== project.id) {
+    throw new Error(`The address /p/${siteSlug}/${slug} belongs to another project`);
+  }
+
   const template = pickTemplate(facts.businessType, candidate.query);
   const serviceName = facts.services.find((s) => candidate.query.toLowerCase().includes(s.toLowerCase())) ?? null;
   const review = reviewPage({
@@ -226,8 +262,8 @@ export async function writeCandidate(input: WriteCandidateInput): Promise<WriteC
     model: built.usage.model,
     duration_ms: built.usage.durationMs,
   });
-  if (quota.userId && typeof (supabase as { rpc?: unknown }).rpc === "function") {
-    await supabase.rpc("increment_generation_count", { user_id_param: quota.userId });
+  if (ownerId && typeof (supabase as { rpc?: unknown }).rpc === "function") {
+    await supabase.rpc("increment_generation_count", { user_id_param: ownerId });
   }
 
   return { hostedPageId: hosted.id as string, assetId: asset.id as string, review, hostedPage: hosted as HostedPageRow };

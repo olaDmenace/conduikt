@@ -169,6 +169,42 @@ describe("runMissingPages", () => {
     expect(tables.missing_page_candidates.find((c) => c.status === "published")).toBeTruthy();
   });
 
+  it("refuses to overwrite another project's page at the same hosted address", async () => {
+    // Find which query the run would write first, then park another project's page there.
+    const dry = fakeDb({ projects: [project] });
+    await runMissingPages({ projectId: "proj-1", supabase: dry.supabase, mode: "manual", maxPages: 1, deps: { crawl: async () => crawl, volume, build } });
+    const top = dry.tables.missing_page_candidates.find((c) => c.status === "drafted")!;
+    const slug = String(dry.tables.hosted_pages[0].slug);
+
+    const { supabase, tables } = fakeDb({
+      projects: [project],
+      hosted_pages: [{ id: "hp-other", project_id: "proj-2", site_slug: "lekki-plumbers", slug, status: "published", title: "Theirs" }],
+    });
+    const result = await runMissingPages({ projectId: "proj-1", supabase, mode: "manual", maxPages: 1, deps: { crawl: async () => crawl, volume, build } });
+
+    expect(result.pagesWritten).toBe(0);
+    expect(tables.hosted_pages).toHaveLength(1);
+    expect(tables.hosted_pages[0]).toMatchObject({ id: "hp-other", project_id: "proj-2", status: "published", title: "Theirs" });
+    const candidate = tables.missing_page_candidates.find((c) => c.query === top.query);
+    expect(candidate?.status).toBe("failed");
+    expect(String(candidate?.last_error)).toContain("belongs to another project");
+  });
+
+  it("releases a candidate from writing when saving the page fails", async () => {
+    const { supabase, tables } = fakeDb({ projects: [project] });
+    const raw = supabase.from.bind(supabase);
+    (supabase as unknown as { from: typeof raw }).from = (table: string) => {
+      if (table === "assets") throw new Error("disk full");
+      return raw(table);
+    };
+    const result = await runMissingPages({ projectId: "proj-1", supabase, mode: "manual", maxPages: 1, deps: { crawl: async () => crawl, volume, build } });
+
+    expect(result.pagesWritten).toBe(0);
+    expect(tables.missing_page_candidates.some((c) => c.status === "writing")).toBe(false);
+    const failed = tables.missing_page_candidates.find((c) => c.status === "failed");
+    expect(String(failed?.last_error)).toContain("disk full");
+  });
+
   it("records the AI-unavailable error and leaves the candidate open", async () => {
     const { supabase, tables } = fakeDb({ projects: [project] });
     const failing = async (): Promise<BuildResult> => {

@@ -63,6 +63,19 @@ export function tidyText(s: string): string {
     .trim();
 }
 
+/**
+ * The CTA link is model output seeded with crawled page text, so it is untrusted.
+ * Keep only web, mail and phone links or site-relative paths; anything else
+ * (javascript:, data:, vbscript:, protocol-relative) falls back to the contact anchor.
+ */
+export function safeHref(raw: string): string {
+  const href = raw.trim();
+  if (!href) return "#contact";
+  if (/^(https?:\/\/|mailto:|tel:)/i.test(href)) return href;
+  if (/^(\/(?!\/)|#)/.test(href)) return href;
+  return "#contact";
+}
+
 export function normalisePage(raw: unknown, today: string): MissingPageContent {
   const p = pageSchema.parse(raw);
   const updatedOn = /^\d{4}-\d{2}-\d{2}$/.test(p.updatedOn) ? p.updatedOn : today;
@@ -74,7 +87,7 @@ export function normalisePage(raw: unknown, today: string): MissingPageContent {
     answer: tidyText(p.answer),
     sections: p.sections.map((s) => ({ heading: tidyText(s.heading), body: tidyText(s.body) })),
     faq: p.faq.slice(0, 5).map((f) => ({ q: tidyText(f.q), a: tidyText(f.a) })),
-    cta: { label: tidyText(p.cta.label).slice(0, 40), href: p.cta.href.trim() },
+    cta: { label: tidyText(p.cta.label).slice(0, 40), href: safeHref(p.cta.href) },
     updatedOn,
     ...(p.changes && p.changes.length ? { changes: p.changes.slice(0, 3).map(tidyText) } : {}),
   };
