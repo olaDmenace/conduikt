@@ -39,24 +39,26 @@ export const syncAdInsightsJob = inngest.createFunction(
       return { projects: 0, synced: 0, errors: 0 };
     }
 
-    const result = await step.run("sync-each-project", async () => {
-      let synced = 0;
-      let errors = 0;
-      for (const projectId of projectIds) {
+    // One step per project: a retry resumes after the last finished project
+    // instead of re-pulling every account, and one project's failure never
+    // stops the others.
+    let synced = 0;
+    let errors = 0;
+    for (const projectId of projectIds) {
+      const outcome = await step.run(`sync-${projectId}`, async () => {
         try {
           const r = await syncAdInsights(projectId, supabase, { days: 7 });
-          if (r.ok) synced++;
-          else console.warn(`[sync-ad-insights] ${projectId}: ${r.reason}`);
+          if (!r.ok) console.warn(`[sync-ad-insights] ${projectId}: ${r.reason}`);
+          return { synced: r.ok, failed: false };
         } catch (err) {
-          errors++;
-          console.error(
-            `[sync-ad-insights] ${projectId} failed:`,
-            err instanceof Error ? err.message : err
-          );
+          console.error(`[sync-ad-insights] ${projectId} failed:`, err instanceof Error ? err.message : err);
+          return { synced: false, failed: true };
         }
-      }
-      return { synced, errors };
-    });
+      });
+      if (outcome.synced) synced++;
+      if (outcome.failed) errors++;
+    }
+    const result = { synced, errors };
 
     console.log(
       `[sync-ad-insights] Done: projects=${projectIds.length}, synced=${result.synced}, errors=${result.errors}`
