@@ -25,7 +25,10 @@ export const SAAS_SEEDS = [
   "{product} pricing",
   "{product} alternative",
   "{product} vs {competitor}",
+  "what is {product}",
   "{category} for {audience}",
+  "{category} software",
+  "best {category} tool",
   "{category} template",
   "how to {job}",
 ];
@@ -42,10 +45,31 @@ function clean(s: string): string {
     .trim();
 }
 
+// "how to {job}" only reads well after a verb: "how to schedule posts", not
+// "how to seo pages". Services are usually nouns (features, offerings), so
+// only the ones that start with a verb qualify.
+const JOB_VERBS = new Set([
+  "get", "find", "write", "build", "make", "grow", "run", "schedule", "automate", "publish", "plan", "track",
+  "manage", "create", "send", "generate", "launch", "measure", "improve", "increase", "reduce", "book", "sell",
+  "market", "promote", "reach", "convert", "collect", "design", "hire", "train", "learn", "start", "set",
+]);
+
+function startsWithVerb(phrase: string): boolean {
+  const first = clean(phrase).split(" ")[0];
+  return JOB_VERBS.has(first);
+}
+
+/** Shorten free-text audiences ("founders who do their own marketing") to a usable phrase. */
+function shortAudience(a: string): string {
+  const words = clean(a).split(" ").filter(Boolean);
+  const stop = words.findIndex((w, i) => i > 0 && ["who", "that", "which", "and", "or", "with", "without"].includes(w));
+  return (stop > 0 ? words.slice(0, stop) : words.slice(0, 5)).join(" ");
+}
+
 /** "emergency plumbing" -> "fix a burst pipe" is the agent's job; here we only derive a plain verb phrase. */
 function jobsFrom(facts: ProjectFacts): string[] {
   const jobs: string[] = [];
-  for (const s of facts.services) jobs.push(s);
+  for (const s of facts.services) if (startsWithVerb(s)) jobs.push(s);
   if (facts.valueProposition) {
     const vp = clean(facts.valueProposition);
     const m = vp.match(/\b(?:helps?|lets?|so you can|to)\s+(?:you\s+)?(.{8,60}?)(?:[.,;]|$)/);
@@ -91,7 +115,7 @@ export function buildIntentQueries(facts: ProjectFacts, seeds: string[]): string
     product: [clean(facts.name)],
     competitor: facts.competitors.map(clean).filter(Boolean).slice(0, 4),
     category: facts.category ? [clean(facts.category)] : services.slice(0, 1),
-    audience: facts.audience.map(clean).filter(Boolean).slice(0, 3),
+    audience: facts.audience.map(shortAudience).filter(Boolean).slice(0, 3),
     job: jobsFrom(facts).map(clean).filter(Boolean).slice(0, 4),
     name: [clean(facts.name)],
     topic: (services.length ? services : facts.category ? [clean(facts.category)] : []).slice(0, 4),

@@ -6,6 +6,8 @@
 
 **Revision 2 (same day):** added section 4.1 to 4.3 (the one-product decision and goal statement), 5.9 (AEO, GEO and the other "EOs"), and 7 (alignment with the existing infrastructure and the written plan). Corrected the positioning quote in section 4.
 
+**Revision 5 (6 Nov 2026):** section 8 gains a "where it stands" note; section 11 records the ship review, the merge of PR #1 (v0.5.0), the three review follow-ups, the second live-model run and the widened SaaS search seeds.
+
 ---
 
 ## 0. The short version
@@ -394,6 +396,8 @@ Short answer: the roadmap does not deviate from the goal. It deviates from one d
 
 Total: roughly one quarter of focused work with Claude Code; the Meta verification is the only external dependency on the critical path, so chase it now.
 
+**Where it stands (6 Nov 2026).** Phases 0, 1 and 2 are merged to `main` (PR #1, v0.5.0) and the migrations are live. Phase 3 is scaffolded and merged (Instagram publish, Meta Ads insights, WhatsApp Cloud API, Found-by-AI) but waits on Meta business verification and a Perplexity key before it does anything for a user. Phase 4 (Local pack) and Phase 5 (inbound sales assistant) are not started. "Later" is unchanged. The owner gates that stop Phase 3 from lighting up are listed at the end of section 11.
+
 ---
 
 ## 9. The assignment (office-hours rule: one real-world action)
@@ -431,7 +435,7 @@ Internal documents cross-checked: `SYSTEM_ARCHITECTURE.md`, `SYSTEM_ARCHITECTURE
 
 ---
 
-## 11. Execution feedback (26 Oct 2026, session cut short by the usage limit)
+## 11. Execution feedback (26 Oct to 6 Nov 2026)
 
 **Built (uncommitted, on `main` working tree):** six workstreams from `docs/audits/2026-10-26-execution-plan.md`.
 - Phase 0: sidebar Home is the Overview, legacy launcher redirects, orphans linked (forms, competitors, marketing kit), settings tabs from one source, slide tour removed, Tawk off auth pages, dead link fixed; typed `AIUnavailableError` with one honest sentence and 503s across every model route, sample previews when the model is unreachable, cheap-model routing for previews/scoring, daily spend cap with admin alert; cron secret header-only (+ migration), Google tokens encrypted, csp-report rate-limited, AI crawlers allowed in robots, FAQ schema moved to the homepage, `.env.example` rewritten, 4 scaffold docs deleted, 13 docs moved to `docs/`, personal files moved to `../conduikt-private/`, pitch-deck binaries untracked, 13 dead files and 14 unused packages removed.
@@ -451,4 +455,10 @@ Headless Playwright walkthrough as the demo user: sign-in; wizard as "Local serv
 
 Three fixes came out of the run: the support chat bubble sat over the wizard's Next button on narrow screens (hidden on the wizard now); projects with no website queued no first-week agents (they now start a Missing Pages run and land on that page, and the first-week screen explains the path); and Missing Pages generations were not counted against the plan (they now check the limit first, record the generation and increment the owner's count, returning 429 when the plan is exhausted). The fictional demo project was deleted through the app afterwards so its page never goes public.
 
-**Also left for the owner:** Meta verification, Google Business Profile API approval, DataForSEO and Perplexity keys, the `*.conduikt.site` wildcard domain on Vercel, CRON_SECRET rotation and `app.cron_secret`, enabling leaked-password protection in Supabase Auth, and a decision on the SECURITY DEFINER functions the advisor lists. The work is committed on branch `feat/audit-roadmap-execution` (not pushed).
+**6 Nov 2026, shipped and re-tested with the live model.** The branch went through the ship workflow: full suite (90 files, 1,080 tests), typecheck, lint and hex check clean; a pre-landing code review found no blockers and three secondary-path bugs, fixed before the PR opened: the hosted page's call-to-action link came straight from model output (a prompt-injected `javascript:` link would have rendered; links are now allow-listed to web, mail, phone and site-relative), a Missing Pages candidate that failed while saving stayed in "writing" and could never be retried (it now ends "failed" with the reason), and the nightly run's service-role upsert could overwrite another project's page at the same hosted address (now refused). PR #1 was merged by the owner the same morning; Vercel built and deployed it. GitHub Actions did not run the CI job because the GitHub account is locked for a billing issue, so CI on `main` shows a failure that has nothing to do with the code; the same checks passed locally.
+
+Three follow-ups the review left were then fixed on `fix/review-followups`: a WhatsApp sequence step with no connection, or a permanent Meta error, used to leave the enrollment active at that step forever (it now records a failed event, skips the step and continues the sequence, so email steps still go out; transient errors still retry); the Found-by-AI and ad-insights nightly jobs ran every project inside one Inngest step, so a retry re-asked every engine (one step per project now, like the Missing Pages job); and a tenant subdomain (`{site}.conduikt.site`) served every API route and every other site's pages (it now serves only that site's own pages and sitemap, 404 for the rest, with the routing in `src/lib/hosted-pages/host.ts` under test).
+
+With the Claude API credited again, a second live run used a SaaS project with a website (conduikt.com itself): the three Free-tier agents ran for real and produced usable work (the Site Audit scored the homepage 72 and asked for a plain-language "what, who, where" sentence near the top and a visible last-updated date, which is exactly the answer-readiness rubric; the social posts and keyword research read like a marketer wrote them), and the twelve locked agents showed real previews for the site, not samples. The Missing Pages run crawled 21 pages, checked 7 searches and wrote a draft with readiness 100. The searches it checked were weak for a SaaS ("how to seo pages", "conduikt live test alternative"): the SaaS seeds have been widened (`what is {product}`, `{category} software`, `best {category} tool`), "how to" is only asked of verb-led services, and free-text audiences are shortened to a usable phrase, all under test. Both test projects were deleted through the app afterwards. One note for anyone testing on this laptop: the webpack dev server recompiles for minutes after edits when memory is low, which made pages look stuck during the run; production builds are precompiled and unaffected.
+
+**Also left for the owner:** Meta verification, Google Business Profile API approval, DataForSEO and Perplexity keys, the `*.conduikt.site` wildcard domain on Vercel, CRON_SECRET rotation and `app.cron_secret`, enabling leaked-password protection in Supabase Auth, a decision on the SECURITY DEFINER functions the advisor lists, naira Local-tier plan IDs, and clearing the GitHub billing lock so CI runs again.

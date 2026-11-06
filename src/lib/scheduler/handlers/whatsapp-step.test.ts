@@ -161,8 +161,8 @@ describe("whatsapp_step handler", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("is a non-retryable failure when the project has no WhatsApp connection", async () => {
-    const { db } = makeDb({
+  it("records the missing connection, skips the step and moves the sequence on", async () => {
+    const { db, inserts, updates } = makeDb({
       email_sequence_enrollments: { data: enrollment },
       audience_contacts: { data: { id: "c1", phone: "08031234567", whatsapp_opt_in: true, status: "subscribed" } },
       email_sequence_steps: { data: step },
@@ -170,8 +170,12 @@ describe("whatsapp_step handler", () => {
       connected_accounts: { data: null },
     });
     const r = await handler({ enrollmentId: "enr1", stepOrder: 1 }, ctx(db));
-    expect(r).toMatchObject({ ok: false, retryable: false });
+    expect(r).toMatchObject({ ok: true, result: { skipped: true, reason: "whatsapp_not_connected" } });
     expect(fetchMock).not.toHaveBeenCalled();
+    const failed = inserts.find((i) => i.table === "whatsapp_events");
+    expect(failed?.row).toMatchObject({ event_type: "failed" });
+    // The enrollment is not left stuck at this step.
+    expect(updates.some((u) => u.table === "email_sequence_enrollments" && (u.values as { current_step_order?: number }).current_step_order === 1)).toBe(true);
   });
 
   it("sends to an opted-in contact, records the event and queues the next WhatsApp step", async () => {
@@ -242,7 +246,7 @@ describe("whatsapp_step handler", () => {
     });
   });
 
-  it("records a failed event and does not retry Meta's permanent errors", async () => {
+  it("records a failed event and skips the step on Meta's permanent errors instead of retrying", async () => {
     fetchMock.mockResolvedValueOnce(json({ error: { message: "Template not found", code: 132001 } }, false, 400));
     const { db, inserts } = makeDb({
       email_sequence_enrollments: { data: enrollment },
@@ -252,9 +256,8 @@ describe("whatsapp_step handler", () => {
       connected_accounts: { data: { id: "conn1", project_id: "proj1", platform_user_id: "PNID1", access_token: "tok", metadata: {} } },
     });
     const r = await handler({ enrollmentId: "enr1", stepOrder: 1 }, ctx(db));
-    expect(r).toEqual({ ok: false, error: "Template not found", retryable: false });
+    expect(r).toMatchObject({ ok: true, result: { skipped: true, reason: "send_failed", code: 132001, error: "Template not found" } });
     const failed = inserts.find((i) => i.table === "whatsapp_events");
     expect(failed?.row).toMatchObject({ event_type: "failed", body: "Template not found" });
-    expect(enqueueMock).not.toHaveBeenCalled();
   });
 });

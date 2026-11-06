@@ -24,7 +24,9 @@ import type { ExecutionHandler } from "../types";
 //   3. Load step (must be channel='whatsapp') + asset. The asset content
 //      carries either a template (template_name, language_code,
 //      components) or plain text (body_text / raw / scheduled_text).
-//   4. Send through the project's WhatsApp connection.
+//   4. Send through the project's WhatsApp connection. No connection, or a
+//      permanent Meta error, records a 'failed' event and skips the step
+//      (the sequence continues); transient errors are retried.
 //   5. Record a 'sent' event, bump enrollment progress.
 //   6. Enqueue the next step on its own channel's handler, or complete.
 //
@@ -164,8 +166,25 @@ const handler: ExecutionHandler = async (rawPayload, { execution, supabase }) =>
 
   const conn = await getWhatsAppConnection(supabase, projectId);
   if (!conn) {
-    // Not connected yet: do not burn retries, do not cancel the sequence.
-    return { ok: false, error: WHATSAPP_NOT_CONNECTED_MESSAGE, retryable: false };
+    // No WhatsApp connection on this project: the step cannot be sent and
+    // retrying will not change that. Record it so the owner can see why,
+    // then skip this step and carry on with the rest of the sequence
+    // (email steps still go out) instead of leaving the enrollment stuck.
+    await recordWhatsAppEvent(supabase, {
+      projectId,
+      direction: "outbound",
+      eventType: "failed",
+      contactId: contact.id as string,
+      enrollmentId: enrollment.id as string,
+      phone,
+      body: WHATSAPP_NOT_CONNECTED_MESSAGE,
+      metadata: { step_order: stepOrder, reason: "whatsapp_not_connected" },
+    });
+    const next = await advance(supabase, enrollment, stepOrder);
+    return {
+      ok: true,
+      result: { skipped: true, reason: "whatsapp_not_connected", step_order: stepOrder, next_step_order: next?.step_order ?? null },
+    };
   }
 
   const sendResult = message.template
@@ -189,9 +208,15 @@ const handler: ExecutionHandler = async (rawPayload, { execution, supabase }) =>
       metadata: { step_order: stepOrder, code: sendResult.code ?? null },
     });
     // Meta error 131047 (outside 24h window) and 132xxx (template issues)
-    // will not fix themselves on retry.
+    // will not fix themselves on retry: the failure is recorded above, this
+    // step is skipped and the sequence moves on. Anything else is retried.
     const permanent = sendResult.code !== undefined && sendResult.code >= 130000;
-    return { ok: false, error: sendResult.error, retryable: !permanent };
+    if (!permanent) return { ok: false, error: sendResult.error, retryable: true };
+    const next = await advance(supabase, enrollment, stepOrder);
+    return {
+      ok: true,
+      result: { skipped: true, reason: "send_failed", code: sendResult.code ?? null, error: sendResult.error, step_order: stepOrder, next_step_order: next?.step_order ?? null },
+    };
   }
 
   // 5. Record + bump.

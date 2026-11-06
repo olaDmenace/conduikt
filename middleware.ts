@@ -1,28 +1,21 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/src/lib/supabase/middleware";
+import { hostedSiteOfHost, resolveHostedRoute } from "@/src/lib/hosted-pages/host";
 
 // Hosted pages live at {site}.conduikt.site (HOSTED_PAGES_DOMAIN). A request
-// on such a host is rewritten onto the public /p/{site}/... routes; every
-// other request goes through the Supabase session middleware as before.
+// on such a host is rewritten onto that site's public /p/{site}/... routes;
+// the rest of the app (API, dashboard, other sites' pages) is not served
+// there. Every other request goes through the Supabase session middleware.
 const HOSTED_PAGES_DOMAIN = (process.env.HOSTED_PAGES_DOMAIN || "conduikt.site").toLowerCase();
 
-function hostedSiteOf(request: NextRequest): string | null {
-  const host = (request.headers.get("host") ?? "").split(":")[0].toLowerCase();
-  if (!host.endsWith(`.${HOSTED_PAGES_DOMAIN}`)) return null;
-  const site = host.slice(0, -(HOSTED_PAGES_DOMAIN.length + 1));
-  if (!site || site === "www" || site.includes(".")) return null;
-  return site;
-}
-
 export async function middleware(request: NextRequest) {
-  const site = hostedSiteOf(request);
-  if (site) {
-    const { pathname } = request.nextUrl;
-    if (pathname.startsWith("/p/") || pathname.startsWith("/_next/") || pathname.startsWith("/api/")) {
-      return NextResponse.next();
-    }
+  const site = hostedSiteOfHost(request.headers.get("host"), HOSTED_PAGES_DOMAIN);
+  const route = resolveHostedRoute(site, request.nextUrl.pathname);
+  if (route.kind === "pass") return NextResponse.next();
+  if (route.kind === "not_found") return new NextResponse("Not found", { status: 404 });
+  if (route.kind === "rewrite") {
     const url = request.nextUrl.clone();
-    url.pathname = pathname === "/" ? `/p/${site}` : `/p/${site}${pathname}`;
+    url.pathname = route.pathname;
     return NextResponse.rewrite(url);
   }
 
@@ -36,6 +29,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

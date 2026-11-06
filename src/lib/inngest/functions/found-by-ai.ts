@@ -57,21 +57,26 @@ export const foundByAi = inngest.createFunction(
       return { projects: 0, asked: 0 };
     }
 
-    const result = await step.run("check-each-project", async () => {
-      let asked = 0;
-      let errors = 0;
-      for (const projectId of projectIds) {
+    // One step per project: a retry resumes after the last finished project
+    // instead of asking every engine again (double spend), and one project's
+    // failure never stops the others.
+    let asked = 0;
+    let errors = 0;
+    for (const projectId of projectIds) {
+      const outcome = await step.run(`check-${projectId}`, async () => {
         try {
           const r = await checkVisibility(projectId, { db: supabase });
-          asked += r.asked;
           if (!r.ok) console.warn(`[found-by-ai] ${projectId}: ${r.reason}`);
+          return { asked: r.asked, failed: false };
         } catch (err) {
-          errors++;
           console.error(`[found-by-ai] ${projectId} failed:`, err instanceof Error ? err.message : err);
+          return { asked: 0, failed: true };
         }
-      }
-      return { asked, errors };
-    });
+      });
+      asked += outcome.asked;
+      if (outcome.failed) errors++;
+    }
+    const result = { asked, errors };
 
     console.log(
       `[found-by-ai] Done: projects=${projectIds.length}, asked=${result.asked}, errors=${result.errors}`
