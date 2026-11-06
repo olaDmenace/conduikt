@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.5.0] - 2026-11-06
+
+Executes the October 2026 audit roadmap: one engine, four playbooks (SaaS, local, agency, creator), three modes, and a Missing Pages loop that gets businesses found by Google and AI answers without a website or a marketer.
+
+### Added
+- Audit and roadmap of record at `docs/audits/2026-10-24-full-audit-and-roadmap.md` (+ PDF) with the decision record (D1-D6), AEO/GEO plan and execution feedback; execution plan at `docs/audits/2026-10-26-execution-plan.md`; `docs/POSITIONING.md` rewritten around the four playbooks
+- Playbooks and Modes (`check_all`, `social_runs`, `hands_off`) on projects, with a Modes settings page and a five-step questionnaire onboarding (business type, location, services, website optional)
+- Missing Pages loop: crawl -> intents -> gaps -> volume -> score -> write -> answer-readiness review -> draft or publish; nightly Inngest run and manual "Find missing pages"
+- Hosted pages at `/p/{site}/{slug}` and `*.conduikt.site`, with site index, sitemap, JSON-LD and FAQ; WordPress REST publishing
+- "Ready for Google and AI answers": answer-first prompt rules, schema generator, answer-readiness rubric rows in the SEO audit, AI visibility checks and `ai_visibility` tables
+- Ad insights sync (`ad_insights`) and Instagram/WhatsApp channels with WhatsApp sequence steps
+- Honest 503s when the AI provider is unavailable (`AIUnavailableError`), sample previews (`AI_PREVIEW_MODE`), model routing (Haiku for previews and scoring) and a daily spend cap
+- Missing-page agent in the registry, performance context for ads and visibility, analytics cards
+- Migrations: `ad_insights`, `ai_visibility`, `hosted_pages`, `missing_pages`, `instagram_whatsapp_channels`, `playbooks_and_modes`, `cron_jobs_header_auth` (all applied to production 2026-11-05, together with the previously unapplied `content_revisions`)
+
+### Fixed
+- Missing Pages generations now count against the plan: limit check before writing, `increment_generation_count` after, 429 `generation_limit` when exhausted
+- Projects created without a website now start a Missing Pages run and land on it; the first-week page explains the path instead of queueing nothing
+- Support chat bubble no longer covers the onboarding wizard's Next button
+- Cron auth migration is a guarded no-op until `app.cron_secret` is set, so re-running it cannot blank the Authorization header on live jobs; `?secret=` query auth removed (401)
+- Hosted page CTA links are allow-listed (`http(s)`, `mailto`, `tel`, site-relative); `javascript:`/`data:` output from the model falls back to `#contact`
+- A Missing Pages candidate is released from `writing` to `failed` if saving its asset or page throws, instead of blocking re-writes with 409 forever
+- Writing a page refuses an address already owned by another project rather than re-parenting it through the service-role upsert
+- FAQ JSON-LD moved from the root layout to the homepage; brand settings Palette import; Tawk widget ref-during-render lint error
+
+### Changed
+- Agent registry gains a `growth` tier and project-scoped paths; scheduler handlers register the WhatsApp step
+- `src/lib/plans` is the single source for generation limits across agents and Missing Pages
+
+---
+
 ## [0.4.0] - 2026-02-18
 
 ### Added
