@@ -55,6 +55,25 @@ describe("buildIntentQueries", () => {
     expect(q.some((x) => x.startsWith("how to run marketing"))).toBe(true);
   });
 
+  it("asks 'how to' only of verb-led services and shortens free-text audiences", () => {
+    const q = buildIntentQueries(
+      {
+        ...saas,
+        valueProposition: null,
+        services: ["SEO pages", "social posting", "schedule posts"],
+        audience: ["founders and small business owners who do their own marketing"],
+      },
+      SAAS_SEEDS
+    );
+    expect(q).not.toContain("how to seo pages");
+    expect(q).not.toContain("how to social posting");
+    expect(q).toContain("how to schedule posts");
+    expect(q).toContain("marketing automation for founders");
+    expect(q).toContain("marketing automation software");
+    expect(q).toContain("best marketing automation tool");
+    expect(q).toContain("what is conduikt");
+  });
+
   it("drops seeds whose slots have no values", () => {
     const q = buildIntentQueries({ ...local, location: null }, LOCAL_SEEDS);
     expect(q.some((x) => x.includes("{location}"))).toBe(false);
