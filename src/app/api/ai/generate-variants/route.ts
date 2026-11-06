@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
-import { generateWithClaude } from "@/src/lib/ai/client";
+import { AIUnavailableError, aiUnavailableBody, generateWithClaude } from "@/src/lib/ai/client";
 import { getAgent } from "@/src/lib/ai/agents";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
 
@@ -73,12 +73,18 @@ ${originalContent}
 
 Generate a completely different version. Vary the structure, angle, and hook. Keep the same core topic and intent.`;
 
-    const result = await generateWithClaude({
-      systemPrompt,
-      userPrompt,
-      model: agent.model,
-      maxTokens: agent.maxTokens,
-    });
+    let result;
+    try {
+      result = await generateWithClaude({
+        systemPrompt,
+        userPrompt,
+        model: agent.model,
+        maxTokens: agent.maxTokens,
+      });
+    } catch (err) {
+      if (err instanceof AIUnavailableError) return NextResponse.json(aiUnavailableBody(err), { status: 503 });
+      throw err;
+    }
 
     variants.push(result.content);
 

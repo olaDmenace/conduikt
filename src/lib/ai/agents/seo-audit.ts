@@ -42,6 +42,13 @@ Start at 100 and subtract points for each issue found:
 - Missing robots.txt or sitemap reference: -3
 - Duplicate or near-duplicate content signals: -4
 
+**Answer readiness (how usable the page is as a direct answer for Google's answer features and assistants such as ChatGPT; deduct per issue, category "answer"):**
+- No plain sentence saying who the business is, what it does and where it works: -4
+- The first paragraph under the H1 does not answer the page's main question directly: -3
+- No headings phrased as questions people ask, and no FAQ section: -3
+- No visible date (published or updated): -2
+- Structured data present but its name or type contradicts the visible content: -3
+
 **Opportunities (deduct per issue):**
 - Missing hreflang (if multilingual signals exist): -2
 - No internal links: -3
@@ -65,7 +72,7 @@ Return valid JSON (and ONLY JSON — no markdown code fences, no explanation bef
   "findings": [
     {
       "severity": "critical" | "warning" | "info",
-      "category": "meta" | "content" | "technical" | "performance" | "schema",
+      "category": "meta" | "content" | "technical" | "performance" | "schema" | "answer",
       "title": "string",
       "detail": "string",
       "fix": "string (include code snippets where relevant)",

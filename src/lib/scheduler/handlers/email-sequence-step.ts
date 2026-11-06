@@ -191,7 +191,7 @@ const handler: ExecutionHandler = async (rawPayload, { execution, supabase }) =>
   // 6. Enqueue next step or complete.
   const { data: nextStep } = await supabase
     .from("email_sequence_steps")
-    .select("step_order, delay_hours")
+    .select("step_order, delay_hours, channel")
     .eq("sequence_id", enrollment.sequence_id)
     .gt("step_order", stepOrder)
     .order("step_order", { ascending: true })
@@ -201,9 +201,12 @@ const handler: ExecutionHandler = async (rawPayload, { execution, supabase }) =>
   if (nextStep) {
     const delayHours = Math.max(0, Number(nextStep.delay_hours ?? 0));
     const scheduledFor = new Date(Date.now() + delayHours * 3600_000);
+    // A series can mix channels: a WhatsApp step runs on its own handler.
+    const nextType =
+      (nextStep as { channel?: string | null }).channel === "whatsapp" ? "whatsapp_step" : "email_sequence_step";
     await enqueueExecution(supabase, {
       userId: enrollment.user_id,
-      executionType: "email_sequence_step",
+      executionType: nextType,
       payload: { enrollmentId: enrollment.id, stepOrder: nextStep.step_order },
       scheduledFor,
       idempotencyKey: `seq-step:${enrollment.id}:${nextStep.step_order}`,

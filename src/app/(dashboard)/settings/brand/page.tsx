@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import Image from "next/image";
-import { User, CreditCard, Zap, Users, Webhook, Palette, Upload } from "@/src/components/ui/lucide-icons";
+import { Palette, Upload } from "@/src/components/ui/lucide-icons";
 import { Card } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
+import { SettingsTabs } from "@/src/components/settings/settings-tabs";
 import { useToast } from "@/src/components/ui/toast";
 
 interface BrandKit {
@@ -17,15 +17,6 @@ interface BrandKit {
   brand_secondary_color: string;
   brand_font: string;
 }
-
-const settingsNav = [
-  { name: "Profile", href: "/settings", icon: User, active: false },
-  { name: "Billing", href: "/settings/billing", icon: CreditCard, active: false },
-  { name: "Integrations", href: "/settings/integrations", icon: Zap, active: false },
-  { name: "Team", href: "/settings/team", icon: Users, active: false },
-  { name: "Brand kit", href: "/settings/brand", icon: Palette, active: true },
-  { name: "Webhooks", href: "/settings/integrations/webhooks", icon: Webhook, active: false },
-];
 
 export default function BrandKitPage() {
   const [kit, setKit] = useState<BrandKit | null>(null);
@@ -92,29 +83,11 @@ export default function BrandKitPage() {
         title="Brand kit"
         description="Your logo and colours. We use them on text cards for social posts and on white-label PDF reports."
       />
+      <SettingsTabs />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
-        <nav className="lg:col-span-1" aria-label="Settings">
-          <div className="flex gap-1 overflow-x-auto lg:flex-col">
-            {settingsNav.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                aria-current={item.active ? "page" : undefined}
-                className={`flex h-9 shrink-0 items-center gap-2.5 rounded-md px-2.5 text-sm transition-colors duration-[var(--duration-fast)] delay-[var(--hover-delay)] ${
-                  item.active
-                    ? "bg-ink text-ink-text"
-                    : "text-text-2 hover:bg-surface-2 hover:text-text"
-                }`}
-              >
-                <item.icon className="h-4 w-4" aria-hidden />
-                {item.name}
-              </Link>
-            ))}
-          </div>
-        </nav>
+      <div>
 
-        <div className="space-y-6 lg:col-span-3">
+        <div className="space-y-6">
           {loading || !kit ? (
             <div className="space-y-6" role="status" aria-label="Loading your brand kit">
               <div className="space-y-4 rounded-lg border border-line bg-surface p-4 md:p-6">

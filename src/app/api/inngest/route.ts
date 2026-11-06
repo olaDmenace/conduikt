@@ -8,6 +8,9 @@ import {
   refreshXTokens,
   refreshLinkedInTokens,
   refreshTiktokTokens,
+  syncAdInsightsJob,
+  foundByAi,
+  missingPagesNightly,
 } from "@/src/lib/inngest";
 
 const handlers = serve({
@@ -19,6 +22,9 @@ const handlers = serve({
     refreshXTokens,
     refreshLinkedInTokens,
     refreshTiktokTokens,
+    syncAdInsightsJob,
+    foundByAi,
+    missingPagesNightly,
   ],
 });
 

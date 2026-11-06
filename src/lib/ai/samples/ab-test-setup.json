@@ -1,0 +1,9 @@
+{
+  "agentId": "ab-test-setup",
+  "headline": "Test the homepage headline: the current welcome line against one that names the outcome.",
+  "items": [
+    "Variant A: the current headline",
+    "Variant B: \"Same-week appointments for homeowners in [town]\"",
+    "Measure calls and form submissions over two weeks; you need about 400 visits per variant"
+  ]
+}

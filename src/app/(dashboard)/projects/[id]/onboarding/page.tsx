@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   ArrowRight,
   ArrowLeft,
@@ -14,9 +15,12 @@ import {
 } from "@/src/components/ui/lucide-icons";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
-import { Badge } from "@/src/components/ui/badge";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useToast } from "@/src/components/ui/toast";
+
+// "Your business profile": the same answers the new-project wizard collects,
+// editable any time from Project settings. New projects fill this in the
+// wizard; this page is for changing it later. It never nags.
 
 // ── Constants ──────────────────────────────────────────────
 
@@ -50,6 +54,8 @@ const ONLINE_CHANNELS = [
   "TikTok",
   "YouTube",
   "Facebook",
+  "WhatsApp",
+  "Google Business Profile",
   "Reddit",
   "Email newsletters",
   "Other",
@@ -113,9 +119,12 @@ interface ProjectData {
 
 const TOTAL_STEPS = 5;
 
+const inputClass =
+  "w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent";
+
 // ── Component ──────────────────────────────────────────────
 
-export default function OnboardingPage({
+export default function BusinessProfilePage({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -141,7 +150,7 @@ export default function OnboardingPage({
     competitors: ["", "", ""],
   });
 
-  // Load existing project data to pre-fill
+  // Load the project so the form shows what is already saved.
   useEffect(() => {
     async function load() {
       const res = await fetch(`/api/projects/${id}`);
@@ -151,13 +160,6 @@ export default function OnboardingPage({
       }
       const project: ProjectData = await res.json();
 
-      // If onboarding already completed, redirect to overview
-      if (project.onboarding_completed) {
-        router.replace(`/projects/${id}`);
-        return;
-      }
-
-      // Pre-fill from existing project data
       const existingAudience =
         typeof project.target_audience === "string"
           ? project.target_audience
@@ -171,7 +173,7 @@ export default function OnboardingPage({
           : (project.brand_voice as { tone?: string })?.tone ?? "";
 
       const existingCompetitors = Array.isArray(project.competitors)
-        ? (project.competitors as { url?: string }[])
+        ? (project.competitors as (string | { url?: string })[])
             .map((c) => (typeof c === "string" ? c : c.url ?? ""))
             .slice(0, 3)
         : [];
@@ -204,7 +206,7 @@ export default function OnboardingPage({
       setLoading(false);
     }
     load();
-  }, [id, router]);
+  }, [id]);
 
   function toggleChannel(channel: string) {
     setData((prev) => ({
@@ -226,23 +228,13 @@ export default function OnboardingPage({
   function canAdvance(): boolean {
     switch (step) {
       case 1:
-        return (
-          data.businessName.trim().length > 0 && data.industry.length > 0
-        );
-      case 2:
-        return data.targetAudience.trim().length > 0;
-      case 3:
-        return data.brandVoice.length > 0 && data.primaryGoal.length > 0;
-      case 4:
-        return true; // optional step
-      case 5:
-        return true;
+        return data.businessName.trim().length > 0;
       default:
-        return false;
+        return true;
     }
   }
 
-  async function handleComplete() {
+  async function handleSave() {
     setSaving(true);
     try {
       const competitorUrls = data.competitors.filter(
@@ -254,28 +246,29 @@ export default function OnboardingPage({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: data.businessName,
-          website_url: data.websiteUrl || undefined,
-          industry: data.industry,
-          business_description: data.businessDescription || undefined,
-          target_audience: data.targetAudience,
-          audience_pain_point: data.audiencePainPoint || undefined,
+          website_url: data.websiteUrl || null,
+          industry: data.industry || null,
+          business_description: data.businessDescription || null,
+          target_audience: data.targetAudience || null,
+          audience_pain_point: data.audiencePainPoint || null,
           online_channels: data.onlineChannels,
-          brand_voice: data.brandVoice,
-          brand_voice_example: data.brandVoiceExample || undefined,
-          primary_goal: data.primaryGoal,
-          competitors: competitorUrls.length > 0 ? competitorUrls : undefined,
+          brand_voice: data.brandVoice || null,
+          brand_voice_example: data.brandVoiceExample || null,
+          primary_goal: data.primaryGoal || null,
+          competitors: competitorUrls.length > 0 ? competitorUrls : null,
           onboarding_completed: true,
         }),
       });
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        toast(err.error || "Couldn't save onboarding. Try again.", "error");
+        toast(err.error || "Couldn't save your profile. Try again.", "error");
         setSaving(false);
         return;
       }
 
-      router.push(`/projects/${id}`);
+      toast("Profile saved", "success");
+      router.push(`/projects/${id}/settings`);
     } catch {
       toast("Couldn't reach the server. Your profile wasn't saved. Try again.", "error");
       setSaving(false);
@@ -293,6 +286,18 @@ export default function OnboardingPage({
 
   return (
     <div className="mx-auto max-w-2xl py-8 animate-in">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h1 className="text-heading text-text">Your business profile</h1>
+          <p className="text-body-s text-text-2">
+            Every agent reads these answers. Change them whenever your business changes.
+          </p>
+        </div>
+        <Link href={`/projects/${id}/settings`} className="hover-link text-body-s text-accent hover:text-accent-hover">
+          Back to settings
+        </Link>
+      </div>
+
       {/* Progress indicator */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
@@ -303,12 +308,12 @@ export default function OnboardingPage({
             {step === 1
               ? "About your business"
               : step === 2
-                ? "Your audience"
+                ? "Who you sell to"
                 : step === 3
-                  ? "Your brand voice"
+                  ? "How you sound"
                   : step === 4
                     ? "Competitors (optional)"
-                    : "Check and confirm"}
+                    : "Check and save"}
           </p>
         </div>
         <div className="flex gap-1.5">
@@ -338,7 +343,7 @@ export default function OnboardingPage({
                   About your business
                 </h2>
                 <p className="text-body-s text-text-2">
-                  Help us understand what you do
+                  What you do, in your words
                 </p>
               </div>
             </div>
@@ -356,15 +361,15 @@ export default function OnboardingPage({
                     businessName: e.target.value,
                   }))
                 }
-                className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                placeholder="Your business name"
+                className={inputClass}
+                placeholder="Try: Ade's Plumbing"
                 autoFocus
               />
             </div>
 
             <div>
               <label className="text-body-s text-text-2 mb-2 block">
-                Website URL
+                Website address
               </label>
               <input
                 type="url"
@@ -375,8 +380,8 @@ export default function OnboardingPage({
                     websiteUrl: e.target.value,
                   }))
                 }
-                className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                placeholder="https://yoursite.com"
+                className={inputClass}
+                placeholder="Try: https://yoursite.com"
               />
             </div>
 
@@ -389,8 +394,9 @@ export default function OnboardingPage({
                   <button
                     key={ind}
                     type="button"
+                    aria-pressed={data.industry === ind}
                     onClick={() =>
-                      setData((prev) => ({ ...prev, industry: ind }))
+                      setData((prev) => ({ ...prev, industry: prev.industry === ind ? "" : ind }))
                     }
                     className={`rounded-md border px-3 py-2 text-body-s text-left transition-colors ${
                       data.industry === ind
@@ -406,7 +412,7 @@ export default function OnboardingPage({
 
             <div>
               <label className="text-body-s text-text-2 mb-2 block">
-                Business description
+                One line about the business
               </label>
               <textarea
                 value={data.businessDescription}
@@ -416,8 +422,8 @@ export default function OnboardingPage({
                     businessDescription: e.target.value.slice(0, 300),
                   }))
                 }
-                className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent resize-none"
-                placeholder="We help [who] to [what] by [how]"
+                className={`${inputClass} resize-none`}
+                placeholder="Try: We help [who] to [what] by [how]"
                 rows={3}
                 maxLength={300}
               />
@@ -429,23 +435,23 @@ export default function OnboardingPage({
         </Card>
       )}
 
-      {/* Step 2 — Your audience */}
+      {/* Step 2 — Who you sell to */}
       {step === 2 && (
         <Card className="animate-in">
           <CardContent className="space-y-6">
             <div className="flex items-center gap-3 mb-2">
               <Users className="h-5 w-5 shrink-0 text-text-3" />
               <div>
-                <h2 className="text-heading text-text">Your audience</h2>
+                <h2 className="text-heading text-text">Who you sell to</h2>
                 <p className="text-body-s text-text-2">
-                  Tell us who you are trying to reach
+                  The people you want to reach
                 </p>
               </div>
             </div>
 
             <div>
               <label className="text-body-s text-text-2 mb-2 block">
-                Primary target audience
+                Your ideal customer
               </label>
               <input
                 type="text"
@@ -456,8 +462,8 @@ export default function OnboardingPage({
                     targetAudience: e.target.value.slice(0, 150),
                   }))
                 }
-                className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                placeholder="e.g. Solo founders building SaaS products"
+                className={inputClass}
+                placeholder="Try: homeowners in Lekki who need a plumber the same day"
                 maxLength={150}
                 autoFocus
               />
@@ -465,7 +471,7 @@ export default function OnboardingPage({
 
             <div>
               <label className="text-body-s text-text-2 mb-2 block">
-                Their biggest pain point
+                The problem they want solved
               </label>
               <input
                 type="text"
@@ -476,8 +482,8 @@ export default function OnboardingPage({
                     audiencePainPoint: e.target.value.slice(0, 150),
                   }))
                 }
-                className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                placeholder="e.g. Not enough time to create consistent marketing content"
+                className={inputClass}
+                placeholder="Try: no time to post, so customers forget they exist"
                 maxLength={150}
               />
             </div>
@@ -491,6 +497,7 @@ export default function OnboardingPage({
                   <button
                     key={channel}
                     type="button"
+                    aria-pressed={data.onlineChannels.includes(channel)}
                     onClick={() => toggleChannel(channel)}
                     className={`rounded-md border px-3 py-2.5 text-body-s text-left transition-colors flex items-center gap-2 ${
                       data.onlineChannels.includes(channel)
@@ -510,31 +517,32 @@ export default function OnboardingPage({
         </Card>
       )}
 
-      {/* Step 3 — Your brand voice */}
+      {/* Step 3 — How you sound */}
       {step === 3 && (
         <Card className="animate-in">
           <CardContent className="space-y-6">
             <div className="flex items-center gap-3 mb-2">
               <MessageSquare className="h-5 w-5 shrink-0 text-text-3" />
               <div>
-                <h2 className="text-heading text-text">Your brand voice</h2>
+                <h2 className="text-heading text-text">How you sound</h2>
                 <p className="text-body-s text-text-2">
-                  How should your content sound?
+                  So what we write reads like you wrote it
                 </p>
               </div>
             </div>
 
             <div>
               <label className="text-body-s text-text-2 mb-2 block">
-                Brand voice
+                Pick the closest
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {BRAND_VOICES.map((voice) => (
                   <button
                     key={voice}
                     type="button"
+                    aria-pressed={data.brandVoice === voice}
                     onClick={() =>
-                      setData((prev) => ({ ...prev, brandVoice: voice }))
+                      setData((prev) => ({ ...prev, brandVoice: prev.brandVoice === voice ? "" : voice }))
                     }
                     className={`rounded-md border px-3 py-2.5 text-body-s transition-colors ${
                       data.brandVoice === voice
@@ -550,7 +558,7 @@ export default function OnboardingPage({
 
             <div>
               <label className="text-body-s text-text-2 mb-2 block">
-                Brand voice example{" "}
+                A sentence that sounds like you{" "}
                 <span className="text-text-3">(optional)</span>
               </label>
               <textarea
@@ -561,8 +569,8 @@ export default function OnboardingPage({
                     brandVoiceExample: e.target.value.slice(0, 300),
                   }))
                 }
-                className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent resize-none"
-                placeholder="Paste a sentence or two that sounds like your brand"
+                className={`${inputClass} resize-none`}
+                placeholder="Try: paste a sentence or two from your site or a post"
                 rows={3}
                 maxLength={300}
               />
@@ -573,15 +581,16 @@ export default function OnboardingPage({
 
             <div>
               <label className="text-body-s text-text-2 mb-2 block">
-                Primary marketing goal
+                Main goal
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {MARKETING_GOALS.map((goal) => (
                   <button
                     key={goal}
                     type="button"
+                    aria-pressed={data.primaryGoal === goal}
                     onClick={() =>
-                      setData((prev) => ({ ...prev, primaryGoal: goal }))
+                      setData((prev) => ({ ...prev, primaryGoal: prev.primaryGoal === goal ? "" : goal }))
                     }
                     className={`rounded-md border px-4 py-3 text-body-s text-left transition-colors ${
                       data.primaryGoal === goal
@@ -626,8 +635,8 @@ export default function OnboardingPage({
                   type="url"
                   value={url}
                   onChange={(e) => updateCompetitor(i, e.target.value)}
-                  className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                  placeholder={`https://competitor${i + 1}.com`}
+                  className={inputClass}
+                  placeholder={`Try: https://competitor${i + 1}.com`}
                   autoFocus={i === 0}
                 />
               </div>
@@ -636,7 +645,7 @@ export default function OnboardingPage({
         </Card>
       )}
 
-      {/* Step 5 — Confirmation */}
+      {/* Step 5 — Check and save */}
       {step === 5 && (
         <Card className="animate-in">
           <CardContent className="space-y-6">
@@ -644,7 +653,7 @@ export default function OnboardingPage({
               <Check className="h-5 w-5 shrink-0 text-teal" />
               <div>
                 <h2 className="text-heading text-text">
-                  Review your profile
+                  Check your profile
                 </h2>
                 <p className="text-body-s text-text-2">
                   Make sure everything looks right
@@ -657,17 +666,19 @@ export default function OnboardingPage({
               {data.websiteUrl && (
                 <SummaryRow label="Website" value={data.websiteUrl} />
               )}
-              <SummaryRow label="Industry" value={data.industry} />
+              {data.industry && <SummaryRow label="Industry" value={data.industry} />}
               {data.businessDescription && (
                 <SummaryRow
-                  label="Description"
+                  label="About"
                   value={data.businessDescription}
                 />
               )}
-              <SummaryRow label="Target audience" value={data.targetAudience} />
+              {data.targetAudience && (
+                <SummaryRow label="Who you sell to" value={data.targetAudience} />
+              )}
               {data.audiencePainPoint && (
                 <SummaryRow
-                  label="Pain point"
+                  label="Their problem"
                   value={data.audiencePainPoint}
                 />
               )}
@@ -677,14 +688,14 @@ export default function OnboardingPage({
                   value={data.onlineChannels.join(", ")}
                 />
               )}
-              <SummaryRow label="Brand voice" value={data.brandVoice} />
+              {data.brandVoice && <SummaryRow label="How you sound" value={data.brandVoice} />}
               {data.brandVoiceExample && (
                 <SummaryRow
-                  label="Voice example"
+                  label="Example"
                   value={data.brandVoiceExample}
                 />
               )}
-              <SummaryRow label="Primary goal" value={data.primaryGoal} />
+              {data.primaryGoal && <SummaryRow label="Main goal" value={data.primaryGoal} />}
               {data.competitors.some((c) => c.trim()) && (
                 <SummaryRow
                   label="Competitors"
@@ -737,9 +748,9 @@ export default function OnboardingPage({
           )}
 
           {step === 5 && (
-            <Button size="sm" disabled={saving} onClick={handleComplete}>
+            <Button size="sm" disabled={saving} onClick={handleSave}>
               {!saving && <Check className="h-4 w-4" />}
-              {saving ? "Saving…" : "Looks good"}
+              {saving ? "Saving…" : "Save profile"}
             </Button>
           )}
         </div>

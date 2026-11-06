@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
-import { generateWithClaude } from "@/src/lib/ai/client";
+import { generateWithClaude, AIUnavailableError, aiUnavailableBody } from "@/src/lib/ai/client";
 import { getAgent } from "@/src/lib/ai/agents";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
 import { buildPerformanceContext } from "@/src/lib/ai/performance-context";
@@ -122,12 +122,20 @@ export async function POST(request: NextRequest) {
     videoType: resolvedVideoType,
   });
 
-  const result = await generateWithClaude({
-    systemPrompt,
-    userPrompt,
-    model: agent.model,
-    maxTokens: agent.maxTokens,
-  });
+  let result;
+  try {
+    result = await generateWithClaude({
+      systemPrompt,
+      userPrompt,
+      model: agent.model,
+      maxTokens: agent.maxTokens,
+    });
+  } catch (err) {
+    if (err instanceof AIUnavailableError) {
+      return NextResponse.json(aiUnavailableBody(err), { status: 503 });
+    }
+    throw err;
+  }
 
   let scriptData;
   try {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
-import { generateWithClaude } from "@/src/lib/ai/client";
+import { generateWithClaude, AIUnavailableError } from "@/src/lib/ai/client";
 import { getAgent } from "@/src/lib/ai/agents";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
 
@@ -80,6 +80,7 @@ export async function POST(request: NextRequest) {
   (async () => {
     let completed = 0;
     let failed = 0;
+    let aiError: string | null = null;
 
     for (let i = 0; i < total; i++) {
       try {
@@ -119,8 +120,14 @@ export async function POST(request: NextRequest) {
         });
 
         completed++;
-      } catch {
+      } catch (err) {
         failed++;
+        if (err instanceof AIUnavailableError) {
+          // Every remaining item would fail the same way; stop and say why.
+          aiError = err.userMessage;
+          failed += total - i - 1;
+          break;
+        }
       }
 
       // Update progress
@@ -146,8 +153,10 @@ export async function POST(request: NextRequest) {
       user_id: user.id,
       project_id: projectId,
       type: "bulk_complete",
-      title: `Bulk generation complete`,
-      body: `${completed}/${total} pieces generated successfully`,
+      title: aiError ? "Bulk generation stopped" : "Bulk generation complete",
+      body: aiError
+        ? `${completed} of ${total} pieces were written. ${aiError}`
+        : `${completed} of ${total} pieces were written.`,
     });
   })();
 

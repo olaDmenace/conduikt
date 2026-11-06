@@ -27,6 +27,7 @@ import { Card } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { PageHeader } from "@/src/components/layout/page-header";
+import { SettingsTabs } from "@/src/components/settings/settings-tabs";
 
 interface PitchTemplate {
   id: string;
@@ -95,9 +96,10 @@ export default function SharePage() {
   return (
     <div className="space-y-10 pb-12">
       <PageHeader
-        title="Share Conduikt"
-        description="A ready-made kit you can DM, post or forward to anyone. Every asset is on-brand and free to use."
+        title="Marketing kit"
+        description="A ready-made kit you can message, post or forward to anyone. Every asset is on-brand and free to use."
       />
+      <SettingsTabs className="mb-0" />
 
       {/* Brand palette: reassures advocates the kit is on-brand. */}
       <section className="grid grid-cols-1 overflow-hidden rounded-lg border border-line bg-surface lg:grid-cols-2">

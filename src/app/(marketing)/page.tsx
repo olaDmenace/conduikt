@@ -5,7 +5,7 @@ import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Reveal } from "@/src/components/ui/reveal";
 import { SiteCheckForm } from "@/src/components/marketing/site-check-form";
-import { homepageFaqs as faqs } from "@/src/lib/seo/homepage-schema";
+import { homepageFaqs as faqs, faqJsonLd } from "@/src/lib/seo/homepage-schema";
 import type { AgentDefinition } from "@/src/lib/ai/agents/registry";
 import {
   AGENT_DISPLAY,
@@ -213,6 +213,11 @@ const bandY = "py-14 md:py-[72px] lg:py-[104px]";
 export default function LandingPage() {
   return (
     <>
+      {/* FAQPage schema belongs only where the questions are visible: here, not in the root layout. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       {/* 1 · Hero — photograph, dark overlay */}
       <section aria-label="Introduction" data-hide-chat className="relative flex min-h-[620px] items-end overflow-hidden text-on-photo lg:min-h-[720px]">
         <Image

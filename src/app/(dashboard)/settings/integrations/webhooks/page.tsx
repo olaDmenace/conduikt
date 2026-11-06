@@ -18,6 +18,7 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { EmptyState } from "@/src/components/ui/empty-state";
 import { Badge } from "@/src/components/ui/badge";
 import { PageHeader } from "@/src/components/layout/page-header";
+import { SettingsTabs } from "@/src/components/settings/settings-tabs";
 import { useToast } from "@/src/components/ui/toast";
 
 interface Webhook {
@@ -128,6 +129,7 @@ export default function WebhooksPage() {
           Add webhook
         </Button>
       </PageHeader>
+      <SettingsTabs />
 
       {showForm && (
         <Card className="animate-in mb-6">

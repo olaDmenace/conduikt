@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
+import { AIUnavailableError, aiUnavailableBody } from "@/src/lib/ai/client";
 import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
 import {
   fetchPageSignal,
@@ -62,6 +63,8 @@ export async function POST(request: NextRequest) {
       result,
     });
   } catch (err) {
+    // Signed-in checks are honest: no sample stands in for a real audit.
+    if (err instanceof AIUnavailableError) return NextResponse.json(aiUnavailableBody(err), { status: 503 });
     const message =
       process.env.NODE_ENV === "development"
         ? err instanceof Error

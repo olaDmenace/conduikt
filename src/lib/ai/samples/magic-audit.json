@@ -1,0 +1,28 @@
+{
+  "seoScore": 61,
+  "seoGrade": "D",
+  "topIssues": [
+    "Add a meta description to the homepage that names your service and your area.",
+    "Replace the welcome headline with one that says what you do and for whom.",
+    "Add alt text to the homepage images and compress the three largest."
+  ],
+  "brandVoice": {
+    "tone": "friendly, practical, local, plainspoken",
+    "audience": "Homeowners and small businesses nearby who want a reliable local provider they can call today.",
+    "valueProposition": "A local team that turns up when it says it will, quotes a fixed price, and leaves the place tidy."
+  },
+  "sampleLinkedInPosts": [
+    {
+      "angle": "founder story",
+      "text": "We started this business because we were tired of hearing the same story from neighbours: someone came out, quoted one price, charged another, and left a mess.\n\nSo we set three rules for ourselves. We quote a fixed price before any work starts. We turn up inside the window we gave you. And we leave the place the way we found it, or cleaner.\n\nTen years on, most of our work still comes from people who were recommended by someone we did a job for. That is the only marketing we have ever really trusted.\n\nIf you have been putting off a job because you are not sure who to call, send us a message. We will tell you honestly whether it is something you can sort yourself."
+    },
+    {
+      "angle": "customer pain",
+      "text": "The most common call we get starts the same way: \"It has been like this for a while, but now it is getting worse.\"\n\nWe understand why people wait. Nobody wants a stranger in the house, an unknown bill, or a day off work for a two-hour job.\n\nHere is what we do about each of those. You will know the name of the person coming. You will have a fixed price in writing before we start. And we offer early and late slots so you do not have to take time off.\n\nIf something has been getting worse for a while, it is usually cheaper to look at it now than in three months. Give us a call and we will tell you what it is likely to involve."
+    },
+    {
+      "angle": "counter-intuitive take",
+      "text": "The cheapest quote is often the most expensive one.\n\nWe lose jobs on price every week, and we have made peace with that. A quote that is far below everyone else's usually means one of three things: something has been left out, the materials are not what you were told, or the price will change once the work has started.\n\nWe would rather give you one number that does not move. It covers the visit, the materials and the clean-up, and if we find something unexpected we stop and talk to you before doing anything about it.\n\nIf you are comparing quotes right now, ask each one the same question: what is not included? The answer tells you more than the number does."
+    }
+  ]
+}

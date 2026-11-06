@@ -101,7 +101,6 @@ const tiers: PricingTier[] = [
       "Email marketing — unlimited audiences, 25,000 contacts each",
       "200,000 marketing emails / month",
       "White-label exports (remove Conduikt branding)",
-      "API access",
       "Bulk operations across projects",
       "Dedicated support",
     ],

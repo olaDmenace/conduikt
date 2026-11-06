@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
-import { generateWithClaude } from "@/src/lib/ai/client";
+import { generateWithClaude, AIUnavailableError, aiUnavailableBody } from "@/src/lib/ai/client";
 import { onboardingAdvisorAgent } from "@/src/lib/ai/agents/onboarding-advisor";
 
 export async function POST(
@@ -76,8 +76,12 @@ Generate personalised setup recommendations.`;
     const plan = JSON.parse(result.content);
     return NextResponse.json(plan);
   } catch (e) {
+    if (e instanceof AIUnavailableError) {
+      return NextResponse.json(aiUnavailableBody(e), { status: 503 });
+    }
+    console.error("[onboarding-plan] failed", e);
     return NextResponse.json(
-      { error: "Failed to generate plan", details: String(e) },
+      { error: "We couldn't build the plan. Try again in a few minutes." },
       { status: 500 }
     );
   }

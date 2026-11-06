@@ -115,7 +115,7 @@ describe('Cron Publish Route', () => {
       expect(response.status).toBe(200)
     })
 
-    it('accepts secret via ?secret= query param (pg_cron alt form)', async () => {
+    it('rejects the secret in the ?secret= query string (it would land in request logs)', async () => {
       // @ts-expect-error - NODE_ENV is readonly in process.env types but mutable at runtime
       process.env.NODE_ENV = 'production'
       process.env.CRON_SECRET = 'real-secret'
@@ -125,7 +125,7 @@ describe('Cron Publish Route', () => {
       const request = new NextRequest('http://localhost/api/cron/publish?secret=real-secret')
       const response = await GET(request)
 
-      expect(response.status).toBe(200)
+      expect(response.status).toBe(401)
     })
   })
 

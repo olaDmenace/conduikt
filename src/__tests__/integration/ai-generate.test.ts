@@ -27,10 +27,25 @@ class MockTruncatedResponseError extends Error {
   }
 }
 
+class MockAIUnavailableError extends Error {
+  code = 'network'
+  retryable = true
+  userMessage = 'unavailable'
+}
+
 vi.mock('@/src/lib/ai/client', () => ({
   generateWithClaude: vi.fn().mockResolvedValue(mockAIResult),
   generateWithClaudeCompletion: vi.fn().mockResolvedValue(mockAIResult),
   TruncatedResponseError: MockTruncatedResponseError,
+  AIUnavailableError: MockAIUnavailableError,
+  aiUnavailableBody: vi.fn((err: { userMessage: string; code: string }) => ({
+    error: err.userMessage,
+    code: 'ai_unavailable',
+    reason: err.code,
+    retryable: true,
+  })),
+  checkSpendCap: vi.fn().mockResolvedValue({ capUsd: 25, spentUsd: 0, exceeded: false, day: '2026-01-01' }),
+  mapAnthropicError: vi.fn(() => null),
   getAnthropicClient: vi.fn(),
 }))
 

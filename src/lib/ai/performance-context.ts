@@ -1,4 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import { adInsightsSummaryForPrompt } from "@/src/lib/integrations/meta-ads";
+import { visibilitySummaryForPrompt } from "@/src/lib/integrations/ai-visibility";
 
 export async function buildPerformanceContext(
   projectId: string,
@@ -168,6 +170,21 @@ export async function buildPerformanceContext(
           : ` (confidence=${l.confidence})`;
       sections.push(`- [${l.channel}] ${l.hypothesis}${meta}`);
     }
+  }
+
+  // 6. Paid ads (read-only Meta insights) and answer-engine visibility.
+  // Both helpers return "" when nothing is connected or recorded yet.
+  try {
+    const ads = await adInsightsSummaryForPrompt(supabase, projectId);
+    if (ads) sections.push(ads);
+  } catch (err) {
+    console.warn("[performance-context] ad insights skipped", err);
+  }
+  try {
+    const found = await visibilitySummaryForPrompt(supabase, projectId);
+    if (found) sections.push(found);
+  } catch (err) {
+    console.warn("[performance-context] visibility skipped", err);
   }
 
   if (sections.length === 0) return "";

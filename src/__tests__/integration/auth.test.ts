@@ -176,7 +176,7 @@ describe('Authentication', () => {
 
       // updateSession is the middleware function
       // We test the logic directly — protected paths redirect unauthenticated users
-      const protectedPaths = ['/dashboard', '/projects', '/settings', '/playground']
+      const protectedPaths = ['/dashboard', '/projects', '/settings', '/share']
       for (const path of protectedPaths) {
         expect(
           protectedPaths.some((p) => path.startsWith(p))

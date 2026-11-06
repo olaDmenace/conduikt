@@ -13,6 +13,7 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
+import { SettingsTabs } from "@/src/components/settings/settings-tabs";
 import {
   PLAN_PRICING,
   GENERATION_LIMITS,
@@ -203,6 +204,7 @@ function BillingContent() {
   return (
     <div>
       <PageHeader title="Billing" description="Your plan, what you've used, and upgrades." />
+      <SettingsTabs />
 
       {upgraded && (
         <div role="status" className="mb-6 flex items-center gap-3 rounded-lg border border-line bg-teal-soft px-5 py-4 animate-in">

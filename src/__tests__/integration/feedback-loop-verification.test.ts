@@ -12,7 +12,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * the load-bearing seams — without hitting Supabase, Anthropic, or the
  * live loop.
  *
- * The full 5-stage spec lives in PRODUCT-PLAN.md §5. This file covers
+ * The full 5-stage spec lives in docs/PRODUCT-PLAN.md §5. This file covers
  * the two stages that are meaningful to verify in-process with mocks:
  *
  *   Stage 3 · Prompt injection

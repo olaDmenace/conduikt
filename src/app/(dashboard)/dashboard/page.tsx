@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { readPendingAudit } from "@/src/lib/onboarding/url";
-import { OnboardingTour } from "@/src/components/onboarding/onboarding-tour";
 import { Card, InkCard } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
@@ -90,7 +89,6 @@ export default function DashboardPage() {
   const [prompt, setPrompt] = useState("");
   const [tab, setTab] = useState<"active" | "scheduled" | "history">("active");
   const [busy, setBusy] = useState(false);
-  const [showTour, setShowTour] = useState(false);
   const [firstWeek, setFirstWeek] = useState<FirstWeekSummary | null>(null);
   // True once we know this project has never had a first-week run.
   const [noRunYet, setNoRunYet] = useState(false);
@@ -121,7 +119,6 @@ export default function DashboardPage() {
         })
         .catch(() => setFirstWeek(null));
     }
-    if (!json.user.onboardingCompleted) setShowTour(true);
     // Scope the rail to the project we are showing.
     if (json.project && json.project.id !== currentProjectId) setCurrentProjectId(json.project.id);
   }, [currentProjectId, setCurrentProjectId, router]);
@@ -216,7 +213,6 @@ export default function DashboardPage() {
   if (data.empty || !data.project || !data.kpis) {
     return (
       <div className="mx-auto max-w-[1200px] space-y-8">
-        {showTour && <OnboardingTour onComplete={() => setShowTour(false)} />}
         <header className="space-y-2">
           <h1 className="text-display-s text-text">{greeting}</h1>
           <p className="text-body text-text-2">Add your website and we&apos;ll check it, then plan your first week.</p>
@@ -299,14 +295,15 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-8">
-      {showTour && <OnboardingTour onComplete={() => setShowTour(false)} />}
-
       <header className="space-y-5">
         <div className="space-y-2">
           <h1 className="text-display-s text-text">{greeting}</h1>
           <p className="text-body text-text-2">
             {statusLine(data.live.length, data.waitingCount)}{" "}
-            <span className="text-text-3">· {data.project.name}</span>
+            <span className="text-text-3">· {data.project.name}</span>{" "}
+            <Link href={`/projects/${pid}/settings`} className="hover-link text-text-3 hover:text-text">
+              Project settings
+            </Link>
           </p>
         </div>
         {promptBar}
@@ -429,7 +426,7 @@ export default function DashboardPage() {
                     sub={`${a.type.replace(/_/g, " ")} · ${a.status}`}
                     action={
                       <Button size="sm" variant="quiet" asChild>
-                        <Link href={`/projects/${pid}/assets`}>View</Link>
+                        <Link href={`/projects/${pid}/assets/${a.id}`}>View</Link>
                       </Button>
                     }
                   />

@@ -1,5 +1,5 @@
 """
-Convert PITCH-DECK.md to PITCH-DECK.pptx.
+Convert docs/PITCH-DECK.md to docs/PITCH-DECK.pptx.
 
 Conservative renderer: title at top + content body. Tables and code blocks
 are rendered as monospace text so they survive PowerPoint editing.
@@ -25,8 +25,8 @@ if len(sys.argv) >= 3:
     SRC = Path(sys.argv[1]).resolve()
     OUT = Path(sys.argv[2]).resolve()
 else:
-    SRC = ROOT / "PITCH-DECK.md"
-    OUT = ROOT / "PITCH-DECK.pptx"
+    SRC = ROOT / "docs" / "PITCH-DECK.md"
+    OUT = ROOT / "docs" / "PITCH-DECK.pptx"
 
 TEAL = RGBColor(0x1F, 0x6B, 0x66)
 COPPER = RGBColor(0xD9, 0x66, 0x3A)

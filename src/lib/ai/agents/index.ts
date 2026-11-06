@@ -15,6 +15,7 @@ import { contentScorerAgent } from "./content-scorer";
 import { programmaticSeoAgent } from "./programmatic-seo";
 import { launchStrategyAgent } from "./launch-strategy";
 import { abTestSetupAgent } from "./ab-test-setup";
+import { missingPageAgent } from "./missing-page";
 import type { AgentConfig } from "./types";
 import { withDirection } from "../direction";
 
@@ -37,6 +38,7 @@ const RAW_AGENTS: Record<string, AgentConfig> = {
   "programmatic-seo": programmaticSeoAgent,
   "launch-strategy": launchStrategyAgent,
   "ab-test-setup": abTestSetupAgent,
+  "missing-page": missingPageAgent,
 };
 
 // Every agent handed out here reads the project's direction (the team's

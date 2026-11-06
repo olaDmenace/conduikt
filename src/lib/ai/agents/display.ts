@@ -22,6 +22,7 @@ export const AGENT_DISPLAY: Record<string, AgentDisplay> = {
   "blog-post": { name: "Blog", job: "Full articles, ready to publish" },
   "video-ad": { name: "Video Ad", job: "Short video ads with a voice" },
   "programmatic-seo": { name: "Landing Pages", job: "Many search pages at once" },
+  "missing-page": { name: "Missing Pages", job: "Finds the searches you have no page for and writes the page" },
   "content-strategy": { name: "Strategy", job: "Your plan for the next 90 days" },
   "posting-plan": { name: "Posting Plan", job: "What to post, and when" },
   "keyword-research": { name: "Keyword Finder", job: "Finds what people search for" },

@@ -4,6 +4,7 @@ import { ensureValidXToken } from "@/src/lib/integrations/x-token";
 import { ensureValidLinkedInToken } from "@/src/lib/integrations/linkedin-token";
 import { ensureValidTikTokToken } from "@/src/lib/integrations/tiktok-token";
 import { uploadVideoToTikTokInbox } from "@/src/lib/integrations/tiktok-publish";
+import { publishToInstagram } from "@/src/lib/integrations/instagram";
 import {
   uploadXMedia,
   uploadMediaToLinkedIn,
@@ -28,11 +29,11 @@ export async function GET(request: NextRequest) {
   // trigger this. Fail closed: in production the secret must exist AND
   // must match the caller's credential, otherwise we refuse.
   //
-  // Supabase pg_cron can pass the credential two ways depending on how
-  // the SQL job was written:
-  //   1) Authorization header:  net.http_get(url, headers := '{"Authorization":"Bearer xxx"}')
-  //   2) Query string:          net.http_get(url || '?secret=xxx')
-  // We accept either so operators aren't locked into one form.
+  // The credential is accepted ONLY as an Authorization header:
+  //   net.http_get(url, headers := '{"Authorization":"Bearer xxx"}')
+  // A `?secret=` query string is deliberately not honoured: query strings
+  // end up in Vercel request logs, so the secret would leak into the
+  // logs. See supabase/migrations/20261026_cron_jobs_header_auth.sql.
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) {
     if (process.env.NODE_ENV === "production") {
@@ -50,10 +51,7 @@ export async function GET(request: NextRequest) {
     );
   } else {
     const authHeader = request.headers.get("authorization");
-    const queryParamSecret = new URL(request.url).searchParams.get("secret");
-    const headerMatches = authHeader === `Bearer ${cronSecret}`;
-    const queryMatches = queryParamSecret === cronSecret;
-    if (!headerMatches && !queryMatches) {
+    if (authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
   }
@@ -131,23 +129,29 @@ export async function GET(request: NextRequest) {
     const asset = Array.isArray(post.assets) ? post.assets[0] : post.assets;
     const project = Array.isArray(post.projects) ? post.projects[0] : post.projects;
     const userId = project?.user_id as string | undefined;
-    const account = userId ? accountMap.get(accountKey(userId, post.channel)) : undefined;
+    // Instagram publishes through the connected Facebook Page (same Meta app).
+    const accountPlatform = post.channel === "instagram" ? "facebook" : post.channel;
+    const account = userId ? accountMap.get(accountKey(userId, accountPlatform)) : undefined;
 
     const text: string = asset?.content?.scheduled_text ?? asset?.content?.raw ?? "";
     const media: PostMedia | undefined = asset?.content?.media;
 
-    // TikTok requires a video URL but the caption is optional. Every other
-    // channel requires text. Compute the per-channel guard accordingly.
+    // TikTok requires a video URL but the caption is optional. Instagram
+    // requires an image or video. Every other channel requires text.
     const missingContent =
       post.channel === "tiktok"
         ? !(isVideoMedia(media) && media?.url)
-        : !text;
+        : post.channel === "instagram"
+          ? !media?.url
+          : !text;
 
     if (missingContent || !account?.access_token) {
       const reason = missingContent
         ? post.channel === "tiktok"
           ? "TikTok posts require a video — attach one before scheduling"
-          : "Missing post text"
+          : post.channel === "instagram"
+            ? "Instagram posts need an image or video — attach one before scheduling"
+            : "Missing post text"
         : `No connected ${post.channel} account for this user — reconnect in Settings`;
       await supabase
         .from("scheduled_posts")
@@ -215,6 +219,14 @@ export async function GET(request: NextRequest) {
         );
       } else if (post.channel === "tiktok") {
         publishResult = await publishToTikTok(token, media);
+      } else if (post.channel === "instagram") {
+        publishResult = await publishToInstagram({
+          projectId: post.project_id,
+          userId: userId as string,
+          caption: text,
+          mediaUrl: media?.url as string,
+          mediaType: isVideoMedia(media) ? "video" : "image",
+        });
       } else {
         publishResult = { ok: false, error: "Unknown channel" };
       }

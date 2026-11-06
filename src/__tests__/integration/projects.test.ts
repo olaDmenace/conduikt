@@ -115,6 +115,89 @@ describe('Projects API', () => {
         expect(insertCall.user_id).toBe(mockUser.id)
       }
     })
+
+    it('saves the playbook fields and the folded-in business profile', async () => {
+      chain.single.mockResolvedValueOnce({ data: mockProject, error: null })
+
+      const { POST } = await import('@/src/app/api/projects/route')
+      const request = new Request('http://localhost:3000/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: "Ade's Plumbing",
+          website_url: null,
+          business_type: 'local',
+          wants_hosted_page: true,
+          business_location: ' Lekki, Lagos ',
+          services: ['pipe repairs', ' ', 'drain cleaning'],
+          industry: 'Construction',
+          brand_voice: 'Friendly',
+          primary_goal: 'Generate leads',
+          online_channels: ['WhatsApp', 'Instagram'],
+          competitors: [],
+          onboarding_answers: { active_channels: ['WhatsApp'], biggest_challenge: 'Getting more traffic' },
+        }),
+      })
+
+      const response = await POST(request as any)
+      expect(response.status).toBe(201)
+
+      const insert = chain.insert.mock.calls[0]?.[0]
+      expect(insert.business_type).toBe('local')
+      expect(insert.wants_hosted_page).toBe(true)
+      expect(insert.business_location).toBe('Lekki, Lagos')
+      expect(insert.services).toEqual(['pipe repairs', 'drain cleaning'])
+      expect(insert.automation_mode).toBe('check_all')
+      expect(insert.industry).toBe('Construction')
+      expect(insert.brand_voice).toBe('Friendly')
+      expect(insert.primary_goal).toBe('Generate leads')
+      expect(insert.online_channels).toEqual(['WhatsApp', 'Instagram'])
+      expect(insert.competitors).toBeNull()
+      expect(insert.onboarding_completed).toBe(true)
+      expect(insert.website_url).toBeNull()
+    })
+
+    it('leaves the profile incomplete and the playbook unset when the wizard skipped them', async () => {
+      chain.single.mockResolvedValueOnce({ data: mockProject, error: null })
+
+      const { POST } = await import('@/src/app/api/projects/route')
+      const request = new Request('http://localhost:3000/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'Bare', website_url: 'example.com' }),
+      })
+
+      const response = await POST(request as any)
+      expect(response.status).toBe(201)
+      const insert = chain.insert.mock.calls[0]?.[0]
+      expect(insert.business_type).toBeNull()
+      expect(insert.onboarding_completed).toBe(false)
+      expect(insert.wants_hosted_page).toBe(false)
+      expect(insert.services).toEqual([])
+      // A bare domain is accepted and given a scheme.
+      expect(insert.website_url).toBe('https://example.com')
+    })
+
+    it('returns 400 for an unknown business type or automation mode', async () => {
+      const { POST } = await import('@/src/app/api/projects/route')
+      for (const body of [
+        { name: 'Test', business_type: 'bakery' },
+        { name: 'Test', automation_mode: 'autopilot' },
+        { name: 'Test', wants_hosted_page: 'yes' },
+        { name: 'Test', services: 'pipes' },
+      ]) {
+        const request = new Request('http://localhost:3000/api/projects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        })
+        const response = await POST(request as any)
+        expect(response.status, JSON.stringify(body)).toBe(400)
+        const data = await response.json()
+        expect(data.code).toBe('INVALID_INPUT')
+      }
+      expect(chain.insert).not.toHaveBeenCalled()
+    })
   })
 
   describe('GET /api/projects', () => {
@@ -222,6 +305,51 @@ describe('Projects API', () => {
 
       const response = await PATCH(request as any, { params: Promise.resolve({ id: 'test-project-id' }) })
       expect(response.status).toBe(200)
+    })
+
+    it('saves automation_mode, business_type and the hosted-page preference', async () => {
+      chain.single.mockResolvedValueOnce({
+        data: { ...mockProject, automation_mode: 'social_runs', business_type: 'creator' },
+        error: null,
+      })
+
+      const { PATCH } = await import('@/src/app/api/projects/[id]/route')
+      const request = new Request('http://localhost:3000/api/projects/test-project-id', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          automation_mode: 'social_runs',
+          business_type: 'creator',
+          wants_hosted_page: true,
+          business_location: '  ',
+          services: ['coaching', '', 'courses '],
+        }),
+      })
+
+      const response = await PATCH(request as any, { params: Promise.resolve({ id: 'test-project-id' }) })
+      expect(response.status).toBe(200)
+      const updates = chain.update.mock.calls[0]?.[0]
+      expect(updates).toEqual({
+        automation_mode: 'social_runs',
+        business_type: 'creator',
+        wants_hosted_page: true,
+        business_location: null,
+        services: ['coaching', 'courses'],
+      })
+    })
+
+    it('returns 400 for an unknown automation mode or business type', async () => {
+      const { PATCH } = await import('@/src/app/api/projects/[id]/route')
+      for (const body of [{ automation_mode: 'autopilot' }, { business_type: 'bakery' }, { wants_hosted_page: 'yes' }]) {
+        const request = new Request('http://localhost:3000/api/projects/test-project-id', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        })
+        const response = await PATCH(request as any, { params: Promise.resolve({ id: 'test-project-id' }) })
+        expect(response.status, JSON.stringify(body)).toBe(400)
+      }
+      expect(chain.update).not.toHaveBeenCalled()
     })
   })
 

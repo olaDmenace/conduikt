@@ -14,6 +14,7 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { PageHeader } from "@/src/components/layout/page-header";
+import { SettingsTabs } from "@/src/components/settings/settings-tabs";
 import {
   CONDUIKT_SHARED_FROM_EMAIL,
 } from "@/src/lib/email/marketing";
@@ -44,6 +45,7 @@ export default function EmailDomainPage() {
         title="Sending domain"
         description="Where your marketing emails come from. A custom domain (Pro and up) lands in inboxes more reliably and matches your brand."
       />
+      <SettingsTabs />
 
       {/* Current sender: what every Conduikt user sends from today. */}
       <Card className="mb-6">

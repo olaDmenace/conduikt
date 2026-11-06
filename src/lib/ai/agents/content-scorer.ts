@@ -1,10 +1,12 @@
 import type { AgentConfig, ProjectContext } from "./types";
+import { modelFor } from "../model-routing";
 
 export const contentScorerAgent: AgentConfig = {
   id: "content-scorer",
   name: "Content Scorer Agent",
   description: "Score content across clarity, relevance, engagement, and brand alignment",
-  model: "claude-sonnet-4-6",
+  // Short, structured and frequent: the cheap model (see model-routing).
+  model: modelFor("score"),
   maxTokens: 1000,
 
   buildSystemPrompt(ctx: ProjectContext): string {

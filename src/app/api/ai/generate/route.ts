@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 import {
+  AIUnavailableError,
+  aiUnavailableBody,
   generateWithClaudeCompletion,
   TruncatedResponseError,
 } from "@/src/lib/ai/client";
@@ -88,6 +90,9 @@ export async function POST(request: NextRequest) {
       maxTokens: skill.maxTokens,
     });
   } catch (err) {
+    if (err instanceof AIUnavailableError) {
+      return NextResponse.json(aiUnavailableBody(err), { status: 503 });
+    }
     if (err instanceof TruncatedResponseError) {
       console.error(
         `[ai-generate] ${skill.id} truncated after ${err.attempts} attempts (${err.outputTokens} output tokens accumulated)`,

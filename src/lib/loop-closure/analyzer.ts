@@ -8,6 +8,7 @@
 
 import { createServiceClient } from "@/src/lib/supabase/service";
 import { generateWithClaude } from "@/src/lib/ai/client";
+import { modelFor } from "@/src/lib/ai/model-routing";
 import type { AnalyzerResult, Learning, LearningChannel } from "./types";
 
 const SYSTEM_PROMPT = `You analyze social-media post performance to find patterns that predict engagement.
@@ -154,7 +155,7 @@ export async function runAnalyzer(opts: AnalyzerOptions): Promise<AnalyzerResult
   const ai = await generateWithClaude({
     systemPrompt: SYSTEM_PROMPT,
     userPrompt,
-    model: "claude-sonnet-4-6",
+    model: modelFor("analyze"),
     maxTokens: 2000,
     temperature: 0.3,
   });

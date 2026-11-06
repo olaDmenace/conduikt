@@ -1,0 +1,9 @@
+{
+  "agentId": "seo-audit",
+  "headline": "The homepage has no meta description and its title repeats the business name three times.",
+  "items": [
+    "Write a 150-character meta description that names the service and the town you serve.",
+    "Replace the title tag with one line: what you do, where, and for whom.",
+    "Add alt text to the eleven images on the homepage; eight have none."
+  ]
+}

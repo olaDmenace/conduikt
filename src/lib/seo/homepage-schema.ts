@@ -1,5 +1,12 @@
-// Plain-words FAQ (docs/DESIGN.md §Voice). Shown on the homepage and
-// /pricing, and emitted as FAQPage JSON-LD.
+// Homepage JSON-LD (SoftwareApplication + FAQPage). The Organization entity
+// (#organization: name, url, logo, sameAs, contactPoint, founder) lives in
+// src/app/layout.tsx and is referenced from here by @id, so there is one
+// Organization node per page, not two.
+//
+// Plain-words FAQ (docs/DESIGN.md §Voice). This array is the single source
+// of the FAQ copy: src/app/(marketing)/page.tsx renders it in the
+// <section id="faq"> and faqJsonLd below emits the same strings as FAQPage
+// JSON-LD, so what answer engines read is exactly what visitors see.
 export const homepageFaqs = [
   {
     question: "What does Conduikt actually do?",
@@ -53,8 +60,15 @@ export const softwareAppJsonLd = {
     "AI SEO Audit, CRO Analysis, Keyword Research, Content Generation, Multi-Channel Publishing, Email Sequence Builder, Video Ad Creator, A/B Testing, Growth Playbook, Campaign Orchestration, Analytics Feedback Loop, Client Reports",
   publisher: {
     "@type": "Organization",
+    "@id": "https://conduikt.com/#organization",
     name: "Conduikt",
     url: "https://conduikt.com/",
+    logo: {
+      "@type": "ImageObject",
+      url: "https://conduikt.com/icon-512.png",
+      width: 512,
+      height: 512,
+    },
   },
   offers: [
     {
@@ -123,6 +137,10 @@ export const softwareAppJsonLd = {
 export const faqJsonLd = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
+  "@id": "https://conduikt.com/#faq",
+  url: "https://conduikt.com/#faq",
+  inLanguage: "en",
+  publisher: { "@id": "https://conduikt.com/#organization" },
   mainEntity: homepageFaqs.map((faq) => ({
     "@type": "Question",
     name: faq.question,

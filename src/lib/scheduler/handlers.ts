@@ -9,3 +9,4 @@
 import "./handlers/email-sequence-step";
 import "./handlers/playbook-action";
 import "./handlers/first-week-agent";
+import "./handlers/whatsapp-step";

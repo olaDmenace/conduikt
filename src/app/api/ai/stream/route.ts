@@ -1,6 +1,13 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
-import { continuationMessages, getAnthropicClient } from "@/src/lib/ai/client";
+import {
+  AIUnavailableError,
+  aiUnavailableBody,
+  checkSpendCap,
+  continuationMessages,
+  getAnthropicClient,
+  mapAnthropicError,
+} from "@/src/lib/ai/client";
 import { getAgent } from "@/src/lib/ai/agents";
 import type { ProjectContext } from "@/src/lib/ai/agents/types";
 import {
@@ -84,6 +91,20 @@ export async function POST(request: NextRequest) {
 
   const systemPrompt = skill.buildSystemPrompt(context);
   const userPrompt = skill.buildUserPrompt(input);
+
+  // The stream talks to the SDK directly, so the spend cap is checked here
+  // while a plain 503 is still possible.
+  try {
+    await checkSpendCap();
+  } catch (err) {
+    if (err instanceof AIUnavailableError) {
+      return new Response(JSON.stringify(aiUnavailableBody(err)), {
+        status: 503,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    throw err;
+  }
 
   const anthropic = getAnthropicClient();
   const start = Date.now();
@@ -195,6 +216,15 @@ export async function POST(request: NextRequest) {
         });
         controller.close();
       } catch (err) {
+        // Headers are already out, so the 503 becomes an error event with
+        // the same body the JSON routes return.
+        const unavailable = mapAnthropicError(err);
+        if (unavailable) {
+          console.error(`[ai-stream] unavailable: ${unavailable.code}.`, err instanceof Error ? err.message : err);
+          sendEvent({ type: "error", ...aiUnavailableBody(unavailable) });
+          controller.close();
+          return;
+        }
         const message =
           process.env.NODE_ENV === "development"
             ? err instanceof Error

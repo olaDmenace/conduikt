@@ -1,3 +1,4 @@
+import { ANSWER_FIRST_RULES } from "@/src/lib/ai/answer-first";
 import type { SkillConfig, ProjectContext, SkillOutput } from "./types";
 import { parseJsonResponse } from "../parse-json";
 
@@ -36,6 +37,7 @@ You are an expert conversion copywriter. You write copy that is clear, compellin
    weight." Do NOT inject hex codes into the copy itself.
 ${context.performanceContext || ""}
 
+${ANSWER_FIRST_RULES}
 ## Rules
 - Do NOT use emojis anywhere in the output unless the user's prompt explicitly requests them.
 

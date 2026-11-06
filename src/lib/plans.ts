@@ -1,5 +1,5 @@
 // Single source of truth for plan tiers, limits, and gating checks.
-// Keep in sync with conduikt-pricing-strategy-v2.md.
+// Keep in sync with docs/conduikt-pricing-strategy-v2.md.
 
 export type PlanTier = "free" | "pro" | "growth" | "agency";
 
@@ -37,7 +37,7 @@ export function getSeatLimit(plan: PlanTier): number {
 // Email marketing per-tier limits. Resend bills Conduikt for every email
 // sent (transactional + marketing combined), so these limits cap our
 // liability on the free tier and shape the upgrade ladder. See
-// conduikt-pricing-strategy-v2.md for the rationale.
+// docs/conduikt-pricing-strategy-v2.md for the rationale.
 export interface EmailLimits {
   audiences: number;          // max audiences per user
   contactsPerAudience: number; // max contacts in a single audience

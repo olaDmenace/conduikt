@@ -8,6 +8,7 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { PageHeader } from "@/src/components/layout/page-header";
+import { SettingsTabs } from "@/src/components/settings/settings-tabs";
 import { useToast } from "@/src/components/ui/toast";
 
 type Mode = "off" | "review" | "auto";
@@ -101,6 +102,7 @@ export default function AutomationSettingsPage() {
           </Link>
         </Button>
       </PageHeader>
+      <SettingsTabs />
 
       <div className="max-w-2xl space-y-4">
         <ChannelCard

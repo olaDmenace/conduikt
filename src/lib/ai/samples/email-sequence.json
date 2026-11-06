@@ -1,0 +1,9 @@
+{
+  "agentId": "email-sequence",
+  "headline": "A five-email welcome series that turns a quote request into a booked job.",
+  "items": [
+    "Email 1: Your quote, and what happens next",
+    "Email 2: How we price a job, with one worked example",
+    "Email 3: What three recent customers said, in their words"
+  ]
+}

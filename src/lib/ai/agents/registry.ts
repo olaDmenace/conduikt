@@ -8,7 +8,8 @@ export interface AgentDefinition {
   tier: "free" | "pro" | "growth" | "agency";
   category: "analysis" | "creation" | "strategy" | "distribution";
   ctaLabel: string;   // Button text: "Run Audit"
-  route: string;      // Global URL slug: /agents/{route}
+  route: string;      // URL slug. The global /agents/{route} pages are gone (next.config
+                      // redirects them to the picker); the slug only names the agent now.
   // In-project path suffix, appended to /projects/{id}/. May include query strings
   // (e.g. "content?skill=copywriting"). Defaults to `route` when omitted.
   projectPath?: string;
@@ -120,7 +121,9 @@ export const AGENT_REGISTRY: AgentDefinition[] = [
     category: "analysis",
     ctaLabel: "Analyze",
     route: "competitor",
-    projectPath: "content?skill=competitor-analysis",
+    // Tracked competitors + snapshots; the one-shot written analysis is
+    // linked from that page.
+    projectPath: "competitors",
   },
   {
     id: "blog-post",
@@ -219,6 +222,19 @@ export const AGENT_REGISTRY: AgentDefinition[] = [
     category: "creation",
     ctaLabel: "Generate Pages",
     route: "programmatic-seo",
+  },
+  {
+    id: "missing-page",
+    name: "Missing Pages Agent",
+    shortName: "Missing Pages",
+    icon: "Search",
+    description: "Finds the searches you have no page for, writes the page, puts it live",
+    status: "active",
+    tier: "growth",
+    category: "creation",
+    ctaLabel: "Find missing pages",
+    route: "missing-pages",
+    projectPath: "missing-pages",
   },
   {
     id: "launch-strategy",
