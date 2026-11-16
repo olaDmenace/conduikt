@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
-import { AIUnavailableError, aiUnavailableBody, generateWithClaude } from "@/src/lib/ai/client";
+import { AIRefusedError, AIUnavailableError, aiRefusedBody, aiUnavailableBody, generateWithClaude } from "@/src/lib/ai/client";
 import { getAgent } from "@/src/lib/ai/agents";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
 
@@ -83,6 +83,7 @@ Generate a completely different version. Vary the structure, angle, and hook. Ke
       });
     } catch (err) {
       if (err instanceof AIUnavailableError) return NextResponse.json(aiUnavailableBody(err), { status: 503 });
+      if (err instanceof AIRefusedError) return NextResponse.json(aiRefusedBody(err), { status: 422 });
       throw err;
     }
 

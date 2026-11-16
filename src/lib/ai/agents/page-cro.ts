@@ -1,11 +1,12 @@
 import type { SkillConfig, ProjectContext, SkillOutput } from "./types";
+import { modelFor } from "../model-routing";
 import { parseJsonResponse } from "../parse-json";
 
 export const pageCroSkill: SkillConfig = {
   id: "page-cro",
   name: "Page CRO",
   description: "Landing page conversion rate optimization analysis",
-  model: "claude-sonnet-4-6",
+  model: modelFor("generate"),
   maxTokens: 4000,
 
   buildSystemPrompt: (context: ProjectContext) => {

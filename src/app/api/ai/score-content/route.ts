@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
-import { AIUnavailableError, aiUnavailableBody, generateWithClaude } from "@/src/lib/ai/client";
+import { AIRefusedError, AIUnavailableError, aiRefusedBody, aiUnavailableBody, generateWithClaude } from "@/src/lib/ai/client";
 import { getAgent } from "@/src/lib/ai/agents";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
+import { effortFor } from "@/src/lib/ai/model-routing";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
       userPrompt,
       model: agent.model,
       maxTokens: agent.maxTokens,
-      temperature: 0,
+      effort: effortFor("score"),
     });
 
     const parsed = agent.parseResponse(result.content);
@@ -113,6 +114,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(scoreData);
   } catch (e) {
     if (e instanceof AIUnavailableError) return NextResponse.json(aiUnavailableBody(e), { status: 503 });
+    if (e instanceof AIRefusedError) return NextResponse.json(aiRefusedBody(e), { status: 422 });
     return NextResponse.json(
       { error: "Failed to score content", details: String(e) },
       { status: 500 }

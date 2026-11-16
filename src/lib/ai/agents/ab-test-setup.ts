@@ -1,4 +1,5 @@
 import type { AgentConfig, ProjectContext, AgentOutput } from "./types";
+import { modelFor } from "../model-routing";
 import { parseJsonResponse } from "../parse-json";
 
 export const abTestSetupAgent: AgentConfig = {
@@ -6,7 +7,7 @@ export const abTestSetupAgent: AgentConfig = {
   name: "A/B Test Planner",
   description:
     "Turn a hypothesis into a real A/B test plan — variants, primary metric, sample size, duration and a shipping-ready scorecard.",
-  model: "claude-sonnet-4-6",
+  model: modelFor("generate"),
   maxTokens: 8000,
 
   buildSystemPrompt: (context: ProjectContext) => `

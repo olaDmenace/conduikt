@@ -3,6 +3,7 @@ import { createClient } from "@/src/lib/supabase/server";
 import { generateWithClaude } from "@/src/lib/ai/client";
 import { getAgent } from "@/src/lib/ai/agents";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
+import { effortFor } from "@/src/lib/ai/model-routing";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
       userPrompt,
       model: agent.model,
       maxTokens: agent.maxTokens,
-      temperature: 0,
+      effort: effortFor("score"),
     });
 
     const parsed = agent.parseResponse(result.content);

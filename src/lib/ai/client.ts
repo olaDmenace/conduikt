@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { DEFAULT_MODEL, estimateCostUsd } from "./model-routing";
+import { DEFAULT_MODEL, effortFor, estimateCostUsd, type Effort } from "./model-routing";
 
 let client: Anthropic | null = null;
 
@@ -12,9 +12,16 @@ export function getAnthropicClient() {
   return client;
 }
 
-export type AIModel = "claude-sonnet-4-6" | "claude-opus-4-6" | "claude-haiku-4-5";
+// The ids a request may be sent to. Only the 5.5 models: buildMessageParams
+// always sends output_config.effort, which Haiku 4.5 rejects outright and the
+// 4.6 models reject at "xhigh", so the legacy ids are not valid targets (or
+// env overrides) any more. They still appear in ai_generations rows, which is
+// why MODEL_PRICING in model-routing is keyed by string and keeps their rates.
+// Adding an id here also means adding it to KNOWN_MODELS and MODEL_PRICING.
+export type AIModel = "claude-opus-5-5" | "claude-sonnet-5-5" | "claude-haiku-5-5";
 
 export { DEFAULT_MODEL };
+export type { Effort };
 
 export type StopReason = "end_turn" | "max_tokens" | "stop_sequence" | "tool_use" | "pause_turn" | "refusal" | null;
 
@@ -88,6 +95,55 @@ export class AIUnavailableError extends Error {
 /** The JSON body an API route returns (with status 503) for an AIUnavailableError. */
 export function aiUnavailableBody(err: AIUnavailableError) {
   return { error: err.userMessage, code: "ai_unavailable" as const, reason: err.code, retryable: true as const };
+}
+
+// ---------------------------------------------------------------------------
+// The model declined the request
+// ---------------------------------------------------------------------------
+
+/** The one sentence a user sees when the model refuses. Rephrasing is the only fix. */
+export const AI_REFUSED_MESSAGE = "The writing service declined this request. Rephrase it and try again.";
+
+/**
+ * Thrown by generateWithClaude when the API answers 200 with
+ * stop_reason "refusal": the model would not write this. Not retryable as
+ * is. `category` is the API's stop_details.category when it sends one;
+ * `explanation` stays in the server log. Input tokens were still billed.
+ */
+export class AIRefusedError extends Error {
+  readonly category: string | null;
+  readonly explanation: string | null;
+  readonly retryable = false as const;
+  readonly userMessage: string;
+
+  constructor(category?: string | null, explanation?: string | null) {
+    super(`AI refused${category ? ` (${category})` : ""}${explanation ? `: ${explanation}` : ""}`);
+    this.name = "AIRefusedError";
+    this.category = category ?? null;
+    this.explanation = explanation ?? null;
+    this.userMessage = AI_REFUSED_MESSAGE;
+  }
+}
+
+/** The JSON body an API route returns (with status 422) for an AIRefusedError. */
+export function aiRefusedBody(err: AIRefusedError) {
+  return { error: err.userMessage, code: "ai_refused" as const, reason: err.category ?? "unspecified", retryable: false as const };
+}
+
+// SDK 0.74 does not type stop_details yet; read it through a narrow cast.
+type StopDetails = { category?: unknown; explanation?: unknown };
+
+/**
+ * An AIRefusedError for a response whose stop_reason is "refusal", or null
+ * for any other stop reason. Call it before reading content: a refused
+ * response may carry no text, or text that trails off.
+ */
+export function refusalFrom(response: { stop_reason: string | null; stop_details?: unknown }): AIRefusedError | null {
+  if (response.stop_reason !== "refusal") return null;
+  const details = (response as { stop_details?: StopDetails }).stop_details;
+  const category = typeof details?.category === "string" ? details.category : null;
+  const explanation = typeof details?.explanation === "string" ? details.explanation : null;
+  return new AIRefusedError(category, explanation);
 }
 
 function errorText(err: unknown): string {
@@ -287,23 +343,83 @@ function describe(v: SpendCapVerdict) {
 
 const STREAM_ABOVE_TOKENS = 16_000;
 
+/**
+ * The smallest max_tokens any request sends. Thinking is adaptive on the
+ * 5.5 models and counts toward max_tokens, so a tiny cap can be spent
+ * before the first word of the answer. Callers may ask for less; they get
+ * this.
+ */
+export const MAX_TOKENS_FLOOR = 2048;
+
+export function withMaxTokensFloor(maxTokens: number): number {
+  return Math.max(MAX_TOKENS_FLOOR, Math.floor(maxTokens) || 0);
+}
+
 type Turn = { role: "user" | "assistant"; content: string };
 
-// Current models reject assistant-message prefill ("The conversation must
-// end with a user message"), so a cut-off answer is continued with a
-// normal turn: the partial answer as the assistant's message, then a user
-// message asking for the rest.
-export const CONTINUE_PROMPT =
-  "Your previous reply was cut off by the length limit. Continue it from exactly where it stopped. " +
-  "Output only the continuation: do not repeat anything already written, do not add a preface, and do not start over.";
+/** How much of the cut-off answer the continuation prompt quotes back. */
+const CONTINUE_TAIL_CHARS = 300;
+
+/**
+ * The user turn that asks for the rest of a cut-off answer. The 5.5 models
+ * reject a trailing assistant message (prefill), so the request never ends
+ * on one: the partial answer goes in as a finished assistant turn and this
+ * user turn, quoting its tail, asks the model to pick up from there.
+ */
+export function continuePrompt(soFar: string): string {
+  const tail = soFar.trimEnd().slice(-CONTINUE_TAIL_CHARS);
+  return (
+    `Your previous response was interrupted and ended with: ${tail}\n\n` +
+    "Continue from exactly where you left off without repeating anything. " +
+    "Output only the continuation: no preface, and do not start over."
+  );
+}
 
 export function continuationMessages(userPrompt: string, soFar: string): Turn[] {
   if (!soFar) return [{ role: "user", content: userPrompt }];
   return [
     { role: "user", content: userPrompt },
     { role: "assistant", content: soFar.trimEnd() },
-    { role: "user", content: CONTINUE_PROMPT },
+    { role: "user", content: continuePrompt(soFar) },
   ];
+}
+
+/**
+ * The text of a response: every "text" block joined, in order. The 5.5
+ * models may open with one or more thinking blocks (sometimes with empty
+ * text), so the first block is not necessarily the answer.
+ */
+export function textOf(content: ReadonlyArray<{ type: string; text?: string }>): string {
+  let out = "";
+  for (const block of content) {
+    if (block.type === "text" && typeof block.text === "string") out += block.text;
+  }
+  return out;
+}
+
+// SDK 0.74 types effort as low|medium|high|max; the API also takes xhigh.
+type SdkEffort = NonNullable<Anthropic.Messages.OutputConfig["effort"]>;
+
+/**
+ * The request body generateWithClaude sends. No `temperature`, `top_p` or
+ * `top_k` (the 5.5 models reject non-default sampling), no `thinking`
+ * (adaptive by default; `output_config.effort` is the knob), and max_tokens
+ * never below MAX_TOKENS_FLOOR.
+ */
+export function buildMessageParams(opts: {
+  model: AIModel;
+  maxTokens: number;
+  effort: Effort;
+  systemPrompt: string;
+  messages: Turn[];
+}): Anthropic.Messages.MessageCreateParamsNonStreaming {
+  return {
+    model: opts.model,
+    max_tokens: withMaxTokensFloor(opts.maxTokens),
+    system: opts.systemPrompt,
+    messages: opts.messages,
+    output_config: { effort: opts.effort as SdkEffort },
+  };
 }
 
 /** Append a continuation, dropping any text the model repeated at the seam. */
@@ -321,38 +437,38 @@ export async function generateWithClaude({
   userPrompt,
   model = DEFAULT_MODEL,
   maxTokens = 4000,
-  temperature,
-  prefill,
+  effort = effortFor("generate"),
+  soFar,
 }: {
   systemPrompt: string;
   userPrompt: string;
   model?: AIModel;
+  /** Raised to MAX_TOKENS_FLOOR when smaller. */
   maxTokens?: number;
-  temperature?: number;
-  prefill?: string;
+  /** Thinking depth; defaults to effortFor("generate"). Pass effortFor("preview") etc. for cheap work. */
+  effort?: Effort;
+  /** The cut-off answer so far, when asking for the rest; see continuationMessages. */
+  soFar?: string;
 }): Promise<GenerationResult> {
   await checkSpendCap();
 
   const anthropic = getAnthropicClient();
   const start = Date.now();
 
-  // `prefill` is the cut-off answer so far; see continuationMessages.
-  const messages = continuationMessages(userPrompt, prefill ?? "");
-
-  const params = {
+  const params = buildMessageParams({
     model,
-    max_tokens: maxTokens,
-    temperature: temperature ?? 1,
-    system: systemPrompt,
-    messages,
-  };
+    maxTokens,
+    effort,
+    systemPrompt,
+    messages: continuationMessages(userPrompt, soFar ?? ""),
+  });
   // The SDK refuses non-streaming requests that could run past 10 minutes
   // (large max_tokens, e.g. the 24k-token Growth Plan). Stream those and
   // wait for the final message — same result shape, no timeout.
   let response;
   try {
     response =
-      maxTokens > STREAM_ABOVE_TOKENS
+      params.max_tokens > STREAM_ABOVE_TOKENS
         ? await anthropic.messages.stream(params).finalMessage()
         : await anthropic.messages.create(params);
   } catch (err) {
@@ -366,10 +482,17 @@ export async function generateWithClaude({
   }
 
   const durationMs = Date.now() - start;
-  const textBlock = response.content.find((b) => b.type === "text");
+
+  // A refusal is a 200 with no usable content; decide on stop_reason
+  // before looking at the blocks.
+  const refused = refusalFrom(response);
+  if (refused) {
+    console.error(`[ai-client] refused (${refused.category ?? "unspecified"}).`, refused.explanation ?? "");
+    throw refused;
+  }
 
   return {
-    content: textBlock?.text ?? "",
+    content: textOf(response.content),
     model,
     inputTokens: response.usage.input_tokens,
     outputTokens: response.usage.output_tokens,
@@ -391,7 +514,7 @@ export async function generateWithClaudeCompletion(opts: {
   userPrompt: string;
   model?: AIModel;
   maxTokens?: number;
-  temperature?: number;
+  effort?: Effort;
   maxContinuations?: number;
 }): Promise<GenerationResult> {
   const {
@@ -399,7 +522,7 @@ export async function generateWithClaudeCompletion(opts: {
     userPrompt,
     model = DEFAULT_MODEL,
     maxTokens = 4000,
-    temperature,
+    effort,
     maxContinuations = 2,
   } = opts;
 
@@ -415,8 +538,8 @@ export async function generateWithClaudeCompletion(opts: {
       userPrompt,
       model,
       maxTokens,
-      temperature,
-      prefill: accumulated || undefined,
+      effort,
+      soFar: accumulated || undefined,
     });
 
     accumulated = accumulated ? joinContinuation(accumulated, chunk.content) : chunk.content;

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
-import { aiUnavailableResponse, isAiUnavailableError, isResponse, requireProjectOwner } from "@/src/lib/missing-pages/api";
+import { aiRefusedResponse, aiUnavailableResponse, isAiRefusedError, isAiUnavailableError, isResponse, requireProjectOwner } from "@/src/lib/missing-pages/api";
 import { GenerationLimitError } from "@/src/lib/missing-pages/run";
 import { factsFromProject } from "@/src/lib/missing-pages/facts";
 import { writeCandidate, type CandidateRow } from "@/src/lib/missing-pages/run";
@@ -39,6 +39,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     });
   } catch (err) {
     if (isAiUnavailableError(err)) return aiUnavailableResponse(err);
+    if (isAiRefusedError(err)) return aiRefusedResponse(err);
     if (err instanceof GenerationLimitError) {
       return NextResponse.json({ error: err.message, code: "generation_limit" }, { status: 429 });
     }

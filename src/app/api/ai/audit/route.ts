@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
-import { AIUnavailableError, aiUnavailableBody, generateWithClaude } from "@/src/lib/ai/client";
+import { AIRefusedError, AIUnavailableError, aiRefusedBody, aiUnavailableBody, generateWithClaude } from "@/src/lib/ai/client";
 import { seoAuditSkill } from "@/src/lib/ai/agents/seo-audit";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
 import {
@@ -134,10 +134,10 @@ export async function POST(request: NextRequest) {
       userPrompt,
       model: seoAuditSkill.model,
       maxTokens: seoAuditSkill.maxTokens,
-      temperature: 0,
     });
   } catch (err) {
     if (err instanceof AIUnavailableError) return NextResponse.json(aiUnavailableBody(err), { status: 503 });
+    if (err instanceof AIRefusedError) return NextResponse.json(aiRefusedBody(err), { status: 422 });
     const message = err instanceof Error ? err.message : "AI generation failed";
     return NextResponse.json({ error: message }, { status: 500 });
   }

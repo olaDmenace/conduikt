@@ -50,7 +50,7 @@ function fakeDb(opts: { cap?: unknown; rows?: Gen[]; fail?: boolean } = {}) {
   return { db, calls };
 }
 
-const sonnet = (inTok: number, outTok: number): Gen => ({ model: "claude-sonnet-4-6", input_tokens: inTok, output_tokens: outTok });
+const opus = (inTok: number, outTok: number): Gen => ({ model: "claude-opus-5-5", input_tokens: inTok, output_tokens: outTok });
 const at = (iso: string) => () => new Date(iso);
 
 describe("checkSpendCap", () => {
@@ -66,8 +66,8 @@ describe("checkSpendCap", () => {
   });
 
   it("sums today's spend from tokens at list prices", async () => {
-    // 1M sonnet input ($3) + 200k sonnet output ($3) = $6
-    const { db, calls } = fakeDb({ cap: 25, rows: [sonnet(1_000_000, 0), sonnet(0, 200_000)] });
+    // 1M opus input ($4) + 100k opus output ($2) = $6
+    const { db, calls } = fakeDb({ cap: 25, rows: [opus(1_000_000, 0), opus(0, 100_000)] });
     const v = await checkSpendCap({ db, now: at("2026-10-26T10:00:00Z") });
     expect(v.spentUsd).toBeCloseTo(6, 6);
     expect(v.capUsd).toBe(25);
@@ -82,14 +82,14 @@ describe("checkSpendCap", () => {
 
   it("throws spend_cap once the cap is reached and alerts the admin once a day", async () => {
     const sendAlert = vi.fn().mockResolvedValue(undefined);
-    // 10M sonnet input = $30 against a $25 cap
-    const { db, calls } = fakeDb({ cap: 25, rows: [sonnet(10_000_000, 0)] });
+    // 10M opus input = $40 against a $25 cap
+    const { db, calls } = fakeDb({ cap: 25, rows: [opus(10_000_000, 0)] });
 
     const first = checkSpendCap({ db, now: at("2026-10-26T10:00:00Z"), sendAlert });
     await expect(first).rejects.toBeInstanceOf(AIUnavailableError);
     await expect(first).rejects.toMatchObject({ code: "spend_cap", retryable: false });
     expect(sendAlert).toHaveBeenCalledTimes(1);
-    expect(sendAlert).toHaveBeenCalledWith(30, 25, "2026-10-26");
+    expect(sendAlert).toHaveBeenCalledWith(40, 25, "2026-10-26");
 
     // Still over, later the same day and past the cache: no second email.
     await expect(checkSpendCap({ db, now: at("2026-10-26T12:00:00Z"), sendAlert })).rejects.toMatchObject({ code: "spend_cap" });
@@ -102,7 +102,7 @@ describe("checkSpendCap", () => {
   });
 
   it("caches the verdict for a minute", async () => {
-    const { db, calls } = fakeDb({ cap: 25, rows: [sonnet(1_000_000, 0)] });
+    const { db, calls } = fakeDb({ cap: 25, rows: [opus(1_000_000, 0)] });
     await checkSpendCap({ db, now: at("2026-10-26T10:00:00Z") });
     await checkSpendCap({ db, now: at("2026-10-26T10:00:30Z") });
     expect(calls.generations).toBe(1);
@@ -112,7 +112,7 @@ describe("checkSpendCap", () => {
 
   it("serves an exceeded verdict from the cache without another query", async () => {
     const sendAlert = vi.fn().mockResolvedValue(undefined);
-    const { db, calls } = fakeDb({ cap: 1, rows: [sonnet(1_000_000, 0)] });
+    const { db, calls } = fakeDb({ cap: 1, rows: [opus(1_000_000, 0)] });
     await expect(checkSpendCap({ db, now: at("2026-10-26T10:00:00Z"), sendAlert })).rejects.toMatchObject({ code: "spend_cap" });
     await expect(checkSpendCap({ db, now: at("2026-10-26T10:00:10Z"), sendAlert })).rejects.toMatchObject({ code: "spend_cap" });
     expect(calls.generations).toBe(1);
@@ -120,7 +120,7 @@ describe("checkSpendCap", () => {
   });
 
   it("a cap of 0 disables the cap", async () => {
-    const { db } = fakeDb({ cap: 0, rows: [sonnet(10_000_000, 0)] });
+    const { db } = fakeDb({ cap: 0, rows: [opus(10_000_000, 0)] });
     const v = await checkSpendCap({ db, now: at("2026-10-26T10:00:00Z") });
     expect(v.exceeded).toBe(false);
     expect(v.capUsd).toBe(0);
@@ -134,7 +134,7 @@ describe("checkSpendCap", () => {
 
   it("still blocks when the alert email fails", async () => {
     const sendAlert = vi.fn().mockRejectedValue(new Error("resend down"));
-    const { db } = fakeDb({ cap: 1, rows: [sonnet(1_000_000, 0)] });
+    const { db } = fakeDb({ cap: 1, rows: [opus(1_000_000, 0)] });
     await expect(checkSpendCap({ db, now: at("2026-10-26T10:00:00Z"), sendAlert })).rejects.toMatchObject({ code: "spend_cap" });
   });
 });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
-import { AIUnavailableError, aiUnavailableBody, generateWithClaude } from "@/src/lib/ai/client";
+import { AIRefusedError, AIUnavailableError, aiRefusedBody, aiUnavailableBody, generateWithClaude } from "@/src/lib/ai/client";
+import { modelFor } from "@/src/lib/ai/model-routing";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -22,13 +23,14 @@ Context: ${JSON.stringify(context || {})}
 
 Respond in JSON format: { "suggestions": [{ "text": "string", "type": "string" }] }`,
       userPrompt: prompt,
-      model: "claude-sonnet-4-6",
-      maxTokens: 1000,
+      model: modelFor("generate"),
+      maxTokens: 2048,
     });
 
     return NextResponse.json({ content: result.content });
   } catch (err) {
     if (err instanceof AIUnavailableError) return NextResponse.json(aiUnavailableBody(err), { status: 503 });
+    if (err instanceof AIRefusedError) return NextResponse.json(aiRefusedBody(err), { status: 422 });
     throw err;
   }
 }

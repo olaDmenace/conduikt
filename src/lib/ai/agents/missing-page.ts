@@ -1,4 +1,5 @@
 import type { AgentConfig, ProjectContext, AgentOutput } from "./types";
+import { modelFor } from "../model-routing";
 import { parseJsonResponse } from "../parse-json";
 
 // Missing Page agent: writes ONE page for ONE search phrase. Answer first,
@@ -9,7 +10,7 @@ export const missingPageAgent: AgentConfig = {
   id: "missing-page",
   name: "Missing Pages",
   description: "Finds the searches you have no page for, writes the page, puts it live",
-  model: "claude-sonnet-4-6",
+  model: modelFor("generate"),
   maxTokens: 4000,
 
   buildSystemPrompt: (context: ProjectContext) => `

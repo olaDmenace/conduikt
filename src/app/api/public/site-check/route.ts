@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { AIUnavailableError, aiUnavailableBody } from "@/src/lib/ai/client";
+import { AIRefusedError, AIUnavailableError, aiRefusedBody, aiUnavailableBody } from "@/src/lib/ai/client";
 import { sampleMagicAudit } from "@/src/lib/ai/samples";
 import { analyzeMagicAudit, fetchPageSignal, type MagicAuditResult } from "@/src/lib/onboarding/magic-audit";
 import { normalizeAuditUrl } from "@/src/lib/onboarding/url";
@@ -115,6 +115,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url, audit, previews: gate(previews), signal: entry.signal, ...(sample ? { sample: true } : {}) });
   } catch (err) {
     if (err instanceof AIUnavailableError) return NextResponse.json(aiUnavailableBody(err), { status: 503 });
+    if (err instanceof AIRefusedError) return NextResponse.json(aiRefusedBody(err), { status: 422 });
     console.error("[site-check] failed:", err);
     return NextResponse.json({ error: "We couldn't check that site just now. Try again in a minute." }, { status: 502 });
   }

@@ -21,7 +21,7 @@ const pageSchema = z.object({
   changes: z.array(z.string()).optional(),
 });
 
-export type GenerateFn = (args: { systemPrompt: string; userPrompt: string; maxTokens?: number; temperature?: number }) => Promise<GenerationResult>;
+export type GenerateFn = (args: { systemPrompt: string; userPrompt: string; maxTokens?: number }) => Promise<GenerationResult>;
 
 export interface BuildInput {
   facts: ProjectFacts;
@@ -115,7 +115,7 @@ export async function buildMissingPage(input: BuildInput): Promise<BuildResult> 
     existingPage: input.kind === "update" ? input.existingPage ?? null : null,
   });
 
-  const result = await generate({ systemPrompt, userPrompt, maxTokens: agent.maxTokens, temperature: 0.7 });
+  const result = await generate({ systemPrompt, userPrompt, maxTokens: agent.maxTokens });
   const parsed = agent.parseResponse(result.content);
   const page = normalisePage(parsed.data, today);
   return {

@@ -1,11 +1,12 @@
 import type { SkillConfig, ProjectContext, SkillOutput } from "./types";
+import { modelFor } from "../model-routing";
 import { parseJsonResponse } from "../parse-json";
 
 export const emailSequenceSkill: SkillConfig = {
   id: "email-sequence",
   name: "Email Sequence",
   description: "Automated email sequence generation",
-  model: "claude-sonnet-4-6",
+  model: modelFor("generate"),
   // 5 full HTML emails with table-based markup, inline-styled brand
   // accents, and table-of-contents-style sections regularly hit 5500-6500
   // output tokens. The previous 6000 cap pushed Claude to truncation

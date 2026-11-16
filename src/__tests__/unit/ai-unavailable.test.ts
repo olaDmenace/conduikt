@@ -11,11 +11,17 @@ vi.mock("@anthropic-ai/sdk", () => ({
 }));
 
 import {
+  AI_REFUSED_MESSAGE,
   AI_UNAVAILABLE_MESSAGE,
+  AIRefusedError,
   AIUnavailableError,
+  aiRefusedBody,
   aiUnavailableBody,
+  continuePrompt,
   generateWithClaude,
+  generateWithClaudeCompletion,
   mapAnthropicError,
+  refusalFrom,
   resetSpendCapCache,
   TruncatedResponseError,
 } from "@/src/lib/ai/client";
@@ -76,6 +82,7 @@ describe("mapAnthropicError", () => {
     expect(mapAnthropicError(apiError(400, "messages: text content blocks must be non-empty", "invalid_request_error"))).toBeNull();
     expect(mapAnthropicError(new Error("boom"))).toBeNull();
     expect(mapAnthropicError(new TruncatedResponseError("partial", 10, 3))).toBeNull();
+    expect(mapAnthropicError(new AIRefusedError("harmful_content"))).toBeNull();
     expect(mapAnthropicError(null)).toBeNull();
   });
 
@@ -99,6 +106,50 @@ describe("mapAnthropicError", () => {
       code: "ai_unavailable",
       reason: "no_credit",
       retryable: true,
+    });
+  });
+});
+
+describe("refusals", () => {
+  it("turns stop_reason refusal into a typed, non-retryable error carrying stop_details", () => {
+    const err = refusalFrom({
+      stop_reason: "refusal",
+      stop_details: { category: "harmful_content", explanation: "The request asks for X." },
+    });
+    expect(err).toBeInstanceOf(AIRefusedError);
+    expect(err?.name).toBe("AIRefusedError");
+    expect(err?.category).toBe("harmful_content");
+    expect(err?.explanation).toBe("The request asks for X.");
+    expect(err?.retryable).toBe(false);
+    expect(err?.userMessage).toBe(AI_REFUSED_MESSAGE);
+    expect(err?.userMessage).toBe("The writing service declined this request. Rephrase it and try again.");
+    expect(err?.userMessage).not.toMatch(/charge/i);
+  });
+
+  it("copes with a refusal that has no stop_details", () => {
+    const err = refusalFrom({ stop_reason: "refusal" });
+    expect(err?.category).toBeNull();
+    expect(err?.explanation).toBeNull();
+    expect(aiRefusedBody(err!)).toEqual({
+      error: AI_REFUSED_MESSAGE,
+      code: "ai_refused",
+      reason: "unspecified",
+      retryable: false,
+    });
+  });
+
+  it("is null for every other stop reason", () => {
+    for (const stop of ["end_turn", "max_tokens", "stop_sequence", "tool_use", "pause_turn", null]) {
+      expect(refusalFrom({ stop_reason: stop })).toBeNull();
+    }
+  });
+
+  it("builds the 422 body routes return", () => {
+    expect(aiRefusedBody(new AIRefusedError("harmful_content"))).toEqual({
+      error: AI_REFUSED_MESSAGE,
+      code: "ai_refused",
+      reason: "harmful_content",
+      retryable: false,
     });
   });
 });
@@ -143,7 +194,107 @@ describe("generateWithClaude", () => {
     });
     const out = await generateWithClaude({ systemPrompt: "s", userPrompt: "u" });
     expect(out.content).toBe("hello");
-    expect(out.model).toBe("claude-sonnet-4-6");
+    expect(out.model).toBe("claude-opus-5-5");
     expect(out.stopReason).toBe("end_turn");
+  });
+
+  it("sends effort, no sampling params and no thinking field", async () => {
+    sdk.create.mockResolvedValue({
+      content: [{ type: "text", text: "ok" }],
+      usage: { input_tokens: 1, output_tokens: 1 },
+      stop_reason: "end_turn",
+    });
+    await generateWithClaude({ systemPrompt: "s", userPrompt: "u", maxTokens: 4000 });
+    expect(sdk.create).toHaveBeenCalledTimes(1);
+    const params = sdk.create.mock.calls[0][0];
+    expect(params).toEqual({
+      model: "claude-opus-5-5",
+      max_tokens: 4000,
+      system: "s",
+      messages: [{ role: "user", content: "u" }],
+      output_config: { effort: "medium" },
+    });
+    expect(params).not.toHaveProperty("temperature");
+    expect(params).not.toHaveProperty("top_p");
+    expect(params).not.toHaveProperty("top_k");
+    expect(params).not.toHaveProperty("thinking");
+    expect(params).not.toHaveProperty("tool_choice");
+  });
+
+  it("passes an explicit effort through", async () => {
+    sdk.create.mockResolvedValue({
+      content: [{ type: "text", text: "ok" }],
+      usage: { input_tokens: 1, output_tokens: 1 },
+      stop_reason: "end_turn",
+    });
+    await generateWithClaude({ systemPrompt: "s", userPrompt: "u", effort: "low" });
+    expect(sdk.create.mock.calls[0][0].output_config).toEqual({ effort: "low" });
+  });
+
+  it("raises a tiny max_tokens to the 2048 floor", async () => {
+    sdk.create.mockResolvedValue({
+      content: [{ type: "text", text: "id-1" }],
+      usage: { input_tokens: 1, output_tokens: 1 },
+      stop_reason: "end_turn",
+    });
+    await generateWithClaude({ systemPrompt: "s", userPrompt: "u", maxTokens: 100 });
+    expect(sdk.create.mock.calls[0][0].max_tokens).toBe(2048);
+  });
+
+  it("reads text by block type, skipping the thinking blocks a response may open with", async () => {
+    sdk.create.mockResolvedValue({
+      content: [
+        { type: "thinking", thinking: "", signature: "x" },
+        { type: "text", text: "first " },
+        { type: "text", text: "second" },
+      ],
+      usage: { input_tokens: 10, output_tokens: 5 },
+      stop_reason: "end_turn",
+    });
+    const out = await generateWithClaude({ systemPrompt: "s", userPrompt: "u" });
+    expect(out.content).toBe("first second");
+  });
+
+  it("throws AIRefusedError on stop_reason refusal before reading content", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    sdk.create.mockResolvedValue({
+      content: [{ type: "text", text: "I can" }],
+      usage: { input_tokens: 10, output_tokens: 2 },
+      stop_reason: "refusal",
+      stop_details: { category: "harmful_content", explanation: "no" },
+    });
+    await expect(generateWithClaude({ systemPrompt: "s", userPrompt: "u" })).rejects.toMatchObject({
+      name: "AIRefusedError",
+      category: "harmful_content",
+      retryable: false,
+      userMessage: AI_REFUSED_MESSAGE,
+    });
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("harmful_content"), "no");
+  });
+
+  it("continues a cut-off answer with a user turn, never a trailing assistant message", async () => {
+    sdk.create
+      .mockResolvedValueOnce({
+        content: [{ type: "text", text: "Part one and" }],
+        usage: { input_tokens: 10, output_tokens: 5 },
+        stop_reason: "max_tokens",
+      })
+      .mockResolvedValueOnce({
+        content: [{ type: "text", text: " part two." }],
+        usage: { input_tokens: 12, output_tokens: 3 },
+        stop_reason: "end_turn",
+      });
+    const out = await generateWithClaudeCompletion({ systemPrompt: "s", userPrompt: "u" });
+    expect(out.content).toBe("Part one and part two.");
+    expect(out.stopReason).toBe("end_turn");
+    expect(sdk.create).toHaveBeenCalledTimes(2);
+
+    const second = sdk.create.mock.calls[1][0];
+    const last = second.messages[second.messages.length - 1];
+    expect(last.role).toBe("user");
+    expect(last.content).toBe(continuePrompt("Part one and"));
+    expect(last.content).toContain("Your previous response was interrupted and ended with: Part one and");
+    expect(second.messages.map((m: { role: string }) => m.role)).toEqual(["user", "assistant", "user"]);
+    expect(second.messages[1].content).toBe("Part one and");
   });
 });

@@ -1,11 +1,12 @@
 import type { SkillConfig, ProjectContext, SkillOutput } from "./types";
+import { modelFor } from "../model-routing";
 import { parseJsonResponse } from "../parse-json";
 
 export const contentStrategySkill: SkillConfig = {
   id: "content-strategy",
   name: "Content Strategy",
   description: "Strategic content planning with topics, formats, and calendar recommendations",
-  model: "claude-sonnet-4-6",
+  model: modelFor("generate"),
   // Pillars × content_pieces × calendar entries fan out fast on bigger
   // strategies; 8000 gives headroom for 90-day plans without truncation.
   maxTokens: 8000,

@@ -1,11 +1,12 @@
 import type { SkillConfig, ProjectContext, SkillOutput } from "./types";
+import { modelFor } from "../model-routing";
 import { parseJsonResponse } from "../parse-json";
 
 export const socialContentSkill: SkillConfig = {
   id: "social-content",
   name: "Social Content",
   description: "Social media content creation for X and LinkedIn",
-  model: "claude-sonnet-4-6",
+  model: modelFor("generate"),
   maxTokens: 4000,
 
   buildSystemPrompt: (context: ProjectContext) => `

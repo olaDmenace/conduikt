@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
-import { generateWithClaude, AIUnavailableError, aiUnavailableBody } from "@/src/lib/ai/client";
+import { generateWithClaude, AIRefusedError, AIUnavailableError, aiRefusedBody, aiUnavailableBody } from "@/src/lib/ai/client";
 import { onboardingAdvisorAgent } from "@/src/lib/ai/agents/onboarding-advisor";
 
 export async function POST(
@@ -60,7 +60,7 @@ Generate personalised setup recommendations.`;
     const result = await generateWithClaude({
       systemPrompt,
       userPrompt,
-      maxTokens: 1500,
+      maxTokens: 2048,
     });
 
     await supabase.from("ai_generations").insert({
@@ -78,6 +78,9 @@ Generate personalised setup recommendations.`;
   } catch (e) {
     if (e instanceof AIUnavailableError) {
       return NextResponse.json(aiUnavailableBody(e), { status: 503 });
+    }
+    if (e instanceof AIRefusedError) {
+      return NextResponse.json(aiRefusedBody(e), { status: 422 });
     }
     console.error("[onboarding-plan] failed", e);
     return NextResponse.json(

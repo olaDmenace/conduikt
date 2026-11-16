@@ -1,4 +1,5 @@
 import type { AgentConfig, ProjectContext, AgentOutput } from "./types";
+import { modelFor } from "../model-routing";
 import { parseJsonResponse } from "../parse-json";
 
 // Day-by-day social media plan, sister to content-strategy.
@@ -22,7 +23,7 @@ export const postingPlanAgent: AgentConfig = {
   name: "Posting Plan Agent",
   description:
     "AI-generated day-by-day X and LinkedIn posting plan with hooks, templates, and video briefs",
-  model: "claude-sonnet-4-6",
+  model: modelFor("generate"),
   // 30 days × 2 platforms × ~6 fields per entry runs long; 8000 keeps
   // the schema fully populated without truncation pressure.
   maxTokens: 8000,

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 import { verifyProjectOwnership } from "@/src/lib/auth/verify-ownership";
-import { generateWithClaude, AIUnavailableError } from "@/src/lib/ai/client";
+import { generateWithClaude, AIRefusedError, AIUnavailableError } from "@/src/lib/ai/client";
 import { getAgent } from "@/src/lib/ai/agents";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
 import { buildPerformanceContext } from "@/src/lib/ai/performance-context";
@@ -185,7 +185,9 @@ export async function POST(
           result:
             err instanceof AIUnavailableError
               ? { error: err.userMessage, errorCode: "ai_unavailable", reason: err.code }
-              : { error: err instanceof Error ? err.message : "Unknown error" },
+              : err instanceof AIRefusedError
+                ? { error: err.userMessage, errorCode: "ai_refused", reason: err.category ?? "unspecified" }
+                : { error: err instanceof Error ? err.message : "Unknown error" },
           completed_at: new Date().toISOString(),
         })
         .eq("id", step.id);

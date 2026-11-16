@@ -1,12 +1,13 @@
 import type { AgentConfig } from "./types";
+import { modelFor } from "../model-routing";
 
 export const onboardingAdvisorAgent: AgentConfig = {
   id: "onboarding-advisor",
   name: "Onboarding Advisor",
   description:
     "Generates personalised setup recommendations based on questionnaire answers",
-  model: "claude-sonnet-4-6",
-  maxTokens: 1500,
+  model: modelFor("generate"),
+  maxTokens: 2048,
   buildSystemPrompt: () => `You are an AI marketing advisor for Conduikt, an AI marketing automation platform. Based on the user's questionnaire answers about their marketing setup, generate personalized recommendations.
 
 You MUST respond with valid JSON only, no markdown, no explanation:

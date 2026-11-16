@@ -7,7 +7,7 @@ export const contentScorerAgent: AgentConfig = {
   description: "Score content across clarity, relevance, engagement, and brand alignment",
   // Short, structured and frequent: the cheap model (see model-routing).
   model: modelFor("score"),
-  maxTokens: 1000,
+  maxTokens: 2048,
 
   buildSystemPrompt(ctx: ProjectContext): string {
     const brandVoice =

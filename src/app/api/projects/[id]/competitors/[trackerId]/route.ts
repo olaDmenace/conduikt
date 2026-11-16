@@ -74,7 +74,7 @@ Provide a competitive analysis snapshot.`;
     const result = await generateWithClaude({
       systemPrompt,
       userPrompt,
-      maxTokens: 1500,
+      maxTokens: 2048,
     });
 
     const parsed = JSON.parse(result.content);

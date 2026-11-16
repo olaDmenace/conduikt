@@ -1,7 +1,11 @@
 import { Badge } from "@/src/components/ui/badge";
 import { getUsageData } from "@/src/lib/admin/queries";
+import { CURRENT_MODEL_PRICING } from "@/src/lib/ai/model-routing";
 
 export const dynamic = "force-dynamic";
+
+// "$4", "$0.10": whole dollars bare, cents to two places.
+const priceLabel = (usd: number) => (Number.isInteger(usd) ? String(usd) : usd.toFixed(2));
 
 export default async function AdminUsagePage() {
   const {
@@ -244,8 +248,15 @@ export default async function AdminUsagePage() {
       {/* Pricing note */}
       <div className="rounded-lg border border-line bg-ground px-4 py-3">
         <p className="text-body-s text-text-3">
-          Cost estimates based on Anthropic API pricing: Sonnet $3/MTok input, $15/MTok output.
-          Actual costs may vary with batching, caching, or plan discounts.
+          Cost estimates use each row&apos;s model at Anthropic list price per million tokens (input / output):{" "}
+          {CURRENT_MODEL_PRICING.map((m, i) => (
+            <span key={m.id}>
+              {i > 0 && ", "}
+              {m.label} ${priceLabel(m.input)} / ${priceLabel(m.output)}
+            </span>
+          ))}
+          . Rows on retired models are priced at the rates they were billed at; unknown models at the Opus 5.5
+          rate. Actual costs may vary with caching, batching, or plan discounts.
         </p>
       </div>
     </div>
