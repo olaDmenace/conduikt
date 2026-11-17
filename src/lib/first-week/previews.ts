@@ -1,5 +1,5 @@
 import { AIUnavailableError, generateWithClaude } from "@/src/lib/ai/client";
-import { modelFor } from "@/src/lib/ai/model-routing";
+import { effortFor, modelFor } from "@/src/lib/ai/model-routing";
 import { parseJsonResponse } from "@/src/lib/ai/parse-json";
 import { samplePreviews } from "@/src/lib/ai/samples";
 import type { PageSignal } from "@/src/lib/onboarding/magic-audit";
@@ -67,7 +67,7 @@ ${agents.map((a) => `- ${a.id}: ${a.name}. ${a.job}`).join("\n")}`;
       userPrompt,
       model: modelFor("preview"),
       maxTokens: 3500,
-      temperature: 0.4,
+      effort: effortFor("preview"),
     }));
   } catch (err) {
     if (err instanceof AIUnavailableError && mode === "fallback") {

@@ -14,7 +14,7 @@ import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import {
   normalizePlan,
-  PLAN_ORDER,
+  nextUpgradeTier,
   GENERATION_LIMITS,
   tierLabel,
   PLAN_PRICING,
@@ -46,9 +46,8 @@ export function UsageLimitProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   const plan = state.plan;
-  const planIdx = PLAN_ORDER.indexOf(plan);
-  const nextTier: PlanTier | null =
-    planIdx < PLAN_ORDER.length - 1 ? PLAN_ORDER[planIdx + 1] : null;
+  // Local users are offered Pro; the naira tier is never an upgrade target.
+  const nextTier: PlanTier | null = nextUpgradeTier(plan);
 
   return (
     <UsageLimitContext.Provider value={{ showLimitModal }}>

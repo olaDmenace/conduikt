@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Rate limit: 5 uploads per minute per user
-  const rl = rateLimit(`upload:${user.id}`, { limit: 5, windowSeconds: 60 });
+  const rl = await rateLimit(`upload:${user.id}`, { limit: 5, windowSeconds: 60 });
   if (!rl.allowed) return rateLimitResponse(rl);
 
   const ALLOWED_BUCKETS = ["logos", "post-media", "brand-assets"];

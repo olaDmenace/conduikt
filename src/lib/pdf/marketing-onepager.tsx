@@ -28,9 +28,16 @@ const LOOP = [
 ];
 
 const TIERS: PlanTier[] = ["free", "pro", "growth", "agency"];
-const TIER_LABEL: Record<PlanTier, string> = { free: "Free", pro: "Pro", growth: "Growth", agency: "Agency" };
+const TIER_LABEL: Record<PlanTier, string> = {
+  free: "Free",
+  local: "Local",
+  pro: "Pro",
+  growth: "Growth",
+  agency: "Agency",
+};
 const TIER_EXTRA: Record<PlanTier, string> = {
   free: "Site check and social posts",
+  local: "For local businesses, billed in naira",
   pro: "Posts to X and LinkedIn for you",
   growth: "Campaigns, video ads and split tests",
   agency: "Client reports and team seats",

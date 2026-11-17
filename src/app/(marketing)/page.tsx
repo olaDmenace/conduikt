@@ -38,7 +38,13 @@ import ctaPhoto from "@/public/images/home/cta-team.webp";
 // page can't drift from the product.
 
 const TIER_ORDER: PlanTier[] = ["free", "pro", "growth", "agency"];
-const TIER_LABEL: Record<PlanTier, string> = { free: "Free", pro: "Pro", growth: "Growth", agency: "Agency" };
+const TIER_LABEL: Record<PlanTier, string> = {
+  free: "Free",
+  local: "Local",
+  pro: "Pro",
+  growth: "Growth",
+  agency: "Agency",
+};
 
 // Real testimonials from conduikt.com. Roles appear only where the
 // person's own words state one — never invented.
@@ -100,12 +106,14 @@ const PRICING: Array<{
     (n === AI_AGENT_COUNT ? `All ${n} AI agents` : `${n} AI agents`) + (tools.length ? ` + ${tools.join(" and ")}` : "");
   const extra: Record<PlanTier, string> = {
     free: "Site check and social posts",
+    local: "For local businesses: a hosted page, WhatsApp and review requests",
     pro: "Posts to X and LinkedIn for you",
     growth: "Campaigns, video ads and split tests",
     agency: "Client reports and team seats",
   };
   const cta: Record<PlanTier, { label: string; href: string }> = {
     free: { label: "Start free", href: "/signup" },
+    local: { label: "Choose Local", href: "/pricing" },
     pro: { label: "Try Pro", href: "/signup" },
     growth: { label: "Try Growth", href: "/signup" },
     agency: { label: "Talk to us", href: "mailto:hello@conduikt.com" },

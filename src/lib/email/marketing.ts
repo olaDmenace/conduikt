@@ -314,6 +314,16 @@ export async function verifyDomain(domainId: string): Promise<ResendResult<true>
   }
 }
 
+export async function deleteDomain(domainId: string): Promise<ResendResult<true>> {
+  try {
+    const { error } = await client().domains.remove(domainId);
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: true };
+  } catch (e) {
+    return { ok: false, error: errMsg(e) };
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Defaults
 // ---------------------------------------------------------------------------
@@ -323,9 +333,9 @@ export async function verifyDomain(domainId: string): Promise<ResendResult<true>
 // domain is reserved for transactional / contact mailboxes (hello@,
 // support@) and isn't used as a Resend sender.
 //
-// Each user can override with their own verified domain (Pro+ feature,
-// gated behind a waitlist until Resend is upgraded). That override path
-// lives in the broadcast send route, not here.
+// Each user on Pro and above can override this with their own verified
+// domain: see src/lib/email/sender.ts (resolveSenderAddress) and the
+// /settings/email-domain flow.
 export const CONDUIKT_MARKETING_FROM = "Conduikt <mail@contacts.conduikt.com>";
 export const CONDUIKT_MARKETING_DOMAIN = "contacts.conduikt.com";
 

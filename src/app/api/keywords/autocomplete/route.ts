@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
+import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
 
 // Google Suggest API — proxied through our API to require auth
 const GOOGLE_SUGGEST_URL = "https://suggestqueries.google.com/complete/search";
@@ -10,6 +11,11 @@ export async function GET(request: Request) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  // Typeahead fires per keystroke (debounced client-side); 60 per 10 min
+  // is plenty for a person and stops a loop hammering Google through us.
+  const rl = await rateLimit(`keyword-autocomplete:${user.id}`, { limit: 60, windowSeconds: 600 });
+  if (!rl.allowed) return rateLimitResponse(rl);
 
   const { searchParams } = new URL(request.url);
   const q = searchParams.get("q");

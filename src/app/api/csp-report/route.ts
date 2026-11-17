@@ -47,7 +47,7 @@ interface ReportsApiEntry {
 }
 
 export async function POST(request: NextRequest) {
-  const rl = rateLimit(clientKey(request), RATE_LIMIT);
+  const rl = await rateLimit(clientKey(request), RATE_LIMIT);
   if (!rl.allowed) return rateLimitResponse(rl);
 
   try {

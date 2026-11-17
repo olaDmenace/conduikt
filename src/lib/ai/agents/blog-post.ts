@@ -1,12 +1,13 @@
 import { ANSWER_FIRST_RULES } from "@/src/lib/ai/answer-first";
 import type { SkillConfig, ProjectContext, SkillOutput } from "./types";
+import { modelFor } from "../model-routing";
 import { parseJsonResponse } from "../parse-json";
 
 export const blogPostSkill: SkillConfig = {
   id: "blog-post",
   name: "Blog Post",
   description: "SEO-optimized long-form blog posts with meta tags, structure, and social promotion snippets",
-  model: "claude-sonnet-4-6",
+  model: modelFor("generate"),
   // 1500-word blog posts plus meta + social_promotion + conclusion run
   // ~6500-7500 output tokens. 12000 keeps headroom for outliers.
   maxTokens: 12000,

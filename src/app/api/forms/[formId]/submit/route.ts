@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/src/lib/supabase/service";
-import { enqueueExecution } from "@/src/lib/scheduler/enqueue";
+import { enrollContactInSequence } from "@/src/lib/email/enroll";
+import { beginConfirmation } from "@/src/lib/email/confirm";
+import { createContact } from "@/src/lib/email/marketing";
+import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
+import { clientIp } from "@/src/lib/security/client-ip";
 
 // Public POST endpoint for lead-capture forms.
 //
@@ -20,10 +24,20 @@ import { enqueueExecution } from "@/src/lib/scheduler/enqueue";
 //   1. Honeypot field `_hp` — invisible input populated by bots. If
 //      non-empty, return 200 silently (don't reveal the trap).
 //   2. Email regex validation.
+//   3. Per-IP rate limit (the only path here that sends an email).
 //
 // Side effects on success:
-//   - Upsert audience_contact (subscribed; idempotent on email).
-//   - If the form has sequence_id, create + enqueue a sequence enrollment.
+//   - New contact: insert as 'subscribed', or as 'pending' when the list
+//     has double opt-in on (then email them a confirm link; the email
+//     series waits until they confirm).
+//   - Existing contact: never changes their status. An unsubscribed,
+//     bounced or suppressed address stays that way; a pending one gets
+//     the confirmation email again.
+//   - Two submits for the same new address at once (double-click, embed
+//     retry): the insert that loses the unique index (23505) re-reads the
+//     row and takes the existing-contact path, so both get a 200 and only
+//     one Resend contact is created (mirroring runs after the insert).
+//   - If the form has sequence_id and the contact is subscribed, enrol.
 //   - Bump form.submission_count.
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -86,6 +100,12 @@ export async function POST(
     );
   }
 
+  // Per visitor across every form: 10 submits per 10 minutes. The counter
+  // is shared across instances, so a burst spread over lambdas is still
+  // one burst.
+  const limited = await rateLimit(`form-submit:${clientIp(request.headers)}`, { limit: 10, windowSeconds: 600 });
+  if (!limited.allowed) return rateLimitResponse(limited);
+
   const firstName = body.first_name?.toString().trim() || null;
   const lastName = body.last_name?.toString().trim() || null;
 
@@ -105,85 +125,133 @@ export async function POST(
     return corsJson({ error: "This form is not accepting submissions." }, { status: 404 });
   }
 
-  // Upsert the contact. The audience_contacts unique index on
-  // (audience_id, email) means re-submission of the same email returns
-  // the existing row instead of erroring.
-  const { data: contact, error: cErr } = await supabase
-    .from("audience_contacts")
-    .upsert(
-      {
+  const { data: audience } = await supabase
+    .from("audiences")
+    .select("id, name, double_opt_in, resend_audience_id")
+    .eq("id", form.audience_id)
+    .maybeSingle();
+  const doubleOptIn = audience?.double_opt_in === true;
+
+  // Brand name for the confirmation email: the project's client name, then
+  // the project name, then the list name.
+  async function brandName(): Promise<string> {
+    const { data: project } = await supabase
+      .from("projects")
+      .select("name, client_name")
+      .eq("id", form!.project_id)
+      .maybeSingle();
+    return (project?.client_name ?? "").trim() || (project?.name ?? "").trim() || audience?.name || "us";
+  }
+
+  async function findExisting(): Promise<{ id: string; status: string } | null> {
+    const { data } = await supabase
+      .from("audience_contacts")
+      .select("id, status, unsubscribe_token")
+      .eq("audience_id", form!.audience_id)
+      .eq("email", email)
+      .maybeSingle();
+    return (data as { id: string; status: string } | null) ?? null;
+  }
+
+  // Existing contact? Never flip their status from a public form.
+  let existing = await findExisting();
+
+  let contactId = "";
+  let contactStatus = "";
+  let isNew = false;
+
+  if (!existing) {
+    const { data: inserted, error: cErr } = await supabase
+      .from("audience_contacts")
+      .insert({
         audience_id: form.audience_id,
         email,
         first_name: firstName,
         last_name: lastName,
-        status: "subscribed",
-      },
-      {
-        onConflict: "audience_id,email",
-        ignoreDuplicates: false,
-      }
-    )
-    .select("id, status, unsubscribe_token")
-    .single();
+        status: doubleOptIn ? "pending" : "subscribed",
+        pending_sequence_id: doubleOptIn ? form.sequence_id ?? null : null,
+        resend_contact_id: null,
+      })
+      .select("id, status")
+      .single();
 
-  if (cErr || !contact) {
-    return corsJson(
-      { error: "Could not save your submission. Please try again." },
-      { status: 500 }
-    );
+    if (cErr?.code === "23505") {
+      // Lost the race to another submit for the same address: it is the
+      // existing contact now, so take that path.
+      existing = await findExisting();
+    } else if (cErr || !inserted) {
+      return corsJson(
+        { error: "Could not save your submission. Please try again." },
+        { status: 500 }
+      );
+    } else {
+      isNew = true;
+      contactId = inserted.id;
+      contactStatus = inserted.status;
+    }
+
+    if (!isNew && !existing) {
+      return corsJson(
+        { error: "Could not save your submission. Please try again." },
+        { status: 500 }
+      );
+    }
   }
 
-  // If the contact is already unsubscribed/bounced, don't reactivate them
-  // through a form submit (could be a spammer testing addresses they've
-  // suppressed). Treat as silent success — the form said yes, but we
-  // don't enroll them.
-  const skipEnrollment =
-    contact.status !== "subscribed" || !form.sequence_id;
-
-  if (!skipEnrollment && form.sequence_id) {
-    // Pick step 1 of the sequence to schedule.
-    const { data: firstStep } = await supabase
-      .from("email_sequence_steps")
-      .select("step_order, delay_hours")
-      .eq("sequence_id", form.sequence_id)
-      .order("step_order", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-
-    if (firstStep) {
-      // Insert enrollment (idempotent via the unique sequence+contact
-      // constraint).
-      const { data: enrollment } = await supabase
-        .from("email_sequence_enrollments")
-        .upsert(
-          {
-            user_id: form.user_id,
-            sequence_id: form.sequence_id,
-            contact_id: contact.id,
-            audience_id: form.audience_id,
-          },
-          { onConflict: "sequence_id,contact_id", ignoreDuplicates: false }
-        )
-        .select("id")
-        .single();
-
-      if (enrollment) {
-        const delayHours = Math.max(0, Number(firstStep.delay_hours ?? 0));
-        const scheduledFor = new Date(Date.now() + delayHours * 3600_000);
-        await enqueueExecution(supabase, {
-          userId: form.user_id,
-          executionType: "email_sequence_step",
-          payload: {
-            enrollmentId: enrollment.id,
-            stepOrder: firstStep.step_order,
-          },
-          scheduledFor,
-          idempotencyKey: `seq-step:${enrollment.id}:${firstStep.step_order}`,
-          parentId: enrollment.id,
-          parentType: "email_sequence_enrollment",
-        });
-      }
+  if (existing) {
+    contactId = existing.id;
+    contactStatus = existing.status;
+    if (firstName || lastName) {
+      await supabase
+        .from("audience_contacts")
+        .update({
+          ...(firstName ? { first_name: firstName } : {}),
+          ...(lastName ? { last_name: lastName } : {}),
+        })
+        .eq("id", existing.id);
     }
+    if (existing.status === "pending") {
+      // They signed up again without confirming: send the link again.
+      await beginConfirmation(supabase, {
+        contactId: existing.id,
+        email,
+        userId: form.user_id,
+        brandName: await brandName(),
+      });
+    }
+  } else if (doubleOptIn) {
+    await beginConfirmation(supabase, {
+      contactId,
+      email,
+      userId: form.user_id,
+      brandName: await brandName(),
+    });
+  } else if (audience?.resend_audience_id) {
+    // Mirror into Resend only after the local row exists, and only when
+    // they're subscribed. Pending people join the Resend audience at
+    // confirm time.
+    const mirrored = await createContact(audience.resend_audience_id, {
+      email,
+      first_name: firstName ?? undefined,
+      last_name: lastName ?? undefined,
+    });
+    if (mirrored.ok) {
+      await supabase
+        .from("audience_contacts")
+        .update({ resend_contact_id: mirrored.data.id })
+        .eq("id", contactId);
+    }
+  }
+
+  // Enrol only subscribed people. Pending ones are enrolled when they
+  // confirm (confirmContactByToken reads pending_sequence_id).
+  if (contactStatus === "subscribed" && form.sequence_id) {
+    await enrollContactInSequence(supabase, {
+      userId: form.user_id,
+      sequenceId: form.sequence_id,
+      contactId,
+      audienceId: form.audience_id,
+    });
   }
 
   // Bump the submission counter. Best-effort — we don't fail the user
@@ -193,10 +261,14 @@ export async function POST(
   // Either redirect (server-side; embed JS may also handle redirect on
   // its end if it asked for JSON) or return JSON.
   if (form.redirect_url) {
-    return corsJson({ ok: true, redirect: form.redirect_url });
+    return corsJson({ ok: true, redirect: form.redirect_url, pending: contactStatus === "pending" });
   }
   return corsJson({
     ok: true,
-    message: form.thank_you_message,
+    message:
+      contactStatus === "pending"
+        ? "Almost there. Check your inbox and confirm your email."
+        : form.thank_you_message,
+    pending: contactStatus === "pending",
   });
 }

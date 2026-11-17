@@ -14,6 +14,13 @@ vi.mock("@/src/lib/scheduler/enqueue", () => ({
   enqueueExecution: (...args: unknown[]) => enqueueMock(...args),
 }));
 
+// Mock the from-address resolver: it has its own tests. The handler must
+// send from whatever it returns (verified domain or the shared sender).
+const resolveSenderMock = vi.fn();
+vi.mock("@/src/lib/email/sender", () => ({
+  resolveSenderAddress: (...args: unknown[]) => resolveSenderMock(...args),
+}));
+
 import handler from "@/src/lib/scheduler/handlers/email-sequence-step";
 import type { ScheduledExecution } from "@/src/lib/scheduler/types";
 
@@ -124,10 +131,18 @@ function fakeExecution(): ScheduledExecution {
   };
 }
 
+const SHARED_SENDER = {
+  email: "mail@contacts.conduikt.com",
+  from: "Conduikt <mail@contacts.conduikt.com>",
+  custom: false,
+};
+
 beforeEach(() => {
   sendMock.mockReset();
   enqueueMock.mockClear();
   enqueueMock.mockResolvedValue({ inserted: true, id: "queued-1" });
+  resolveSenderMock.mockReset();
+  resolveSenderMock.mockResolvedValue(SHARED_SENDER);
 });
 
 describe("email-sequence-step handler", () => {
@@ -263,11 +278,13 @@ describe("email-sequence-step handler", () => {
     );
 
     expect(r.ok).toBe(true);
+    expect(resolveSenderMock).toHaveBeenCalledWith(expect.anything(), "user-1", null);
     expect(sendMock).toHaveBeenCalledWith(
       expect.objectContaining({
         to: "alice@example.com",
         subject: "Welcome",
         unsubscribeToken: "token-xyz",
+        from: SHARED_SENDER.from,
       })
     );
     expect(enqueueMock).toHaveBeenCalledWith(
@@ -277,6 +294,39 @@ describe("email-sequence-step handler", () => {
         payload: { enrollmentId: "enr-1", stepOrder: 2 },
         idempotencyKey: "seq-step:enr-1:2",
       })
+    );
+  });
+
+  it("sends from the owner's verified domain when the resolver returns one", async () => {
+    sendMock.mockResolvedValue({ ok: true, resendEmailId: "re_custom" });
+    resolveSenderMock.mockResolvedValue({
+      email: "news@acme.com",
+      from: "Acme <news@acme.com>",
+      custom: true,
+    });
+
+    const { supabase } = buildSupabase({
+      email_sequence_enrollments: [
+        { data: ACTIVE_ENROLLMENT, error: null },
+        { data: null, error: null },
+        { data: null, error: null },
+      ],
+      audience_contacts: [{ data: SUBSCRIBED_CONTACT, error: null }],
+      email_sequence_steps: [
+        { data: STEP_1, error: null },
+        { data: null, error: null }, // no next step
+      ],
+      profiles: [{ data: { email_usage_reset_at: null }, error: null }],
+    });
+
+    const r = await handler(
+      { enrollmentId: "enr-1", stepOrder: 1 },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { supabase: supabase as any, execution: fakeExecution() }
+    );
+    expect(r.ok).toBe(true);
+    expect(sendMock).toHaveBeenCalledWith(
+      expect.objectContaining({ from: "Acme <news@acme.com>" })
     );
   });
 

@@ -28,6 +28,8 @@ import {
   MenuFoldOne,
   MenuUnfoldOne,
 } from "@/src/components/ui/icons";
+// Same IconPark set through the client wrapper; icons.tsx doesn't list these two yet.
+import { User as LeadsIcon, Star as ReviewsIcon } from "@/src/components/ui/lucide-icons";
 import { cn } from "@/src/lib/utils/cn";
 import { useUIStore } from "@/src/stores/ui-store";
 import { createClient } from "@/src/lib/supabase/client";
@@ -44,6 +46,7 @@ import { IconButton } from "@/src/components/ui/button";
 //   Primary: Home · Drafts waiting for your OK · Calendar · Analytics · What we learned
 //   Ask an agent to: Check my site · Plan what to say · Write something · Post and schedule
 //   Your email list: Email series · Subscribers & sign-up forms · One-off emails
+//   Your customers: Leads · Reviews
 //   Settings: Everything we made · How you sound · Connected accounts
 //   Footer: plan tile (ink), sign out, legal
 //
@@ -332,6 +335,12 @@ export function Sidebar() {
             <SidebarItem href={projectHref("/emails")} icon={<Mail size={20} fill="currentColor" />} label="Email series" current={!!base && at(`${base}/emails`)} onClick={close} labelClassName={compactLabel} collapsed={collapsed} />
             <SidebarItem href={projectHref("/audiences")} icon={<Peoples size={20} fill="currentColor" />} label="Subscribers & sign-up forms" current={!!base && (at(`${base}/audiences`) || at(`${base}/forms`))} onClick={close} labelClassName={compactLabel} collapsed={collapsed} />
             <SidebarItem href={projectHref("/broadcasts")} icon={<SendEmail size={20} fill="currentColor" />} label="One-off emails" current={!!base && at(`${base}/broadcasts`)} onClick={close} labelClassName={compactLabel} collapsed={collapsed} />
+          </SidebarSection>
+
+          {/* Your customers: the leads pipeline and reviews (audit §5.2) */}
+          <SidebarSection label="Your customers" labelClassName={compactLabel}>
+            <SidebarItem href={projectHref("/leads")} icon={<LeadsIcon size={20} fill="currentColor" />} label="Leads" current={!!base && at(`${base}/leads`)} onClick={close} labelClassName={compactLabel} collapsed={collapsed} />
+            <SidebarItem href={projectHref("/reviews")} icon={<ReviewsIcon size={20} fill="currentColor" />} label="Reviews" current={!!base && at(`${base}/reviews`)} onClick={close} labelClassName={compactLabel} collapsed={collapsed} />
           </SidebarSection>
 
           {/* Settings */}

@@ -95,7 +95,7 @@ export function FoundByAiCard({ projectId }: { projectId: string }) {
     return (
       <EmptyState
         icon={<Sparkles className="h-6 w-6" />}
-        title="Not connected yet. Once an answer engine key is added, we ask the questions your customers ask every night and show whether you are in the answer."
+        title="Not switched on yet. Once the writing service is set up, we ask the questions your customers ask every night and show whether you are in the answer."
       />
     );
   }

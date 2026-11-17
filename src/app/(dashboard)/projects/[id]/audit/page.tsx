@@ -10,7 +10,10 @@ import {
   ArrowUpRight,
   Sparkles,
   Lock,
+  Copy,
 } from "@/src/components/ui/lucide-icons";
+import { buildSchemaSnippet, isSchemaFinding } from "@/src/lib/seo/schema-snippet";
+import { factsFromProject, type ProjectRow } from "@/src/lib/missing-pages/facts";
 import { Card } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
@@ -35,6 +38,8 @@ interface Finding {
   impact: "high" | "medium" | "low";
   gated?: boolean;
   gateCTA?: string;
+  /** Paste-ready JSON-LD when the finding is about structured data (attachSchemaSnippet). */
+  schema_snippet?: string;
 }
 
 interface Audit {
@@ -85,8 +90,25 @@ export default function AuditPage({
   const [filter, setFilter] = useState<
     "all" | "critical" | "warning" | "info"
   >("all");
+  // The project facts, for a schema snippet when the saved audit has none.
+  const [projectRow, setProjectRow] = useState<ProjectRow | null>(null);
+  const [copiedSnippet, setCopiedSnippet] = useState(false);
   const { toast } = useToast();
   const { showLimitModal } = useUsageLimitModal();
+
+  useEffect(() => {
+    fetch(`/api/projects/${id}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((row) => setProjectRow(row as ProjectRow | null))
+      .catch(() => setProjectRow(null));
+  }, [id]);
+
+  function copySnippet(text: string) {
+    navigator.clipboard.writeText(text);
+    setCopiedSnippet(true);
+    toast("Copied", "info");
+    setTimeout(() => setCopiedSnippet(false), 2000);
+  }
 
   async function getAudits(): Promise<Audit[] | null> {
     const res = await fetch(`/api/projects/${id}/audits`);
@@ -183,6 +205,16 @@ export default function AuditPage({
 
   const countBy = (s: Finding["severity"]) =>
     findings.filter((f) => severityOf(f) === s).length;
+
+  // The structured-data snippet: saved with the audit when the route
+  // attached one, else built here from the project facts.
+  const schemaFinding = findings.find((f) => !f.gated && isSchemaFinding(f));
+  const savedSnippet = findings.find((f) => f.schema_snippet)?.schema_snippet ?? null;
+  const schemaSnippet =
+    savedSnippet ??
+    (schemaFinding && projectRow
+      ? buildSchemaSnippet(factsFromProject(projectRow), { pageUrl: latestAudit.url }).html
+      : null);
 
   return (
     <div>
@@ -286,6 +318,28 @@ export default function AuditPage({
       {/* Page speed */}
       {latestAudit.metadata?.pageSpeed && (
         <PageSpeedPanel data={latestAudit.metadata.pageSpeed} />
+      )}
+
+      {/* Structured data, ready to paste */}
+      {schemaSnippet && (
+        <Card className="mb-8 animate-in">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-label text-text-3">Ready for Google</p>
+              <h2 className="mt-1 text-heading text-text">Facts about your business, in the form Google reads</h2>
+              <p className="mt-1 max-w-[64ch] text-body-s text-text-2">
+                Your site is missing this. Paste it inside the <span className="font-mono">&lt;head&gt;</span> of your home page, or into your site builder&apos;s custom code box.
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => copySnippet(schemaSnippet)}>
+              <Copy className="h-4 w-4" />
+              {copiedSnippet ? "Copied" : "Copy"}
+            </Button>
+          </div>
+          <pre className="mt-4 max-h-80 overflow-auto rounded-md border border-line bg-ground p-3 font-mono text-[12px] leading-relaxed text-text">
+            <code>{schemaSnippet}</code>
+          </pre>
+        </Card>
       )}
 
       {/* Filters */}

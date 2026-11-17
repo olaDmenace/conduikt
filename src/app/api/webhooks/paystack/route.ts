@@ -21,7 +21,7 @@ function verifySignature(rawBody: string, signature: string): boolean {
 
 export async function POST(request: NextRequest) {
   // Rate limit by IP: 30 requests per minute
-  const rl = rateLimit(`paystack-wh:${request.headers.get("x-forwarded-for") || "unknown"}`, { limit: 30, windowSeconds: 60 });
+  const rl = await rateLimit(`paystack-wh:${request.headers.get("x-forwarded-for") || "unknown"}`, { limit: 30, windowSeconds: 60 });
   if (!rl.allowed) return rateLimitResponse(rl);
 
   const rawBody = await request.text();

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
-import { generateWithClaude, AIUnavailableError, aiUnavailableBody } from "@/src/lib/ai/client";
+import { generateWithClaude, AIRefusedError, AIUnavailableError, aiRefusedBody, aiUnavailableBody } from "@/src/lib/ai/client";
 import { onboardingAdvisorAgent } from "@/src/lib/ai/agents/onboarding-advisor";
+import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
 
 export async function POST(
   request: NextRequest,
@@ -14,6 +15,9 @@ export async function POST(
   } = await supabase.auth.getUser();
   if (!user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const rl = await rateLimit(`onboarding-plan:${user.id}`, { limit: 20, windowSeconds: 600 });
+  if (!rl.allowed) return rateLimitResponse(rl);
 
   const { data: project } = await supabase
     .from("projects")
@@ -60,7 +64,7 @@ Generate personalised setup recommendations.`;
     const result = await generateWithClaude({
       systemPrompt,
       userPrompt,
-      maxTokens: 1500,
+      maxTokens: 2048,
     });
 
     await supabase.from("ai_generations").insert({
@@ -78,6 +82,9 @@ Generate personalised setup recommendations.`;
   } catch (e) {
     if (e instanceof AIUnavailableError) {
       return NextResponse.json(aiUnavailableBody(e), { status: 503 });
+    }
+    if (e instanceof AIRefusedError) {
+      return NextResponse.json(aiRefusedBody(e), { status: 422 });
     }
     console.error("[onboarding-plan] failed", e);
     return NextResponse.json(

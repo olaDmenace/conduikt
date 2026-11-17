@@ -180,7 +180,7 @@ export const PLAYBOOKS: Record<BusinessType, Playbook> = {
       gbpStatus,
       contentOutput,
     ],
-    pricingNote: "Priced in naira soon.",
+    pricingNote: "The Local plan is ₦15,000 a month, billed in naira.",
   },
   agency: {
     id: "agency",

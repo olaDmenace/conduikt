@@ -14,7 +14,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (isResponse(ctx)) return ctx;
   const { supabase, userId } = ctx;
 
-  const rl = rateLimit(`missing-pages-run:${userId}`, { limit: 3, windowSeconds: 10 * 60 });
+  const rl = await rateLimit(`missing-pages-run:${userId}`, { limit: 3, windowSeconds: 10 * 60 });
   if (!rl.allowed) return rateLimitResponse(rl);
 
   let maxPages = 1;
@@ -33,6 +33,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
   if (result.error?.code === "generation_limit") {
     return NextResponse.json({ error: result.error.message, code: "generation_limit", run: result }, { status: 429 });
+  }
+  if (result.error?.code === "nothing_to_check") {
+    // No website and no services: nothing was read and no run was counted.
+    return NextResponse.json({ error: result.error.message, code: "nothing_to_check", settingsPath: `/projects/${id}/settings`, run: result }, { status: 422 });
   }
   if (result.error) {
     return NextResponse.json({ error: result.error.message, run: result }, { status: 500 });

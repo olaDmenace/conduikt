@@ -39,9 +39,30 @@ export async function GET(
   return NextResponse.json(project);
 }
 
+/** Optional free text: trimmed, capped, "" becomes null. */
+const text = (max: number) =>
+  z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? null : v),
+    z.string().trim().max(max).nullable().optional()
+  );
+
+/** An optional link. "" is none; "calendly.com/x" becomes https://calendly.com/x. */
+const link = z.preprocess((v) => {
+  if (typeof v !== "string") return v ?? null;
+  const s = v.trim();
+  if (!s) return null;
+  return /^[a-z][a-z0-9+.-]*:\/\//i.test(s) ? s : `https://${s}`;
+}, z.url({ error: "That doesn't look like a link" }).max(2048).nullable().optional());
+
 // Fields with a fixed shape are checked before they reach the database.
 // Everything else in allowedFields is passed through as before.
 const TypedPatchSchema = z.object({
+  // Business details (phone, address and the two links other features read)
+  phone: text(40),
+  address_line: text(200),
+  city: text(120),
+  booking_url: link,
+  review_url: link,
   business_type: z.enum(BUSINESS_TYPES).nullable().optional(),
   automation_mode: z.enum(AUTOMATION_MODE_IDS).optional(),
   wants_hosted_page: z.boolean().optional(),
@@ -105,6 +126,12 @@ export async function PATCH(
     "wants_hosted_page",
     "business_location",
     "services",
+    // Business details (phone, address, booking and review links)
+    "phone",
+    "address_line",
+    "city",
+    "booking_url",
+    "review_url",
   ];
 
   const updates: Record<string, unknown> = {};

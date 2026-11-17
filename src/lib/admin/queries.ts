@@ -1,5 +1,6 @@
 import { createServiceClient } from "@/src/lib/supabase/service";
 import { PLAN_PRICING } from "@/src/lib/plans";
+import { estimateCostUsd } from "@/src/lib/ai/model-routing";
 
 // ─── Dashboard Stats ───────────────────────────────────────────────
 export async function getAdminStats() {
@@ -308,17 +309,9 @@ export async function getAllGenerations() {
 }
 
 // ─── Cost Estimation ───────────────────────────────────────────────
-// Pricing per million tokens (USD)
-const MODEL_PRICING: Record<string, { input: number; output: number }> = {
-  "claude-sonnet-4-6": { input: 3, output: 15 },
-  "claude-sonnet-4-5-20250929": { input: 3, output: 15 },
-  default: { input: 3, output: 15 },
-};
-
-function estimateCost(model: string, inputTokens: number, outputTokens: number) {
-  const pricing = MODEL_PRICING[model] ?? MODEL_PRICING.default;
-  return (inputTokens * pricing.input + outputTokens * pricing.output) / 1_000_000;
-}
+// One price table for the whole app: MODEL_PRICING in model-routing, which
+// the daily spend cap also uses. Unknown ids are priced as Opus 5.5.
+const estimateCost = estimateCostUsd;
 
 // ─── Usage & Cost Data ─────────────────────────────────────────────
 export async function getUsageData() {

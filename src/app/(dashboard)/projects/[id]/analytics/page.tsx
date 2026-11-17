@@ -49,6 +49,8 @@ import { YoutubeWidget } from "@/src/components/analytics/youtube-widget";
 import { UnverifiedAppWarning } from "@/src/components/analytics/unverified-app-warning";
 import { AdsInsightsCard } from "@/src/components/analytics/ads-insights-card";
 import { FoundByAiCard } from "@/src/components/analytics/found-by-ai-card";
+import { GetMentionedCard } from "@/src/components/analytics/get-mentioned-card";
+import { isMetaAdsCardEnabled, MetaAdsConnectCard } from "@/src/components/analytics/meta-ads-connect-card";
 
 
 // ---------- types ----------
@@ -1011,10 +1013,28 @@ export default function AnalyticsPage() {
             )}
           </section>
 
+          {/* Meta Ads: connect and pick an ad account. Hidden until Meta approves the app. */}
+          {isMetaAdsCardEnabled() && (
+            <section className="mb-6">
+              <div className="mb-4">
+                <h2 className={sectionHeading}>
+                  <TrendingUp className="h-5 w-5 text-text-3" />
+                  Meta ads account
+                </h2>
+              </div>
+              <MetaAdsConnectCard projectId={id} />
+            </section>
+          )}
+
           {/* Paid ads and answer engines: read-only inputs to the loop */}
           <section className="mb-6 grid gap-6 lg:grid-cols-2">
             <AdsInsightsCard projectId={id} />
             <FoundByAiCard projectId={id} />
+          </section>
+
+          {/* Places answer engines read before they trust a business */}
+          <section className="mb-6">
+            <GetMentionedCard projectId={id} />
           </section>
 
           {/* Content history */}

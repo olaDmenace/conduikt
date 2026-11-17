@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 import {
+  AIRefusedError,
   AIUnavailableError,
+  aiRefusedBody,
   aiUnavailableBody,
   generateWithClaudeCompletion,
   TruncatedResponseError,
@@ -28,7 +30,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Rate limit: 10 AI generations per minute per user
-  const rl = rateLimit(`ai-gen:${user.id}`, { limit: 10, windowSeconds: 60 });
+  const rl = await rateLimit(`ai-gen:${user.id}`, { limit: 10, windowSeconds: 60 });
   if (!rl.allowed) return rateLimitResponse(rl);
 
   const body = await request.json();
@@ -92,6 +94,9 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     if (err instanceof AIUnavailableError) {
       return NextResponse.json(aiUnavailableBody(err), { status: 503 });
+    }
+    if (err instanceof AIRefusedError) {
+      return NextResponse.json(aiRefusedBody(err), { status: 422 });
     }
     if (err instanceof TruncatedResponseError) {
       console.error(

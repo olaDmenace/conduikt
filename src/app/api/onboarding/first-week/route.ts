@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const rl = rateLimit(`first-week:${user.id}`, { limit: 5, windowSeconds: 3600 });
+  const rl = await rateLimit(`first-week:${user.id}`, { limit: 5, windowSeconds: 3600 });
   if (!rl.allowed) return rateLimitResponse(rl);
 
   const body = (await request.json().catch(() => ({}))) as {
@@ -293,7 +293,7 @@ export async function PATCH(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const rl = rateLimit(`first-week-retry:${user.id}`, { limit: 10, windowSeconds: 3600 });
+  const rl = await rateLimit(`first-week-retry:${user.id}`, { limit: 10, windowSeconds: 3600 });
   if (!rl.allowed) return rateLimitResponse(rl);
 
   const { projectId, agentId } = (await request.json().catch(() => ({}))) as { projectId?: string; agentId?: string };

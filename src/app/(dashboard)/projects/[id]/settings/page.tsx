@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Save, Trash2, AlertTriangle, Upload, Palette, Check, ArrowUpRight } from "@/src/components/ui/lucide-icons";
+import { Save, Trash2, AlertTriangle, Upload, Palette, Check, ArrowUpRight, Search } from "@/src/components/ui/lucide-icons";
+import type { NapFieldReport, NapReport } from "@/src/lib/local/nap-check";
+import { Badge } from "@/src/components/ui/badge";
 import { BUSINESS_TYPES, PLAYBOOKS, playbookFor, type BusinessType } from "@/src/lib/playbooks";
 import { AUTOMATION_MODES, normalizeMode, type AutomationMode } from "@/src/lib/automation/mode";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
@@ -36,6 +38,65 @@ interface Project {
   wants_hosted_page: boolean | null;
   business_location: string | null;
   services: string[] | null;
+  phone?: string | null;
+  address_line?: string | null;
+  city?: string | null;
+  booking_url?: string | null;
+  review_url?: string | null;
+  nap_report?: NapReport | null;
+  nap_checked_at?: string | null;
+}
+
+function whenLabel(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+}
+
+/** One row of the consistency report: label, status chip, the variants seen. */
+function NapRow({ label, field, extra }: { label: string; field: NapFieldReport; extra?: React.ReactNode }) {
+  if (!field.expected) {
+    return (
+      <div className="flex flex-col gap-1 border-t border-line py-3 first:border-t-0 first:pt-0">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-title text-text">{label}</span>
+          <Badge variant="secondary">Not saved</Badge>
+        </div>
+        <p className="text-body-s text-text-2">Add it above and check again.</p>
+      </div>
+    );
+  }
+  const missing = field.found_on.length === 0;
+  return (
+    <div className="flex flex-col gap-1 border-t border-line py-3 first:border-t-0 first:pt-0">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-title text-text">{label}</span>
+        {field.consistent ? (
+          <Badge variant="success">Consistent</Badge>
+        ) : missing ? (
+          <Badge variant="error">Not found</Badge>
+        ) : (
+          <Badge variant="warning">{field.variants.length} versions</Badge>
+        )}
+      </div>
+      <p className="text-body-s text-text-2">
+        {missing
+          ? `"${field.expected}" isn't on any page we checked.`
+          : `On ${field.found_on.length} of your pages.`}
+      </p>
+      {field.variants.length > 1 && (
+        <ul className="mt-1 space-y-1">
+          {field.variants.map((v, i) => (
+            <li key={v} className="flex items-center gap-2 text-body-s">
+              <span className="font-mono text-[11px] uppercase tracking-wide text-text-3">{i === 0 ? "Saved" : "Site"}</span>
+              <span className="text-text">{v}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {extra}
+    </div>
+  );
 }
 
 export default function ProjectSettingsPage() {
@@ -74,6 +135,15 @@ export default function ProjectSettingsPage() {
   const [businessLocation, setBusinessLocation] = useState("");
   const [servicesText, setServicesText] = useState("");
 
+  // Business details (audit §5.2) and the consistency check
+  const [phone, setPhone] = useState("");
+  const [addressLine, setAddressLine] = useState("");
+  const [city, setCity] = useState("");
+  const [bookingUrl, setBookingUrl] = useState("");
+  const [reviewUrl, setReviewUrl] = useState("");
+  const [napReport, setNapReport] = useState<NapReport | null>(null);
+  const [checkingNap, setCheckingNap] = useState(false);
+
   useEffect(() => {
     async function fetchProject() {
       const [res, profileRes] = await Promise.all([
@@ -108,6 +178,12 @@ export default function ProjectSettingsPage() {
         setWantsHostedPage(Boolean(data.wants_hosted_page));
         setBusinessLocation(data.business_location || "");
         setServicesText(Array.isArray(data.services) ? data.services.join(", ") : "");
+        setPhone(data.phone || "");
+        setAddressLine(data.address_line || "");
+        setCity(data.city || "");
+        setBookingUrl(data.booking_url || "");
+        setReviewUrl(data.review_url || "");
+        setNapReport(data.nap_report ?? null);
       } else {
         toast("Failed to load project", "error");
       }
@@ -183,6 +259,11 @@ export default function ProjectSettingsPage() {
           .split(/[,\n]/)
           .map((s) => s.trim())
           .filter(Boolean),
+        phone: phone.trim() || null,
+        address_line: addressLine.trim() || null,
+        city: city.trim() || null,
+        booking_url: bookingUrl.trim() || null,
+        review_url: reviewUrl.trim() || null,
       }),
     });
 
@@ -217,6 +298,23 @@ export default function ProjectSettingsPage() {
       toast("Couldn't save that. Try again.", "error");
     }
     setSavingMode(false);
+  }
+
+  // Checks the details saved on the server against the website, so
+  // unsaved edits in the form don't count until Save.
+  async function checkDetails() {
+    if (checkingNap) return;
+    setCheckingNap(true);
+    const res = await fetch(`/api/projects/${id}/nap-check`, { method: "POST" }).catch(() => null);
+    if (res?.ok) {
+      const data = await res.json();
+      setNapReport(data.report ?? null);
+      toast(data.report?.issues?.length ? "Checked. Some details need attention." : "Checked. Your details match.", "success");
+    } else {
+      const err = res ? await res.json().catch(() => ({})) : {};
+      toast(err.error || "Couldn't check your website. Try again.", "error");
+    }
+    setCheckingNap(false);
   }
 
   async function handleDelete() {
@@ -420,6 +518,136 @@ export default function ProjectSettingsPage() {
                 />
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Business details (audit §5.2): the facts every page should agree on */}
+        <Card className="animate-in" style={{ animationDelay: "55ms" }}>
+          <CardHeader>
+            <CardTitle className="text-heading">Business details</CardTitle>
+            <p className="text-body-s text-text-2">
+              How customers reach you. Google and AI answers trust a business more when these read the same everywhere.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input
+                label="Phone"
+                type="tel"
+                placeholder="Try: 0803 123 4567"
+                hint="The number customers call or message."
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
+              <Input
+                label="City"
+                placeholder="Try: Lekki, Lagos"
+                hint="The town or area you serve from."
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+              />
+            </div>
+            <Input
+              label="Address"
+              placeholder="Try: 12 Admiralty Way"
+              hint="Street and building, as it appears on your signboard."
+              value={addressLine}
+              onChange={(e) => setAddressLine(e.target.value)}
+            />
+            <Input
+              label="Booking link"
+              type="url"
+              placeholder="https://calendly.com/your-business"
+              hint="Where customers book you, e.g. a Calendly or WhatsApp link."
+              value={bookingUrl}
+              onChange={(e) => setBookingUrl(e.target.value)}
+            />
+            <Input
+              label="Review link"
+              type="url"
+              placeholder="https://g.page/r/your-business/review"
+              hint="Where customers leave a review, e.g. your Google Business profile link."
+              value={reviewUrl}
+              onChange={(e) => setReviewUrl(e.target.value)}
+            />
+
+            {/* Consistency check */}
+            <div className="flex flex-col gap-3 rounded-lg border border-line bg-ground p-4">
+              <div className="flex flex-wrap items-end justify-between gap-2">
+                <div>
+                  <p className="text-title text-text">Check your details are consistent</p>
+                  <p className="text-body-s text-text-2">
+                    We read up to 30 of your pages and compare them with the details you saved.
+                  </p>
+                </div>
+                <Button type="button" variant="outline" size="sm" disabled={checkingNap} onClick={checkDetails}>
+                  <Search className="h-4 w-4" />
+                  {checkingNap ? "Checking…" : napReport ? "Check again" : "Check my pages"}
+                </Button>
+              </div>
+
+              {napReport && (
+                <div className="rounded-md border border-line bg-surface p-4">
+                  <p className="mb-3 font-mono text-[11px] uppercase tracking-wide text-text-3">
+                    {napReport.pages_checked} {napReport.pages_checked === 1 ? "page" : "pages"} checked · {whenLabel(napReport.checked_at)}
+                  </p>
+                  <NapRow label="Business name" field={napReport.name} />
+                  <NapRow
+                    label="Phone"
+                    field={napReport.phone}
+                    extra={
+                      napReport.phone.other_numbers.length > 0 ? (
+                        <p className="mt-1 text-body-s text-text-2">
+                          Other numbers on your site: {napReport.phone.other_numbers.join(", ")}
+                        </p>
+                      ) : null
+                    }
+                  />
+                  <NapRow
+                    label="Address"
+                    field={napReport.address}
+                    extra={
+                      city.trim() && napReport.address.expected ? (
+                        <p className="mt-1 text-body-s text-text-2">
+                          {napReport.address.city_found_on.length > 0
+                            ? `Your city is on ${napReport.address.city_found_on.length} of your pages.`
+                            : "Your city isn't on any page we checked."}
+                        </p>
+                      ) : null
+                    }
+                  />
+                  <div className="flex flex-col gap-1 border-t border-line py-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-title text-text">Ready for Google and AI answers</span>
+                      {!napReport.structured_data.found ? (
+                        <Badge variant="error">Missing</Badge>
+                      ) : napReport.structured_data.name_matches === false ||
+                        napReport.structured_data.phone_matches === false ||
+                        napReport.structured_data.address_matches === false ? (
+                        <Badge variant="warning">Doesn&apos;t match</Badge>
+                      ) : (
+                        <Badge variant="success">Matches</Badge>
+                      )}
+                    </div>
+                    <p className="text-body-s text-text-2">
+                      {napReport.structured_data.found
+                        ? `Your pages tell Google what kind of business this is (${napReport.structured_data.types.join(", ")}).`
+                        : "None of your pages tell Google what kind of business this is. Build my page adds it for you."}
+                    </p>
+                  </div>
+                  {napReport.issues.length > 0 && (
+                    <ul className="mt-2 space-y-1 border-t border-line pt-3">
+                      {napReport.issues.map((issue) => (
+                        <li key={issue} className="flex items-start gap-2 text-body-s text-text-2">
+                          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
+                          {issue}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 

@@ -39,25 +39,37 @@ export async function GET() {
     return NextResponse.json({ error: profilesErr.message }, { status: 500 });
   }
 
-  // Resolve emails via auth admin. listUsers paginates at 1000/page —
-  // for any user list bigger than that we'd need to iterate. Conduikt is
-  // small enough today that one page covers it; flag as a TODO if we ever
-  // exceed.
+  // Resolve emails via auth admin. listUsers pages at PER_PAGE; we walk
+  // pages until one comes back short, with a hard ceiling of MAX_PAGES so a
+  // misbehaving API can't loop forever. That ceiling is the real cap on
+  // this export: MAX_PAGES * PER_PAGE users. Past it the CSV would be
+  // missing emails for the newest sign-ups, so we log a warning and say
+  // so in a response header rather than silently truncating.
+  const PER_PAGE = 1000;
+  const MAX_PAGES = 10;
   const emailMap = new Map<string, string>();
   let page = 1;
-  // Cap at 10 pages = 10k users to avoid runaway loops.
-  while (page <= 10) {
+  let truncated = false;
+  for (;;) {
     const { data: usersPage, error: usersErr } = await supabase.auth.admin.listUsers({
       page,
-      perPage: 1000,
+      perPage: PER_PAGE,
     });
     if (usersErr) {
       return NextResponse.json({ error: usersErr.message }, { status: 500 });
     }
-    for (const u of usersPage?.users ?? []) {
+    const users = usersPage?.users ?? [];
+    for (const u of users) {
       if (u.id && u.email) emailMap.set(u.id, u.email);
     }
-    if (!usersPage || usersPage.users.length < 1000) break;
+    if (users.length < PER_PAGE) break;
+    if (page >= MAX_PAGES) {
+      truncated = true;
+      console.warn(
+        `[admin/users/export] hit the ${MAX_PAGES}-page ceiling (${MAX_PAGES * PER_PAGE} users); emails beyond that are missing from the CSV`
+      );
+      break;
+    }
     page++;
   }
 
@@ -82,6 +94,7 @@ export async function GET() {
       "Content-Type": "text/csv; charset=utf-8",
       "Content-Disposition": `attachment; filename="${filename}"`,
       "Cache-Control": "no-store",
+      ...(truncated ? { "X-Export-Truncated": `emails capped at ${MAX_PAGES * PER_PAGE} users` } : {}),
     },
   });
 }

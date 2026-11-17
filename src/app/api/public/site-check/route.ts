@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { AIUnavailableError, aiUnavailableBody } from "@/src/lib/ai/client";
+import { AIRefusedError, AIUnavailableError, aiRefusedBody, aiUnavailableBody } from "@/src/lib/ai/client";
 import { sampleMagicAudit } from "@/src/lib/ai/samples";
 import { analyzeMagicAudit, fetchPageSignal, type MagicAuditResult } from "@/src/lib/onboarding/magic-audit";
 import { normalizeAuditUrl } from "@/src/lib/onboarding/url";
@@ -14,7 +14,7 @@ import { clientIp } from "@/src/lib/security/client-ip";
 // Body: { url, turnstileToken? }
 //
 // Costs two model calls (the audit and one preview call for every agent),
-// so it is guarded three ways: a per-visitor limit, a per-instance hourly
+// so it is guarded three ways: a per-visitor limit, a site-wide hourly
 // ceiling, and Cloudflare Turnstile when its keys are configured. Results
 // are cached per URL for an hour so repeat checks are free.
 //
@@ -74,18 +74,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url, audit: cached.audit, previews: gate(cached.previews), signal: cached.signal, cached: true });
   }
 
-  const perVisitor = rateLimit(`site-check:${ip}`, { limit: 3, windowSeconds: 3600 });
-  const perInstance = rateLimit("site-check:all", { limit: 120, windowSeconds: 3600 });
-  if (!perVisitor.allowed || !perInstance.allowed) {
-    return NextResponse.json(
-      { error: "You've checked a few sites already. Create a free account to keep going.", code: "rate_limited" },
-      { status: 429 }
-    );
-  }
+  // Gates in order of how cheaply they refuse: the visitor's own window,
+  // then the bot check, and only then the site-wide ceiling. The site-wide
+  // counter is shared across instances, so a slot is taken from it only
+  // for a request that has already passed the other two; otherwise one
+  // source (or a bot run) could drain the 120 for everyone.
+  const rateLimited = NextResponse.json(
+    { error: "You've checked a few sites already. Create a free account to keep going.", code: "rate_limited" },
+    { status: 429 }
+  );
+  const perVisitor = await rateLimit(`site-check:${ip}`, { limit: 3, windowSeconds: 3600 });
+  if (!perVisitor.allowed) return rateLimited;
 
   if (!(await verifyTurnstile(body?.turnstileToken, ip))) {
     return NextResponse.json({ error: "We couldn't confirm you're not a bot. Refresh and try again.", code: "bot_check" }, { status: 403 });
   }
+
+  const siteWide = await rateLimit("site-check:all", { limit: 120, windowSeconds: 3600 });
+  if (!siteWide.allowed) return rateLimited;
 
   try {
     await assertPublicUrl(url);
@@ -115,6 +121,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url, audit, previews: gate(previews), signal: entry.signal, ...(sample ? { sample: true } : {}) });
   } catch (err) {
     if (err instanceof AIUnavailableError) return NextResponse.json(aiUnavailableBody(err), { status: 503 });
+    if (err instanceof AIRefusedError) return NextResponse.json(aiRefusedBody(err), { status: 422 });
     console.error("[site-check] failed:", err);
     return NextResponse.json({ error: "We couldn't check that site just now. Try again in a minute." }, { status: 502 });
   }

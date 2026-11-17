@@ -14,6 +14,7 @@ const badgeVariants = {
   count: "bg-ink text-ink-text",
   // Tier chips
   free: "bg-teal-soft text-teal",
+  local: "bg-accent-soft text-accent-hover", // naira tier; reads like Pro
   pro: "bg-accent-soft text-accent-hover",
   growth: "bg-ink text-ink-text",
   agency: "bg-ink text-ink-text",

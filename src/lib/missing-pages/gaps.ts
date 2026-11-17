@@ -112,8 +112,7 @@ async function claudeDisambiguate(items: Array<{ query: string; page: CrawledPag
     systemPrompt:
       'For each numbered pair, decide whether the page already answers the search well enough that a searcher would be satisfied. Return ONLY JSON: {"verdicts": [{"n": 1, "answers": true}, ...]}',
     userPrompt: list,
-    maxTokens: 800,
-    temperature: 0,
+    maxTokens: 2048,
   });
   const parsed = parseJsonResponse(result.content) as { verdicts?: Array<{ n: number; answers: boolean }> };
   const out: Record<string, boolean> = {};

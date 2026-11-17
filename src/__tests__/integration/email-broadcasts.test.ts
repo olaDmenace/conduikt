@@ -16,6 +16,18 @@ vi.mock("@/src/lib/email/marketing", async () => {
   };
 });
 
+// The from-address resolver has its own tests; here it answers with the
+// shared sender unless a test says otherwise.
+const SHARED_SENDER = {
+  email: "mail@contacts.conduikt.com",
+  from: "List <mail@contacts.conduikt.com>",
+  custom: false,
+};
+const resolveSenderMock = vi.fn();
+vi.mock("@/src/lib/email/sender", () => ({
+  resolveSenderAddress: (...args: unknown[]) => resolveSenderMock(...args),
+}));
+
 // User-context Supabase + service-role Supabase share a single fromMock for
 // these tests — the route uses both, but each query routes by table.
 const fromMock = vi.fn();
@@ -88,6 +100,7 @@ beforeEach(() => {
   rpcMock.mockResolvedValue({ data: null, error: null });
   createBroadcastMock.mockResolvedValue({ ok: true, data: { id: "rb-1" } });
   sendBroadcastMock.mockResolvedValue({ ok: true, data: true });
+  resolveSenderMock.mockResolvedValue(SHARED_SENDER);
 });
 
 // ---------------------------------------------------------------------------
@@ -118,7 +131,7 @@ describe("POST /api/projects/[id]/broadcasts", () => {
     expect(res.status).toBe(400);
   });
 
-  it("rejects custom from_email until verified-domain flow ships", async () => {
+  it("rejects a from_email that is not the user's verified domain or the shared sender", async () => {
     setupTables({
       projects: ownedProjectChain,
       audiences: () => ({
@@ -188,6 +201,41 @@ describe("POST /api/projects/[id]/broadcasts", () => {
     expect(inserted!.from_email).toBe("mail@contacts.conduikt.com");
     expect(inserted!.status).toBe("draft");
     expect(inserted!.from_name).toBe("List"); // defaulted from audience name
+    expect(resolveSenderMock).toHaveBeenCalledWith(expect.anything(), "user-1", "List");
+  });
+
+  it("defaults from_email to the user's verified domain when the resolver finds one", async () => {
+    resolveSenderMock.mockResolvedValue({ email: "news@acme.com", from: "List <news@acme.com>", custom: true });
+    let inserted: Record<string, unknown> | null = null;
+    setupTables({
+      projects: ownedProjectChain,
+      audiences: () => ({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: { id: "aud-1", name: "List", resend_audience_id: "ra-1", project_id: "p1" },
+          error: null,
+        }),
+      }),
+      broadcasts: () => ({
+        insert: vi.fn((row) => {
+          inserted = row;
+          return {
+            select: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({ data: { id: "b-2", ...row }, error: null }),
+          };
+        }),
+      }),
+    });
+    const { POST } = await import("@/src/app/api/projects/[id]/broadcasts/route");
+    const req = new Request("http://localhost/foo", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ audience_id: "aud-1", subject: "Hello", html_body: "<p>Hi</p>" }),
+    });
+    const res = await POST(req as never, { params: Promise.resolve({ id: "p1" }) });
+    expect(res.status).toBe(201);
+    expect(inserted!.from_email).toBe("news@acme.com");
   });
 });
 

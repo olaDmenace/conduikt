@@ -1,11 +1,12 @@
 import type { SkillConfig, ProjectContext, SkillOutput } from "./types";
+import { modelFor } from "../model-routing";
 import { parseJsonResponse } from "../parse-json";
 
 export const keywordResearchSkill: SkillConfig = {
   id: "keyword-research",
   name: "Keyword Research",
   description: "AI-powered keyword discovery with search intent, difficulty estimates, and content cluster recommendations",
-  model: "claude-sonnet-4-6",
+  model: modelFor("generate"),
   maxTokens: 5000,
 
   buildSystemPrompt: (context: ProjectContext) => `

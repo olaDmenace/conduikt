@@ -1,12 +1,13 @@
 import { ANSWER_FIRST_RULES } from "@/src/lib/ai/answer-first";
 import type { SkillConfig, ProjectContext, SkillOutput } from "./types";
+import { modelFor } from "../model-routing";
 import { parseJsonResponse } from "../parse-json";
 
 export const copywritingSkill: SkillConfig = {
   id: "copywriting",
   name: "Copywriting",
   description: "Conversion-focused marketing copy generation",
-  model: "claude-sonnet-4-6",
+  model: modelFor("generate"),
   maxTokens: 4000,
 
   buildSystemPrompt: (context: ProjectContext) => {

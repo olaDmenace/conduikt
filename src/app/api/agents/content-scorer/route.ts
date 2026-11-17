@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
-import { generateWithClaude } from "@/src/lib/ai/client";
+import { AIRefusedError, AIUnavailableError, aiRefusedBody, aiUnavailableBody, generateWithClaude } from "@/src/lib/ai/client";
 import { getAgent } from "@/src/lib/ai/agents";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
+import { effortFor } from "@/src/lib/ai/model-routing";
+import { blendAnswerability, scoreAnswerability } from "@/src/lib/seo/answerability";
+import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -12,6 +15,10 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  // Shares a window with /api/ai/score-content: same model, same job.
+  const rl = await rateLimit(`content-score:${user.id}`, { limit: 20, windowSeconds: 600 });
+  if (!rl.allowed) return rateLimitResponse(rl);
 
   const body = await request.json();
   const { projectId, content, contentType, postId } = body;
@@ -60,7 +67,7 @@ export async function POST(request: NextRequest) {
       userPrompt,
       model: agent.model,
       maxTokens: agent.maxTokens,
-      temperature: 0,
+      effort: effortFor("score"),
     });
 
     const parsed = agent.parseResponse(result.content);
@@ -70,10 +77,16 @@ export async function POST(request: NextRequest) {
       relevance: number;
       engagement_potential: number;
       brand_alignment: number;
+      answerability: number | null;
       summary: string;
       top_strength: string;
       top_improvement: string;
     };
+
+    // Answerability: half the model's judgement, half a deterministic check.
+    const deterministic = scoreAnswerability(content, { businessName: project.name });
+    scoreData.answerability = blendAnswerability(scoreData.answerability, deterministic.score);
+    const answerabilityFixes = deterministic.fixes;
 
     // Persist score to content_scores table
     await supabase.from("content_scores").insert({
@@ -86,6 +99,7 @@ export async function POST(request: NextRequest) {
       relevance: scoreData.relevance,
       engagement_potential: scoreData.engagement_potential,
       brand_alignment: scoreData.brand_alignment,
+      answerability: scoreData.answerability,
       summary: scoreData.summary,
       top_strength: scoreData.top_strength,
       top_improvement: scoreData.top_improvement,
@@ -101,8 +115,10 @@ export async function POST(request: NextRequest) {
       duration_ms: result.durationMs,
     });
 
-    return NextResponse.json(scoreData);
+    return NextResponse.json({ ...scoreData, answerability_fixes: answerabilityFixes });
   } catch (e) {
+    if (e instanceof AIUnavailableError) return NextResponse.json(aiUnavailableBody(e), { status: 503 });
+    if (e instanceof AIRefusedError) return NextResponse.json(aiRefusedBody(e), { status: 422 });
     const details = process.env.NODE_ENV === "development" ? String(e) : undefined;
     return NextResponse.json(
       { error: "Failed to score content", ...(details ? { details } : {}) },

@@ -361,13 +361,15 @@ export async function selectBrandMatchedAvatar(
   try {
     // Import dynamically to avoid circular deps at module init
     const { generateWithClaude } = await import("@/src/lib/ai/client");
+    const { effortFor, modelFor } = await import("@/src/lib/ai/model-routing");
 
     const result = await generateWithClaude({
       systemPrompt:
         "You are a casting director. You will be given a brand description and a list of available video avatars. Your job is to pick the single avatar that best represents this brand to its target audience. Consider that the chosen avatar's gender will determine the voice used in the video. Pick an avatar whose gender presentation is appropriate for the brand and audience described. Reply with only the avatar_id of your choice. No explanation.",
       userPrompt: `Brand description:\n${brandDesc}\n\nAvailable avatars:\navatar_id | avatar_name | gender\n${avatarList}`,
-      model: "claude-sonnet-4-6",
-      maxTokens: 100,
+      model: modelFor("score"),
+      effort: effortFor("score"),
+      maxTokens: 2048,
     });
 
     const chosenId = result.content.trim();

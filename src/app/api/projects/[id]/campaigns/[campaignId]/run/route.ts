@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 import { verifyProjectOwnership } from "@/src/lib/auth/verify-ownership";
-import { generateWithClaude, AIUnavailableError } from "@/src/lib/ai/client";
+import { generateWithClaude, AIRefusedError, AIUnavailableError } from "@/src/lib/ai/client";
 import { getAgent } from "@/src/lib/ai/agents";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
 import { buildPerformanceContext } from "@/src/lib/ai/performance-context";
 import { saveCampaignStepAssets } from "@/src/lib/ai/campaigns/save-step-assets";
+import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
 
 export async function POST(
   _request: NextRequest,
@@ -20,6 +21,10 @@ export async function POST(
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  // Every run is one model call per step; cap runs, not steps.
+  const rl = await rateLimit(`campaign-run:${user.id}`, { limit: 20, windowSeconds: 600 });
+  if (!rl.allowed) return rateLimitResponse(rl);
 
   const ownedProject = await verifyProjectOwnership(supabase, id, user.id);
   if (!ownedProject) {
@@ -185,7 +190,9 @@ export async function POST(
           result:
             err instanceof AIUnavailableError
               ? { error: err.userMessage, errorCode: "ai_unavailable", reason: err.code }
-              : { error: err instanceof Error ? err.message : "Unknown error" },
+              : err instanceof AIRefusedError
+                ? { error: err.userMessage, errorCode: "ai_refused", reason: err.category ?? "unspecified" }
+                : { error: err instanceof Error ? err.message : "Unknown error" },
           completed_at: new Date().toISOString(),
         })
         .eq("id", step.id);

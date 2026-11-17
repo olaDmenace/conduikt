@@ -3,12 +3,17 @@ import { createClient } from "@/src/lib/supabase/server";
 import { verifyProjectOwnership } from "@/src/lib/auth/verify-ownership";
 import { createContact } from "@/src/lib/email/marketing";
 import { checkContactsLimit, getUserPlan } from "@/src/lib/email/usage";
+import { beginConfirmation } from "@/src/lib/email/confirm";
+import { createServiceClient } from "@/src/lib/supabase/service";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // GET /api/projects/[id]/audiences/[audienceId]/contacts
 //   ?page=1&limit=50&status=subscribed&search=foo
 // Returns paginated contact list for the audience.
+// status: subscribed | pending | unsubscribed | bounced | complained |
+//         suppressed (the owner's own list) | any_suppressed (suppressed +
+//         bounced + complained: what the page calls "Suppressed")
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; audienceId: string }> }
@@ -42,13 +47,22 @@ export async function GET(
   let query = supabase
     .from("audience_contacts")
     .select(
-      "id, email, first_name, last_name, status, custom_fields, subscribed_at, unsubscribed_at, suppression_reason",
+      "id, email, first_name, last_name, status, custom_fields, subscribed_at, unsubscribed_at, suppression_reason, confirmed_at, confirm_sent_at",
       { count: "exact" }
     )
     .eq("audience_id", audienceId)
     .order("subscribed_at", { ascending: false });
 
-  if (status === "subscribed" || status === "unsubscribed" || status === "bounced" || status === "complained") {
+  if (status === "any_suppressed") {
+    query = query.in("status", ["suppressed", "bounced", "complained"]);
+  } else if (
+    status === "subscribed" ||
+    status === "pending" ||
+    status === "unsubscribed" ||
+    status === "bounced" ||
+    status === "complained" ||
+    status === "suppressed"
+  ) {
     query = query.eq("status", status);
   }
   if (search) {
@@ -73,6 +87,8 @@ export async function GET(
 // POST /api/projects/[id]/audiences/[audienceId]/contacts
 // Body: { email, first_name?, last_name?, custom_fields? }
 // Adds a single contact. CSV bulk import uses the /import sibling route.
+// When the list has double opt-in on, the contact starts as 'pending', gets
+// a confirmation email, and only joins Resend once they confirm.
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; audienceId: string }> }
@@ -90,11 +106,12 @@ export async function POST(
 
   const { data: audience } = await supabase
     .from("audiences")
-    .select("id, resend_audience_id")
+    .select("id, name, resend_audience_id, double_opt_in")
     .eq("id", audienceId)
     .eq("project_id", projectId)
     .single();
   if (!audience) return NextResponse.json({ error: "Audience not found" }, { status: 404 });
+  const doubleOptIn = audience.double_opt_in === true;
 
   const body = await request.json().catch(() => ({}));
   const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
@@ -126,7 +143,7 @@ export async function POST(
   // Mirror in Resend. If Resend create fails we still write to Conduikt
   // (resend_contact_id will be null and a future sync job can fix it).
   let resendContactId: string | null = null;
-  if (audience.resend_audience_id) {
+  if (!doubleOptIn && audience.resend_audience_id) {
     const resend = await createContact(audience.resend_audience_id, {
       email,
       first_name: firstName ?? undefined,
@@ -146,7 +163,7 @@ export async function POST(
       last_name: lastName,
       custom_fields: customFields,
       resend_contact_id: resendContactId,
-      status: "subscribed",
+      status: doubleOptIn ? "pending" : "subscribed",
     })
     .select("id, email, first_name, last_name, status, custom_fields, subscribed_at")
     .single();
@@ -160,6 +177,22 @@ export async function POST(
       );
     }
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  if (doubleOptIn && data) {
+    const { data: project } = await supabase
+      .from("projects")
+      .select("name, client_name")
+      .eq("id", projectId)
+      .maybeSingle();
+    const sent = await beginConfirmation(createServiceClient(), {
+      contactId: data.id,
+      email,
+      userId: user.id,
+      brandName: (project?.client_name ?? "").trim() || (project?.name ?? "").trim() || audience.name,
+    });
+    if (!sent.ok) console.warn(`[contacts] confirmation email failed for ${email}: ${sent.error}`);
+    return NextResponse.json({ ...data, confirmation_sent: sent.ok }, { status: 201 });
   }
 
   return NextResponse.json(data, { status: 201 });

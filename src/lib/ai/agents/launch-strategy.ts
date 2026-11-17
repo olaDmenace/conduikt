@@ -1,4 +1,5 @@
 import type { AgentConfig, ProjectContext, AgentOutput } from "./types";
+import { modelFor } from "../model-routing";
 import { parseJsonResponse } from "../parse-json";
 
 export const launchStrategyAgent: AgentConfig = {
@@ -6,7 +7,7 @@ export const launchStrategyAgent: AgentConfig = {
   name: "Launch Strategy",
   description:
     "A concrete, day-by-day launch plan for a SaaS product — pre-launch, launch day, and first 30 days — with assets, channels, and success metrics.",
-  model: "claude-sonnet-4-6",
+  model: modelFor("generate"),
   maxTokens: 10000,
 
   buildSystemPrompt: (context: ProjectContext) => `

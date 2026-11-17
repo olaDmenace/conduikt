@@ -1,13 +1,18 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 import {
+  AIRefusedError,
   AIUnavailableError,
+  aiRefusedBody,
   aiUnavailableBody,
+  buildMessageParams,
   checkSpendCap,
   continuationMessages,
   getAnthropicClient,
   mapAnthropicError,
+  refusalFrom,
 } from "@/src/lib/ai/client";
+import { effortFor } from "@/src/lib/ai/model-routing";
 import { getAgent } from "@/src/lib/ai/agents";
 import type { ProjectContext } from "@/src/lib/ai/agents/types";
 import {
@@ -32,7 +37,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Rate limit: 10 AI streams per minute per user
-  const rl = rateLimit(`ai-stream:${user.id}`, { limit: 10, windowSeconds: 60 });
+  const rl = await rateLimit(`ai-stream:${user.id}`, { limit: 10, windowSeconds: 60 });
   if (!rl.allowed) return rateLimitResponse(rl);
 
   const body = await request.json();
@@ -130,17 +135,22 @@ export async function POST(request: NextRequest) {
 
       try {
         for (let attempt = 0; attempt <= MAX_CONTINUATIONS; attempt++) {
-          // Continue a cut-off answer with a normal turn; current models
-          // reject assistant prefill. See continuationMessages.
-          const messages = continuationMessages(userPrompt, fullText);
+          // Continue a cut-off answer with a user turn; the request never
+          // ends on an assistant message (prefill is rejected). See
+          // continuationMessages. Same body shape as generateWithClaude:
+          // no sampling params, no thinking field, effort via output_config.
+          const stream = anthropic.messages.stream(
+            buildMessageParams({
+              model: skill.model,
+              maxTokens: skill.maxTokens,
+              effort: effortFor("generate"),
+              systemPrompt,
+              messages: continuationMessages(userPrompt, fullText),
+            }),
+          );
 
-          const stream = anthropic.messages.stream({
-            model: skill.model,
-            max_tokens: skill.maxTokens,
-            system: systemPrompt,
-            messages,
-          });
-
+          // "text" fires for text deltas only; thinking deltas never reach
+          // the page.
           stream.on("text", (text) => {
             fullText += text;
             sendEvent({ type: "text", text });
@@ -149,6 +159,11 @@ export async function POST(request: NextRequest) {
           const finalMsg = await stream.finalMessage();
           inputTokens += finalMsg.usage.input_tokens;
           outputTokens += finalMsg.usage.output_tokens;
+
+          // Decide on stop_reason before trusting the text: a refusal can
+          // arrive after some text has streamed.
+          const refused = refusalFrom(finalMsg);
+          if (refused) throw refused;
 
           if (finalMsg.stop_reason !== "max_tokens") {
             truncated = false;
@@ -216,8 +231,14 @@ export async function POST(request: NextRequest) {
         });
         controller.close();
       } catch (err) {
-        // Headers are already out, so the 503 becomes an error event with
-        // the same body the JSON routes return.
+        // Headers are already out, so the 503 / 422 becomes an error event
+        // with the same body the JSON routes return.
+        if (err instanceof AIRefusedError) {
+          console.error(`[ai-stream] ${skill.id} refused (${err.category ?? "unspecified"}).`, err.explanation ?? "");
+          sendEvent({ type: "error", ...aiRefusedBody(err) });
+          controller.close();
+          return;
+        }
         const unavailable = mapAnthropicError(err);
         if (unavailable) {
           console.error(`[ai-stream] unavailable: ${unavailable.code}.`, err instanceof Error ? err.message : err);

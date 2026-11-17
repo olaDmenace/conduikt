@@ -43,7 +43,7 @@ describe("generateAgentPreviews", () => {
   it("returns real previews, unflagged, when the model answers", async () => {
     generate.mockResolvedValue({
       content: realReply(["seo-audit", "copywriting"]),
-      model: "claude-haiku-4-5",
+      model: "claude-haiku-5-5",
       inputTokens: 1,
       outputTokens: 1,
       durationMs: 1,
@@ -52,7 +52,7 @@ describe("generateAgentPreviews", () => {
     const out = await generateAgentPreviews(signal, ["seo-audit", "copywriting"]);
     expect(out.map((p) => p.headline)).toEqual(["Real for seo-audit", "Real for copywriting"]);
     expect(hasSamplePreviews(out)).toBe(false);
-    expect(generate).toHaveBeenCalledWith(expect.objectContaining({ model: "claude-haiku-4-5" }));
+    expect(generate).toHaveBeenCalledWith(expect.objectContaining({ model: "claude-haiku-5-5" }));
   });
 
   it("falls back to samples when the writing service is unavailable (default mode)", async () => {

@@ -324,6 +324,25 @@ Two different things hide in this idea:
 
 Sequencing: 1, 2 and 3 ride inside Missing Pages (Phase 2); 4 is Phase 3 with the Meta work; 5 is Phase 4 with the Local pack; 6 is this week. Sell it with the design doc's words, not the acronyms: "Ready for Google and AI answers", never "AEO".
 
+### 5.10 Voice and calls: dograh (owner's proposal, 16 Nov 2026)
+
+**What it is.** dograh (github.com/dograh-hq/dograh) is an open-source, self-hosted voice-agent platform, "the open-source alternative to Vapi and Retell": a Python backend on Pipecat with a drag-and-drop call-flow builder, outbound campaigns (CSV of numbers, time windows, retries), inbound numbers, webhooks, REST API with API keys, and Node and Python SDKs. BSD-2 licence, very active (6,000+ stars, pushes daily), a hosted cloud at app.dograh.com. It sells no minutes and no numbers: you bring Twilio, Telnyx, Plivo, Vonage or a SIP trunk, plus your own speech-to-text, text-to-speech and model keys. Self-hosting means a Docker host with Postgres, Redis and MinIO behind a public HTTPS URL, which is not something Vercel runs.
+
+**Would it fit?** Technically, yes, and cleanly: a "voice step" in a sequence would be a scheduler handler that calls dograh's run API with the contact's number and a workflow id, and a webhook that records the outcome, the same shape as the WhatsApp step. One to two weeks of work.
+
+**The office-hours test, question by question.**
+- *Demand reality.* No customer has asked for calls. The only voice products people pay for today, worldwide, are an inbound receptionist for clinics, salons and trades (roughly $100 to $900 a month), missed-call text-back ($20 to $40 a month), and opt-in appointment reminders. None of them is marketing.
+- *Status quo.* A Lagos business owner's phone is the business line. Customers live on WhatsApp. More than half of unknown calls in Nigeria are flagged as spam, so a cold robocall from a business reads as a scam.
+- *Unit cost.* A connected call to a Nigerian mobile costs $0.16 to $0.24 a minute in telephony alone through the providers dograh supports, plus $0.03 to $0.09 a minute of speech and model costs. A two-minute call is about $0.50, which is fifty to two hundred times the cost of a WhatsApp message or an email on the plans Conduikt sells.
+- *The law.* The Nigeria Data Protection Act and the 2025 General Application and Implementation Directive require prior consent for direct marketing, and a 2025 Federal High Court award (Araka v Ecart) shows an opt-out is no defence. The NCC's 2442 Do-Not-Disturb list has no public scrub API, so a dialer cannot pre-check it. Business-initiated WhatsApp calls from Nigerian numbers are not allowed by Meta. Outbound voice marketing is presumptively unlawful as a product.
+- *Narrowest wedge.* The wedge that is legal, cheap and on the channel customers already use is missed-call to WhatsApp text-back: detect a missed call on the business line, send one WhatsApp template ("Sorry we missed you, what do you need?"), and drop the reply into the leads pipeline and the WhatsApp sequence. It needs no voice model, no per-minute cost and no dograh; it needs the WhatsApp Cloud API, which is already built and waits only on Meta verification.
+- *Future fit.* If voice ever earns its place here it will be inbound (an AI receptionist on a Nigerian number that books and hands off to WhatsApp) and opt-in transactional reminders, both of which dograh supports.
+
+**Decision: build later, not now.** Revisit when five paying local-business customers ask for calls, Meta verification is done, and the missed-call text-back wedge has run for a quarter. Until then nothing in the codebase references dograh. If the day comes, the integration is a sequence step plus a webhook, and the compliance rules (consent captured in Conduikt, business hours, DND honoured, no cold outbound) go in before the first call.
+
+Sources: the dograh repository, docs and pricing pages; Twilio and Telnyx Nigeria rate and number pages; NCC DND direction (2016) and NDPC GAID (2025); the Araka v Ecart judgment (FHC, Feb 2025); Meta WhatsApp calling policy for Nigeria.
+
+
 ---
 
 ## 6. What you are missing

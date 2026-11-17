@@ -1,7 +1,16 @@
 // @vitest-environment node
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { runMissingPages } from "./run";
+import { approveRevision, discardRevision, runMissingPages, writeCandidate, type CandidateRow } from "./run";
+import { upsertWordPressPage } from "@/src/lib/integrations/wordpress";
+
+// The WordPress target is the only network call approveRevision can make.
+vi.mock("@/src/lib/integrations/wordpress", () => ({
+  upsertWordPressPage: vi.fn(),
+  normaliseBaseUrl: (s: string) => s.replace(/\/+$/, ""),
+}));
+const wordpress = vi.mocked(upsertWordPressPage);
+import { factsFromProject } from "./facts";
 import type { BuildResult } from "./build";
 import type { MissingPageContent } from "./types";
 import type { CrawlResult } from "@/src/lib/crawl/site-crawler";
@@ -17,7 +26,7 @@ function fakeDb(seed: Record<string, Row[]>) {
   let nextId = 1;
   const from = (table: string) => {
     const rows = (tables[table] ??= []);
-    const state = { op: "select" as "select" | "insert" | "upsert" | "update", filters: [] as Array<[string, unknown]>, payload: null as unknown, conflict: null as string | null, single: false };
+    const state = { op: "select" as "select" | "insert" | "upsert" | "update" | "delete", filters: [] as Array<[string, unknown]>, payload: null as unknown, conflict: null as string | null, single: false };
     const matching = () => rows.filter((r) => state.filters.every(([k, v]) => r[k] === v));
     const exec = () => {
       let data: Row[] = [];
@@ -42,6 +51,10 @@ function fakeDb(seed: Record<string, Row[]>) {
         });
       }
       if (state.op === "update") data = matching().map((r) => Object.assign(r, state.payload as Row));
+      if (state.op === "delete") {
+        data = matching();
+        for (const r of data) rows.splice(rows.indexOf(r), 1);
+      }
       if (state.single) return { data: data[0] ?? null, error: data[0] ? null : { message: "no rows", code: "PGRST116" } };
       return { data, error: null };
     };
@@ -50,6 +63,7 @@ function fakeDb(seed: Record<string, Row[]>) {
       insert: (p: unknown) => ((state.op = "insert"), (state.payload = p), b),
       upsert: (p: unknown, o?: { onConflict?: string }) => ((state.op = "upsert"), (state.payload = p), (state.conflict = o?.onConflict ?? null), b),
       update: (p: unknown) => ((state.op = "update"), (state.payload = p), b),
+      delete: () => ((state.op = "delete"), b),
       eq: (k: string, v: unknown) => (state.filters.push([k, v]), b),
       order: () => b,
       limit: () => b,
@@ -205,6 +219,39 @@ describe("runMissingPages", () => {
     expect(String(failed?.last_error)).toContain("disk full");
   });
 
+  it("stops with nothing_to_check, and counts no run, when there is no website and no services", async () => {
+    const { supabase, tables } = fakeDb({ projects: [{ ...project, website_url: null, services: [] }] });
+    let crawled = false;
+    const result = await runMissingPages({
+      projectId: "proj-1",
+      supabase,
+      mode: "nightly",
+      maxPages: 1,
+      deps: {
+        crawl: async () => {
+          crawled = true;
+          return crawl;
+        },
+        volume,
+        build,
+      },
+    });
+
+    expect(result.error).toEqual({ code: "nothing_to_check", message: "Add what you offer in Settings so we know what to look for." });
+    expect(result.runId).toBeNull();
+    expect(tables.missing_page_runs ?? []).toHaveLength(0);
+    expect(tables.missing_page_candidates ?? []).toHaveLength(0);
+    expect(crawled).toBe(false);
+  });
+
+  it("still runs with services and no website (every search counts as missing)", async () => {
+    const { supabase } = fakeDb({ projects: [{ ...project, website_url: null }] });
+    const result = await runMissingPages({ projectId: "proj-1", supabase, mode: "manual", maxPages: 1, deps: { crawl: async () => crawl, volume, build } });
+    expect(result.error).toBeNull();
+    expect(result.pagesCrawled).toBe(0);
+    expect(result.pagesWritten).toBe(1);
+  });
+
   it("records the AI-unavailable error and leaves the candidate open", async () => {
     const { supabase, tables } = fakeDb({ projects: [project] });
     const failing = async (): Promise<BuildResult> => {
@@ -220,5 +267,171 @@ describe("runMissingPages", () => {
     expect(tables.missing_page_candidates.every((c) => c.status === "open")).toBe(true);
     expect(tables.assets ?? []).toHaveLength(0);
     expect(String(tables.missing_page_runs[0].error)).toContain("ai_unavailable");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Re-writing a page that is already live
+// ---------------------------------------------------------------------------
+
+const livePage: MissingPageContent = { ...goodPage, title: "Old live title", h1: "Old live heading" };
+
+function publishedWorld() {
+  return fakeDb({
+    projects: [project],
+    site_connections: [{ id: "sc-1", project_id: "proj-1", kind: "hosted", site_slug: "lekki" }],
+    assets: [{ id: "asset-live", project_id: "proj-1", type: "seo_page", status: "published", title: "Old live title" }],
+    hosted_pages: [
+      {
+        id: "hp-live",
+        project_id: "proj-1",
+        site_slug: "lekki",
+        slug: "emergency-plumbing-near-me",
+        title: "Old live title",
+        meta_description: livePage.metaDescription,
+        page: livePage,
+        template: "local",
+        status: "published",
+        asset_id: "asset-live",
+        published_at: "2026-10-01T00:00:00.000Z",
+      },
+    ],
+    missing_page_candidates: [
+      { id: "c-live", project_id: "proj-1", query: "emergency plumbing near me", kind: "update", matched_url: "https://lekki.conduikt.site/emergency-plumbing-near-me", status: "published", score: 90, hosted_page_id: "hp-live", asset_id: "asset-live" },
+    ],
+  });
+}
+
+const liveCandidate: CandidateRow = { id: "c-live", project_id: "proj-1", query: "emergency plumbing near me", kind: "update", matched_url: "https://lekki.conduikt.site/emergency-plumbing-near-me", status: "published", score: 90, hosted_page_id: "hp-live" };
+
+describe("writeCandidate on a published candidate", () => {
+  beforeEach(() => wordpress.mockReset());
+
+  it("keeps the live page live and parks the new version as a pending revision", async () => {
+    const { supabase, tables } = publishedWorld();
+    const written = await writeCandidate({ supabase, project, facts: factsFromProject(project), candidate: liveCandidate, deps: { build } });
+
+    expect(written.revision).toBe(true);
+    expect(written.hostedPageId).toBe("hp-live");
+
+    const live = tables.hosted_pages.find((h) => h.id === "hp-live")!;
+    expect(live.status).toBe("published");
+    expect((live.page as MissingPageContent).title).toBe("Old live title");
+    expect(live.asset_id).toBe("asset-live");
+    // The draft is not on the (publicly readable) hosted row.
+    expect(live).not.toHaveProperty("pending_page");
+
+    expect(tables.hosted_page_revisions).toHaveLength(1);
+    const pending = tables.hosted_page_revisions[0];
+    expect(pending.hosted_page_id).toBe("hp-live");
+    expect(pending.project_id).toBe("proj-1");
+    expect((pending.page as MissingPageContent).title).toBe(goodPage.title);
+    expect(pending.asset_id).toBe(written.assetId);
+    expect((pending.readiness as { ready: boolean }).ready).toBe(true);
+
+    // No second hosted row, the candidate is still live, the write was counted.
+    expect(tables.hosted_pages).toHaveLength(1);
+    expect(tables.missing_page_candidates[0].status).toBe("published");
+    expect(tables.assets.filter((a) => a.status === "draft")).toHaveLength(1);
+    expect(tables.ai_generations).toHaveLength(1);
+  });
+
+  it("fails, and leaves the live page alone, when the live row cannot be read", async () => {
+    // A select error (unknown column before the migration, a transient
+    // outage) must not be read as "the live row is gone" and fall through
+    // to a draft upsert over the live page.
+    const { supabase: real, tables } = publishedWorld();
+    const failing = {
+      select: () => failing,
+      eq: () => failing,
+      maybeSingle: async () => ({ data: null, error: { message: "column hosted_pages.nope does not exist" } }),
+    };
+    const supabase = { from: (table: string) => (table === "hosted_pages" ? failing : real.from(table)) } as unknown as SupabaseClient;
+
+    await expect(writeCandidate({ supabase, project, facts: factsFromProject(project), candidate: liveCandidate, deps: { build } })).rejects.toThrow("does not exist");
+
+    const live = tables.hosted_pages[0];
+    expect(tables.hosted_pages).toHaveLength(1);
+    expect(live.status).toBe("published");
+    expect((live.page as MissingPageContent).title).toBe("Old live title");
+    expect(tables.hosted_page_revisions ?? []).toHaveLength(0);
+    expect(tables.missing_page_candidates[0].status).toBe("published");
+    expect(tables.missing_page_candidates[0].last_error).toMatch(/does not exist/);
+    expect(tables.ai_generations ?? []).toHaveLength(0);
+  });
+
+  it("puts the candidate back to published when the write fails", async () => {
+    const { supabase, tables } = publishedWorld();
+    const failing = async (): Promise<BuildResult> => {
+      throw new Error("model returned junk");
+    };
+    await expect(writeCandidate({ supabase, project, facts: factsFromProject(project), candidate: liveCandidate, deps: { build: failing } })).rejects.toThrow("junk");
+    expect(tables.missing_page_candidates[0].status).toBe("published");
+    expect(tables.hosted_pages[0].status).toBe("published");
+  });
+
+  it("approveRevision swaps the pending version in and publishes it; discardRevision drops it", async () => {
+    const { supabase, tables } = publishedWorld();
+    await writeCandidate({ supabase, project, facts: factsFromProject(project), candidate: liveCandidate, deps: { build } });
+
+    const out = await approveRevision({ supabase, facts: factsFromProject(project), candidateId: "c-live", hostedPageId: "hp-live", target: { kind: "hosted", siteSlug: "lekki" } });
+    expect(out.kind).toBe("hosted");
+    expect(out.url).toBe("https://lekki.conduikt.site/emergency-plumbing-near-me");
+
+    const live = tables.hosted_pages[0];
+    expect(live.status).toBe("published");
+    expect((live.page as MissingPageContent).title).toBe(goodPage.title);
+    expect(live.title).toBe(goodPage.title);
+    expect(tables.hosted_page_revisions).toHaveLength(0);
+    const newAsset = tables.assets.find((a) => a.id === live.asset_id)!;
+    expect(newAsset.status).toBe("published");
+    expect(newAsset.id).not.toBe("asset-live");
+    expect((tables.missing_page_candidates[0].readiness as { score: number }).score).toBe(100);
+    expect(wordpress).not.toHaveBeenCalled();
+
+    // A second rewrite replaces the pending one, then the owner keeps the live page.
+    const third = async (): Promise<BuildResult> => ({ page: { ...goodPage, title: "Third version" }, usage: { inputTokens: 1, outputTokens: 1, model: "x", durationMs: 1 } });
+    await writeCandidate({ supabase, project, facts: factsFromProject(project), candidate: liveCandidate, deps: { build: third } });
+    expect(tables.hosted_page_revisions).toHaveLength(1);
+    expect((tables.hosted_page_revisions[0].page as MissingPageContent).title).toBe("Third version");
+    await discardRevision(supabase, "hp-live");
+    expect(tables.hosted_page_revisions).toHaveLength(0);
+    expect((tables.hosted_pages[0].page as MissingPageContent).title).toBe(goodPage.title);
+  });
+
+  it("on a WordPress project, pushes to WordPress before swapping, and keeps the draft pending when WordPress refuses", async () => {
+    const { supabase, tables } = publishedWorld();
+    const written = await writeCandidate({ supabase, project, facts: factsFromProject(project), candidate: liveCandidate, deps: { build } });
+    const target = { kind: "wordpress" as const, connection: { baseUrl: "https://lekki.ng", username: "olu", appPassword: "secret" } };
+    const facts = factsFromProject(project);
+
+    // 1. WordPress is down: nothing on our side moves, the owner can retry.
+    wordpress.mockRejectedValueOnce(new Error("WordPress responded 401"));
+    await expect(approveRevision({ supabase, facts, candidateId: "c-live", hostedPageId: "hp-live", target })).rejects.toThrow("401");
+    const live = tables.hosted_pages[0];
+    expect((live.page as MissingPageContent).title).toBe("Old live title");
+    expect(live.asset_id).toBe("asset-live");
+    expect(tables.hosted_page_revisions).toHaveLength(1);
+    expect(tables.hosted_page_revisions[0].asset_id).toBe(written.assetId);
+    expect(tables.assets.find((a) => a.id === written.assetId)!.status).toBe("draft");
+    expect(tables.missing_page_candidates[0].status).toBe("published");
+
+    // 2. WordPress accepts: the pending version was what went over, then the row swaps.
+    wordpress.mockResolvedValueOnce({ id: 12, link: "https://lekki.ng/emergency-plumbing-near-me/", created: false });
+    const out = await approveRevision({ supabase, facts, candidateId: "c-live", hostedPageId: "hp-live", target });
+    expect(out.kind).toBe("wordpress");
+    expect(out.url).toBe("https://lekki.ng/emergency-plumbing-near-me/");
+    expect(wordpress).toHaveBeenCalledTimes(2);
+    expect(wordpress.mock.calls[1][1]).toMatchObject({ slug: "emergency-plumbing-near-me", title: goodPage.title, status: "publish" });
+    expect((tables.hosted_pages[0].page as MissingPageContent).title).toBe(goodPage.title);
+    expect(tables.hosted_pages[0].asset_id).toBe(written.assetId);
+    expect(tables.hosted_page_revisions).toHaveLength(0);
+    expect(tables.assets.find((a) => a.id === written.assetId)!.status).toBe("published");
+    expect(tables.missing_page_candidates[0].matched_url).toBe("https://lekki.ng/emergency-plumbing-near-me/");
+  });
+
+  it("refuses to approve when nothing is pending", async () => {
+    const { supabase } = publishedWorld();
+    await expect(approveRevision({ supabase, facts: factsFromProject(project), candidateId: "c-live", hostedPageId: "hp-live", target: null })).rejects.toThrow("no new draft");
   });
 });

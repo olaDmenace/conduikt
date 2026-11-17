@@ -24,6 +24,12 @@ export interface ProjectRow {
   phone?: string | null;
   contact_email?: string | null;
   social_links?: unknown;
+  // Added by the 20261117 project-profile migration; read defensively so
+  // the code works before and after it lands.
+  address_line?: unknown;
+  city?: unknown;
+  booking_url?: unknown;
+  review_url?: unknown;
 }
 
 const TYPES: BusinessType[] = ["saas", "local", "ecommerce", "creator", "agency", "other"];
@@ -55,6 +61,16 @@ function strings(value: unknown, pick?: (o: Record<string, unknown>) => unknown)
   return [];
 }
 
+/** A trimmed string from a column that may not exist yet (or hold junk). */
+function optionalText(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function optionalUrl(value: unknown): string | null {
+  const s = optionalText(value);
+  return s && /^https?:\/\//i.test(s) ? s : null;
+}
+
 export function factsFromProject(row: ProjectRow): ProjectFacts {
   const businessType = businessTypeOf(row.business_type);
   const services = strings(row.services);
@@ -74,7 +90,45 @@ export function factsFromProject(row: ProjectRow): ProjectFacts {
     phone: row.phone?.trim() || null,
     email: row.contact_email?.trim() || null,
     sameAs,
+    address: optionalText(row.address_line),
+    city: optionalText(row.city),
+    bookingUrl: optionalUrl(row.booking_url),
+    reviewUrl: optionalUrl(row.review_url),
   };
+}
+
+/** Shown when a run has nothing to read and nothing to look for. */
+export const NOTHING_TO_CHECK_MESSAGE = "Add what you offer in Settings so we know what to look for.";
+
+/**
+ * A run needs a site to read or a list of services to build searches
+ * from. With neither, every search would be an estimate about nothing.
+ */
+export function hasSomethingToCheck(facts: Pick<ProjectFacts, "websiteUrl" | "services">): boolean {
+  return Boolean(facts.websiteUrl) || facts.services.length > 0;
+}
+
+/** The address a map can find: street first, then city, then the broader place. */
+export function mapAddressOf(facts: Pick<ProjectFacts, "address" | "city" | "location">): string | null {
+  const parts = [facts.address, facts.city, facts.location].map((p) => p?.trim() ?? "").filter(Boolean);
+  if (parts.length === 0) return null;
+  // "Lekki" inside "Lekki, Lagos": keep the broader one only once.
+  const unique = parts.filter((p, i) => !parts.slice(i + 1).some((later) => later.toLowerCase().includes(p.toLowerCase())));
+  return unique.join(", ");
+}
+
+/** A phone number as a tel: link (digits and a leading + only), or null. */
+export function telHrefOf(phone: string | null | undefined): string | null {
+  const digits = (phone ?? "").replace(/[^\d+]/g, "");
+  return digits.replace(/\D/g, "").length >= 6 ? `tel:${digits}` : null;
+}
+
+/**
+ * Where a page's button should go when the writer left it at "#contact":
+ * the booking link, else a call, else the contact anchor.
+ */
+export function ctaFallbackHref(facts: Pick<ProjectFacts, "bookingUrl" | "phone">): string {
+  return facts.bookingUrl ?? telHrefOf(facts.phone) ?? "#contact";
 }
 
 export type AutomationMode = "check_all" | "social_runs" | "hands_off";

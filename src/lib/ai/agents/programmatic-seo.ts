@@ -1,5 +1,6 @@
 import { ANSWER_FIRST_RULES } from "@/src/lib/ai/answer-first";
 import type { AgentConfig, ProjectContext, AgentOutput } from "./types";
+import { modelFor } from "../model-routing";
 import { parseJsonResponse } from "../parse-json";
 
 export const programmaticSeoAgent: AgentConfig = {
@@ -7,7 +8,7 @@ export const programmaticSeoAgent: AgentConfig = {
   name: "Programmatic SEO",
   description:
     "Generate a batch of templated landing-page variants — one per target query — with unique meta, H1, sections and FAQ per page.",
-  model: "claude-sonnet-4-6",
+  model: modelFor("generate"),
   maxTokens: 12000,
 
   buildSystemPrompt: (context: ProjectContext) => `

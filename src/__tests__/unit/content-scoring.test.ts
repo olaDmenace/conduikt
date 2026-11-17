@@ -119,3 +119,39 @@ describe('Content Scoring Logic', () => {
     })
   })
 })
+
+// ---------------------------------------------------------------------------
+// Answerability dimension: the agent's JSON shape and the blend the route
+// returns. These run the real modules, not stand-ins.
+// ---------------------------------------------------------------------------
+import { contentScorerAgent, CONTENT_SCORE_DIMENSIONS } from '@/src/lib/ai/agents/content-scorer'
+import { blendAnswerability, scoreAnswerability } from '@/src/lib/seo/answerability'
+
+describe('Answerability dimension contract', () => {
+  it('the prompt asks for answerability (0-100) outside the four-part total', () => {
+    const prompt = contentScorerAgent.buildSystemPrompt({ name: 'TestCo', websiteUrl: 'https://testco.com' })
+    expect(prompt).toContain('"answerability": number')
+    expect(prompt).toMatch(/answerability\*\* \(0–100\)/)
+    expect(prompt).toContain('NOT part of the total')
+  })
+
+  it('parseResponse always exposes an answerability key, null when the model left it out', () => {
+    const withIt = contentScorerAgent.parseResponse(JSON.stringify({ total_score: 70, clarity: 20, relevance: 18, engagement_potential: 16, brand_alignment: 16, answerability: 55, summary: 's', top_strength: 'a', top_improvement: 'b' }))
+    expect((withIt.data as { answerability: number }).answerability).toBe(55)
+    const without = contentScorerAgent.parseResponse('```json\n{"total_score": 70, "clarity": 20, "relevance": 18, "engagement_potential": 16, "brand_alignment": 16}\n```')
+    expect((without.data as { answerability: unknown }).answerability).toBeNull()
+  })
+
+  it('the dimension list the UI renders by key includes answerability out of 100', () => {
+    const dim = CONTENT_SCORE_DIMENSIONS.find((d) => d.key === 'answerability')
+    expect(dim).toEqual({ key: 'answerability', label: 'Ready for Google and AI answers', max: 100 })
+    expect(CONTENT_SCORE_DIMENSIONS.map((d) => d.key)).toEqual(['clarity', 'relevance', 'engagement_potential', 'brand_alignment', 'answerability'])
+  })
+
+  it('the route blends the model and the deterministic score by averaging', () => {
+    const det = scoreAnswerability('Short slogan. Buy now!').score
+    expect(det).toBeLessThan(40)
+    expect(blendAnswerability(90, det)).toBe(Math.round((90 + det) / 2))
+    expect(blendAnswerability(undefined, det)).toBe(det)
+  })
+})

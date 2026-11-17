@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { AIUnavailableError, generateWithClaudeCompletion, TruncatedResponseError } from "@/src/lib/ai/client";
+import { AIRefusedError, AIUnavailableError, generateWithClaudeCompletion, TruncatedResponseError } from "@/src/lib/ai/client";
 import { getAgent } from "@/src/lib/ai/agents";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
 import type { HandlerResult } from "@/src/lib/scheduler/types";
@@ -19,9 +19,10 @@ type Db = SupabaseClient<any>;
 
 /** Why a row failed, when the UI should say more than "didn't finish". */
 export const AI_UNAVAILABLE = "ai_unavailable";
+export const AI_REFUSED = "ai_refused";
 
 /** A handler result that can also name the failure for the status payload. */
-export type FirstWeekResult = HandlerResult & { errorCode?: typeof AI_UNAVAILABLE; reason?: string };
+export type FirstWeekResult = HandlerResult & { errorCode?: typeof AI_UNAVAILABLE | typeof AI_REFUSED; reason?: string };
 
 export async function runFirstWeekAgent(supabase: Db, payload: Record<string, unknown>): Promise<FirstWeekResult> {
   const projectId = typeof payload.projectId === "string" ? payload.projectId : null;
@@ -54,6 +55,10 @@ export async function runFirstWeekAgent(supabase: Db, payload: Record<string, un
       // minute, so don't burn the second attempt on them; the user's
       // "Try again" re-queues the row later. Transient faults may retry.
       return { ok: false, error: err.userMessage, retryable: err.retryable, errorCode: AI_UNAVAILABLE, reason: err.code };
+    }
+    if (err instanceof AIRefusedError) {
+      // The same prompt would be refused again; only a rephrase helps.
+      return { ok: false, error: err.userMessage, retryable: false, errorCode: AI_REFUSED, reason: err.category ?? "unspecified" };
     }
     return { ok: false, error: err instanceof Error ? err.message : "Model call failed", retryable: true };
   }

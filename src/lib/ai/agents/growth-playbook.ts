@@ -1,11 +1,12 @@
 import type { SkillConfig, ProjectContext, SkillOutput } from "./types";
+import { modelFor } from "../model-routing";
 import { parseJsonResponse } from "../parse-json";
 
 export const growthPlaybookSkill: SkillConfig = {
   id: "growth-playbook",
   name: "Growth Playbook",
   description: "90-day AI-generated growth plan with prioritised actions across SEO, content, social, and conversion",
-  model: "claude-sonnet-4-6",
+  model: modelFor("generate"),
   maxTokens: 24000,
 
   buildSystemPrompt: (context: ProjectContext) => `

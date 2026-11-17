@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Rate limit: 5 media uploads per minute per user.
-  const rl = rateLimit(`media-upload:${user.id}`, { limit: 5, windowSeconds: 60 });
+  const rl = await rateLimit(`media-upload:${user.id}`, { limit: 5, windowSeconds: 60 });
   if (!rl.allowed) return rateLimitResponse(rl);
 
   const formData = await request.formData();

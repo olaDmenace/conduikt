@@ -4,6 +4,8 @@ import { createClient } from "@/src/lib/supabase/server";
 import {
   getFlutterwavePlanId,
   getPaystackPlanCode,
+  isLocalPlanEnabled,
+  planCurrency,
   PLAN_PRICING,
   type PlanTier,
 } from "@/src/lib/plans";
@@ -31,15 +33,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { planKey } = (await request.json()) as { planKey?: string };
-  if (!planKey || !["pro", "growth", "agency"].includes(planKey)) {
+  const { planKey } = (await request.json().catch(() => ({}))) as { planKey?: string };
+  if (!planKey || !["local", "pro", "growth", "agency"].includes(planKey)) {
     return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
   }
 
   const tier = planKey as PlanTier;
+  // Each tier is charged in its own currency: naira for Local, dollars
+  // for the rest. The Local tier is only offered once it can be bought
+  // (a Local plan id exists with either provider; see isLocalPlanEnabled).
   const amount = PLAN_PRICING[tier].price;
+  const currency = planCurrency(tier);
   if (!amount) {
     return NextResponse.json({ error: "Invalid plan price" }, { status: 500 });
+  }
+  if (tier === "local" && !isLocalPlanEnabled()) {
+    return NextResponse.json({ error: "The Local plan is not available yet" }, { status: 400 });
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
@@ -73,6 +82,7 @@ export async function POST(request: NextRequest) {
           metadata: {
             user_id: user.id,
             plan_key: tier,
+            currency,
           },
         });
 
@@ -83,7 +93,9 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      // Flutterwave path.
+      // Flutterwave path. The charge goes out in the tier's own currency
+      // and the webhook (src/app/api/webhooks/flutterwave/route.ts)
+      // checks the amount against that same currency.
       const planId = getFlutterwavePlanId(tier);
       if (!planId) {
         errors.push({ provider, error: "Flutterwave plan not configured" });
@@ -94,7 +106,7 @@ export async function POST(request: NextRequest) {
       const { link } = await initFlutterwavePayment({
         txRef,
         amount,
-        currency: "USD",
+        currency,
         customerEmail: user.email ?? "",
         paymentPlanId: planId,
         redirectUrl: `${appUrl}/settings/billing?payment=success`,

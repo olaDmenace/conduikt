@@ -18,6 +18,21 @@ export function aiUnavailableResponse(err: unknown): NextResponse {
   return NextResponse.json({ error: message, code: "ai_unavailable", retryable: true }, { status: 503 });
 }
 
+export const AI_REFUSED_FALLBACK = "The writing service declined this request. Rephrase it and try again.";
+
+/** The model declined to write the page (stop_reason "refusal"); see AIRefusedError. */
+export function isAiRefusedError(err: unknown): err is Error & { userMessage?: string; category?: string | null } {
+  return err instanceof Error && err.name === "AIRefusedError";
+}
+
+export function aiRefusedResponse(err: unknown): NextResponse {
+  const e = err as { userMessage?: string; category?: string | null } | null;
+  return NextResponse.json(
+    { error: e?.userMessage ?? AI_REFUSED_FALLBACK, code: "ai_refused", reason: e?.category ?? "unspecified", retryable: false },
+    { status: 422 },
+  );
+}
+
 export type OwnerContext = { supabase: SupabaseClient; userId: string; project: ProjectRow };
 
 /** The signed-in owner of this project, or the response to send instead. */

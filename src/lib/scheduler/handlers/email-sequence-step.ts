@@ -1,7 +1,7 @@
 import { registerHandler } from "../registry";
 import { enqueueExecution } from "../enqueue";
 import { sendSequenceEmail } from "@/src/lib/email/sequence-send";
-import { CONDUIKT_SHARED_FROM_EMAIL } from "@/src/lib/email/marketing";
+import { resolveSenderAddress } from "@/src/lib/email/sender";
 import { prependBrandHeader } from "@/src/lib/email/brand-header";
 import type { ExecutionHandler } from "../types";
 
@@ -160,14 +160,16 @@ const handler: ExecutionHandler = async (rawPayload, { execution, supabase }) =>
     altText: projectRow?.name,
   });
 
-  // 4. Send. The user's project may set a custom from_name later; for
-  // now we use the shared sender (mail@conduikt.com) — same as broadcasts.
+  // 4. Send from the owner's verified domain when their plan allows one
+  // and it is verified, else the shared sender — the same resolver the
+  // broadcast route uses. The project name is the display name.
+  const sender = await resolveSenderAddress(supabase, enrollment.user_id, projectRow?.name ?? null);
   const sendResult = await sendSequenceEmail({
     to: contact.email,
     subject,
     html: brandedHtml,
     unsubscribeToken: contact.unsubscribe_token,
-    from: `Conduikt <${CONDUIKT_SHARED_FROM_EMAIL}>`,
+    from: sender.from,
     tags: [
       { name: "type", value: "sequence_step" },
       { name: "enrollment_id", value: enrollment.id },

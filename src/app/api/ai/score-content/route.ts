@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
-import { AIUnavailableError, aiUnavailableBody, generateWithClaude } from "@/src/lib/ai/client";
+import { AIRefusedError, AIUnavailableError, aiRefusedBody, aiUnavailableBody, generateWithClaude } from "@/src/lib/ai/client";
 import { getAgent } from "@/src/lib/ai/agents";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
+import { effortFor } from "@/src/lib/ai/model-routing";
+import { blendAnswerability, scoreAnswerability } from "@/src/lib/seo/answerability";
+import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -12,6 +15,10 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  // Shares a window with /api/agents/content-scorer: same model, same job.
+  const rl = await rateLimit(`content-score:${user.id}`, { limit: 20, windowSeconds: 600 });
+  if (!rl.allowed) return rateLimitResponse(rl);
 
   const body = await request.json();
   const { content, contentType, projectId, postId } = body;
@@ -33,6 +40,7 @@ export async function POST(request: NextRequest) {
 
   // Build project context if projectId is provided
   let systemPrompt: string;
+  let businessName: string | null = null;
   if (projectId) {
     const { data: project } = await supabase
       .from("projects")
@@ -44,6 +52,7 @@ export async function POST(request: NextRequest) {
     if (project) {
       const context = buildProjectContext(project);
       systemPrompt = agent.buildSystemPrompt(context);
+      businessName = typeof project.name === "string" ? project.name : null;
     } else {
       systemPrompt = agent.buildSystemPrompt({
         name: "Unknown",
@@ -68,7 +77,7 @@ export async function POST(request: NextRequest) {
       userPrompt,
       model: agent.model,
       maxTokens: agent.maxTokens,
-      temperature: 0,
+      effort: effortFor("score"),
     });
 
     const parsed = agent.parseResponse(result.content);
@@ -78,10 +87,15 @@ export async function POST(request: NextRequest) {
       relevance: number;
       engagement_potential: number;
       brand_alignment: number;
+      answerability: number | null;
       summary: string;
       top_strength: string;
       top_improvement: string;
     };
+
+    // Answerability: half the model's judgement, half a deterministic check.
+    const deterministic = scoreAnswerability(content, { businessName });
+    scoreData.answerability = blendAnswerability(scoreData.answerability, deterministic.score);
 
     // Persist score
     if (projectId) {
@@ -95,6 +109,7 @@ export async function POST(request: NextRequest) {
         relevance: scoreData.relevance,
         engagement_potential: scoreData.engagement_potential,
         brand_alignment: scoreData.brand_alignment,
+        answerability: scoreData.answerability,
         summary: scoreData.summary,
         top_strength: scoreData.top_strength,
         top_improvement: scoreData.top_improvement,
@@ -110,9 +125,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return NextResponse.json(scoreData);
+    return NextResponse.json({ ...scoreData, answerability_fixes: deterministic.fixes });
   } catch (e) {
     if (e instanceof AIUnavailableError) return NextResponse.json(aiUnavailableBody(e), { status: 503 });
+    if (e instanceof AIRefusedError) return NextResponse.json(aiRefusedBody(e), { status: 422 });
     return NextResponse.json(
       { error: "Failed to score content", details: String(e) },
       { status: 500 }

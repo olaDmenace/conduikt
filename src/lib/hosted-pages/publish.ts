@@ -6,6 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { decryptToken } from "@/src/lib/crypto/tokens";
 import { upsertWordPressPage, type WordPressConnection } from "@/src/lib/integrations/wordpress";
 import { pageJsonLd } from "@/src/lib/seo/schema-generator";
+import { mapAddressOf } from "@/src/lib/missing-pages/facts";
 import type { HostedTemplate, MissingPageContent, ProjectFacts } from "@/src/lib/missing-pages/types";
 import { renderPageHtml } from "./html";
 import { hostedPagePath, hostedPageUrl, slugify } from "./templates";
@@ -92,7 +93,9 @@ export async function publishToWordPress(
   const siteUrl = connection.baseUrl.replace(/\/$/, "");
   const pageUrl = `${siteUrl}/${input.slug}/`;
   const jsonLd = pageJsonLd(input.page, input.facts, { pageUrl, siteUrl, serviceName: input.serviceName ?? null, template: input.template });
-  const content = renderPageHtml(input.page, { jsonLd, omitH1: true });
+  // A map on local pages when the project has a street address or city.
+  const mapAddress = input.template === "local" && (input.facts.address || input.facts.city) ? mapAddressOf(input.facts) : null;
+  const content = renderPageHtml(input.page, { jsonLd, omitH1: true, mapAddress, businessName: input.facts.name });
   const res = await upsertWordPressPage(connection, { slug: input.slug, title: input.page.title, content, excerpt: input.page.metaDescription, status: "publish" }, fetchImpl);
   return { link: res.link, created: res.created };
 }

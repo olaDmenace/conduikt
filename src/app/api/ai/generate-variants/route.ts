@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
-import { AIUnavailableError, aiUnavailableBody, generateWithClaude } from "@/src/lib/ai/client";
+import { AIRefusedError, AIUnavailableError, aiRefusedBody, aiUnavailableBody, generateWithClaude } from "@/src/lib/ai/client";
 import { getAgent } from "@/src/lib/ai/agents";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
+import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -11,6 +12,10 @@ export async function POST(request: NextRequest) {
   } = await supabase.auth.getUser();
   if (!user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // One call fans out into up to three model requests.
+  const rl = await rateLimit(`ai-variants:${user.id}`, { limit: 20, windowSeconds: 600 });
+  if (!rl.allowed) return rateLimitResponse(rl);
 
   const body = await request.json();
   const { projectId, agentId, originalContent, variantCount = 2 } = body;
@@ -83,6 +88,7 @@ Generate a completely different version. Vary the structure, angle, and hook. Ke
       });
     } catch (err) {
       if (err instanceof AIUnavailableError) return NextResponse.json(aiUnavailableBody(err), { status: 503 });
+      if (err instanceof AIRefusedError) return NextResponse.json(aiRefusedBody(err), { status: 422 });
       throw err;
     }
 

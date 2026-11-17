@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
-import { AIUnavailableError, aiUnavailableBody } from "@/src/lib/ai/client";
+import { AIRefusedError, AIUnavailableError, aiRefusedBody, aiUnavailableBody } from "@/src/lib/ai/client";
 import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
 import {
   fetchPageSignal,
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rl = rateLimit(`magic-audit:${user.id}`, {
+  const rl = await rateLimit(`magic-audit:${user.id}`, {
     limit: 3,
     windowSeconds: 3600,
   });
@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     // Signed-in checks are honest: no sample stands in for a real audit.
     if (err instanceof AIUnavailableError) return NextResponse.json(aiUnavailableBody(err), { status: 503 });
+    if (err instanceof AIRefusedError) return NextResponse.json(aiRefusedBody(err), { status: 422 });
     const message =
       process.env.NODE_ENV === "development"
         ? err instanceof Error

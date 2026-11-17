@@ -1,4 +1,5 @@
 import type { AgentConfig, ProjectContext } from "./types";
+import { modelFor } from "../model-routing";
 
 const UGC_RULES = `
 RULES FOR UGC (User Generated Content) VIDEO:
@@ -46,7 +47,7 @@ export const videoScriptAgent: AgentConfig = {
   id: "video-script",
   name: "Video Script Agent",
   description: "Generate short-form video ad scripts from your content",
-  model: "claude-sonnet-4-6",
+  model: modelFor("generate"),
   maxTokens: 3000,
 
   buildSystemPrompt(ctx: ProjectContext): string {

@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Rate limit: 10 emails per hour per user
-  const rl = rateLimit(`email:${user.id}`, { limit: 10, windowSeconds: 3600 });
+  const rl = await rateLimit(`email:${user.id}`, { limit: 10, windowSeconds: 3600 });
   if (!rl.allowed) return rateLimitResponse(rl);
 
   // Verify user is on a paid plan

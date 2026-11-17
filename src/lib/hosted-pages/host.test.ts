@@ -22,6 +22,11 @@ describe("resolveHostedRoute", () => {
     expect(resolveHostedRoute("lekki", "/pipe-repairs")).toEqual({ kind: "rewrite", pathname: "/p/lekki/pipe-repairs" });
     expect(resolveHostedRoute("lekki", "/sitemap.xml")).toEqual({ kind: "rewrite", pathname: "/p/lekki/sitemap.xml" });
   });
+  it("serves the tenant's llms.txt from its own site only", () => {
+    expect(resolveHostedRoute("lekki", "/llms.txt")).toEqual({ kind: "rewrite", pathname: "/p/lekki/llms.txt" });
+    expect(resolveHostedRoute("lekki", "/p/lekki/llms.txt")).toEqual({ kind: "pass" });
+    expect(resolveHostedRoute("lekki", "/p/other-site/llms.txt")).toEqual({ kind: "not_found" });
+  });
   it("passes the tenant's own /p paths and Next assets through", () => {
     expect(resolveHostedRoute("lekki", "/p/lekki")).toEqual({ kind: "pass" });
     expect(resolveHostedRoute("lekki", "/p/lekki/pipe-repairs")).toEqual({ kind: "pass" });

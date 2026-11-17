@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 import { verifyProjectOwnership } from "@/src/lib/auth/verify-ownership";
 import { CONDUIKT_SHARED_FROM_EMAIL } from "@/src/lib/email/marketing";
+import { resolveSenderAddress } from "@/src/lib/email/sender";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -110,18 +111,23 @@ export async function POST(
     );
   }
 
-  // Resolve from-email. If the user provided one, it must be a verified
-  // domain owned by them. For V1 the verified-domain UI isn't shipped yet,
-  // so any user-supplied from_email is rejected — everyone uses the
-  // shared sender. Once Day 5 lands the verified-domain check moves here.
-  let resolvedFromEmail = CONDUIKT_SHARED_FROM_EMAIL;
+  // Default from-name to the audience name (acts as the "brand" recipients see).
+  const resolvedFromName = fromName || audience.name || "Conduikt";
+
+  // From-address: the user's verified sending domain when their plan
+  // allows one and it is verified, else Conduikt's shared sender
+  // (resolveSenderAddress decides). A from_email in the body may only
+  // name one of those two; anything else is not an address we can send
+  // from.
+  const sender = await resolveSenderAddress(supabase, user.id, resolvedFromName);
+  let resolvedFromEmail = sender.email;
   if (fromEmail) {
-    // For now: only Conduikt's shared sender is allowed.
-    if (fromEmail !== CONDUIKT_SHARED_FROM_EMAIL) {
+    if (fromEmail !== sender.email && fromEmail !== CONDUIKT_SHARED_FROM_EMAIL) {
       return NextResponse.json(
         {
-          error:
-            "Custom from_email is a Pro+ feature and the verified-domain flow is not live yet. Leave from_email blank to use the shared sender.",
+          error: sender.custom
+            ? `from_email must be ${sender.email} (your verified domain) or the shared sender. Leave it blank to use ${sender.email}.`
+            : "Sending from your own address needs a verified sending domain on Pro or above (Settings > Email domain). Leave from_email blank to use the shared sender.",
           code: "CUSTOM_DOMAIN_NOT_AVAILABLE",
         },
         { status: 403 }
@@ -129,9 +135,6 @@ export async function POST(
     }
     resolvedFromEmail = fromEmail;
   }
-
-  // Default from-name to the audience name (acts as the "brand" recipients see).
-  const resolvedFromName = fromName || audience.name || "Conduikt";
 
   const { data, error } = await supabase
     .from("broadcasts")

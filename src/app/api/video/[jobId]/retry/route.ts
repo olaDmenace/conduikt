@@ -22,7 +22,7 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rl = rateLimit(`video-gen:${user.id}`, { limit: 3, windowSeconds: 60 });
+  const rl = await rateLimit(`video-gen:${user.id}`, { limit: 3, windowSeconds: 60 });
   if (!rl.allowed) return rateLimitResponse(rl);
 
   const { data: job } = await supabase
@@ -84,10 +84,9 @@ export async function POST(
 
   // Charge a fresh credit. The original attempt was refunded when it
   // failed, so this brings the user back to "1 credit per video".
-  await supabase
-    .from("profiles")
-    .update({ generation_count: (profile?.generation_count ?? 0) + 1 })
-    .eq("id", user.id);
+  // Counted through the server-side function: profiles.generation_count is
+  // protected from direct client writes (migration 20261117_profiles_protect_columns).
+  await supabase.rpc("increment_generation_count", { user_id_param: user.id });
 
   await inngest.send({
     name: "video/job.created",

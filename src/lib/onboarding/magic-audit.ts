@@ -176,7 +176,6 @@ export async function analyzeMagicAudit(
     systemPrompt: SYSTEM_PROMPT,
     userPrompt: buildUserPrompt(signal),
     maxTokens: 4000,
-    temperature: 0.5,
   });
 
   const parsed = parseJsonResponse(content) as Partial<MagicAuditResult>;

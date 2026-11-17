@@ -5,6 +5,7 @@ import { verifyProjectOwnership } from "@/src/lib/auth/verify-ownership";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
 import { socialContentSkill } from "@/src/lib/ai/agents/social-content";
 import { generateWithClaude } from "@/src/lib/ai/client";
+import { modelFor } from "@/src/lib/ai/model-routing";
 import { enqueueExecution } from "@/src/lib/scheduler/enqueue";
 import { withDirection } from "@/src/lib/ai/direction";
 
@@ -124,8 +125,8 @@ export async function POST(
         platform: channel,
         count: 1,
       }),
-      model: "claude-sonnet-4-6",
-      maxTokens: 2000,
+      model: modelFor("generate"),
+      maxTokens: 2048,
     });
     parsedOutput = (socialContentSkill.parseResponse(result.content).data as
       | { posts?: Array<{ platform: string; text: string; hook?: string; angle?: string }> }
