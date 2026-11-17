@@ -7,7 +7,8 @@
 // can be tested with a fake database and no network.
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { crawlSite, fetchPage, type CrawledPage, type CrawlResult } from "@/src/lib/crawl/site-crawler";
+import { crawlSite, emptyCrawl, fetchPage, type CrawledPage, type CrawlResult } from "@/src/lib/crawl/site-crawler";
+import { crawlUnreachable, crawlUnreachableMessage, SITE_UNREACHABLE } from "@/src/lib/crawl/unreachable";
 import { getKeywordVolumeProvider, type KeywordVolumeProvider } from "@/src/lib/integrations/keyword-volume";
 import { getPublishTarget, publishDraft, publishHostedPage, publishToWordPress, resolveSiteSlug, type HostedPageRow, type PublishTarget } from "@/src/lib/hosted-pages/publish";
 import { hostedPageUrl, hostedSiteUrl, pickTemplate, slugify } from "@/src/lib/hosted-pages/templates";
@@ -72,7 +73,7 @@ export interface RunMissingPagesResult {
   pagesWritten: number;
   pagesPublished: number;
   written: Array<{ candidateId: string; query: string; hostedPageId: string; published: boolean; url: string | null; readiness: number }>;
-  error: { code: "ai_unavailable" | "generation_limit" | "nothing_to_check" | "failed"; message: string } | null;
+  error: { code: "ai_unavailable" | "generation_limit" | "nothing_to_check" | typeof SITE_UNREACHABLE | "failed"; message: string } | null;
 }
 
 export interface CandidateRow {
@@ -557,11 +558,23 @@ export async function runMissingPages(input: RunMissingPagesInput): Promise<RunM
 
   try {
     // 1. What pages exist: the site, plus pages we already host for it.
-    let crawl: CrawlResult = { pages: [], robots: { fetched: false, aiCrawlersBlocked: { GPTBot: false, ClaudeBot: false, PerplexityBot: false, "Google-Extended": false }, disallowForUs: [] }, source: "none", errors: [] };
+    let crawl: CrawlResult = emptyCrawl();
     if (facts.websiteUrl) crawl = await (deps.crawl ?? ((u: string) => crawlSite(u)))(facts.websiteUrl);
+    result.pagesCrawled = crawl.pages.length;
+
+    // A site we could not read is not a site with no pages. Treating it as
+    // one would call every search a gap and write pages the site already
+    // has, so stop here: the run is recorded with the reason, no candidate
+    // is touched, and the owner sees why. Hosted-only projects (no website)
+    // never come this way.
+    if (facts.websiteUrl && crawlUnreachable(crawl)) {
+      result.error = { code: SITE_UNREACHABLE, message: crawlUnreachableMessage(crawl, facts.websiteUrl) };
+      await finish();
+      return result;
+    }
+
     const { data: hostedRows } = await supabase.from("hosted_pages").select("site_slug, slug, title, page, status").eq("project_id", projectId).eq("status", "published");
     const pages = [...crawl.pages, ...hostedAsCrawled((hostedRows ?? []) as Parameters<typeof hostedAsCrawled>[0])];
-    result.pagesCrawled = crawl.pages.length;
 
     // 2. What people search for, and whether a page answers it.
     const queries = await buildIntentQueriesForProject(facts);

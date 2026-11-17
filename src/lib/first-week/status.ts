@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { firstWeekAgents } from "./plan";
-import { FIRST_WEEK, FIRST_WEEK_AGENT } from "./run";
+import { FIRST_WEEK, FIRST_WEEK_AGENT, SITE_UNREACHABLE } from "./run";
 
 // Progress of a project's first-week pack, shared by the status API and
 // the PDF report. Uses a service client: callers check ownership first.
@@ -83,11 +83,15 @@ export async function loadFirstWeek(service: Db, projectId: string, includeOutpu
       const state =
         row?.status === "completed" ? "done" : row?.status === "failed" ? "failed" : row?.status === "running" ? "running" : "queued";
       const errorCode = state === "failed" ? (row?.error_code ?? row?.result?.errorCode ?? null) : null;
+      // The site-unreachable message names the host and status, so the
+      // panel shows it as stored rather than a generic line.
+      const errorMessage = state === "failed" && errorCode === SITE_UNREACHABLE ? (row?.last_error ?? null) : null;
       return {
         ...a,
         state,
         executionId: row?.id ?? null,
         errorCode,
+        errorMessage,
         output: includeOutput ? (row?.result?.output ?? null) : undefined,
       };
     });

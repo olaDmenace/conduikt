@@ -3,7 +3,9 @@ import {
   fetchPageSignal,
   normalizeAuditUrl,
   scoreToGrade,
+  signalUnreachableMessage,
 } from "@/src/lib/onboarding/magic-audit";
+import { OUR_USER_AGENT } from "@/src/lib/crawl/robots";
 
 describe("magic-audit · normalizeAuditUrl", () => {
   it("accepts a full https URL", () => {
@@ -93,6 +95,84 @@ describe("magic-audit · fetchPageSignal", () => {
       "Widgets that don't suck. Trusted by 5000 teams."
     );
     expect(signal.h1).toBe("Ship better widgets, faster");
+    expect(signal.fetchOk).toBe(true);
+    expect(signal.blocked).toBe(false);
+    expect(signal.fetchError).toBeNull();
+  });
+
+  it("reads the site as ConduiktBot, in English, like the crawler does", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue({ ok: true, status: 200, headers: new Headers(), text: () => Promise.resolve(sampleHtml) }) as unknown as typeof fetch;
+    await fetchPageSignal("https://acme.com", fetchImpl);
+    const init = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[0][1] as { headers: Record<string, string> };
+    expect(init.headers["User-Agent"]).toContain(OUR_USER_AGENT);
+    expect(init.headers["Accept-Language"]).toBe("en");
+  });
+
+  it("reports a 403 bot challenge as blocked, never as an empty page", async () => {
+    const challenge = `<!DOCTYPE html><html><head><title>Just a moment...</title></head><body><script src="/cdn-cgi/challenge-platform/h/b/orchestrate/jsch/v1"></script></body></html>`;
+    const fetchImpl = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 403,
+      headers: new Headers({ "cf-mitigated": "challenge" }),
+      text: () => Promise.resolve(challenge),
+    }) as unknown as typeof fetch;
+
+    const signal = await fetchPageSignal("https://acme.com", fetchImpl);
+    expect(signal.fetchOk).toBe(false);
+    expect(signal.blocked).toBe(true);
+    expect(signal.fetchStatus).toBe(403);
+    expect(signal.fetchError).toContain("blocked");
+    // The challenge page's own title must not leak into the audit.
+    expect(signal.title).toBeNull();
+    expect(signal.html).toBe("");
+    expect(signalUnreachableMessage(signal)).toBe(
+      "We couldn't read acme.com (status 403). It looks like your site's bot protection blocked us. Allow the user agent ConduiktBot and try again."
+    );
+  });
+
+  it("reports a 503 challenge page as blocked by its title alone", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+      headers: new Headers(),
+      text: () => Promise.resolve("<html><head><title>Attention Required! | Cloudflare</title></head></html>"),
+    }) as unknown as typeof fetch;
+    const signal = await fetchPageSignal("https://acme.com", fetchImpl);
+    expect(signal.fetchOk).toBe(false);
+    expect(signal.blocked).toBe(true);
+    expect(signal.fetchStatus).toBe(503);
+  });
+
+  it("reports a timeout as a fetch error with no status", async () => {
+    const timeout = new Error("The operation was aborted due to timeout");
+    timeout.name = "TimeoutError";
+    const fetchImpl = vi.fn().mockRejectedValue(timeout);
+    const signal = await fetchPageSignal("https://acme.com", fetchImpl as unknown as typeof fetch);
+    expect(signal.fetchOk).toBe(false);
+    expect(signal.blocked).toBe(false);
+    expect(signal.fetchStatus).toBeNull();
+    expect(signal.fetchError).toBe("timed out");
+    expect(signalUnreachableMessage(signal)).toBe("We couldn't read acme.com right now (timed out). Try again in a few minutes.");
+  });
+
+  it("reports a plain server error with its status and not as blocked", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue({ ok: false, status: 500, headers: new Headers(), text: () => Promise.resolve("oops") }) as unknown as typeof fetch;
+    const signal = await fetchPageSignal("https://acme.com", fetchImpl);
+    expect(signal.fetchOk).toBe(false);
+    expect(signal.blocked).toBe(false);
+    expect(signal.fetchStatus).toBe(500);
+    expect(signalUnreachableMessage(signal)).toContain("(status 500)");
+  });
+
+  it("does not call a 200 with an empty body a page: fetchOk is false and the status is kept", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue({ ok: true, status: 200, headers: new Headers(), text: () => Promise.resolve("  \n ") }) as unknown as typeof fetch;
+    const signal = await fetchPageSignal("https://acme.com", fetchImpl);
+    expect(signal.fetchOk).toBe(false);
+    expect(signal.blocked).toBe(false);
+    expect(signal.fetchStatus).toBe(200);
+    expect(signal.fetchError).toBe("empty response");
+    expect(signal.html).toBe("  \n ");
+    expect(signalUnreachableMessage(signal)).toBe("We couldn't read acme.com right now (status 200). Try again in a few minutes.");
   });
 
   it("strips <script> and <style> from body text", async () => {
@@ -129,6 +209,8 @@ describe("magic-audit · fetchPageSignal", () => {
     expect(signal.h1).toBeNull();
     expect(signal.bodyText).toBe("");
     expect(signal.url).toBe("https://acme.com");
+    expect(signal.fetchOk).toBe(false);
+    expect(signal.fetchError).toBe("network fail");
   });
 
   it("returns nulls when fetch response is not ok", async () => {
@@ -140,6 +222,7 @@ describe("magic-audit · fetchPageSignal", () => {
     const signal = await fetchPageSignal("https://acme.com", fetchImpl);
     expect(signal.title).toBeNull();
     expect(signal.bodyText).toBe("");
+    expect(signal.fetchOk).toBe(false);
   });
 
   it("decodes common HTML entities in title/meta/h1", async () => {

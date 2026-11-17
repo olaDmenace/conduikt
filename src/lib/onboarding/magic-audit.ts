@@ -12,6 +12,8 @@
 
 import { generateWithClaude } from "@/src/lib/ai/client";
 import { parseJsonResponse } from "@/src/lib/ai/parse-json";
+import { CRAWL_HEADERS } from "@/src/lib/crawl/site-crawler";
+import { hostLabel, isTimeoutError, looksBlocked, siteUnreachableMessage } from "@/src/lib/crawl/unreachable";
 export { normalizeAuditUrl } from "./url";
 
 /** Minimal signal extracted from a fetched HTML page. */
@@ -23,6 +25,19 @@ export interface PageSignal {
   bodyText: string;
   /** Raw HTML, capped at 60k chars, for agents that read the markup. */
   html?: string;
+  /** The page came back readable: a 2xx with a non-empty body. Never true with an empty `html`. */
+  fetchOk: boolean;
+  /** The response status, or null when there was no response (timeout, refused). */
+  fetchStatus: number | null;
+  /** Why the page could not be read, in a few words; null when it was. */
+  fetchError: string | null;
+  /** The site's bot protection answered instead of the page. */
+  blocked: boolean;
+}
+
+/** The sentence for a signal that could not be read. */
+export function signalUnreachableMessage(signal: Pick<PageSignal, "url" | "blocked" | "fetchStatus" | "fetchError">): string {
+  return siteUnreachableMessage({ blocked: signal.blocked, status: signal.fetchStatus, host: hostLabel(signal.url), error: signal.fetchError });
 }
 
 export interface MagicAuditResult {
@@ -43,33 +58,46 @@ export interface MagicAuditResult {
 /**
  * Fetch a URL and extract the tiny slice of signal we actually need.
  * Deliberately simple regex extraction — a full DOM parser would drag
- * in a heavy dep and buy us little for the four fields we use. Fails
- * open (returns nulls) rather than throwing.
+ * in a heavy dep and buy us little for the four fields we use. Never
+ * throws: when the page could not be read the signal says so
+ * (`fetchOk: false`, with the status or error and whether bot protection
+ * answered), so no caller mistakes an unreadable site for an empty one.
  */
 export async function fetchPageSignal(
   url: string,
   fetchImpl: typeof fetch = fetch
 ): Promise<PageSignal> {
   let html = "";
+  let fetchOk = false;
+  let fetchStatus: number | null = null;
+  let fetchError: string | null = null;
+  let blocked = false;
   try {
     const res = await fetchImpl(url, {
       method: "GET",
       redirect: "follow",
-      headers: {
-        // A generic UA — some hosts serve minimal HTML to unknown bots
-        // and full HTML to browsers. Adjust if we see empty responses.
-        "User-Agent":
-          "Mozilla/5.0 (compatible; Conduikt/1.0; +https://conduikt.com)",
-        Accept: "text/html,application/xhtml+xml",
-      },
+      // The same identity as the crawler, so an owner who allows
+      // ConduiktBot once has allowed every read we make.
+      headers: CRAWL_HEADERS,
       // 10s timeout — most reasonable pages respond in <2s; anything
       // slower is either broken or bot-blocking us.
       signal: AbortSignal.timeout(10_000),
     });
-    if (res.ok) html = await res.text();
-  } catch {
-    // Swallow — we'll return the signal with all-null fields so the
-    // downstream LLM call still runs on just the URL.
+    fetchStatus = typeof res.status === "number" ? res.status : res.ok ? 200 : null;
+    if (res.ok) {
+      html = await res.text();
+      // A 200 with nothing in it (a soft block, a broken origin, a redirect
+      // chain ending on an empty page) is not a page we read. Scoring it
+      // would report "no title, no H1, no content" about a site we never saw.
+      fetchOk = html.trim().length > 0;
+      if (!fetchOk) fetchError = "empty response";
+    } else {
+      const body = await res.text().catch(() => "");
+      blocked = looksBlocked(fetchStatus, res.headers, body);
+      fetchError = blocked ? `${fetchStatus} blocked by bot protection` : `status ${fetchStatus}`;
+    }
+  } catch (err) {
+    fetchError = err instanceof Error ? (isTimeoutError(err) ? "timed out" : err.message) : "failed";
   }
 
   const title = matchFirst(html, /<title[^>]*>([\s\S]*?)<\/title>/i);
@@ -100,6 +128,10 @@ export async function fetchPageSignal(
     h1: h1 ? decodeEntities(h1.trim()) : null,
     bodyText,
     html: html.slice(0, 60_000),
+    fetchOk,
+    fetchStatus,
+    fetchError,
+    blocked,
   };
 }
 

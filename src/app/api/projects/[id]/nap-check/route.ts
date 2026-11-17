@@ -60,6 +60,13 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: `We couldn't read your website: ${message}` }, { status: 502 });
   }
 
+  // No page could be read: hand the report back so the card can say why,
+  // but keep the last good report on the project rather than replace it
+  // with one that checked nothing.
+  if (report.status === "unreachable") {
+    return NextResponse.json({ report, checked_at: report.checked_at, code: "site_unreachable" });
+  }
+
   const { error } = await supabase
     .from("projects")
     .update({ nap_report: report, nap_checked_at: report.checked_at })

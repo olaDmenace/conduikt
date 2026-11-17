@@ -6,7 +6,9 @@ import {
   fetchPageSignal,
   analyzeMagicAudit,
   normalizeAuditUrl,
+  signalUnreachableMessage,
 } from "@/src/lib/onboarding/magic-audit";
+import { SITE_UNREACHABLE } from "@/src/lib/crawl/unreachable";
 
 /**
  * POST /api/onboarding/magic-audit
@@ -52,6 +54,10 @@ export async function POST(request: NextRequest) {
 
   try {
     const signal = await fetchPageSignal(normalized);
+    // An unreadable site is not an empty site: say so instead of scoring a page we never saw.
+    if (!signal.fetchOk) {
+      return NextResponse.json({ error: signalUnreachableMessage(signal), code: SITE_UNREACHABLE }, { status: 502 });
+    }
     const result = await analyzeMagicAudit(signal);
     return NextResponse.json({
       url: normalized,

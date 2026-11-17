@@ -34,6 +34,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (result.error?.code === "generation_limit") {
     return NextResponse.json({ error: result.error.message, code: "generation_limit", run: result }, { status: 429 });
   }
+  if (result.error?.code === "site_unreachable") {
+    // The site could not be read (bot challenge, timeout). Nothing was written.
+    return NextResponse.json({ error: result.error.message, code: "site_unreachable", retryable: true, run: result }, { status: 502 });
+  }
   if (result.error?.code === "nothing_to_check") {
     // No website and no services: nothing was read and no run was counted.
     return NextResponse.json({ error: result.error.message, code: "nothing_to_check", settingsPath: `/projects/${id}/settings`, run: result }, { status: 422 });

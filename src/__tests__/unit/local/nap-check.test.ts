@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   addressPattern,
   buildNapReport,
+  runNapCheck,
   nameVariantsOn,
   normaliseAddress,
   normaliseName,
@@ -225,5 +226,45 @@ describe("buildNapReport", () => {
     expect(report.phone).toMatchObject({ expected: null, consistent: false, variants: [], other_numbers: [] });
     expect(report.address).toMatchObject({ expected: null, consistent: false, city_found_on: [] });
     expect(report.issues).toEqual(["We couldn't read any pages on your website."]);
+  });
+});
+
+describe("runNapCheck", () => {
+  type Routes = Record<string, string | { status: number; body?: string }>;
+  const fakeFetch = (routes: Routes) => async (url: string): Promise<Response> => {
+    const hit = routes[url];
+    if (hit === undefined) return new Response("not found", { status: 404 });
+    if (typeof hit === "string") return new Response(hit, { status: 200, headers: { "content-type": "text/html" } });
+    return new Response(hit.body ?? "", { status: hit.status });
+  };
+
+  it("says the site was unreachable, and marks nothing inconsistent, when bot protection answered every request", async () => {
+    const challenge = { status: 403, body: "<html><head><title>Just a moment...</title></head></html>" };
+    const fetchImpl = fakeFetch({ "https://x.test/robots.txt": challenge, "https://x.test/sitemap.xml": challenge, "https://x.test/": challenge });
+    const report = await runNapCheck("https://x.test", input, { fetchImpl });
+    expect(report.status).toBe("unreachable");
+    expect(report.pages_checked).toBe(0);
+    expect(report.message).toBe(
+      "We couldn't read x.test (status 403). It looks like your site's bot protection blocked us. Allow the user agent ConduiktBot and try again."
+    );
+    // Nothing was checked, so nothing is reported as an issue.
+    expect(report.issues).toEqual([]);
+    expect(report.name.found_on).toEqual([]);
+    expect(report.phone.found_on).toEqual([]);
+    expect(report.address.found_on).toEqual([]);
+  });
+
+  it("keeps today's report when the site was read but a value is simply not there", async () => {
+    const fetchImpl = fakeFetch({
+      "https://x.test/robots.txt": { status: 404 },
+      "https://x.test/sitemap.xml": { status: 404 },
+      "https://x.test/": `<html><head><title>Lekki Dental Care</title></head><body><h1>Lekki Dental Care</h1><p>Book online.</p></body></html>`,
+    });
+    const report = await runNapCheck("https://x.test", input, { fetchImpl });
+    expect(report.status).toBe("ok");
+    expect(report.pages_checked).toBe(1);
+    expect(report.phone.consistent).toBe(false);
+    expect(report.issues).toContain("Your phone number isn't on any page we checked.");
+    expect(report.message).toBeUndefined();
   });
 });

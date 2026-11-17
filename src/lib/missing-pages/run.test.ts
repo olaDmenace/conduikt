@@ -99,6 +99,10 @@ const goodPage: MissingPageContent = {
 const crawl: CrawlResult = {
   source: "sitemap",
   errors: [],
+  blocked: false,
+  fetchedAny: true,
+  failedStatus: null,
+  failedError: null,
   robots: { fetched: true, aiCrawlersBlocked: { GPTBot: false, ClaudeBot: false, PerplexityBot: false, "Google-Extended": false }, disallowForUs: [] },
   pages: [
     { url: "https://lekki.ng/", title: "Lekki Plumbers", h1: "Plumbing in Lekki", metaDescription: null, textExcerpt: "We fix pipes.", headings: ["Plumbing in Lekki"] },
@@ -159,6 +163,87 @@ describe("runMissingPages", () => {
     expect(run.pages_written).toBe(1);
     expect(run.error).toBeNull();
     expect(tables.ai_generations[0]).toMatchObject({ agent_used: "missing-page", input_tokens: 10 });
+  });
+
+  it("stops before intents when the site could not be read, writes nothing and records why", async () => {
+    const { supabase, tables } = fakeDb({
+      projects: [project],
+      // The last good run's candidate stays exactly as it was.
+      missing_page_candidates: [{ id: "c-old", project_id: "proj-1", query: "emergency plumbing near me", status: "open", score: 80 }],
+    });
+    const blocked: CrawlResult = { ...crawl, pages: [], source: "none", blocked: true, fetchedAny: false, failedStatus: 403, failedError: null, errors: ["https://lekki.ng/: 403 blocked by bot protection"] };
+    const buildSpy = vi.fn(build);
+    const result = await runMissingPages({ projectId: "proj-1", supabase, mode: "manual", maxPages: 3, deps: { crawl: async () => blocked, volume, build: buildSpy } });
+
+    expect(result.error).toEqual({
+      code: "site_unreachable",
+      message: "We couldn't read lekki.ng (status 403). It looks like your site's bot protection blocked us. Allow the user agent ConduiktBot and try again.",
+    });
+    expect(result.pagesCrawled).toBe(0);
+    expect(result.queriesChecked).toBe(0);
+    expect(result.gapsFound).toBe(0);
+    expect(result.pagesWritten).toBe(0);
+    expect(buildSpy).not.toHaveBeenCalled();
+
+    // No candidate was added or touched; nothing was drafted.
+    expect(tables.missing_page_candidates).toHaveLength(1);
+    expect(tables.missing_page_candidates[0]).toMatchObject({ id: "c-old", status: "open", score: 80 });
+    expect(tables.hosted_pages ?? []).toHaveLength(0);
+
+    // The run row carries the reason so the page and the nightly log can show it.
+    const run = tables.missing_page_runs[0];
+    expect(run.finished_at).toBeTruthy();
+    expect(run.pages_crawled).toBe(0);
+    expect(run.pages_written).toBe(0);
+    expect(String(run.error)).toContain("site_unreachable:");
+    expect(String(run.error)).toContain("bot protection");
+  });
+
+  it("treats a timed-out site the same way, with a timed-out message", async () => {
+    const { supabase, tables } = fakeDb({ projects: [project] });
+    const timedOut: CrawlResult = { ...crawl, pages: [], source: "none", blocked: false, fetchedAny: false, failedStatus: null, failedError: "timed out", errors: [] };
+    const result = await runMissingPages({ projectId: "proj-1", supabase, mode: "nightly", maxPages: 1, deps: { crawl: async () => timedOut, volume, build } });
+    expect(result.error?.code).toBe("site_unreachable");
+    expect(result.error?.message).toBe("We couldn't read lekki.ng right now (timed out). Try again in a few minutes.");
+    expect(tables.missing_page_candidates ?? []).toHaveLength(0);
+  });
+
+  it("writes nothing when robots.txt and the sitemap answered but every page request failed", async () => {
+    // The edge served robots.txt and sitemap.xml in a few milliseconds; the
+    // origin behind it timed out on every page. Zero pages is not "every
+    // search is a gap": a pricing page must not be written for a site that
+    // already has one.
+    const { supabase, tables } = fakeDb({ projects: [project] });
+    const originDown: CrawlResult = {
+      ...crawl,
+      pages: [],
+      source: "sitemap",
+      blocked: false,
+      fetchedAny: false,
+      failedStatus: null,
+      failedError: "timed out",
+      errors: ["https://lekki.ng/: timed out", "https://lekki.ng/drain-cleaning: timed out"],
+    };
+    const buildSpy = vi.fn(build);
+    const result = await runMissingPages({ projectId: "proj-1", supabase, mode: "nightly", maxPages: 3, deps: { crawl: async () => originDown, volume, build: buildSpy } });
+    expect(result.error?.code).toBe("site_unreachable");
+    expect(result.error?.message).toBe("We couldn't read lekki.ng right now (timed out). Try again in a few minutes.");
+    expect(result.gapsFound).toBe(0);
+    expect(result.pagesWritten).toBe(0);
+    expect(buildSpy).not.toHaveBeenCalled();
+    expect(tables.missing_page_candidates ?? []).toHaveLength(0);
+    expect(tables.hosted_pages ?? []).toHaveLength(0);
+  });
+
+  it("still runs a hosted-only project (no website) from its services", async () => {
+    const { supabase, tables } = fakeDb({ projects: [{ ...project, website_url: null }] });
+    const crawlSpy = vi.fn(async () => crawl);
+    const result = await runMissingPages({ projectId: "proj-1", supabase, mode: "manual", maxPages: 1, deps: { crawl: crawlSpy, volume, build } });
+    expect(crawlSpy).not.toHaveBeenCalled();
+    expect(result.error).toBeNull();
+    expect(result.pagesCrawled).toBe(0);
+    expect(result.gapsFound).toBeGreaterThan(0);
+    expect(tables.missing_page_candidates.length).toBe(result.gapsFound);
   });
 
   it("keeps a dismissed candidate dismissed and publishes when the project is Hands off", async () => {

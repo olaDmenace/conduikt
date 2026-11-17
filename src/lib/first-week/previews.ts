@@ -46,6 +46,10 @@ export async function generateAgentPreviews(
   if (agentIds.length === 0) return [];
   const mode = previewMode();
   if (mode === "always") return samplePreviews(agentIds);
+  // A page that could not be read has nothing to preview from; the model
+  // would invent "for this site" from an empty prompt and the result would
+  // show as real. Samples say what they are; in "off" mode there is nothing.
+  if (!signal.fetchOk) return mode === "off" ? [] : samplePreviews(agentIds);
 
   const wanted = new Set(agentIds);
   const agents = firstWeekAgents().filter((a) => wanted.has(a.id));

@@ -194,7 +194,13 @@ export async function POST(request: NextRequest) {
   const businessType = (typed?.business_type ?? undefined) as Parameters<typeof splitByPlan>[1];
   const { run, locked } = splitByPlan(plan, businessType);
 
+  // When the site could not be read (a bot challenge, a timeout) the brief
+  // carries no markup. The agents that work from the brief still run; the
+  // Site Audit reads the page again when its row runs and, if the site is
+  // still unreadable, fails with "site_unreachable" instead of scoring an
+  // empty page (see runFirstWeekAgent).
   const signal = await fetchPageSignal(url, safeFetch as typeof fetch);
+  if (!signal.fetchOk) console.warn(`[first-week] could not read ${host}: ${signal.fetchError ?? "unknown"}`);
   const brief: SiteBrief = {
     url,
     hostname: host,
@@ -205,7 +211,7 @@ export async function POST(request: NextRequest) {
     audience,
     tone,
     seoScore: typeof body.audit?.seoScore === "number" ? body.audit.seoScore : null,
-    html: signal.html ?? "",
+    html: signal.fetchOk ? (signal.html ?? "") : "",
   };
 
   const { data: parent, error: parentErr } = await service

@@ -4,6 +4,7 @@ import { aiRefusedResponse, aiUnavailableResponse, isAiRefusedError, isAiUnavail
 import { factsFromProject } from "@/src/lib/missing-pages/facts";
 import { ownerQuota } from "@/src/lib/missing-pages/run";
 import { crawlSite } from "@/src/lib/crawl/site-crawler";
+import { crawlUnreachable, crawlUnreachableMessage, SITE_UNREACHABLE } from "@/src/lib/crawl/unreachable";
 import { generateWithClaude } from "@/src/lib/ai/client";
 import { modelFor } from "@/src/lib/ai/model-routing";
 import { MAX_TITLE_PAGES, parseTitlesResponse, rowChanges, titlesSystemPrompt, titlesUserPrompt, type TitleProposal } from "@/src/lib/seo/titles";
@@ -48,6 +49,11 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
   if (!quota.ok) return NextResponse.json({ error: "Generation limit reached. Upgrade your plan.", code: "generation_limit" }, { status: 429 });
 
   const crawl = await crawlSite(facts.websiteUrl, { maxPages: MAX_TITLE_PAGES });
+  // Nothing came back at all (bot challenge, timeout): say so rather than
+  // asking the model about zero pages or calling the site empty.
+  if (crawlUnreachable(crawl)) {
+    return NextResponse.json({ error: crawlUnreachableMessage(crawl, facts.websiteUrl), code: SITE_UNREACHABLE, retryable: true }, { status: 502 });
+  }
   if (crawl.pages.length === 0) {
     return NextResponse.json({ error: "We could not read any pages on your site. Check the address and that the site is public.", code: "no_pages" }, { status: 400 });
   }
