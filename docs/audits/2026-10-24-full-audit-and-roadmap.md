@@ -495,7 +495,7 @@ With the Claude API credited again, a second live run used a SaaS project with a
 
 Seven migrations were applied to production and verified; the rate limiter was smoke-tested live (the third hit of a two-per-window key is refused). The full suite stands at 122 files and 1,465 tests, typecheck and lint clean, hex check at baseline.
 
-**One security finding the schema snapshot surfaced, still open.** The profiles table's update policy has no WITH CHECK and keeps the default grants, so any signed-in user can change their own plan, role and quota columns from the browser; every plan and admin check trusts those values. The fix is `supabase/migrations/20261117_profiles_protect_columns.sql` (a trigger that rejects those changes from client roles, plus two narrowed policies). The automation refused to run it because it alters policies, so the owner pastes it into the Supabase SQL editor. Until then this is the most important open item in the product.
+**One security finding the schema snapshot surfaced, still open.** The profiles table's update policy has no WITH CHECK and keeps the default grants, so any signed-in user can change their own plan, role and quota columns from the browser; every plan and admin check trusts those values. The fix is `supabase/migrations/20261117_profiles_protect_columns.sql` (a trigger that rejects those changes from client roles, plus two narrowed policies). The automation refused to run it twice; on the owner's explicit instruction it was applied on 17 Nov and verified (trigger live, policies narrowed). Closed.
 
 **Live test on production (17 Nov, after the merge):** a headless run as the demo user on conduikt.com, SaaS project with a website, live model. Worked first time: project creation with business details saved; the three Free-tier agents finished in 45 seconds with real previews for the twelve locked ones; a Missing Pages run wrote a draft with readiness 100 and the page rendered with the phone number, a call-to-action and a FAQ; the title and H1 tool read 20 pages and proposed answer-first replacements; "get mentioned" seeded six SaaS listings and the Claude web-search engine answered with 15 citations; the leads page, reviews page, settings, analytics and the sending-domain page all rendered in one to four seconds; a review request went out by email and the Free allowance showed 4 of 5 left; the sending-domain route gated the Free plan honestly (403, "Pro and above"); the project was deleted afterwards. Not exercised: llms.txt on a hosted site (no published page existed to read) and the WhatsApp leg (Meta).
 
@@ -550,9 +550,9 @@ Removed from `.env.example` on 17 Nov because no code reads them: `WHATSAPP_PHON
 
 **Owner actions, in the order they unblock the most**
 
-1. Paste `supabase/migrations/20261117_profiles_protect_columns.sql` into the Supabase SQL editor (security, see section 11).
-2. Cloudflare for conduikt.com: turn off Bot Fight Mode (Security, Bots) or allow the user agent ConduiktBot, so the product can read its own site and demos work; until then the Site Audit and Missing Pages cannot read conduikt.com from production.
-3. Rotate `CRON_SECRET` in Vercel and, in the same change, run `ALTER DATABASE postgres SET app.cron_secret = '<new value>'` so the header-auth migration takes effect; `fill-x-bracket-daily` sends an empty header until then.
+1. Done 17 Nov: `20261117_profiles_protect_columns.sql` applied and verified.
+2. Done 17 Nov: Bot Fight Mode turned off on Cloudflare; production reads 21 pages of conduikt.com again.
+3. Owner's call (17 Nov): leave `CRON_SECRET` as is for now. Consequence: the two publishing jobs keep working with the embedded secret; `fill-x-bracket-daily` (personal X automation) sends an empty header and fails until `app.cron_secret` is set.
 4. Clear the GitHub Actions billing lock so lint, typecheck and tests run on every push again.
 5. Add the `*.conduikt.site` wildcard domain in Vercel (nameservers at Vercel), so hosted pages get their own subdomains.
 6. Meta business verification, then App Review for posting, WhatsApp and ads-read permissions, then set `NEXT_PUBLIC_ENABLE_FACEBOOK_INTEGRATION=true`.
