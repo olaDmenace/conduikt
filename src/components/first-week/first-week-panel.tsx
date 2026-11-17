@@ -22,8 +22,10 @@ interface AgentRow {
   job: string;
   tier: PlanTier;
   state: State;
-  /** Set on failed rows when the writing service itself was the problem. */
-  errorCode?: "ai_unavailable" | string | null;
+  /** Set on failed rows when the writing service itself was the problem, or the site could not be read. */
+  errorCode?: "ai_unavailable" | "site_unreachable" | string | null;
+  /** The stored sentence for a site that could not be read (names the host and status). */
+  errorMessage?: string | null;
   output?: unknown;
   preview?: { headline: string; items: string[]; sample?: boolean } | null;
 }
@@ -33,6 +35,13 @@ interface AgentRow {
 export const SAMPLE_NOTE = "Sample output. Real results run on your site when the writing service is available.";
 const FAILED_NOTE = "This one hit a problem.";
 const UNAVAILABLE_NOTE = "The writing service is unavailable. Nothing was charged.";
+const UNREACHABLE_NOTE = "We couldn't read your site. Try again in a few minutes.";
+
+function failureNote(a: AgentRow): string {
+  if (a.errorCode === "ai_unavailable") return UNAVAILABLE_NOTE;
+  if (a.errorCode === "site_unreachable") return a.errorMessage || UNREACHABLE_NOTE;
+  return FAILED_NOTE;
+}
 
 interface Status {
   started: boolean;
@@ -245,7 +254,7 @@ export function FirstWeekPanel({ projectId, className }: { projectId: string; cl
               </button>
               {a.state === "failed" && (
                 <div className="flex items-center justify-between gap-3 px-4 pb-3">
-                  <p className="text-body-s text-text-3">{a.errorCode === "ai_unavailable" ? UNAVAILABLE_NOTE : FAILED_NOTE}</p>
+                  <p className="text-body-s text-text-3">{failureNote(a)}</p>
                   <Button size="sm" variant="outline" onClick={() => retry(a.id)} disabled={retrying === a.id}>
                     {retrying === a.id ? "Starting…" : "Try again"}
                   </Button>

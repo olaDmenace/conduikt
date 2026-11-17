@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AIRefusedError, AIUnavailableError, aiRefusedBody, aiUnavailableBody } from "@/src/lib/ai/client";
 import { sampleMagicAudit } from "@/src/lib/ai/samples";
-import { analyzeMagicAudit, fetchPageSignal, type MagicAuditResult } from "@/src/lib/onboarding/magic-audit";
+import { analyzeMagicAudit, fetchPageSignal, signalUnreachableMessage, type MagicAuditResult } from "@/src/lib/onboarding/magic-audit";
+import { SITE_UNREACHABLE } from "@/src/lib/crawl/unreachable";
 import { normalizeAuditUrl } from "@/src/lib/onboarding/url";
 import { generateAgentPreviews, hasSamplePreviews, previewMode, type PreviewResult } from "@/src/lib/first-week/previews";
 import { FIRST_WEEK_AGENT_IDS, OPEN_PREVIEWS } from "@/src/lib/first-week/plan";
@@ -104,6 +105,11 @@ export async function POST(request: NextRequest) {
 
   try {
     const signal = await fetchPageSignal(url, safeFetch as typeof fetch);
+    // An unreadable site is not an empty site: say so instead of scoring
+    // (or sampling) a page we never saw. Nothing is cached.
+    if (!signal.fetchOk) {
+      return NextResponse.json({ error: signalUnreachableMessage(signal), code: SITE_UNREACHABLE }, { status: 502 });
+    }
     const [audit, previews] = await Promise.all([
       auditOrSample(signal),
       generateAgentPreviews(signal, [...FIRST_WEEK_AGENT_IDS]).catch((err) => {

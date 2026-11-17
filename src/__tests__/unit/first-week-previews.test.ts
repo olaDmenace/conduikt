@@ -23,6 +23,10 @@ const signal = {
   metaDescription: null,
   h1: "Welcome",
   bodyText: "We fix things.",
+  fetchOk: true,
+  fetchStatus: 200,
+  fetchError: null,
+  blocked: false,
 };
 
 const realReply = (ids: string[]) =>
@@ -87,6 +91,22 @@ describe("generateAgentPreviews", () => {
 
   it("returns nothing for no agents without calling the model", async () => {
     expect(await generateAgentPreviews(signal, [])).toEqual([]);
+    expect(generate).not.toHaveBeenCalled();
+  });
+
+  it("never asks the model about a page that could not be read; shows samples, flagged", async () => {
+    const unreadable = { ...signal, title: null, h1: null, bodyText: "", html: "", fetchOk: false, fetchStatus: 403, fetchError: "403 blocked by bot protection", blocked: true };
+    const out = await generateAgentPreviews(unreadable, ["seo-audit", "copywriting"]);
+    expect(generate).not.toHaveBeenCalled();
+    expect(out.map((p) => p.agentId)).toEqual(["seo-audit", "copywriting"]);
+    expect(out.every((p) => p.sample === true)).toBe(true);
+    expect(hasSamplePreviews(out)).toBe(true);
+  });
+
+  it("returns no previews for an unreadable page when AI_PREVIEW_MODE is off", async () => {
+    process.env.AI_PREVIEW_MODE = "off";
+    const unreadable = { ...signal, bodyText: "", html: "", fetchOk: false, fetchStatus: null, fetchError: "timed out" };
+    expect(await generateAgentPreviews(unreadable, ["seo-audit"])).toEqual([]);
     expect(generate).not.toHaveBeenCalled();
   });
 });

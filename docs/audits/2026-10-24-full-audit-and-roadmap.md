@@ -8,6 +8,8 @@
 
 **Revision 5 (6 Nov 2026):** section 8 gains a "where it stands" note; section 11 records the ship review, the merge of PR #1 (v0.5.0), the three review follow-ups, the second live-model run and the widened SaaS search seeds.
 
+**Revision 6 (17 Nov 2026):** section 5.10 (dograh verdict), section 8 "where it stands" rewritten after the close-out release, section 11 records the close-out build and its live test, new section 12 lists every environment variable and what still waits on the owner.
+
 ---
 
 ## 0. The short version
@@ -415,7 +417,7 @@ Short answer: the roadmap does not deviate from the goal. It deviates from one d
 
 Total: roughly one quarter of focused work with Claude Code; the Meta verification is the only external dependency on the critical path, so chase it now.
 
-**Where it stands (6 Nov 2026).** Phases 0, 1 and 2 are merged to `main` (PR #1, v0.5.0) and the migrations are live. Phase 3 is scaffolded and merged (Instagram publish, Meta Ads insights, WhatsApp Cloud API, Found-by-AI) but waits on Meta business verification and a Perplexity key before it does anything for a user. Phase 4 (Local pack) and Phase 5 (inbound sales assistant) are not started. "Later" is unchanged. The owner gates that stop Phase 3 from lighting up are listed at the end of section 11.
+**Where it stands (17 Nov 2026, v0.6.0 on main).** Phases 0, 1 and 2 are live. Phase 3 is built and merged (Instagram, Meta Ads insights, WhatsApp Cloud API, Found-by-AI with a Claude web-search engine that needs no extra key) and the Meta pieces wait only on business verification. Phase 4 (Local pack) is built except for the parts that need Google's Business Profile API or a paid rank API: review requests, the name-address-phone check, the "get mentioned" tasks, Maps embeds, the title and H1 tool and the naira Local tier shipped; GBP categories and posts, the reviews dashboard and map-grid ranks did not. Phase 5 (inbound sales assistant) shipped its first half: lead scoring, a pipeline view and the booking link; WhatsApp follow-ups wait on Meta. Email V1 is complete. Agents run on Claude Opus 5.5 and Haiku 5.5. Section 12 lists what the owner still has to set.
 
 ---
 
@@ -454,7 +456,7 @@ Internal documents cross-checked: `SYSTEM_ARCHITECTURE.md`, `SYSTEM_ARCHITECTURE
 
 ---
 
-## 11. Execution feedback (26 Oct to 6 Nov 2026)
+## 11. Execution feedback (26 Oct to 17 Nov 2026)
 
 **Built (uncommitted, on `main` working tree):** six workstreams from `docs/audits/2026-10-26-execution-plan.md`.
 - Phase 0: sidebar Home is the Overview, legacy launcher redirects, orphans linked (forms, competitors, marketing kit), settings tabs from one source, slide tour removed, Tawk off auth pages, dead link fixed; typed `AIUnavailableError` with one honest sentence and 503s across every model route, sample previews when the model is unreachable, cheap-model routing for previews/scoring, daily spend cap with admin alert; cron secret header-only (+ migration), Google tokens encrypted, csp-report rate-limited, AI crawlers allowed in robots, FAQ schema moved to the homepage, `.env.example` rewritten, 4 scaffold docs deleted, 13 docs moved to `docs/`, personal files moved to `../conduikt-private/`, pitch-deck binaries untracked, 13 dead files and 14 unused packages removed.
@@ -481,3 +483,81 @@ Three follow-ups the review left were then fixed on `fix/review-followups`: a Wh
 With the Claude API credited again, a second live run used a SaaS project with a website (conduikt.com itself): the three Free-tier agents ran for real and produced usable work (the Site Audit scored the homepage 72 and asked for a plain-language "what, who, where" sentence near the top and a visible last-updated date, which is exactly the answer-readiness rubric; the social posts and keyword research read like a marketer wrote them), and the twelve locked agents showed real previews for the site, not samples. The Missing Pages run crawled 21 pages, checked 7 searches and wrote a draft with readiness 100. The searches it checked were weak for a SaaS ("how to seo pages", "conduikt live test alternative"): the SaaS seeds have been widened (`what is {product}`, `{category} software`, `best {category} tool`), "how to" is only asked of verb-led services, and free-text audiences are shortened to a usable phrase, all under test. Both test projects were deleted through the app afterwards. One note for anyone testing on this laptop: the webpack dev server recompiles for minutes after edits when memory is low, which made pages look stuck during the run; production builds are precompiled and unaffected.
 
 **Also left for the owner:** Meta verification, Google Business Profile API approval, DataForSEO and Perplexity keys, the `*.conduikt.site` wildcard domain on Vercel, CRON_SECRET rotation and `app.cron_secret`, enabling leaked-password protection in Supabase Auth, a decision on the SECURITY DEFINER functions the advisor lists, naira Local-tier plan IDs, and clearing the GitHub billing lock so CI runs again.
+
+**17 Nov 2026, the close-out release (v0.6.0, PR #3, merged the same day).** The owner asked for everything pending to be built and tested, and for a verdict on dograh (section 5.10: build later). A discovery pass mapped forty pending items against the code; the ones that needed no outside approval were built in three waves, each workstream with its own adversarial review and fix pass, then integrated and shipped.
+
+- *Model upgrade.* Agents moved from Sonnet 4.6 and Haiku 4.5 to Claude Opus 5.5 (generation, analysis) and Haiku 5.5 (previews, scoring), with effort routed per purpose. The move was a real migration, not a string swap: the client sent a sampling temperature on every call and continued truncated output with an assistant prefill, both rejected by the new models. One request builder now carries no sampling parameters, no thinking field, an explicit effort, a 2,048-token output floor so thinking never eats the reply, text read by block type, a typed error for the model declining a request (shown as "The writing service declined this request"), and a user-turn continuation.
+- *Email.* Custom sending domain with the Resend DNS flow and polling, used by broadcasts and series; double opt-in per list with a branded confirm page and no enrolment until confirmed; suppress and unsuppress actions, a status filter and a pasted suppression list; white-label unsubscribe and confirm pages for Agency owners. Email V1 is now complete.
+- *Business details and leads.* Phone, address, city, booking link and review link on the project; a name-address-phone consistency check against the crawled website with the variants shown; a five-stage leads pipeline with a rule-based score and a "send booking link" message; Leads and Reviews in the sidebar.
+- *Local pack and Phase 3.* Review requests by email, by WhatsApp when connected, five a month on Free and unlimited from the Local tier, with a 50-row paste; "get mentioned" tasks per business type with an automatic mention check through the answer engines; a Claude web-search answer engine so Found-by-AI runs today without a Perplexity key; Instagram and Meta Ads entry points behind the Meta flag; the naira Local tier through plans, billing and both payment webhooks.
+- *Missing Pages and answer readiness.* Re-writing a live page now creates a revision that waits for approval instead of un-publishing; a SaaS project with no website and no services stops with "Add what you offer in Settings"; Google Maps embed and llms.txt on hosted sites; a title and H1 rewrite tool with WordPress apply; an answerability dimension in the content scorer; a paste-ready schema snippet in Site Audit.
+- *Platform.* The Content Security Policy is enforced (it was report-only); error and loading boundaries; the dead "cinematic" video branch and three stale "coming soon" promises removed; tests for both payment webhooks, billing and the admin routes; a typed database baseline and a schema snapshot under docs/db; rate limits backed by Postgres on every model and send route, where the old in-memory limiter counted per lambda and was effectively absent on Vercel.
+
+Seven migrations were applied to production and verified; the rate limiter was smoke-tested live (the third hit of a two-per-window key is refused). The full suite stands at 122 files and 1,465 tests, typecheck and lint clean, hex check at baseline.
+
+**One security finding the schema snapshot surfaced, still open.** The profiles table's update policy has no WITH CHECK and keeps the default grants, so any signed-in user can change their own plan, role and quota columns from the browser; every plan and admin check trusts those values. The fix is `supabase/migrations/20261117_profiles_protect_columns.sql` (a trigger that rejects those changes from client roles, plus two narrowed policies). The automation refused to run it because it alters policies, so the owner pastes it into the Supabase SQL editor. Until then this is the most important open item in the product.
+
+**Live test on production (17 Nov, after the merge):** a headless run as the demo user on conduikt.com, SaaS project with a website, live model. Worked first time: project creation with business details saved; the three Free-tier agents finished in 45 seconds with real previews for the twelve locked ones; a Missing Pages run wrote a draft with readiness 100 and the page rendered with the phone number, a call-to-action and a FAQ; the title and H1 tool read 20 pages and proposed answer-first replacements; "get mentioned" seeded six SaaS listings and the Claude web-search engine answered with 15 citations; the leads page, reviews page, settings, analytics and the sending-domain page all rendered in one to four seconds; a review request went out by email and the Free allowance showed 4 of 5 left; the sending-domain route gated the Free plan honestly (403, "Pro and above"); the project was deleted afterwards. Not exercised: llms.txt on a hosted site (no published page existed to read) and the WhatsApp leg (Meta).
+
+One real defect came out of the run. The Site Audit scored the homepage 38 with a summary saying the page was empty, the Missing Pages crawl read zero pages and wrote a "pricing" page for a site that already has one, and the name-address-phone check reported everything inconsistent. The cause: fetches of conduikt.com made from inside Vercel are blocked, while the same code reads nextjs.org fine (30 pages, twice) and every user agent gets the full page from outside. conduikt.com is proxied through Cloudflare, whose bot protection challenges requests from datacenter addresses. Two things follow. For conduikt.com the owner turns off Bot Fight Mode (or, on a paid Cloudflare plan, adds a rule that allows the user agent ConduiktBot). For every customer whose site does the same, the product must say "we couldn't read your site" instead of scoring an empty page or inventing gaps, which is the fix shipped right after this run: the audit, Missing Pages, the nightly job, the NAP check and the titles tool now stop with a plain message naming the status and the likely bot protection, and nothing is written from an unread site.
+
+**Not built, with the reason.** GBP categories, weekly GBP posts and the reviews dashboard (Google Business Profile API approval); map-grid rank tracking (paid API, owner's cost call); WhatsApp follow-ups and the WhatsApp leg of review requests (Meta verification); custom domains on hosted pages (wildcard domain first); Google Ads insights (developer token); Webflow and Shopify publish targets (no customer asking); the Conduikt MCP server for agencies (positioning says wait for a customer); the planner consolidation (D5, pricing copy depends on the agent count); moving the X playbook to its own repo; the SDK major upgrade (0.74 already types what the new models need); dograh (section 5.10).
+
+---
+
+## 12. Environment variables and owner actions (17 Nov 2026)
+
+Every variable the code reads, from a grep of `process.env` on 17 Nov. Set them in Vercel for production; `.env.example` carries the same names with one-line notes. Values are never written in this document.
+
+**Required: the app or a shipped feature breaks or silently degrades without it**
+
+| Variable | What breaks without it |
+| --- | --- |
+| `NEXT_PUBLIC_APP_URL` | OAuth callbacks, billing redirects and every email link fall back to localhost |
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | All auth and data access |
+| `SUPABASE_SERVICE_ROLE_KEY` | Cron publishing, scheduler, webhooks, Inngest jobs, the rate limiter (falls back to per-instance memory) |
+| `ANTHROPIC_API_KEY` | Every agent, preview and scorer |
+| `CRON_SECRET` | The three pg_cron routes refuse to run (500) |
+| `TOKEN_ENCRYPTION_KEY` | Every social and Google connection refuses to store tokens |
+| `FLUTTERWAVE_SECRET_KEY`, `FLUTTERWAVE_WEBHOOK_SECRET_HASH`, `FLUTTERWAVE_PLAN_PRO`, `FLUTTERWAVE_PLAN_GROWTH`, `FLUTTERWAVE_PLAN_AGENCY` | Checkout and subscription webhooks |
+| `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET` | All email; bounces and complaints are rejected without the webhook secret |
+| `INNGEST_EVENT_KEY`, `INNGEST_SIGNING_KEY` | Nightly Missing Pages, Found-by-AI, ads sync, video pipeline, bulk jobs (503 at /api/inngest) |
+| `X_CLIENT_ID`, `X_CLIENT_SECRET`, `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET`, `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` | The matching connect button reports "not configured" |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Search Console, GA4 and YouTube connections |
+| `FACEBOOK_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN` | Meta callbacks and the WhatsApp webhook handshake (needed once Meta verifies) |
+
+**Optional: a feature or a tuning knob**
+
+| Variable | Purpose |
+| --- | --- |
+| `AI_MODEL_DEFAULT`, `AI_MODEL_CHEAP`, `AI_EFFORT_DEFAULT`, `AI_EFFORT_CHEAP` | Override the model ids (Opus 5.5 / Haiku 5.5) and effort levels; unknown values are ignored with a warning |
+| `AI_PREVIEW_MODE` | Serve sample previews instead of calling the model during demos |
+| `FLUTTERWAVE_PLAN_LOCAL`, `PAYSTACK_PLAN_LOCAL` | Turn on the naira Local tier (the pricing page shows it when either is set) |
+| `PAYMENT_PRIMARY_PROVIDER`, `PAYSTACK_SECRET_KEY`, `PAYSTACK_PLAN_PRO`, `PAYSTACK_PLAN_GROWTH`, `PAYSTACK_PLAN_AGENCY` | Paystack as primary or failover |
+| `RESEND_FROM_DOMAIN`, `ADMIN_ALERT_EMAIL` | Shared sender domain; where spend-cap and reconnect alerts go |
+| `NEXT_PUBLIC_ENABLE_FACEBOOK_INTEGRATION`, `FACEBOOK_APP_ID` | Expose Facebook, Instagram and Meta Ads once Meta approves |
+| `X_OAUTH1_CONSUMER_KEY`, `X_OAUTH1_CONSUMER_SECRET`, `X_OAUTH1_ACCESS_TOKEN`, `X_OAUTH1_ACCESS_TOKEN_SECRET` | Image and video upload to X |
+| `GOOGLE_PAGESPEED_API_KEY` | Higher PageSpeed quota in the site audit |
+| `DATAFORSEO_LOGIN`, `DATAFORSEO_PASSWORD` | Real search volumes in Missing Pages (estimates otherwise) |
+| `PERPLEXITY_API_KEY` | A second answer engine for Found-by-AI (the Claude engine runs without it) |
+| `HOSTED_PAGES_DOMAIN`, `NEXT_PUBLIC_HOSTED_PAGES_DOMAIN` | The wildcard domain for hosted sites (default conduikt.site) |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Bot protection on the public site-check form |
+| `UNSPLASH_ACCESS_KEY`, `HEYGEN_API_KEY`, `HEYGEN_DEFAULT_AVATAR_ID`, `HEYGEN_DEFAULT_VOICE_ID`, `HEYGEN_DEFAULT_VOICE_ID_MALE` | Image picker; avatar video ads |
+| `NEXT_PUBLIC_GA_ID`, `NEXT_PUBLIC_TAWK_PROPERTY_ID`, `NEXT_PUBLIC_TAWK_WIDGET_ID` | Marketing-site analytics and support chat |
+| `FOOTBALL_DATA_API_KEY` | The personal X playbook bracket filler only |
+
+Removed from `.env.example` on 17 Nov because no code reads them: `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ACCESS_TOKEN` (WhatsApp credentials are per project now), `NEXT_PUBLIC_FLUTTERWAVE_PUBLIC_KEY`, `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY`.
+
+**Owner actions, in the order they unblock the most**
+
+1. Paste `supabase/migrations/20261117_profiles_protect_columns.sql` into the Supabase SQL editor (security, see section 11).
+2. Cloudflare for conduikt.com: turn off Bot Fight Mode (Security, Bots) or allow the user agent ConduiktBot, so the product can read its own site and demos work; until then the Site Audit and Missing Pages cannot read conduikt.com from production.
+3. Rotate `CRON_SECRET` in Vercel and, in the same change, run `ALTER DATABASE postgres SET app.cron_secret = '<new value>'` so the header-auth migration takes effect; `fill-x-bracket-daily` sends an empty header until then.
+4. Clear the GitHub Actions billing lock so lint, typecheck and tests run on every push again.
+5. Add the `*.conduikt.site` wildcard domain in Vercel (nameservers at Vercel), so hosted pages get their own subdomains.
+6. Meta business verification, then App Review for posting, WhatsApp and ads-read permissions, then set `NEXT_PUBLIC_ENABLE_FACEBOOK_INTEGRATION=true`.
+7. Google: enable the GA4 Data, Search Console and YouTube Data APIs with their scopes on the existing OAuth client; request Business Profile API access (weeks).
+8. Create the naira Local plan in Flutterwave (and Paystack if used) and set `FLUTTERWAVE_PLAN_LOCAL` / `PAYSTACK_PLAN_LOCAL`.
+9. Optional keys as budget allows: DataForSEO (volumes), Perplexity (second engine).
+10. Supabase: leaked-password protection (needs the Pro plan), and the two mutable-search-path functions from the advisor.
+11. Decide on map-grid rank tracking (paid API) and whether the planner consolidation (D5) is worth the pricing-copy change.

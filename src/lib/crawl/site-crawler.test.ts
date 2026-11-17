@@ -2,8 +2,9 @@
 import { describe, expect, it } from "vitest";
 import { crawlSite, normaliseLink, parsePage } from "./site-crawler";
 import { isAllowed, parseRobots, robotsInfo } from "./robots";
+import { crawlUnreachable } from "./unreachable";
 
-type Routes = Record<string, string | { status: number; body?: string }>;
+type Routes = Record<string, string | { status: number; body?: string; headers?: Record<string, string> } | { throws: Error }>;
 
 function fakeFetch(routes: Routes, log: string[] = []) {
   return async (url: string): Promise<Response> => {
@@ -11,7 +12,8 @@ function fakeFetch(routes: Routes, log: string[] = []) {
     const hit = routes[url];
     if (hit === undefined) return new Response("not found", { status: 404 });
     if (typeof hit === "string") return new Response(hit, { status: 200, headers: { "content-type": "text/html" } });
-    return new Response(hit.body ?? "", { status: hit.status });
+    if ("throws" in hit) throw hit.throws;
+    return new Response(hit.body ?? "", { status: hit.status, headers: hit.headers });
   };
 }
 
@@ -99,6 +101,130 @@ describe("crawlSite", () => {
     expect(result.robots.aiCrawlersBlocked.ClaudeBot).toBe(false);
     expect(result.robots.aiCrawlersBlocked.PerplexityBot).toBe(false);
     expect(result.robots.disallowForUs).toEqual(["/private"]);
+    expect(result.fetchedAny).toBe(true);
+    expect(result.blocked).toBe(false);
+  });
+
+  it("reports a site whose bot protection answered every request as blocked, not empty", async () => {
+    const challenge = { status: 403, body: "<html><head><title>Just a moment...</title></head></html>", headers: { "cf-mitigated": "challenge" } };
+    const routes: Routes = {
+      "https://example.com/robots.txt": challenge,
+      "https://example.com/sitemap.xml": challenge,
+      "https://example.com/": challenge,
+    };
+    const result = await crawlSite("https://example.com", { fetchImpl: fakeFetch(routes) });
+    expect(result.pages).toEqual([]);
+    expect(result.source).toBe("none");
+    expect(result.blocked).toBe(true);
+    expect(result.fetchedAny).toBe(false);
+    expect(result.failedStatus).toBe(403);
+    expect(result.errors).toContain("https://example.com/: 403 blocked by bot protection");
+  });
+
+  it("records a per-URL status for pages that fail while others are read", async () => {
+    const routes: Routes = {
+      "https://example.com/robots.txt": { status: 404 },
+      "https://example.com/sitemap.xml": `<urlset><url><loc>https://example.com/</loc></url><url><loc>https://example.com/gone</loc></url><url><loc>https://example.com/busy</loc></url></urlset>`,
+      "https://example.com/": page("Home"),
+      "https://example.com/gone": { status: 500, body: "server error" },
+      "https://example.com/busy": { status: 503, body: "<title>Just a moment...</title>" },
+    };
+    const result = await crawlSite("https://example.com", { fetchImpl: fakeFetch(routes) });
+    expect(result.pages.map((p) => p.url)).toEqual(["https://example.com/"]);
+    expect(result.fetchedAny).toBe(true);
+    expect(result.blocked).toBe(true);
+    expect(result.errors).toContain("https://example.com/gone: 500");
+    expect(result.errors).toContain("https://example.com/busy: 503 blocked by bot protection");
+    expect(result.errors.some((e) => e.startsWith("https://example.com/robots.txt: 404"))).toBe(true);
+  });
+
+  it("records a timeout as such and leaves blocked off", async () => {
+    const timeout = new Error("The operation was aborted due to timeout");
+    timeout.name = "TimeoutError";
+    const routes: Routes = {
+      "https://example.com/robots.txt": { throws: timeout },
+      "https://example.com/sitemap.xml": { throws: timeout },
+      "https://example.com/": { throws: timeout },
+    };
+    const result = await crawlSite("https://example.com", { fetchImpl: fakeFetch(routes) });
+    expect(result.pages).toEqual([]);
+    expect(result.blocked).toBe(false);
+    expect(result.fetchedAny).toBe(false);
+    expect(result.failedStatus).toBeNull();
+    expect(result.failedError).toBe("timed out");
+    expect(result.errors).toContain("https://example.com/: timed out");
+    expect(crawlUnreachable(result)).toBe(true);
+  });
+
+  it("is unreachable when robots.txt and the sitemap answer from the edge but every page times out", async () => {
+    const timeout = new Error("The operation was aborted due to timeout");
+    timeout.name = "TimeoutError";
+    const routes: Routes = {
+      "https://example.com/robots.txt": "User-agent: *\nAllow: /",
+      "https://example.com/sitemap.xml": `<urlset><url><loc>https://example.com/</loc></url><url><loc>https://example.com/pricing</loc></url></urlset>`,
+      "https://example.com/": { throws: timeout },
+      "https://example.com/pricing": { throws: timeout },
+    };
+    const result = await crawlSite("https://example.com", { fetchImpl: fakeFetch(routes) });
+    expect(result.pages).toEqual([]);
+    expect(result.robots.fetched).toBe(true);
+    // The sitemap's 200 says nothing about the pages.
+    expect(result.fetchedAny).toBe(false);
+    expect(result.blocked).toBe(false);
+    expect(result.failedStatus).toBeNull();
+    expect(result.failedError).toBe("timed out");
+    expect(crawlUnreachable(result)).toBe(true);
+  });
+
+  it("is unreachable when the edge serves robots.txt and the sitemap but the origin answers every page with 500", async () => {
+    const routes: Routes = {
+      "https://example.com/robots.txt": "User-agent: *\nAllow: /",
+      "https://example.com/sitemap.xml": `<urlset><url><loc>https://example.com/</loc></url></urlset>`,
+      "https://example.com/": { status: 500, body: "server error" },
+    };
+    const result = await crawlSite("https://example.com", { fetchImpl: fakeFetch(routes) });
+    expect(result.pages).toEqual([]);
+    expect(result.fetchedAny).toBe(false);
+    expect(result.blocked).toBe(false);
+    expect(result.failedStatus).toBe(500);
+    expect(crawlUnreachable(result)).toBe(true);
+  });
+
+  it("does not call a site blocked when only robots.txt was refused and the pages simply 404", async () => {
+    const routes: Routes = {
+      "https://example.com/robots.txt": { status: 403, body: "forbidden" },
+      "https://example.com/sitemap.xml": { status: 404 },
+      // The home page is missing too, so nothing was read.
+    };
+    const result = await crawlSite("https://example.com", { fetchImpl: fakeFetch(routes) });
+    expect(result.pages).toEqual([]);
+    expect(result.blocked).toBe(false);
+    expect(result.failedStatus).toBe(404);
+    expect(result.errors).toContain("https://example.com/robots.txt: 403 blocked by bot protection");
+    expect(crawlUnreachable(result)).toBe(true);
+  });
+
+  it("is not unreachable when robots.txt disallows every page: no page request failed", async () => {
+    const routes: Routes = {
+      "https://example.com/robots.txt": "User-agent: ConduiktBot\nDisallow: /",
+      "https://example.com/sitemap.xml": `<urlset><url><loc>https://example.com/</loc></url></urlset>`,
+      "https://example.com/": page("Home"),
+    };
+    const log: string[] = [];
+    const result = await crawlSite("https://example.com", { fetchImpl: fakeFetch(routes, log) });
+    expect(result.pages).toEqual([]);
+    expect(log).not.toContain("https://example.com/");
+    expect(result.blocked).toBe(false);
+    expect(result.failedStatus).toBeNull();
+    expect(result.failedError).toBeNull();
+    expect(crawlUnreachable(result)).toBe(false);
+  });
+
+  it("reports an address that cannot be parsed as not read", async () => {
+    const result = await crawlSite("http://exa mple .com/not a url", { fetchImpl: fakeFetch({}) });
+    expect(result.pages).toEqual([]);
+    expect(result.errors).toEqual(["Not a valid address"]);
+    expect(crawlUnreachable(result)).toBe(true);
   });
 });
 

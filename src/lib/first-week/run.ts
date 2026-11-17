@@ -2,6 +2,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { AIRefusedError, AIUnavailableError, generateWithClaudeCompletion, TruncatedResponseError } from "@/src/lib/ai/client";
 import { getAgent } from "@/src/lib/ai/agents";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
+import { SITE_UNREACHABLE } from "@/src/lib/crawl/unreachable";
+import { fetchPageSignal, signalUnreachableMessage, type PageSignal } from "@/src/lib/onboarding/magic-audit";
+import { safeFetch } from "@/src/lib/security/safe-fetch";
 import type { HandlerResult } from "@/src/lib/scheduler/types";
 
 // Runs one agent of a "first week" pack. Shared by the request that starts
@@ -20,16 +23,45 @@ type Db = SupabaseClient<any>;
 /** Why a row failed, when the UI should say more than "didn't finish". */
 export const AI_UNAVAILABLE = "ai_unavailable";
 export const AI_REFUSED = "ai_refused";
+export { SITE_UNREACHABLE };
 
 /** A handler result that can also name the failure for the status payload. */
-export type FirstWeekResult = HandlerResult & { errorCode?: typeof AI_UNAVAILABLE | typeof AI_REFUSED; reason?: string };
+export type FirstWeekResult = HandlerResult & {
+  errorCode?: typeof AI_UNAVAILABLE | typeof AI_REFUSED | typeof SITE_UNREACHABLE;
+  reason?: string;
+};
 
-export async function runFirstWeekAgent(supabase: Db, payload: Record<string, unknown>): Promise<FirstWeekResult> {
+/** Test seam for the one network read the Site Audit makes. */
+export interface RunFirstWeekDeps {
+  fetchSignal?: (url: string) => Promise<PageSignal>;
+}
+
+/** Agents that read the page itself, not just the brief (see firstWeekInput). */
+const READS_THE_PAGE = new Set(["seo-audit", "page-cro"]);
+
+export async function runFirstWeekAgent(supabase: Db, payload: Record<string, unknown>, deps: RunFirstWeekDeps = {}): Promise<FirstWeekResult> {
   const projectId = typeof payload.projectId === "string" ? payload.projectId : null;
   const agentId = typeof payload.agentId === "string" ? payload.agentId : null;
-  const input = (payload.input ?? {}) as Record<string, unknown>;
+  const input = { ...((payload.input ?? {}) as Record<string, unknown>) };
   const agent = agentId ? getAgent(agentId) : undefined;
   if (!projectId || !agent) return { ok: false, error: "Bad first-week payload", retryable: false };
+
+  // The Site Audit scores the page's markup. With no markup (the site
+  // could not be read when the pack was queued) it would score an empty
+  // page, so read the site again here: "Try again" re-queues this row, and
+  // a bot challenge is often intermittent. Still nothing: say so and stop.
+  if (READS_THE_PAGE.has(agent.id) && typeof input.url === "string" && !(typeof input.html === "string" && input.html.trim())) {
+    const fetchSignal = deps.fetchSignal ?? ((u: string) => fetchPageSignal(u, safeFetch as typeof fetch));
+    const signal = await fetchSignal(input.url).catch((): PageSignal | null => null);
+    // No markup is no page, whatever the status said.
+    if (!signal || !signal.fetchOk || !signal.html?.trim()) {
+      const message = signal
+        ? signalUnreachableMessage(signal)
+        : signalUnreachableMessage({ url: input.url, blocked: false, fetchStatus: null, fetchError: null });
+      return { ok: false, error: message, retryable: false, errorCode: SITE_UNREACHABLE, reason: signal?.blocked ? "blocked" : "unreachable" };
+    }
+    input.html = signal.html ?? "";
+  }
 
   const { data: project } = await supabase.from("projects").select("*").eq("id", projectId).maybeSingle();
   if (!project) return { ok: false, error: "Project no longer exists", retryable: false };

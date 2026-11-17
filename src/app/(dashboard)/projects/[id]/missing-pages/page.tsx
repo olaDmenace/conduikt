@@ -130,6 +130,9 @@ export default function MissingPagesPage({ params }: { params: Promise<{ id: str
   // Which version of a page with a pending revision the preview shows.
   const [previewPending, setPreviewPending] = useState(false);
   const [nothingToCheck, setNothingToCheck] = useState<string | null>(null);
+  // Set when the last Find could not read the site; the candidates from
+  // the last good run stay on screen underneath.
+  const [unreachable, setUnreachable] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/projects/${projectId}/missing-pages`);
@@ -147,12 +150,14 @@ export default function MissingPagesPage({ params }: { params: Promise<{ id: str
 
   const runNow = async () => {
     setRunning(true);
+    setUnreachable(null);
     try {
       const res = await fetch(`/api/projects/${projectId}/missing-pages/run`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ maxPages: 1 }) });
       const body = await readJson(res);
       if (!res.ok) {
         if (body.code === "nothing_to_check") setNothingToCheck(body.error ?? null);
-        showError(body, "The search did not finish");
+        if (body.code === "site_unreachable") setUnreachable(body.error ?? "We couldn't read your site. Try again in a few minutes.");
+        else showError(body, "The search did not finish");
       } else {
         const run = body.run as { gapsFound: number; pagesWritten: number; pagesPublished: number };
         toast(`${run.gapsFound} searches you have no page for. ${run.pagesWritten} page written${run.pagesPublished ? ", put live" : ", waiting for your OK"}.`, "success");
@@ -230,6 +235,12 @@ export default function MissingPagesPage({ params }: { params: Promise<{ id: str
           {running ? "Looking..." : "Find missing pages"}
         </Button>
       </PageHeader>
+
+      {unreachable && (
+        <p role="status" className="text-body text-text">
+          {unreachable}
+        </p>
+      )}
 
       {nothingToCheckMessage && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-surface px-4 py-3">

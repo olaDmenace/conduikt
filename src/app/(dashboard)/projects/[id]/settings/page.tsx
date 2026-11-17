@@ -309,7 +309,11 @@ export default function ProjectSettingsPage() {
     if (res?.ok) {
       const data = await res.json();
       setNapReport(data.report ?? null);
-      toast(data.report?.issues?.length ? "Checked. Some details need attention." : "Checked. Your details match.", "success");
+      if (data.report?.status === "unreachable") {
+        toast(data.report.message || "We couldn't read your website. Try again in a few minutes.", "warning");
+      } else {
+        toast(data.report?.issues?.length ? "Checked. Some details need attention." : "Checked. Your details match.", "success");
+      }
     } else {
       const err = res ? await res.json().catch(() => ({})) : {};
       toast(err.error || "Couldn't check your website. Try again.", "error");
@@ -586,7 +590,16 @@ export default function ProjectSettingsPage() {
                 </Button>
               </div>
 
-              {napReport && (
+              {napReport?.status === "unreachable" && (
+                <div className="rounded-md border border-line bg-surface p-4" role="status">
+                  <p className="mb-1 font-mono text-[11px] uppercase tracking-wide text-text-3">Nothing checked · {whenLabel(napReport.checked_at)}</p>
+                  <p className="text-body-s text-text">
+                    {napReport.message || "We couldn't read your website. Try again in a few minutes."}
+                  </p>
+                </div>
+              )}
+
+              {napReport && napReport.status !== "unreachable" && (
                 <div className="rounded-md border border-line bg-surface p-4">
                   <p className="mb-3 font-mono text-[11px] uppercase tracking-wide text-text-3">
                     {napReport.pages_checked} {napReport.pages_checked === 1 ? "page" : "pages"} checked · {whenLabel(napReport.checked_at)}

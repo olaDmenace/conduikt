@@ -13,6 +13,10 @@ import { factsFromProject, hasSomethingToCheck, type ProjectRow } from "@/src/li
 // runs, so nothing is crawled, nothing is counted as a run and no error is
 // recorded against it; the owner sees the hint on the Missing Pages screen.
 //
+// A site that could not be read that night (a bot challenge, a timeout)
+// comes back from runMissingPages with error "site_unreachable" and no
+// candidates touched; the outcome records it and the loop moves on.
+//
 // Registered by the lead in src/lib/inngest/index.ts and the Inngest route.
 export const missingPagesNightly = inngest.createFunction(
   { id: "missing-pages-nightly", retries: 1, concurrency: { limit: 2 } },

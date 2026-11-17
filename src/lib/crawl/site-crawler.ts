@@ -14,6 +14,7 @@ import {
   extractVisibleText,
 } from "./html";
 import { isAllowed, OUR_USER_AGENT, parseRobots, robotsInfo, type RobotsInfo } from "./robots";
+import { isTimeoutError, looksBlocked } from "./unreachable";
 
 export type { RobotsInfo } from "./robots";
 
@@ -33,7 +34,25 @@ export interface CrawlResult {
   pages: CrawledPage[];
   robots: RobotsInfo;
   source: "sitemap" | "links" | "none";
+  /** One line per request that failed, with its status ("https://x/ : 403 blocked by bot protection"). */
   errors: string[];
+  /**
+   * Some page request answered with a bot challenge (403, or 429/503 with
+   * Cloudflare's markers). Page requests only: robots.txt and the sitemap
+   * are often served from an edge that answers differently from the origin.
+   */
+  blocked: boolean;
+  /** At least one page request came back readable (never true with zero pages). */
+  fetchedAny: boolean;
+  /** The status of the first failed page request, for the message when nothing was read. */
+  failedStatus: number | null;
+  /** The first page fetch error (timeout, refused connection), when there was no response. */
+  failedError: string | null;
+}
+
+/** An empty result for a site that was never crawled (no address, hosted-only project). */
+export function emptyCrawl(errors: string[] = []): CrawlResult {
+  return { pages: [], robots: robotsInfo(null), source: "none", errors, blocked: false, fetchedAny: false, failedStatus: null, failedError: null };
 }
 
 export interface CrawlOptions {
@@ -48,10 +67,13 @@ export interface CrawlOptions {
 
 const SKIP_EXT = /\.(?:pdf|jpe?g|png|gif|webp|svg|ico|css|js|mjs|json|xml|zip|gz|mp4|mp3|woff2?|ttf|eot|txt|csv|docx?|xlsx?|pptx?)$/i;
 
-const HEADERS = {
+/** The one identity every site read uses, so an owner can allow it once. */
+export const CRAWL_HEADERS = {
   "User-Agent": `Mozilla/5.0 (compatible; ${OUR_USER_AGENT}/1.0; +https://conduikt.com)`,
   Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.5",
+  "Accept-Language": "en",
 };
+const HEADERS = CRAWL_HEADERS;
 
 /** Normalise a link found on `base`; null when it leaves the site or isn't a page. */
 export function normaliseLink(href: string, base: URL): string | null {
@@ -116,17 +138,40 @@ export async function crawlSite(siteUrl: string, opts: CrawlOptions = {}): Promi
   try {
     base = new URL(siteUrl.includes("://") ? siteUrl : `https://${siteUrl}`);
   } catch {
-    return { pages: [], robots: robotsInfo(null), source: "none", errors: ["Not a valid address"] };
+    // No page request could be made, so the site was not read.
+    return { ...emptyCrawl(["Not a valid address"]), failedError: "Not a valid address" };
   }
   const origin = base.origin;
 
-  const getText = async (url: string): Promise<string | null> => {
+  // What the site told us, so the caller can say "blocked" or "timed out"
+  // instead of "no pages" when nothing came back. Only page requests count:
+  // robots.txt and sitemap.xml are often answered by a CDN edge in a few
+  // milliseconds while the origin behind it is down, challenging us or
+  // timing out, and a readable sitemap says nothing about the pages.
+  let blocked = false;
+  let fetchedAny = false;
+  let failedStatus: number | null = null;
+  let failedError: string | null = null;
+
+  const getText = async (url: string, isPage = false): Promise<string | null> => {
     try {
       const res = await fetchImpl(url, { headers: HEADERS, signal: AbortSignal.timeout(timeoutMs) });
-      if (!res.ok) return null;
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        const challenge = looksBlocked(res.status, res.headers, body);
+        if (isPage) {
+          if (challenge) blocked = true;
+          if (failedStatus === null) failedStatus = res.status;
+        }
+        errors.push(`${url}: ${res.status}${challenge ? " blocked by bot protection" : ""}`);
+        return null;
+      }
+      if (isPage) fetchedAny = true;
       return await res.text();
     } catch (err) {
-      errors.push(`${url}: ${err instanceof Error ? err.message : "failed"}`);
+      const message = err instanceof Error ? (isTimeoutError(err) ? "timed out" : err.message) : "failed";
+      if (isPage && failedError === null) failedError = message;
+      errors.push(`${url}: ${message}`);
       return null;
     }
   };
@@ -197,7 +242,7 @@ export async function crawlSite(siteUrl: string, opts: CrawlOptions = {}): Promi
       fetched++;
       active++;
       try {
-        const html = await getText(url);
+        const html = await getText(url, true);
         if (html === null) continue;
         pages.push(parsePage(url, html, opts.keepHtml));
         if (followLinks) {
@@ -217,5 +262,14 @@ export async function crawlSite(siteUrl: string, opts: CrawlOptions = {}): Promi
 
   await Promise.all(Array.from({ length: Math.max(1, concurrency) }, worker));
 
-  return { pages, robots, source: pages.length === 0 && source === "links" ? "none" : source, errors };
+  return {
+    pages,
+    robots,
+    source: pages.length === 0 && source === "links" ? "none" : source,
+    errors,
+    blocked,
+    fetchedAny,
+    failedStatus,
+    failedError,
+  };
 }

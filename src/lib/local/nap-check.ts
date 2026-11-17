@@ -14,6 +14,7 @@
 
 import { crawlSite, type CrawledPage } from "@/src/lib/crawl/site-crawler";
 import { extractJsonLd, textOf } from "@/src/lib/crawl/html";
+import { crawlUnreachable, crawlUnreachableMessage } from "@/src/lib/crawl/unreachable";
 
 export interface NapInput {
   name: string;
@@ -66,6 +67,14 @@ export interface NapReport {
   structured_data: NapStructuredData;
   /** Plain one-liners for the UI, worst first. Empty when all is well. */
   issues: string[];
+  /**
+   * "unreachable" when no page could be read (bot challenge, timeout):
+   * nothing below was checked, so nothing is marked inconsistent. Absent
+   * or "ok" when the site was read.
+   */
+  status?: "ok" | "unreachable";
+  /** Why the site could not be read, for the owner. */
+  message?: string;
 }
 
 export const NAP_MAX_PAGES = 30;
@@ -481,9 +490,19 @@ export interface RunNapCheckOptions {
   fetchImpl?: (url: string, init?: RequestInit) => Promise<Response>;
 }
 
-/** Crawl the site (at most NAP_MAX_PAGES) and build the report. */
+/**
+ * Crawl the site (at most NAP_MAX_PAGES) and build the report. When no
+ * page could be read the report says so (`status: "unreachable"`) with
+ * nothing marked inconsistent: "we could not read it" is not "your site
+ * is inconsistent". A site that was read but does not carry a value is
+ * reported as before.
+ */
 export async function runNapCheck(siteUrl: string, input: NapInput, opts: RunNapCheckOptions = {}): Promise<NapReport> {
   const maxPages = Math.max(1, Math.min(NAP_MAX_PAGES, opts.maxPages ?? NAP_MAX_PAGES));
   const crawl = await crawlSite(siteUrl, { maxPages, keepHtml: true, fetchImpl: opts.fetchImpl });
-  return buildNapReport(input, crawl.pages);
+  if (crawlUnreachable(crawl)) {
+    const empty = buildNapReport(input, []);
+    return { ...empty, pages_checked: 0, issues: [], status: "unreachable", message: crawlUnreachableMessage(crawl, siteUrl) };
+  }
+  return { ...buildNapReport(input, crawl.pages), status: "ok" };
 }
