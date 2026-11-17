@@ -1,13 +1,17 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/src/lib/supabase/service";
+import { checkSpendCap, getAnthropicClient, mapAnthropicError, refusalFrom } from "@/src/lib/ai/client";
+import { modelFor } from "@/src/lib/ai/model-routing";
 
 // Found-by-AI monitor (audit 2026-10-24 §5.9 item 4).
 //
 // Ask the answer engines the questions a customer would ask, and record
-// whether the business was named or cited and who was instead. Perplexity
-// is the first engine (PERPLEXITY_API_KEY); the others plug in through
-// the AnswerEngine interface. With no key at all, NullEngine is the only
-// engine and checkVisibility records nothing and returns a plain reason.
+// whether the business was named or cited and who was instead. Two
+// engines today: Claude with the server-side web search tool, available
+// whenever ANTHROPIC_API_KEY is set (no new key), and Perplexity
+// (PERPLEXITY_API_KEY). Others plug in through the AnswerEngine
+// interface. With no key at all, NullEngine is the only engine and
+// checkVisibility records nothing and returns a plain reason.
 
 export type EngineName = "perplexity" | "openai" | "gemini" | "claude";
 
@@ -96,13 +100,124 @@ export class PerplexityEngine implements AnswerEngine {
   }
 }
 
+// ---- Claude with the server-side web search tool ---------------------------
+
+/**
+ * The web search tool entry. SDK 0.74 only types the 20250305 variant,
+ * so the current one is sent as an opaque object (cast on the request).
+ */
+export const CLAUDE_WEB_SEARCH_TOOL = {
+  type: "web_search_20260209",
+  name: "web_search",
+  max_uses: 3,
+} as const;
+
+const CLAUDE_SYSTEM_PROMPT =
+  "Answer like a helpful local guide. Search the web before answering. Name specific businesses, services or products when you recommend them, and include their websites.";
+
+/** The slice of a Messages response the parser reads; a plain object in tests. */
+export interface ClaudeResponseLike {
+  stop_reason?: string | null;
+  stop_details?: unknown;
+  content: ReadonlyArray<{
+    type: string;
+    text?: string;
+    content?: unknown;
+  }>;
+}
+
+/** The narrow client surface the engine needs; the real SDK client fits it. */
+export interface ClaudeClientLike {
+  messages: { create(params: Record<string, unknown>): Promise<unknown> };
+}
+
+/**
+ * Pull the answer text and the cited URLs out of a response. Text blocks
+ * make the answer; each web_search_tool_result block carries either a
+ * list of results (success) or one object with an error_code (failure),
+ * so the branch is on the shape, not on a status.
+ */
+export function parseClaudeAnswer(response: ClaudeResponseLike): EngineAnswer {
+  let text = "";
+  const citations: string[] = [];
+  for (const block of response.content) {
+    if (block.type === "text" && typeof block.text === "string") {
+      text += block.text;
+      continue;
+    }
+    if (block.type !== "web_search_tool_result") continue;
+    const content = block.content;
+    if (Array.isArray(content)) {
+      for (const r of content as Array<{ type?: string; url?: unknown }>) {
+        if (r && r.type === "web_search_result" && typeof r.url === "string" && !citations.includes(r.url)) {
+          citations.push(r.url);
+        }
+      }
+    } else if (content && typeof content === "object" && "error_code" in content) {
+      console.warn("[ai-visibility] claude web search error:", (content as { error_code?: unknown }).error_code);
+    }
+  }
+  return { text, citations, raw: response };
+}
+
+export interface ClaudeEngineOptions {
+  apiKey?: string;
+  client?: ClaudeClientLike;
+  /** The daily spend cap check; swapped out in tests. */
+  spendCap?: () => Promise<unknown>;
+}
+
+export class ClaudeEngine implements AnswerEngine {
+  readonly name = "claude" as const;
+  readonly available: boolean;
+  private client: ClaudeClientLike | undefined;
+  private spendCap: () => Promise<unknown>;
+
+  constructor(opts: ClaudeEngineOptions = {}) {
+    const apiKey = opts.apiKey ?? process.env.ANTHROPIC_API_KEY;
+    this.available = !!apiKey || !!opts.client;
+    this.client = opts.client;
+    this.spendCap = opts.spendCap ?? (() => checkSpendCap());
+  }
+
+  async ask(question: string): Promise<EngineAnswer> {
+    if (!this.available) return { text: "", citations: [] };
+    await this.spendCap();
+    const client = this.client ?? (getAnthropicClient() as unknown as ClaudeClientLike);
+    let response: ClaudeResponseLike;
+    try {
+      response = (await client.messages.create({
+        model: modelFor("score"),
+        max_tokens: 2048,
+        system: CLAUDE_SYSTEM_PROMPT,
+        messages: [{ role: "user", content: question }],
+        tools: [CLAUDE_WEB_SEARCH_TOOL as unknown as Record<string, unknown>],
+        output_config: { effort: "low" },
+      })) as ClaudeResponseLike;
+    } catch (err) {
+      throw mapAnthropicError(err) ?? err;
+    }
+    const refused = refusalFrom({ stop_reason: response.stop_reason ?? null, stop_details: response.stop_details });
+    if (refused) {
+      console.warn(`[ai-visibility] claude declined "${question}": ${refused.message}`);
+      return { text: "", citations: [], raw: response };
+    }
+    return parseClaudeAnswer(response);
+  }
+}
+
 /** Engines with a key present. Empty when none is configured. */
 export function availableEngines(env: NodeJS.ProcessEnv = process.env): AnswerEngine[] {
   const engines: AnswerEngine[] = [];
+  if (env.ANTHROPIC_API_KEY) engines.push(new ClaudeEngine({ apiKey: env.ANTHROPIC_API_KEY }));
   if (env.PERPLEXITY_API_KEY) engines.push(new PerplexityEngine(env.PERPLEXITY_API_KEY));
-  // openai / gemini / claude: add here when their search-grounded APIs are wired.
+  // openai / gemini: add here when their search-grounded APIs are wired.
   return engines;
 }
+
+/** The one line shown when no engine can be used. */
+export const NO_ENGINE_MESSAGE =
+  "No answer engine is configured. Add ANTHROPIC_API_KEY (or PERPLEXITY_API_KEY) to start checking.";
 
 // ---------------------------------------------------------------------------
 // Questions
@@ -335,7 +450,7 @@ export async function checkVisibility(
   if (engines.length === 0) {
     return {
       ok: false,
-      reason: "No answer engine is configured. Add PERPLEXITY_API_KEY to start checking.",
+      reason: NO_ENGINE_MESSAGE,
       asked: 0,
       mentioned: 0,
       cited: 0,

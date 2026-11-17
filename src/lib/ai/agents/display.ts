@@ -4,6 +4,7 @@
 // so the plain-words rename happens in one place.
 
 import { AGENT_REGISTRY, type AgentDefinition } from "./registry";
+import type { PlanTier } from "@/src/lib/plans";
 
 export interface AgentDisplay {
   name: string;
@@ -64,14 +65,22 @@ export function isTool(id: string): boolean {
 
 const TIER_RANK = { free: 0, pro: 1, growth: 2, agency: 3 } as const;
 
+// Agents are gated by the dollar tiers only. The naira Local tier unlocks
+// the same agents as Pro.
+function agentTier(tier: PlanTier): AgentDefinition["tier"] {
+  return tier === "local" ? "pro" : tier;
+}
+
 /** AI agents unlocked at a plan tier (tools excluded). */
-export function aiAgentCountForTier(tier: AgentDefinition["tier"]): number {
-  return AI_AGENTS.filter((a) => TIER_RANK[a.tier] <= TIER_RANK[tier]).length;
+export function aiAgentCountForTier(tier: PlanTier): number {
+  const rank = TIER_RANK[agentTier(tier)];
+  return AI_AGENTS.filter((a) => TIER_RANK[a.tier] <= rank).length;
 }
 
 /** Tools unlocked at a plan tier, as display names. */
-export function toolsForTier(tier: AgentDefinition["tier"]): string[] {
-  return TOOLS.filter((a) => TIER_RANK[a.tier] <= TIER_RANK[tier]).map((a) => agentDisplay(a).name);
+export function toolsForTier(tier: PlanTier): string[] {
+  const rank = TIER_RANK[agentTier(tier)];
+  return TOOLS.filter((a) => TIER_RANK[a.tier] <= rank).map((a) => agentDisplay(a).name);
 }
 
 const WORDS = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen", "Twenty"];

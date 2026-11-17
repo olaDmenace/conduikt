@@ -7,6 +7,8 @@ import { buildPerformanceContext } from "@/src/lib/ai/performance-context";
 import { inngest } from "@/src/lib/inngest/client";
 import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
 
+const VIDEO_TYPES = ["presenter", "ugc"] as const;
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
 
@@ -52,9 +54,6 @@ export async function POST(request: NextRequest) {
     avatarGender,
   } = body;
   const resolvedVideoType = videoType || style || "presenter";
-  const resolvedAvatarMode = resolvedVideoType === "ugc"
-    ? (avatarMode || "random")
-    : undefined;
 
   if (!projectId || !brief || brief.length < 50) {
     return NextResponse.json(
@@ -63,12 +62,18 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (resolvedVideoType === "cinematic") {
+  // The two video types the pipeline can make. Anything else (old
+  // "cinematic" clients included) gets the same validation error.
+  if (!VIDEO_TYPES.includes(resolvedVideoType)) {
     return NextResponse.json(
-      { error: "Cinematic mode is coming soon." },
+      { error: `Video type must be one of: ${VIDEO_TYPES.join(", ")}` },
       { status: 400 }
     );
   }
+
+  const resolvedAvatarMode = resolvedVideoType === "ugc"
+    ? (avatarMode || "random")
+    : undefined;
 
   // Fetch project
   const { data: project, error: projectError } = await supabase
@@ -185,10 +190,9 @@ export async function POST(request: NextRequest) {
     duration_ms: result.durationMs,
   });
 
-  await supabase
-    .from("profiles")
-    .update({ generation_count: (profile?.generation_count ?? 0) + 1 })
-    .eq("id", user.id);
+  // Counted through the server-side function: profiles.generation_count is
+  // protected from direct client writes (migration 20261117_profiles_protect_columns).
+  await supabase.rpc("increment_generation_count", { user_id_param: user.id });
 
   // Trigger durable background pipeline on Inngest
   await inngest.send({

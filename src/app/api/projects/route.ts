@@ -104,6 +104,13 @@ const CreateProjectSchema = z.object({
   business_location: text(200),
   services: list(120, 30),
 
+  // Business details (phone, address, booking and review links)
+  phone: text(40),
+  address_line: text(200),
+  city: text(120),
+  booking_url: websiteUrl,
+  review_url: websiteUrl,
+
   // Business profile, folded in from /projects/[id]/onboarding
   industry: text(80),
   business_description: text(600),
@@ -191,6 +198,14 @@ export async function POST(request: NextRequest) {
       wants_hosted_page: wantsHostedPage,
       business_location: input.business_location ?? null,
       services: input.services ?? [],
+
+      // Only when given, so creating a project never touches these columns
+      // unless the caller filled them in.
+      ...("phone" in raw ? { phone: input.phone ?? null } : {}),
+      ...("address_line" in raw ? { address_line: input.address_line ?? null } : {}),
+      ...("city" in raw ? { city: input.city ?? null } : {}),
+      ...("booking_url" in raw ? { booking_url: input.booking_url ?? null } : {}),
+      ...("review_url" in raw ? { review_url: input.review_url ?? null } : {}),
 
       industry: input.industry ?? null,
       business_description: input.business_description ?? null,

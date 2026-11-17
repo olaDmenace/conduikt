@@ -4,6 +4,7 @@ import { AIRefusedError, AIUnavailableError, aiRefusedBody, aiUnavailableBody, g
 import { getAgent } from "@/src/lib/ai/agents";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
 import { effortFor } from "@/src/lib/ai/model-routing";
+import { blendAnswerability, scoreAnswerability } from "@/src/lib/seo/answerability";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -34,6 +35,7 @@ export async function POST(request: NextRequest) {
 
   // Build project context if projectId is provided
   let systemPrompt: string;
+  let businessName: string | null = null;
   if (projectId) {
     const { data: project } = await supabase
       .from("projects")
@@ -45,6 +47,7 @@ export async function POST(request: NextRequest) {
     if (project) {
       const context = buildProjectContext(project);
       systemPrompt = agent.buildSystemPrompt(context);
+      businessName = typeof project.name === "string" ? project.name : null;
     } else {
       systemPrompt = agent.buildSystemPrompt({
         name: "Unknown",
@@ -79,10 +82,15 @@ export async function POST(request: NextRequest) {
       relevance: number;
       engagement_potential: number;
       brand_alignment: number;
+      answerability: number | null;
       summary: string;
       top_strength: string;
       top_improvement: string;
     };
+
+    // Answerability: half the model's judgement, half a deterministic check.
+    const deterministic = scoreAnswerability(content, { businessName });
+    scoreData.answerability = blendAnswerability(scoreData.answerability, deterministic.score);
 
     // Persist score
     if (projectId) {
@@ -96,6 +104,7 @@ export async function POST(request: NextRequest) {
         relevance: scoreData.relevance,
         engagement_potential: scoreData.engagement_potential,
         brand_alignment: scoreData.brand_alignment,
+        answerability: scoreData.answerability,
         summary: scoreData.summary,
         top_strength: scoreData.top_strength,
         top_improvement: scoreData.top_improvement,
@@ -111,7 +120,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return NextResponse.json(scoreData);
+    return NextResponse.json({ ...scoreData, answerability_fixes: deterministic.fixes });
   } catch (e) {
     if (e instanceof AIUnavailableError) return NextResponse.json(aiUnavailableBody(e), { status: 503 });
     if (e instanceof AIRefusedError) return NextResponse.json(aiRefusedBody(e), { status: 422 });

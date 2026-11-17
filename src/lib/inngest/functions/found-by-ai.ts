@@ -11,7 +11,9 @@ import { availableEngines, checkVisibility } from "@/src/lib/integrations/ai-vis
  * found" signal). Capped at DAILY_QUESTION_CAP questions per project per
  * day inside checkVisibility.
  *
- * With no engine key the run exits after one log line.
+ * Engines: Claude with web search whenever ANTHROPIC_API_KEY is set (the
+ * same key the agents use, so no extra setup), plus Perplexity when
+ * PERPLEXITY_API_KEY is set. With neither the run exits after one log line.
  *
  * Registration (not done here):
  *   src/lib/inngest/index.ts:      export { foundByAi } from "./functions/found-by-ai";
@@ -22,7 +24,7 @@ export const foundByAi = inngest.createFunction(
   { cron: "0 3 * * *" },
   async ({ step }) => {
     if (availableEngines().length === 0) {
-      console.log("[found-by-ai] No answer engine key set (PERPLEXITY_API_KEY); nothing to do.");
+      console.log("[found-by-ai] No answer engine key set (ANTHROPIC_API_KEY or PERPLEXITY_API_KEY); nothing to do.");
       return { projects: 0, asked: 0, skipped: "no_engine" };
     }
 

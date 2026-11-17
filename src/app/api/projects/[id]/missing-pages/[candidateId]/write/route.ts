@@ -9,6 +9,9 @@ import { hostedPagePath, hostedPageUrl } from "@/src/lib/hosted-pages/templates"
 export const maxDuration = 120;
 
 // POST: "Write this page" for one candidate. Saves a draft; never publishes.
+// For a candidate that is already live the new version is saved as a
+// pending revision and the live page is left alone (approve it through
+// the revision route).
 export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string; candidateId: string }> }) {
   const { id, candidateId } = await params;
   const ctx = await requireProjectOwner(id);
@@ -20,7 +23,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
 
   const { data: candidate } = await supabase
     .from("missing_page_candidates")
-    .select("id, project_id, query, kind, matched_url, status, score")
+    .select("id, project_id, query, kind, matched_url, status, score, hosted_page_id")
     .eq("id", candidateId)
     .eq("project_id", id)
     .single();
@@ -32,6 +35,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({
       hostedPageId: written.hostedPageId,
       assetId: written.assetId,
+      revision: written.revision,
       readiness: { score: written.review.score, ready: written.review.ready, fixes: written.review.fixes, applied: written.review.applied },
       page: written.hostedPage.page,
       path: hostedPagePath(written.hostedPage.site_slug, written.hostedPage.slug),

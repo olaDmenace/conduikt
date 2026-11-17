@@ -1,11 +1,13 @@
 import crypto from "crypto";
+import type { PlanCurrency } from "@/src/lib/plans";
 
 const FLUTTERWAVE_API = "https://api.flutterwave.com/v3";
 
 export interface InitPaymentArgs {
   txRef: string;
+  /** In `currency`'s major unit: dollars for USD tiers, naira for Local. */
   amount: number;
-  currency: "USD";
+  currency: PlanCurrency;
   customerEmail: string;
   paymentPlanId: string;
   redirectUrl: string;

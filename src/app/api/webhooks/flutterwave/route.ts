@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/src/lib/supabase/service";
-import { flutterwavePlanToTier, PLAN_PRICING, type PlanTier } from "@/src/lib/plans";
+import { flutterwavePlanToTier, planCurrency, PLAN_PRICING, type PlanTier } from "@/src/lib/plans";
 import { sendPlanUpgradeEmail } from "@/src/lib/email";
 import { createNotification } from "@/src/lib/notifications";
 import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
@@ -13,7 +13,7 @@ import {
 // userId is a UUID (5 dash-separated segments) so splitting on "-" needs care.
 function parseTxRef(ref: string | null | undefined): { tier: PlanTier; userId: string } | null {
   if (!ref) return null;
-  const match = /^conduikt-(pro|growth|agency)-([0-9a-f-]{36})-/i.exec(ref);
+  const match = /^conduikt-(local|pro|growth|agency)-([0-9a-f-]{36})-/i.exec(ref);
   if (!match) return null;
   return { tier: match[1] as PlanTier, userId: match[2] };
 }
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
         if (!userId) userId = (metaFromPayload.user_id as string) ?? null;
         if (!tier) {
           const planKey = metaFromPayload.plan_key as string | undefined;
-          if (planKey === "pro" || planKey === "growth" || planKey === "agency") {
+          if (planKey === "local" || planKey === "pro" || planKey === "growth" || planKey === "agency") {
             tier = planKey;
           }
         }
@@ -125,8 +125,11 @@ export async function POST(request: NextRequest) {
         break;
       }
 
-      // Amount/currency sanity check (Flutterwave best practice).
+      // Amount/currency sanity check (Flutterwave best practice). Each
+      // tier is charged in its own currency: naira for Local, dollars
+      // for the rest.
       const expectedAmount = PLAN_PRICING[tier].price;
+      const expectedCurrency = planCurrency(tier);
       const actualAmount = typeof data.amount === "number" ? data.amount : 0;
       const currency = data.currency ?? "";
       trace.amountExpected = expectedAmount;
@@ -136,8 +139,8 @@ export async function POST(request: NextRequest) {
         trace.stop = `amount mismatch: charged ${actualAmount}, expected ${expectedAmount}`;
         break;
       }
-      if (currency && currency !== "USD") {
-        trace.stop = `currency mismatch: got ${currency}, expected USD`;
+      if (currency && currency !== expectedCurrency) {
+        trace.stop = `currency mismatch: got ${currency}, expected ${expectedCurrency}`;
         break;
       }
 
@@ -190,7 +193,11 @@ export async function POST(request: NextRequest) {
       trace.isUpgrade = isUpgrade;
 
       // Referral commission — first paid upgrade only. Non-fatal on failure.
-      if (existing?.referred_via) {
+      // Commissions are booked in dollars (referral_earnings.*_usd), so a
+      // naira charge is left for the owner to credit by hand.
+      if (existing?.referred_via && expectedCurrency !== "USD") {
+        trace.referralSkipped = `charge in ${expectedCurrency}; commissions are booked in USD`;
+      } else if (existing?.referred_via) {
         try {
           const { data: conversion } = await supabase
             .from("referral_conversions")

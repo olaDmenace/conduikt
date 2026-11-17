@@ -13,13 +13,22 @@ import {
   AlertTriangle,
   FileEdit,
   Globe,
-  Sparkles,
 } from "@/src/components/ui/lucide-icons";
 import { Card } from "@/src/components/ui/card";
+import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { EmptyState } from "@/src/components/ui/empty-state";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { PageHeader } from "@/src/components/layout/page-header";
+
+// What GET /api/email-domain tells us about the sender. One-off emails
+// go out from the shared address today; the card says so and points at
+// the domain settings.
+interface SenderState {
+  eligible: boolean;
+  shared_from_email: string;
+  domain: { domain: string; status: "pending" | "verified" | "failed"; from_email: string } | null;
+}
 
 interface Broadcast {
   id: string;
@@ -93,16 +102,22 @@ export default function BroadcastsPage({
   const { id: projectId } = use(params);
   const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sender, setSender] = useState<SenderState | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      const res = await fetch(`/api/projects/${projectId}/broadcasts`, {
-        cache: "no-store",
-      });
+      const [res, senderRes] = await Promise.all([
+        fetch(`/api/projects/${projectId}/broadcasts`, { cache: "no-store" }),
+        fetch("/api/email-domain", { cache: "no-store" }).catch(() => null),
+      ]);
       if (res.ok) {
         const data = await res.json();
         if (!cancelled) setBroadcasts(Array.isArray(data) ? data : []);
+      }
+      if (senderRes?.ok) {
+        const data = (await senderRes.json().catch(() => null)) as SenderState | null;
+        if (!cancelled && data) setSender(data);
       }
       if (!cancelled) setLoading(false);
     }
@@ -112,6 +127,30 @@ export default function BroadcastsPage({
     };
   }, [projectId]);
 
+  const senderDomain = sender?.domain ?? null;
+  const domainLive = !!senderDomain && senderDomain.status === "verified" && sender?.eligible === true;
+  const domainPaused = !!senderDomain && sender?.eligible === false;
+  let senderNote: string;
+  let senderCta: string;
+  if (domainPaused) {
+    senderNote = `Your domain ${senderDomain!.domain} is paused: your plan no longer includes sending from your own domain. Upgrade to use it again.`;
+    senderCta = "Manage your sending domain";
+  } else if (domainLive) {
+    senderNote = `Your domain is verified and sign-up confirmations already go out from ${senderDomain!.from_email}. One-off emails still use the shared address for now.`;
+    senderCta = "Manage your sending domain";
+  } else if (senderDomain) {
+    senderNote = `Your domain ${senderDomain.domain} is waiting for its records. Until it is verified, emails use the shared address.`;
+    senderCta = "Finish setting up your domain";
+  } else if (sender?.eligible) {
+    senderNote =
+      "You can send from your own address (like hello@yourcompany.com) so more emails land in the inbox under your name.";
+    senderCta = "Set up your sending domain";
+  } else {
+    senderNote =
+      "Free plans send from our shared address. On Pro and above you can set up your own domain (like hello@yourcompany.com) so more emails land in the inbox under your name.";
+    senderCta = "Set up your sending domain";
+  }
+
   return (
     <div>
       <PageHeader
@@ -119,26 +158,26 @@ export default function BroadcastsPage({
         description="Emails sent once to a subscriber list. Send one from any email series we write for you."
       />
 
-      {/* Sender info — sets expectations about which domain emails come from
-          and previews the upcoming custom-domain feature for paid users. */}
+      {/* Sender info: which address one-off emails come from. */}
       <Card className="mb-6">
         <div className="flex items-start gap-3">
           <Globe className="mt-0.5 h-5 w-5 shrink-0 text-text-3" />
-          <div className="flex-1">
-            <p className="text-title text-text">
-              Sending from{" "}
-              <code className="font-mono text-text">mail@contacts.conduikt.com</code>
-            </p>
-            <p className="mt-1 text-body-s text-text-2">
-              Free and Pro send from our shared address. Sending from your own
-              address (like <code className="font-mono">mail.yourcompany.com</code>)
-              is coming soon on higher plans, so more emails land in the inbox
-              under your name.
-            </p>
-            <Badge variant="secondary" className="mt-2">
-              <Sparkles className="h-3 w-3" />
-              Coming soon
-            </Badge>
+          <div className="min-w-0 flex-1">
+            {sender ? (
+              <p className="text-title text-text">
+                Sending from{" "}
+                <code className="break-all font-mono text-text">{sender.shared_from_email}</code>
+              </p>
+            ) : (
+              <Skeleton className="h-5 w-72" />
+            )}
+            <p className="mt-1 text-body-s text-text-2">{sender ? senderNote : "Checking where your one-off emails come from…"}</p>
+            <Button variant="outline" size="sm" className="mt-3" asChild>
+              <Link href="/settings/email-domain">
+                {senderCta}
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
           </div>
         </div>
       </Card>

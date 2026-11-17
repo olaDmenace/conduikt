@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Twitter, Linkedin, Facebook, Music2, CheckCircle2, AlertCircle, Link2, Unlink, Search, Clock, Pencil } from "@/src/components/ui/lucide-icons";
+import { Twitter, Linkedin, Facebook, Music2, CheckCircle2, AlertCircle, Link2, Unlink, Search, Clock, Pencil, ImageIcon } from "@/src/components/ui/lucide-icons";
 import { Card } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Badge } from "@/src/components/ui/badge";
@@ -32,6 +32,19 @@ interface ConnectedAccount {
   has_access_token: boolean;
   has_refresh_token: boolean;
   created_at: string;
+  // The Instagram account linked to a Facebook Page, when the callback
+  // stored one in metadata. Instagram has no connection of its own.
+  instagram_username: string | null;
+}
+
+const FACEBOOK_WAITING_COPY = "Facebook and Instagram arrive once Meta approves our app. Nothing to do yet.";
+
+function instagramUsernameOf(metadata: unknown): string | null {
+  if (!metadata || typeof metadata !== "object") return null;
+  const m = metadata as { instagram_username?: unknown; instagram?: { username?: unknown } };
+  if (typeof m.instagram_username === "string") return m.instagram_username;
+  if (m.instagram && typeof m.instagram.username === "string") return m.instagram.username;
+  return null;
 }
 
 function IntegrationsContent() {
@@ -80,7 +93,7 @@ function IntegrationsContent() {
     const { data } = await supabase
       .from("connected_accounts")
       .select(
-        "platform, platform_username, token_expires_at, access_token, refresh_token, created_at",
+        "platform, platform_username, token_expires_at, access_token, refresh_token, created_at, metadata",
       );
     setAccounts(
       (data ?? []).map((row) => ({
@@ -90,6 +103,7 @@ function IntegrationsContent() {
         has_access_token: Boolean(row.access_token),
         has_refresh_token: Boolean(row.refresh_token),
         created_at: row.created_at,
+        instagram_username: instagramUsernameOf(row.metadata),
       }))
     );
     setLoading(false);
@@ -177,7 +191,23 @@ function IntegrationsContent() {
     return new Date(account.token_expires_at) < new Date();
   }
 
-  const publishingIntegrations = [
+  const metaEnabled = process.env.NEXT_PUBLIC_ENABLE_FACEBOOK_INTEGRATION === "true";
+
+  interface Integration {
+    key: string;
+    name: string;
+    icon: typeof Twitter;
+    description: string;
+    connectHref: string;
+    account: ConnectedAccount | undefined;
+    comingSoon: boolean;
+    /** Shown instead of the handle when connected (Instagram rides on the Page). */
+    connectedNote?: string;
+    /** No Disconnect button: the connection belongs to another card. */
+    sharedConnection?: boolean;
+  }
+
+  const publishingIntegrations: Integration[] = [
     {
       key: "x",
       name: "X (Twitter)",
@@ -203,8 +233,27 @@ function IntegrationsContent() {
       description: "Post text and images to your Facebook Page from the Content Studio.",
       connectHref: "/api/integrations/facebook/connect",
       account: fbAccount,
-      comingSoon: process.env.NEXT_PUBLIC_ENABLE_FACEBOOK_INTEGRATION !== "true",
+      comingSoon: !metaEnabled,
     },
+    // Instagram reuses the Facebook Page connection: no OAuth of its own.
+    // Only listed once Meta has approved the app.
+    ...(metaEnabled
+      ? [
+          {
+            key: "instagram",
+            name: "Instagram",
+            icon: ImageIcon,
+            description: "Post photos and videos to the Instagram account linked to your Facebook Page.",
+            connectHref: "/api/integrations/facebook/connect",
+            account: fbAccount,
+            comingSoon: false,
+            connectedNote: fbAccount?.instagram_username
+              ? `Uses your connected Facebook Page · @${fbAccount.instagram_username}`
+              : "Uses your connected Facebook Page",
+            sharedConnection: true,
+          } satisfies Integration,
+        ]
+      : []),
     {
       key: "tiktok",
       name: "TikTok",
@@ -221,8 +270,6 @@ function IntegrationsContent() {
   // managed inside each project's Analytics tab. The cards below are
   // user-level only (one X / LinkedIn / Facebook account, used across
   // all your projects).
-
-  type Integration = (typeof publishingIntegrations)[number];
 
   function renderIntegrationCard(integration: Integration, i: number) {
     const connected = !!integration.account;
@@ -259,11 +306,13 @@ function IntegrationsContent() {
               )}
             </div>
             <p className="mt-0.5 text-body-s text-text-2">
-              {connected && integration.account?.platform_username
-                ? `@${integration.account.platform_username}`
-                : integration.comingSoon
-                  ? "Waiting on Meta business verification. We'll email you when this is live."
-                  : integration.description}
+              {connected && integration.connectedNote
+                ? integration.connectedNote
+                : connected && integration.account?.platform_username
+                  ? `@${integration.account.platform_username}`
+                  : integration.comingSoon
+                    ? FACEBOOK_WAITING_COPY
+                    : integration.description}
             </p>
           </div>
         </div>
@@ -283,7 +332,7 @@ function IntegrationsContent() {
                   platform) so the same row gets fresh tokens in place,
                   AND any recently-failed scheduled posts on this
                   channel auto-retry. */}
-              {expired && integration.connectHref && (
+              {expired && integration.connectHref && !integration.sharedConnection && (
                 <Button size="sm" asChild>
                   <a href={integration.connectHref}>
                     <Link2 className="h-4 w-4" />
@@ -291,15 +340,17 @@ function IntegrationsContent() {
                   </a>
                 </Button>
               )}
-              <Button
-                variant="quiet"
-                size="sm"
-                onClick={() => disconnect(integration.key)}
-                disabled={disconnecting === integration.key}
-              >
-                {disconnecting !== integration.key && <Unlink className="h-4 w-4" />}
-                {disconnecting === integration.key ? "Disconnecting…" : "Disconnect"}
-              </Button>
+              {!integration.sharedConnection && (
+                <Button
+                  variant="quiet"
+                  size="sm"
+                  onClick={() => disconnect(integration.key)}
+                  disabled={disconnecting === integration.key}
+                >
+                  {disconnecting !== integration.key && <Unlink className="h-4 w-4" />}
+                  {disconnecting === integration.key ? "Disconnecting…" : "Disconnect"}
+                </Button>
+              )}
             </>
           ) : integration.comingSoon ? (
             <Button variant="outline" size="sm" disabled>

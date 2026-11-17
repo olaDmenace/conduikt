@@ -24,6 +24,7 @@ import {
   CalendarClock,
   ChevronDown,
   Lock,
+  ImageIcon,
 } from "@/src/components/ui/lucide-icons";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -247,6 +248,18 @@ const channelIcons: Record<string, typeof Twitter> = {
   web: Globe,
 };
 
+// Publish channels. Instagram rides on the Facebook Page connection and is
+// only offered once Meta has approved the app (same flag as Facebook).
+type PublishPlatform = "x" | "linkedin" | "instagram";
+
+const INSTAGRAM_PUBLISH_ENABLED = process.env.NEXT_PUBLIC_ENABLE_FACEBOOK_INTEGRATION === "true";
+
+const PUBLISH_PLATFORM_LABEL: Record<PublishPlatform, string> = {
+  x: "X",
+  linkedin: "LinkedIn",
+  instagram: "Instagram",
+};
+
 // ---------- inline social-post components ----------
 // These live at module scope so React reconciles the same component instance
 // across parent re-renders. Defining them inside the parent caused the entire
@@ -305,7 +318,7 @@ type SocialPostCardProps = {
   scheduleDateTime: string;
   postMedia: Record<string, PostMedia>;
   toast: (message: string, variant?: "success" | "error" | "warning" | "info") => void;
-  onPublish: (platform: "x" | "linkedin", text: string, publishKey: string) => void;
+  onPublish: (platform: PublishPlatform, text: string, publishKey: string) => void;
   onSchedule: (platform: "x" | "linkedin", text: string, publishKey: string) => void;
   onSchedulingKeyChange: (key: string | null) => void;
   onScheduleDateTimeChange: (value: string) => void;
@@ -405,6 +418,18 @@ function SocialPostCard({
             >
               {publishing !== publishKey && <Linkedin className="h-3.5 w-3.5" />}
               {publishing === publishKey ? "Posting…" : "Post now"}
+            </Button>
+          )}
+          {INSTAGRAM_PUBLISH_ENABLED && connectedPlatforms.includes("facebook") && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onPublish("instagram", post.text, publishKey)}
+              disabled={publishing !== null}
+              title="Needs a photo or video attached"
+            >
+              {publishing !== `${publishKey}-instagram` && <ImageIcon className="h-3.5 w-3.5" />}
+              {publishing === `${publishKey}-instagram` ? "Posting…" : "Post to Instagram"}
             </Button>
           )}
         </div>
@@ -1463,10 +1488,16 @@ function ContentPageInner({
     setConnectedPlatforms((data ?? []).map((a: { platform: string }) => a.platform));
   }
 
-  async function handlePublish(platform: "x" | "linkedin", postText: string, publishKey: string) {
+  async function handlePublish(platform: PublishPlatform, postText: string, publishKey: string) {
     if (!postText.trim()) return;
 
     const media = postMedia[publishKey];
+    // Instagram needs a photo or video; say so before anything is saved.
+    if (platform === "instagram" && !media?.url) {
+      toast("Instagram posts need a photo or video. Attach one first.", "warning");
+      return;
+    }
+    const publishingKey = platform === "instagram" ? `${publishKey}-instagram` : publishKey;
 
     // Ensure asset is saved first
     let assetId = savedAssetId;
@@ -1491,11 +1522,11 @@ function ContentPageInner({
       setSaving(false);
     }
 
-    setPublishing(publishKey);
+    setPublishing(publishingKey);
     const res = await fetch(`/api/publish/${platform}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: postText, assetId, media }),
+      body: JSON.stringify({ text: postText, assetId, media, projectId }),
     });
 
     const data = await res.json();
@@ -1508,18 +1539,13 @@ function ContentPageInner({
       } else if (platform === "x" && (data.posted ?? 1) > 1) {
         toast(`Thread of ${data.posted} tweets posted to X`, "success");
       } else {
-        toast(
-          platform === "x"
-            ? "Posted to X"
-            : "Posted to LinkedIn",
-          "success"
-        );
+        toast(`Posted to ${PUBLISH_PLATFORM_LABEL[platform]}`, "success");
       }
       fetchAssets();
     } else {
       if (data.reconnect) {
-        toast(`${platform === "x" ? "X" : "LinkedIn"} connection expired. Reconnect it in Settings, Integrations.`, "error");
-        setConnectedPlatforms((prev) => prev.filter((p) => p !== platform));
+        toast(`${PUBLISH_PLATFORM_LABEL[platform]} connection expired. Reconnect it in Settings, Integrations.`, "error");
+        setConnectedPlatforms((prev) => prev.filter((p) => p !== (platform === "instagram" ? "facebook" : platform)));
       } else {
         toast(data.error || "Publish failed", "error");
       }

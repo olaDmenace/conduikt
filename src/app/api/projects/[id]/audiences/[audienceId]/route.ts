@@ -22,7 +22,7 @@ export async function GET(
   const { data: audience, error } = await supabase
     .from("audiences")
     .select(
-      "id, name, description, resend_audience_id, project_id, created_at, updated_at"
+      "id, name, description, resend_audience_id, project_id, double_opt_in, created_at, updated_at"
     )
     .eq("id", audienceId)
     .eq("project_id", projectId)
@@ -50,18 +50,35 @@ export async function GET(
     .eq("audience_id", audienceId)
     .eq("status", "bounced");
 
+  const { count: pending } = await supabase
+    .from("audience_contacts")
+    .select("id", { count: "exact", head: true })
+    .eq("audience_id", audienceId)
+    .eq("status", "pending");
+
+  // 'suppressed' is the owner's own list; complained is automatic. The
+  // page shows them with bounced as one "Suppressed" number.
+  const { count: suppressedOrComplained } = await supabase
+    .from("audience_contacts")
+    .select("id", { count: "exact", head: true })
+    .eq("audience_id", audienceId)
+    .in("status", ["suppressed", "complained"]);
+
   return NextResponse.json({
     ...audience,
     stats: {
       subscribed: subscribed ?? 0,
       unsubscribed: unsubscribed ?? 0,
       bounced: bounced ?? 0,
+      pending: pending ?? 0,
+      suppressed: (suppressedOrComplained ?? 0) + (bounced ?? 0),
     },
   });
 }
 
-// PATCH /api/projects/[id]/audiences/[audienceId] — rename / update description.
-// Body: { name?: string, description?: string | null }
+// PATCH /api/projects/[id]/audiences/[audienceId] — rename / update description
+// / turn double opt-in on or off.
+// Body: { name?: string, description?: string | null, double_opt_in?: boolean }
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; audienceId: string }> }
@@ -100,6 +117,10 @@ export async function PATCH(
         : null;
   }
 
+  if (typeof body?.double_opt_in === "boolean") {
+    updates.double_opt_in = body.double_opt_in;
+  }
+
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });
   }
@@ -110,7 +131,7 @@ export async function PATCH(
     .eq("id", audienceId)
     .eq("project_id", projectId)
     .select(
-      "id, name, description, resend_audience_id, project_id, created_at, updated_at"
+      "id, name, description, resend_audience_id, project_id, double_opt_in, created_at, updated_at"
     )
     .single();
 

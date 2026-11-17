@@ -1,6 +1,35 @@
 import type { SkillConfig, ProjectContext, SkillOutput } from "./types";
 import { modelFor } from "../model-routing";
 import { parseJsonResponse } from "../parse-json";
+import { buildSchemaSnippet, extractFaqFromHtml, isSchemaFinding, type AuditFindingLike } from "@/src/lib/seo/schema-snippet";
+import type { ProjectFacts } from "@/src/lib/missing-pages/types";
+
+export interface AuditReportLike {
+  score?: unknown;
+  findings?: unknown;
+  summary?: unknown;
+  schema_snippet?: string;
+}
+
+/**
+ * When the audit flags missing or incomplete structured data, attach a
+ * paste-ready JSON-LD snippet built from the project facts: on the report
+ * as `schema_snippet` and on the first structured-data finding (so the
+ * saved `findings` JSON carries it to the Site Audit screen). Pure; the
+ * audit route calls it after parseResponse. Returns the same object.
+ */
+export function attachSchemaSnippet<T extends AuditReportLike>(report: T, facts: ProjectFacts, opts: { pageUrl: string; html?: string | null }): T & { schema_snippet?: string } {
+  const out = report as T & { schema_snippet?: string };
+  if (!Array.isArray(out.findings)) return out;
+  const findings = out.findings as Array<AuditFindingLike & { schema_snippet?: string }>;
+  const target = findings.find((f) => f && typeof f === "object" && isSchemaFinding(f));
+  if (!target) return out;
+  const faq = opts.html ? extractFaqFromHtml(opts.html) : [];
+  const snippet = buildSchemaSnippet(facts, { pageUrl: opts.pageUrl, faq });
+  out.schema_snippet = snippet.html;
+  target.schema_snippet = snippet.html;
+  return out;
+}
 
 export const seoAuditSkill: SkillConfig = {
   id: "seo-audit",

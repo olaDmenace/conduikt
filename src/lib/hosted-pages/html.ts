@@ -28,9 +28,31 @@ export interface RenderHtmlOptions {
   jsonLd?: unknown;
   /** Skip the h1 (WordPress prints the title itself). */
   omitH1?: boolean;
+  /**
+   * A street address (or city) for local-business pages: adds a lazy
+   * Google Maps embed with the address written out under it.
+   */
+  mapAddress?: string | null;
+  /** The business name printed with the address. */
+  businessName?: string | null;
 }
 
-/** Body HTML for the page: h1, entity line, answer, sections, FAQ, CTA, date. */
+/** The keyless Google Maps embed for an address (no API key, no tracking params). */
+export function mapEmbedUrl(address: string): string {
+  return `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`;
+}
+
+/** The map block as plain HTML: iframe plus the address as text for readers without the map. */
+export function renderMapHtml(address: string, businessName?: string | null): string {
+  const label = businessName ? `${businessName}, ${address}` : address;
+  return [
+    `<h2>Where to find us</h2>`,
+    `<iframe src="${escapeHtml(mapEmbedUrl(address))}" title="${escapeHtml(`Map of ${address}`)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" width="100%" height="280" style="border:0"></iframe>`,
+    `<p><address>${escapeHtml(label)}</address></p>`,
+  ].join("\n");
+}
+
+/** Body HTML for the page: h1, entity line, answer, sections, FAQ, map, CTA, date. */
 export function renderPageHtml(page: MissingPageContent, opts: RenderHtmlOptions = {}): string {
   const parts: string[] = [];
   if (!opts.omitH1) parts.push(`<h1>${escapeHtml(page.h1)}</h1>`);
@@ -46,6 +68,7 @@ export function renderPageHtml(page: MissingPageContent, opts: RenderHtmlOptions
       parts.push(`<details><summary>${escapeHtml(f.q)}</summary><p>${escapeHtml(f.a)}</p></details>`);
     }
   }
+  if (opts.mapAddress) parts.push(renderMapHtml(opts.mapAddress, opts.businessName));
   parts.push(`<p><a href="${escapeHtml(page.cta.href)}">${escapeHtml(page.cta.label)}</a></p>`);
   parts.push(`<p><small>Updated on <time datetime="${escapeHtml(page.updatedOn)}">${escapeHtml(formatDate(page.updatedOn))}</time></small></p>`);
   if (opts.jsonLd !== undefined) {

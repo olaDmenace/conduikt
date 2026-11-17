@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback, useRef, use } from "react";
 import {
   Video,
-  Film,
   ArrowRight,
   Download,
   RefreshCw,
@@ -334,7 +333,7 @@ export default function VideoAgentPage({
 
       {/* Section A: Style Selector */}
       {phase === "style" && !planGated && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 animate-in">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 animate-in">
           <button
             onClick={() => {
               setStyle("presenter");
@@ -352,17 +351,6 @@ export default function VideoAgentPage({
               Ready
             </Badge>
           </button>
-
-          <div className="relative text-left rounded-lg border border-line bg-surface p-6 opacity-60 cursor-not-allowed">
-            <Film className="mb-4 h-5 w-5 text-text-3" />
-            <h3 className="text-title text-text mb-1">Cinematic ad</h3>
-            <p className="text-body-s text-text-2">
-              Scene by scene, high production. Made with Runway.
-            </p>
-            <Badge className="mt-3" variant="secondary">
-              Coming soon
-            </Badge>
-          </div>
 
           <button
             onClick={() => {

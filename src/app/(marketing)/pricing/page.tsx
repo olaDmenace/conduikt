@@ -4,6 +4,8 @@ import {
   type PricingTier,
 } from "@/src/components/marketing/pricing-card";
 import { AI_AGENT_COUNT, aiAgentCountForTier } from "@/src/lib/ai/agents/display";
+import { Button } from "@/src/components/ui/button";
+import { isLocalPlanEnabled, LOCAL_PLAN_FEATURES, PLAN_PRICING } from "@/src/lib/plans";
 
 export const metadata: Metadata = {
   title: "Pricing — Free, Pro $49, Growth $99, Agency $249",
@@ -110,7 +112,50 @@ const tiers: PricingTier[] = [
   },
 ];
 
+// The Local tier (naira, one local business) is shown only once the
+// owner has created the plan with a provider (isLocalPlanEnabled).
+// Server component, so the check reads the server env and nothing leaks
+// to the client.
+//
+// The button goes to Billing, which lists Local under the same check; a
+// signed-in owner picks it there and checkout posts planKey "local" to
+// /api/billing/initialize. A visitor who is not signed in is sent to
+// /login by the session middleware. The signup page does not read a
+// plan query and never did.
+function LocalPlanBand() {
+  const local = PLAN_PRICING.local;
+  return (
+    <section
+      aria-labelledby="local-plan-heading"
+      className="animate-in grid gap-6 rounded-lg border border-line bg-surface p-7 md:grid-cols-[1fr_auto] md:items-start"
+    >
+      <div className="flex flex-col gap-4">
+        <p className="text-label text-text-3">Local · for one business in Nigeria</p>
+        <h2 id="local-plan-heading" className="text-heading text-text">
+          Everything a local business needs, billed in naira
+        </h2>
+        <p className="text-numeric text-[3.5rem] text-text">
+          {local.label}
+          <span className="ml-1 font-sans text-[15px] tracking-normal text-text-3">/per month</span>
+        </p>
+        <ul className="flex list-none flex-col gap-2 text-sm leading-snug text-text-2">
+          {LOCAL_PLAN_FEATURES.map((feature) => (
+            <li key={feature}>{feature}</li>
+          ))}
+        </ul>
+      </div>
+      <div className="flex flex-col gap-2 md:items-end">
+        <Button variant="outline" size="lg" className="w-full md:w-auto" asChild>
+          <a href="/settings/billing?plan=local">Choose Local in Billing</a>
+        </Button>
+        <p className="text-caption text-text-3">Sign in first, or create a free account.</p>
+      </div>
+    </section>
+  );
+}
+
 export default function PricingPage() {
+  const showLocal = isLocalPlanEnabled();
   return (
     <div>
       <script
@@ -124,9 +169,9 @@ export default function PricingPage() {
           <p className="text-lg leading-relaxed text-text-2">
             Start free. Upgrade when you need more power. Cancel anytime.
           </p>
-          <p className="text-body-s text-text-3">Annual plans coming soon. Save up to 20%.</p>
         </div>
         <PricingGrid tiers={tiers} />
+        {showLocal && <LocalPlanBand />}
       </section>
     </div>
   );

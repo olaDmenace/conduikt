@@ -23,6 +23,14 @@ export interface ProjectFacts {
   email?: string | null;
   /** Social and directory links for schema sameAs */
   sameAs?: string[];
+  /** Street address ("12 Admiralty Way") for the map and the postal address. */
+  address?: string | null;
+  /** Town or city ("Lekki"); falls back to `location` when absent. */
+  city?: string | null;
+  /** Where the call-to-action should send people when the page has no link of its own. */
+  bookingUrl?: string | null;
+  /** Where to leave a review (Google, Trustpilot). */
+  reviewUrl?: string | null;
 }
 
 export interface PageSection {

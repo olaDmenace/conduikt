@@ -3,11 +3,12 @@
 // ground, one ink band, one orange call to action, 6px radius, no shadows.
 
 import type { HostedTemplate, MissingPageContent, ProjectFacts } from "@/src/lib/missing-pages/types";
-import { formatDate } from "./html";
+import { mapAddressOf, telHrefOf } from "@/src/lib/missing-pages/facts";
+import { formatDate, mapEmbedUrl } from "./html";
 
 export interface HostedPageViewProps {
   page: MissingPageContent;
-  project: Pick<ProjectFacts, "name" | "location" | "phone" | "websiteUrl">;
+  project: Pick<ProjectFacts, "name" | "location" | "phone" | "websiteUrl"> & Partial<Pick<ProjectFacts, "address" | "city" | "bookingUrl" | "reviewUrl">>;
   template: HostedTemplate;
   jsonLd?: unknown;
   /** Link for the site name in the header (the site's index). */
@@ -34,7 +35,10 @@ function Paragraphs({ body }: { body: string }) {
 
 export function HostedPageView({ page, project, template, jsonLd, siteHref = "/", embedded = false }: HostedPageViewProps) {
   const eyebrow = template === "launch" ? "New" : template === "local" && project.location ? project.location : project.name;
-  const telHref = project.phone ? `tel:${project.phone.replace(/[^\d+]/g, "")}` : null;
+  const telHref = telHrefOf(project.phone);
+  // A map only on local pages, and only when there is somewhere to point it.
+  const mapAddress = template === "local" ? mapAddressOf({ address: project.address ?? null, city: project.city ?? null, location: project.location }) : null;
+  const mapSrc = mapAddress && (project.address || project.city) ? mapEmbedUrl(mapAddress) : null;
 
   return (
     <div className={embedded ? "bg-ground text-text" : "min-h-screen bg-ground text-text"}>
@@ -100,6 +104,34 @@ export function HostedPageView({ page, project, template, jsonLd, siteHref = "/"
                 </details>
               ))}
             </div>
+          </section>
+        )}
+
+        {mapAddress && (
+          <section className="mt-14">
+            <h2 className="mb-4 text-heading text-text">Where to find us</h2>
+            {mapSrc && (
+              <div className="overflow-hidden rounded-lg border border-line bg-surface">
+                <iframe
+                  src={mapSrc}
+                  title={`Map of ${mapAddress}`}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="block h-[280px] w-full border-0"
+                />
+              </div>
+            )}
+            <address className="mt-3 text-body not-italic text-text-2">
+              {project.name}, {mapAddress}
+              {project.phone && telHref && (
+                <>
+                  {" · "}
+                  <a href={telHref} className="text-accent-hover hover:underline">
+                    {project.phone}
+                  </a>
+                </>
+              )}
+            </address>
           </section>
         )}
 

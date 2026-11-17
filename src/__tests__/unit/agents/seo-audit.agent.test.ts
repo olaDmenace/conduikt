@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { seoAuditSkill } from '@/src/lib/ai/agents/seo-audit'
+import { attachSchemaSnippet, seoAuditSkill } from '@/src/lib/ai/agents/seo-audit'
+import type { ProjectFacts } from '@/src/lib/missing-pages/types'
 import {
   mockProjectContext,
   minimalProjectContext,
   wrappedJsonResponse,
   rawJsonResponse,
-  malformedJsonResponse,
 } from '../../helpers/agent-test-helper'
 
 const validAuditResponse = {
@@ -155,5 +155,47 @@ describe('SEO Audit Agent', () => {
       const result = seoAuditSkill.parseResponse(rawJsonResponse(perfectScore))
       expect((result.data as any).score).toBe(100)
     })
+  })
+})
+
+describe('attachSchemaSnippet', () => {
+  const facts: ProjectFacts = {
+    id: 'p1',
+    name: 'Lekki Plumbers',
+    websiteUrl: 'https://lekki.ng',
+    businessType: 'local',
+    services: ['plumbing'],
+    location: 'Lekki, Lagos',
+    description: null,
+    valueProposition: 'Same-day plumbing',
+    audience: [],
+    competitors: [],
+    category: null,
+    phone: '0800 000 0000',
+  }
+
+  it('adds a paste-ready JSON-LD snippet to the report and the structured-data finding', () => {
+    const report = {
+      score: 60,
+      findings: [
+        { severity: 'warning', category: 'meta', title: 'Title too long', detail: '', fix: '', impact: 'low' },
+        { severity: 'warning', category: 'schema', title: 'Missing structured data', detail: 'No JSON-LD on the page.', fix: 'Add schema.', impact: 'medium' },
+      ],
+      summary: 'x',
+    }
+    const html = '<h2>Do you work weekends?</h2><p>Yes, seven days a week.</p><h2>Do you quote first?</h2><p>Always, in writing.</p><h2>Do you fix heaters?</h2><p>Yes, all brands.</p>'
+    const out = attachSchemaSnippet(report, facts, { pageUrl: 'https://lekki.ng/', html })
+    expect(out.schema_snippet).toContain('<script type="application/ld+json">')
+    expect(out.schema_snippet).toContain('"LocalBusiness"')
+    expect(out.schema_snippet).toContain('"FAQPage"')
+    expect(out.schema_snippet).toContain('Do you work weekends?')
+    const findings = out.findings as Array<{ category: string; schema_snippet?: string }>
+    expect(findings[0].schema_snippet).toBeUndefined()
+    expect(findings[1].schema_snippet).toBe(out.schema_snippet)
+  })
+
+  it('leaves a report alone when nothing is wrong with the structured data', () => {
+    const report = { score: 90, findings: [{ severity: 'info', category: 'meta', title: 'Fine', detail: '', fix: '', impact: 'low' }], summary: 'x' }
+    expect(attachSchemaSnippet(report, facts, { pageUrl: 'https://lekki.ng/' }).schema_snippet).toBeUndefined()
   })
 })

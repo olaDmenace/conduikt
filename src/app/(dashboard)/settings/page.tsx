@@ -70,6 +70,7 @@ export default function SettingsPage() {
 
   const planLabels: Record<string, string> = {
     free: "Free",
+    local: "Local",
     pro: "Pro",
     growth: "Growth",
     agency: "Agency",

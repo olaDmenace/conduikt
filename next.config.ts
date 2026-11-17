@@ -1,13 +1,14 @@
 import type { NextConfig } from "next";
 
-// Content Security Policy — Report-Only mode.
+// Content Security Policy — enforced.
 //
-// This runs alongside the enforced headers below. Browsers evaluate the
-// policy but do NOT block anything; instead they POST violation reports to
-// /api/csp-report where we log them. Once we've watched real traffic for
-// 7-14 days and confirmed the policy doesn't break checkout, generation,
-// or any legitimate load, flip the header key from
-// `Content-Security-Policy-Report-Only` to `Content-Security-Policy`.
+// This ran as Content-Security-Policy-Report-Only from launch until
+// 2026-11-17. The only violation the report log showed in that window was
+// Google Analytics beaconing to https://www.google.com/g/collect (it sends
+// there as well as to *.google-analytics.com), which is now allowed under
+// connect-src. Browsers block anything else that is not listed here and
+// still POST a report to /api/csp-report, so keep report-uri: new
+// violations are how we learn a source is missing.
 //
 // Why each source is here:
 //   script-src: 'unsafe-inline' required by Next.js runtime (inline hydration
@@ -19,9 +20,16 @@ import type { NextConfig } from "next";
 //     from many domains (Unsplash, X user avatars, LinkedIn CDN, etc.).
 //   connect-src: Supabase (data plane + realtime WSS), Anthropic (server-
 //     initiated; the browser rarely needs this but streaming responses may).
-//   frame-src: payment iframes.
+//   media-src: generated videos play from their public Supabase Storage URL
+//     (video-pipeline.ts getPublicUrl); blob: for in-browser previews.
+//   frame-src: payment iframes, plus https://www.google.com for the keyless
+//     Google Maps embed on hosted pages (hosted-pages/html.ts, render.tsx).
+//   object-src 'self': the one <object> we render is the same-origin PDF
+//     preview on /share (/api/marketing-kit/pdf). Third-party plugins stay
+//     blocked.
 //   Google Analytics (gtag): script from googletagmanager.com, beacons to
-//     *.google-analytics.com / *.analytics.google.com.
+//     *.google-analytics.com / *.analytics.google.com and, for some
+//     sessions, https://www.google.com/g/collect.
 //   Tawk chat: scripts, styles, fonts, XHR and a websocket on *.tawk.to,
 //     plus its widget iframes.
 //   Cloudflare Turnstile: the anonymous "Check my site" bot check (script
@@ -31,18 +39,19 @@ import type { NextConfig } from "next";
 //
 // If a violation report shows a source we forgot, add it here — don't broaden
 // to `https:` unless the source is genuinely unlimited.
-const CSP_REPORT_ONLY = [
+const CSP = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.flutterwave.com https://js.paystack.co https://cdn.jsdelivr.net https://va.vercel-scripts.com https://www.googletagmanager.com https://embed.tawk.to https://*.tawk.to https://challenges.cloudflare.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://embed.tawk.to",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data: https://fonts.gstatic.com https://embed.tawk.to",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://checkout.flutterwave.com https://api.paystack.co https://vitals.vercel-insights.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://*.tawk.to wss://*.tawk.to",
-  "frame-src 'self' https://checkout.flutterwave.com https://checkout.paystack.com https://*.tawk.to https://challenges.cloudflare.com",
+  "media-src 'self' blob: https://*.supabase.co",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://checkout.flutterwave.com https://api.paystack.co https://vitals.vercel-insights.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://www.google.com https://*.tawk.to wss://*.tawk.to",
+  "frame-src 'self' https://checkout.flutterwave.com https://checkout.paystack.com https://*.tawk.to https://challenges.cloudflare.com https://www.google.com",
   "frame-ancestors 'self'",
   "form-action 'self' https://checkout.flutterwave.com https://checkout.paystack.com",
   "base-uri 'self'",
-  "object-src 'none'",
+  "object-src 'self'",
   // Trailing slash matters: trailingSlash:true 308s the bare path and
   // browsers never follow redirects when sending reports.
   "report-uri /api/csp-report/",
@@ -67,9 +76,9 @@ const securityHeaders = [
       "browsing-topics=()",
     ].join(", "),
   },
-  // Report-Only — does not block, only reports. Flip the key name to
-  // `Content-Security-Policy` after monitoring violations for 7-14 days.
-  { key: "Content-Security-Policy-Report-Only", value: CSP_REPORT_ONLY },
+  // Enforced since 2026-11-17 (see the CSP comment above). Violations are
+  // blocked and reported to /api/csp-report.
+  { key: "Content-Security-Policy", value: CSP },
 ];
 
 const nextConfig: NextConfig = {

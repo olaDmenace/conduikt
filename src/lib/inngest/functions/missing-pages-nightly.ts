@@ -1,12 +1,17 @@
 import { inngest } from "../client";
 import { createServiceClient } from "@/src/lib/supabase/service";
 import { runMissingPages } from "@/src/lib/missing-pages/run";
+import { factsFromProject, hasSomethingToCheck, type ProjectRow } from "@/src/lib/missing-pages/facts";
 
 // The 2am loop from the reel. Every project that turned on "Run every
 // night" gets one run as its own step: crawl, find the searches it has no
 // page for, write the best one, check it, and leave it in Drafts waiting
 // for the owner's OK (or put it live if the project is Hands off and has
 // somewhere to publish).
+//
+// A project with no website and no services is skipped before its step
+// runs, so nothing is crawled, nothing is counted as a run and no error is
+// recorded against it; the owner sees the hint on the Missing Pages screen.
 //
 // Registered by the lead in src/lib/inngest/index.ts and the Inngest route.
 export const missingPagesNightly = inngest.createFunction(
@@ -15,9 +20,16 @@ export const missingPagesNightly = inngest.createFunction(
   async ({ step }) => {
     const supabase = createServiceClient();
 
-    const projects = await step.run("fetch-enabled-projects", async () => {
-      const { data } = await supabase.from("projects").select("id, name").eq("missing_pages_enabled", true).order("created_at");
-      return (data ?? []) as Array<{ id: string; name: string }>;
+    const { projects, skipped } = await step.run("fetch-enabled-projects", async () => {
+      const { data } = await supabase.from("projects").select("id, name, website_url, services").eq("missing_pages_enabled", true).order("created_at");
+      const rows = (data ?? []) as Array<Pick<ProjectRow, "id" | "name" | "website_url" | "services">>;
+      const ready: Array<{ id: string; name: string }> = [];
+      const skipped: string[] = [];
+      for (const row of rows) {
+        if (hasSomethingToCheck(factsFromProject({ ...row, name: row.name }))) ready.push({ id: row.id, name: row.name });
+        else skipped.push(row.id);
+      }
+      return { projects: ready, skipped };
     });
 
     const outcomes: Array<{ projectId: string; written: number; published: number; error: string | null }> = [];
@@ -35,6 +47,6 @@ export const missingPagesNightly = inngest.createFunction(
       outcomes.push(outcome);
     }
 
-    return { projects: projects.length, outcomes };
+    return { projects: projects.length, skipped, outcomes };
   }
 );

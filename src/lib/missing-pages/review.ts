@@ -5,6 +5,7 @@
 import { checkAnswerReadiness, type ReadinessResult } from "@/src/lib/seo/answer-readiness";
 import { pageJsonLd } from "@/src/lib/seo/schema-generator";
 import type { RobotsInfo } from "@/src/lib/crawl/robots";
+import { ctaFallbackHref } from "./facts";
 import type { HostedTemplate, MissingPageContent, ProjectFacts } from "./types";
 
 export interface ReviewInput {
@@ -46,6 +47,12 @@ export function reviewPage(input: ReviewInput): ReviewResult {
   if (page.entitySentence.trim().split(/\s+/).length < 5 || !nameInEntity) {
     page = { ...page, entitySentence: defaultEntitySentence(input.facts) };
     applied.push("Added a sentence that says who you are, what you do and where.");
+  }
+  // A button that only jumps to "#contact" goes to the booking link or a call instead.
+  const ctaHref = ctaFallbackHref(input.facts);
+  if ((!page.cta.href.trim() || page.cta.href.trim() === "#contact") && ctaHref !== "#contact") {
+    page = { ...page, cta: { ...page.cta, href: ctaHref } };
+    applied.push(ctaHref.startsWith("tel:") ? "Pointed the button at your phone number." : "Pointed the button at your booking link.");
   }
 
   const siteUrl = input.siteUrl ?? input.facts.websiteUrl ?? "https://conduikt.site";

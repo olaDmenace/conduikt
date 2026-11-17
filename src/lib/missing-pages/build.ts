@@ -6,6 +6,7 @@ import { z } from "zod";
 import { generateWithClaude, type GenerationResult } from "@/src/lib/ai/client";
 import { getAgent } from "@/src/lib/ai/agents";
 import type { ProjectContext } from "@/src/lib/ai/agents/types";
+import { ctaFallbackHref } from "./facts";
 import type { CandidateKind, MissingPageContent, ProjectFacts } from "./types";
 
 const pageSchema = z.object({
@@ -68,15 +69,19 @@ export function tidyText(s: string): string {
  * Keep only web, mail and phone links or site-relative paths; anything else
  * (javascript:, data:, vbscript:, protocol-relative) falls back to the contact anchor.
  */
-export function safeHref(raw: string): string {
+export function safeHref(raw: string, fallback = "#contact"): string {
   const href = raw.trim();
-  if (!href) return "#contact";
+  if (!href || href === "#contact") return fallback;
   if (/^(https?:\/\/|mailto:|tel:)/i.test(href)) return href;
   if (/^(\/(?!\/)|#)/.test(href)) return href;
-  return "#contact";
+  return fallback;
 }
 
-export function normalisePage(raw: unknown, today: string): MissingPageContent {
+/**
+ * @param ctaFallback where the button goes when the model gave no usable
+ * link: ctaFallbackHref(facts) (booking link, then a call, then "#contact").
+ */
+export function normalisePage(raw: unknown, today: string, ctaFallback = "#contact"): MissingPageContent {
   const p = pageSchema.parse(raw);
   const updatedOn = /^\d{4}-\d{2}-\d{2}$/.test(p.updatedOn) ? p.updatedOn : today;
   return {
@@ -87,7 +92,7 @@ export function normalisePage(raw: unknown, today: string): MissingPageContent {
     answer: tidyText(p.answer),
     sections: p.sections.map((s) => ({ heading: tidyText(s.heading), body: tidyText(s.body) })),
     faq: p.faq.slice(0, 5).map((f) => ({ q: tidyText(f.q), a: tidyText(f.a) })),
-    cta: { label: tidyText(p.cta.label).slice(0, 40), href: safeHref(p.cta.href) },
+    cta: { label: tidyText(p.cta.label).slice(0, 40), href: safeHref(p.cta.href, ctaFallback) },
     updatedOn,
     ...(p.changes && p.changes.length ? { changes: p.changes.slice(0, 3).map(tidyText) } : {}),
   };
@@ -117,7 +122,7 @@ export async function buildMissingPage(input: BuildInput): Promise<BuildResult> 
 
   const result = await generate({ systemPrompt, userPrompt, maxTokens: agent.maxTokens });
   const parsed = agent.parseResponse(result.content);
-  const page = normalisePage(parsed.data, today);
+  const page = normalisePage(parsed.data, today, ctaFallbackHref(input.facts));
   return {
     page,
     usage: { inputTokens: result.inputTokens, outputTokens: result.outputTokens, model: result.model, durationMs: result.durationMs },
