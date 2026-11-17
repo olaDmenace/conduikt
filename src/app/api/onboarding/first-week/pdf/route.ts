@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const rl = rateLimit(`first-week-pdf:${user.id}`, { limit: 20, windowSeconds: 3600 });
+  const rl = await rateLimit(`first-week-pdf:${user.id}`, { limit: 20, windowSeconds: 3600 });
   if (!rl.allowed) return rateLimitResponse(rl);
 
   const projectId = request.nextUrl.searchParams.get("projectId");

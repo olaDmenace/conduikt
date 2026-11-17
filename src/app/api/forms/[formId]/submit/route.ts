@@ -4,6 +4,7 @@ import { enrollContactInSequence } from "@/src/lib/email/enroll";
 import { beginConfirmation } from "@/src/lib/email/confirm";
 import { createContact } from "@/src/lib/email/marketing";
 import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
+import { clientIp } from "@/src/lib/security/client-ip";
 
 // Public POST endpoint for lead-capture forms.
 //
@@ -58,11 +59,6 @@ export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
 }
 
-function clientIp(request: NextRequest): string {
-  const fwd = request.headers.get("x-forwarded-for");
-  return (fwd ? fwd.split(",")[0] : request.headers.get("x-real-ip") ?? "unknown").trim();
-}
-
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ formId: string }> }
@@ -104,7 +100,10 @@ export async function POST(
     );
   }
 
-  const limited = rateLimit(`form-submit:${formId}:${clientIp(request)}`, { limit: 20, windowSeconds: 600 });
+  // Per visitor across every form: 10 submits per 10 minutes. The counter
+  // is shared across instances, so a burst spread over lambdas is still
+  // one burst.
+  const limited = await rateLimit(`form-submit:${clientIp(request.headers)}`, { limit: 10, windowSeconds: 600 });
   if (!limited.allowed) return rateLimitResponse(limited);
 
   const firstName = body.first_name?.toString().trim() || null;

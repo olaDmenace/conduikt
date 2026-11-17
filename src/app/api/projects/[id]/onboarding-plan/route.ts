@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 import { generateWithClaude, AIRefusedError, AIUnavailableError, aiRefusedBody, aiUnavailableBody } from "@/src/lib/ai/client";
 import { onboardingAdvisorAgent } from "@/src/lib/ai/agents/onboarding-advisor";
+import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
 
 export async function POST(
   request: NextRequest,
@@ -14,6 +15,9 @@ export async function POST(
   } = await supabase.auth.getUser();
   if (!user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const rl = await rateLimit(`onboarding-plan:${user.id}`, { limit: 20, windowSeconds: 600 });
+  if (!rl.allowed) return rateLimitResponse(rl);
 
   const { data: project } = await supabase
     .from("projects")

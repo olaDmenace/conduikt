@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.6.0] - 2026-11-17
+
+Closes out the October 2026 roadmap for everything that needs no outside approval: the email items, the buildable half of the Local pack, the inbound leads pipeline, Missing Pages polish, and platform hardening. Agents now run on Claude Opus 5.5 and Haiku 5.5.
+
+### Added
+- Custom sending domain (Pro and above): add a domain, see the DNS records, check again until verified; broadcasts, email series and confirmations then send from it
+- Double opt-in per list with a branded confirm page; pending contacts are never enrolled or emailed until they confirm
+- Suppression actions: suppress or unsuppress a contact, filter by status, paste a suppression list
+- White-label unsubscribe and confirm pages for Agency-tier owners
+- Business details on the project (phone, address, city, booking link, review link) and a name-address-phone consistency check against the website
+- Leads pipeline: five stages, a rule-based lead score, a "send booking link" message
+- Review requests by email (WhatsApp when connected), five a month on Free, unlimited from the Local tier; CSV paste up to 50 customers
+- "Get mentioned" tasks per business type on the analytics page, with an automatic "mentioned?" check through the answer engines
+- A Claude web-search answer engine for the Found-by-AI monitor, so it runs without a Perplexity key
+- Naira Local tier through plans, billing and both payment webhooks (`FLUTTERWAVE_PLAN_LOCAL`, `PAYSTACK_PLAN_LOCAL`)
+- Instagram and Meta Ads entry points, hidden until Meta verification (`NEXT_PUBLIC_ENABLE_FACEBOOK_INTEGRATION`)
+- Missing Pages: a revision waits for approval when a live page is re-written; Google Maps embed and llms.txt on hosted sites; a title and H1 rewrite tool with WordPress apply; an answerability dimension in the content scorer; a paste-ready schema snippet in Site Audit
+- Rate limits backed by Postgres (`rate_limits` table and `rate_limit_hit` function) on every model and send route
+- Error and loading boundaries (`global-error.tsx`, project `loading.tsx`); money-path tests for Flutterwave, Paystack, billing and admin routes; a typed database baseline (`src/types/database.ts`) and schema snapshot (`docs/db/`)
+- Audit section 5.10: the dograh voice-marketing verdict (build later; missed-call text-back on WhatsApp is the wedge)
+
+### Changed
+- Agents run on `claude-opus-5-5` (generate, analyse) and `claude-haiku-5-5` (previews, scoring) with effort routed per purpose; `AI_MODEL_*` and `AI_EFFORT_*` overrides are validated against the known ids
+- One request builder for every model call: no sampling parameters, no thinking field, explicit effort, a 2,048 max_tokens floor, text read by block type, `refusal` surfaced as a 422 with an honest message, truncation continued as a user turn
+- Content Security Policy is enforced (was report-only), with the Google Analytics collect host and the Maps embed frame allowed
+- Video credits are charged through the quota function instead of a direct profile write
+- Migrations applied to production on 2026-11-17: `business_details_leads`, `content_scores_answerability`, `email_completeness`, `missing_pages_revisions`, `reviews_corroboration`, `seo_titles_asset_type`; `profiles_protect_columns` and `rate_limits` are for the owner to apply
+
+### Removed
+- The non-clickable "Cinematic ad" tile and its dead API branch; "Annual plans coming soon" on pricing; the email-domain waitlist stub and its "Notify me" promise
+
+---
+
 ## [0.5.0] - 2026-11-06
 
 Executes the October 2026 audit roadmap: one engine, four playbooks (SaaS, local, agency, creator), three modes, and a Missing Pages loop that gets businesses found by Google and AI answers without a website or a marketer.

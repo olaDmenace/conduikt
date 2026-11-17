@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 import { AIRefusedError, AIUnavailableError, aiRefusedBody, aiUnavailableBody, generateWithClaude } from "@/src/lib/ai/client";
 import { modelFor } from "@/src/lib/ai/model-routing";
+import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -12,6 +13,9 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const rl = await rateLimit(`ai-suggest:${user.id}`, { limit: 20, windowSeconds: 600 });
+  if (!rl.allowed) return rateLimitResponse(rl);
 
   const { prompt, context } = await request.json();
 

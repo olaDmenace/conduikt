@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
   // Rate limit: 30 publish actions per 5 minutes per user. Bursty by
   // design — someone bulk-publishing a campaign batch shouldn't hit
   // the limit, but it caps absurd loops.
-  const rl = rateLimit(`blog-publish:${user.id}`, {
+  const rl = await rateLimit(`blog-publish:${user.id}`, {
     limit: 30,
     windowSeconds: 300,
   });

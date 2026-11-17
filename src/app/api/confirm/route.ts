@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
   const token = url.searchParams.get("token");
   if (!token) return NextResponse.json({ error: "Missing token" }, { status: 400 });
 
-  const limited = rateLimit(`confirm:${clientIp(request)}`, { limit: 30, windowSeconds: 600 });
+  const limited = await rateLimit(`confirm:${clientIp(request)}`, { limit: 30, windowSeconds: 600 });
   if (!limited.allowed) return rateLimitResponse(limited);
 
   const result = await confirmContactByToken(createServiceClient(), token);
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
   const token = readToken(url, body, contentType);
   if (!token) return NextResponse.json({ error: "Missing token" }, { status: 400 });
 
-  const limited = rateLimit(`confirm:${clientIp(request)}`, { limit: 30, windowSeconds: 600 });
+  const limited = await rateLimit(`confirm:${clientIp(request)}`, { limit: 30, windowSeconds: 600 });
   if (!limited.allowed) return rateLimitResponse(limited);
 
   const result = await confirmContactByToken(createServiceClient(), token);

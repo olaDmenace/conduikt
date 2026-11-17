@@ -34,7 +34,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
   const { supabase, userId } = ctx;
   const project = ctx.project as unknown as DetailsRow;
 
-  const rl = rateLimit(`nap-check:${userId}`, { limit: 5, windowSeconds: 10 * 60 });
+  const rl = await rateLimit(`nap-check:${userId}`, { limit: 5, windowSeconds: 10 * 60 });
   if (!rl.allowed) return rateLimitResponse(rl);
 
   const site = (project.website_url ?? "").trim();

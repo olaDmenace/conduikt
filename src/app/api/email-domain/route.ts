@@ -70,7 +70,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!ctx.ok) return ctx.error;
   const { supabase, user } = ctx;
 
-  const limited = rateLimit(`email-domain:create:${user.id}`, { limit: 5, windowSeconds: 600 });
+  const limited = await rateLimit(`email-domain:create:${user.id}`, { limit: 5, windowSeconds: 600 });
   if (!limited.allowed) return rateLimitResponse(limited);
 
   const plan = await getUserPlan(supabase, user.id);

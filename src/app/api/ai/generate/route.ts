@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Rate limit: 10 AI generations per minute per user
-  const rl = rateLimit(`ai-gen:${user.id}`, { limit: 10, windowSeconds: 60 });
+  const rl = await rateLimit(`ai-gen:${user.id}`, { limit: 10, windowSeconds: 60 });
   if (!rl.allowed) return rateLimitResponse(rl);
 
   const body = await request.json();

@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const rl = rateLimit(`audit-pdf:${user.id}`, { limit: 20, windowSeconds: 3600 });
+  const rl = await rateLimit(`audit-pdf:${user.id}`, { limit: 20, windowSeconds: 3600 });
   if (!rl.allowed) return rateLimitResponse(rl);
 
   const body = (await request.json().catch(() => ({}))) as { url?: string; audit?: unknown };

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 import { verifyProjectOwnership } from "@/src/lib/auth/verify-ownership";
+import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
 
 export async function GET(
   _request: NextRequest,
@@ -13,6 +14,10 @@ export async function GET(
   } = await supabase.auth.getUser();
   if (!user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Trackers plus every snapshot: a read, but a wide one.
+  const rl = await rateLimit(`competitors-list:${user.id}`, { limit: 60, windowSeconds: 600 });
+  if (!rl.allowed) return rateLimitResponse(rl);
 
   const ownedProject = await verifyProjectOwnership(supabase, id, user.id);
   if (!ownedProject) {
@@ -44,6 +49,9 @@ export async function POST(
   } = await supabase.auth.getUser();
   if (!user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const rl = await rateLimit(`competitors-add:${user.id}`, { limit: 20, windowSeconds: 600 });
+  if (!rl.allowed) return rateLimitResponse(rl);
 
   const ownedProject2 = await verifyProjectOwnership(supabase, id, user.id);
   if (!ownedProject2) {

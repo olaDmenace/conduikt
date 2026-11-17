@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Rate limit: 3 video generations per minute per user
-  const rl = rateLimit(`video-gen:${user.id}`, { limit: 3, windowSeconds: 60 });
+  const rl = await rateLimit(`video-gen:${user.id}`, { limit: 3, windowSeconds: 60 });
   if (!rl.allowed) return rateLimitResponse(rl);
 
   // Plan gate — Growth/Agency only

@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rl = rateLimit(`magic-audit:${user.id}`, {
+  const rl = await rateLimit(`magic-audit:${user.id}`, {
     limit: 3,
     windowSeconds: 3600,
   });

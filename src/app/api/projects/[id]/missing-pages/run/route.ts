@@ -14,7 +14,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (isResponse(ctx)) return ctx;
   const { supabase, userId } = ctx;
 
-  const rl = rateLimit(`missing-pages-run:${userId}`, { limit: 3, windowSeconds: 10 * 60 });
+  const rl = await rateLimit(`missing-pages-run:${userId}`, { limit: 3, windowSeconds: 10 * 60 });
   if (!rl.allowed) return rateLimitResponse(rl);
 
   let maxPages = 1;

@@ -22,7 +22,7 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rl = rateLimit(`video-gen:${user.id}`, { limit: 3, windowSeconds: 60 });
+  const rl = await rateLimit(`video-gen:${user.id}`, { limit: 3, windowSeconds: 60 });
   if (!rl.allowed) return rateLimitResponse(rl);
 
   const { data: job } = await supabase

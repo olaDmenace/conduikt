@@ -36,7 +36,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
   if (isResponse(ctx)) return ctx;
   const { supabase, userId, project } = ctx;
 
-  const rl = rateLimit(`titles:${userId}`, { limit: 3, windowSeconds: 10 * 60 });
+  const rl = await rateLimit(`titles:${userId}`, { limit: 3, windowSeconds: 10 * 60 });
   if (!rl.allowed) return rateLimitResponse(rl);
 
   const facts = factsFromProject(project);

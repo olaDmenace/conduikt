@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Rate limit: 5 audits per minute per user
-  const rl = rateLimit(`ai-audit:${user.id}`, { limit: 5, windowSeconds: 60 });
+  const rl = await rateLimit(`ai-audit:${user.id}`, { limit: 5, windowSeconds: 60 });
   if (!rl.allowed) return rateLimitResponse(rl);
 
   // Check generation limits

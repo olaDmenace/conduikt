@@ -15,7 +15,7 @@ export async function POST(): Promise<NextResponse> {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const limited = rateLimit(`email-domain:verify:${user.id}`, { limit: 30, windowSeconds: 300 });
+  const limited = await rateLimit(`email-domain:verify:${user.id}`, { limit: 30, windowSeconds: 300 });
   if (!limited.allowed) return rateLimitResponse(limited);
 
   const row = await loadDomainRow(supabase, user.id);

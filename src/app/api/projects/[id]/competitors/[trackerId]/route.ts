@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/src/lib/supabase/server";
 import { verifyProjectOwnership } from "@/src/lib/auth/verify-ownership";
 import { generateWithClaude } from "@/src/lib/ai/client";
+import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
 
 export async function POST(
   _request: NextRequest,
@@ -14,6 +15,10 @@ export async function POST(
   } = await supabase.auth.getUser();
   if (!user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Per-user cap on model calls; the per-tracker 24h cooldown below is separate.
+  const rl = await rateLimit(`competitor-analysis:${user.id}`, { limit: 20, windowSeconds: 600 });
+  if (!rl.allowed) return rateLimitResponse(rl);
 
   const ownedProject = await verifyProjectOwnership(supabase, id, user.id);
   if (!ownedProject) {

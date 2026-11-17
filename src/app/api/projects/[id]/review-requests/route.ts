@@ -95,7 +95,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const window = { limit: REVIEW_REQUESTS_PER_HOUR, windowSeconds: REVIEW_WINDOW_SECONDS };
-  const calls = rateLimit(`review-requests:${ctx.userId}`, window);
+  const calls = await rateLimit(`review-requests:${ctx.userId}`, window);
   if (!calls.allowed) return rateLimitResponse(calls);
 
   const raw = await request.json().catch(() => null);
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       );
     }
     // The cap that matters is customers contacted, not calls made.
-    const slots = takeRateLimit(`review-rows:${ctx.userId}`, rowsWindow, rows.length);
+    const slots = await takeRateLimit(`review-rows:${ctx.userId}`, rowsWindow, rows.length);
     if (!slots.allowed) return rateLimitResponse(slots);
 
     try {
@@ -156,7 +156,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!email && !phone && !contactId) {
     return NextResponse.json({ error: "Add an email address or a phone number" }, { status: 400 });
   }
-  const slot = takeRateLimit(`review-rows:${ctx.userId}`, rowsWindow, 1);
+  const slot = await takeRateLimit(`review-rows:${ctx.userId}`, rowsWindow, 1);
   if (!slot.allowed) return rateLimitResponse(slot);
 
   try {

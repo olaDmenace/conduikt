@@ -15,7 +15,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
   const ctx = await requireProjectOwner(id);
   if (isResponse(ctx)) return ctx;
 
-  const limit = rateLimit(`corroboration-check:${id}`, { limit: 3, windowSeconds: 3600 });
+  const limit = await rateLimit(`corroboration-check:${id}`, { limit: 3, windowSeconds: 3600 });
   if (!limit.allowed) return rateLimitResponse(limit);
 
   const engines = availableEngines().filter((e) => e.available);

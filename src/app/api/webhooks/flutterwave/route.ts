@@ -56,7 +56,7 @@ interface FlutterwaveWebhookPayload {
 
 export async function POST(request: NextRequest) {
   // Rate limit by IP: 30 requests per minute
-  const rl = rateLimit(
+  const rl = await rateLimit(
     `flutterwave-wh:${request.headers.get("x-forwarded-for") || "unknown"}`,
     { limit: 30, windowSeconds: 60 }
   );

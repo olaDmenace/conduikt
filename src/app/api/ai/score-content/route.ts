@@ -5,6 +5,7 @@ import { getAgent } from "@/src/lib/ai/agents";
 import { buildProjectContext } from "@/src/lib/ai/prompt-builder";
 import { effortFor } from "@/src/lib/ai/model-routing";
 import { blendAnswerability, scoreAnswerability } from "@/src/lib/seo/answerability";
+import { rateLimit, rateLimitResponse } from "@/src/lib/security/rate-limit";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -14,6 +15,10 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  // Shares a window with /api/agents/content-scorer: same model, same job.
+  const rl = await rateLimit(`content-score:${user.id}`, { limit: 20, windowSeconds: 600 });
+  if (!rl.allowed) return rateLimitResponse(rl);
 
   const body = await request.json();
   const { content, contentType, projectId, postId } = body;
